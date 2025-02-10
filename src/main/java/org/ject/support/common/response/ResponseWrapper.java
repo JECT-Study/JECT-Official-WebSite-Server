@@ -11,6 +11,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
 @RestControllerAdvice
 public class ResponseWrapper implements ResponseBodyAdvice<Object> {
+
     @Override
     public boolean supports(final MethodParameter returnType,
                             final Class<? extends HttpMessageConverter<?>> converterType) {
@@ -22,9 +23,12 @@ public class ResponseWrapper implements ResponseBodyAdvice<Object> {
                                   final MediaType selectedContentType,
                                   final Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   final ServerHttpRequest request, final ServerHttpResponse response) {
+
         if (body instanceof ErrorCode errorCode) {
-            return new ApiResponse<>(errorCode.getCode(),errorCode.getMessage());
+            return new ApiResponse<>(errorCode.getCode(), errorCode.getMessage());
         }
+
         return new ApiResponse<>("SUCCESS", body);
+
     }
 }

@@ -6,8 +6,10 @@ import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.AbstractHttpMessageConverter;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.converter.HttpMessageNotWritableException;
@@ -40,5 +42,15 @@ public class CommonHttpMessageConverter extends AbstractHttpMessageConverter<Api
             throws IOException, HttpMessageNotWritableException {
         String responseMessage = objectMapper.writeValueAsString(outputMessage);
         StreamUtils.copy(responseMessage.getBytes(StandardCharsets.UTF_8), outputMessage.getBody());
+    }
+
+    @Override
+    protected void addDefaultHeaders(HttpHeaders headers, ApiResponse<Object> objectApiResponse, MediaType contentType)
+    {
+        try {
+            super.addDefaultHeaders(headers, objectApiResponse, contentType);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

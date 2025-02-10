@@ -9,5 +9,5 @@ import lombok.Getter;
 public class ApiResponse<T> {
     private final String status;
     private final T data;
-    private final LocalDateTime timestamp=LocalDateTime.now();
+    private final LocalDateTime timestamp = LocalDateTime.now();
 }
