@@ -59,13 +59,14 @@ public class AuthService {
         // redis에서 키 값으로 인증 번호 조회
         String redisCode = redisTemplate.opsForValue().get(key);
 
+        // Redis에서 코드가 없는 경우
+        if (redisCode == null) {
+            throw new MailException(NOT_FOUND_AUTH_CODE);
+        }
+
         // 코드 불일치
         if (!userInputCode.equals(redisCode)) {
             throw new MailException(INVALID_AUTH_CODE);
-        }
-
-        if (redisCode == null) {
-            throw new MailException(NOT_FOUND_AUTH_CODE);
         }
 
         // 인증 성공
