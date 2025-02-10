@@ -1,11 +1,14 @@
-package org.ject.support.common.security;
+package org.ject.support.common.security.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.security.jwt.JwtAccessDeniedHandler;
+import org.ject.support.common.security.jwt.JwtAuthenticationEntryPoint;
+import org.ject.support.common.security.jwt.JwtAuthenticationFilter;
+import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -23,19 +26,14 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig {
 
     private static final long MAX_AGE_SEC = 3600;
-    private final JwtTokenProvider jwtTokenProvider;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager (AuthenticationConfiguration authenticationConfiguration)
-            throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
     }
 
     @Bean
@@ -49,10 +47,10 @@ public class SecurityConfig {
                 })
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(request -> request
-                        .requestMatchers("/**").permitAll() // TODO 추후 API URL에 대한 권한 설정 필요
-                        .anyRequest().authenticated()
+                        .requestMatchers("/").permitAll() // TODO: 추후 API 개발 시 수정
+                        .anyRequest().permitAll()
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, objectMapper),
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
