@@ -5,15 +5,19 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
+
   datasource:
     driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
     url: jdbc:tc:mysql:8.2:///
     username: root
     password: 1234
+
   data:
     redis:
       host: localhost
       port: 6379
+      password:
+
   mail:
     host: smtp.gmail.com
     username: qkenrdl05@gmail.com
@@ -21,6 +25,13 @@ spring:
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
+
+  jwt:
+    secret: secret
+    token:
+      access-expiration-time: 360000
+      refresh-expiration-time: 8640000
+
 aws:
   access-key: accesskey
   secret-key: secretkey
@@ -32,6 +43,7 @@ decorator:
   datasource:
     p6spy:
       enable-logging: false
+
 logging:
   level:
     org:
