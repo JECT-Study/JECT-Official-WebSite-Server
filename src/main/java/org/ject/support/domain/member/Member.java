@@ -2,7 +2,7 @@ package org.ject.support.domain.member;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
-가import lombok.AllArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
