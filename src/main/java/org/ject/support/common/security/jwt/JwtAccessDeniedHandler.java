@@ -1,4 +1,4 @@
-package org.ject.support.common.security;
+package org.ject.support.common.security.jwt;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
