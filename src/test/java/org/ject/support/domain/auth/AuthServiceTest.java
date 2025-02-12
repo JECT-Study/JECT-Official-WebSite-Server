@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.util.Optional;
+import org.ject.support.common.security.jwt.JwtCookieProvider;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.auth.AuthDto.AuthCodeResponse;
 import org.ject.support.domain.member.Member;
@@ -45,6 +46,9 @@ class AuthServiceTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @Mock
+    private JwtCookieProvider jwtCookieProvider; // AuthService 내부에서 사용됨
+
+    @Mock
     private ValueOperations<String, String> valueOperations;
 
     private final String TEST_EMAIL = "test@example.com";
@@ -70,7 +74,7 @@ class AuthServiceTest {
         given(valueOperations.get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
         given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.empty());
         given(memberRepository.save(any(Member.class))).willReturn(newMember);
-        given(jwtTokenProvider.getAuthenticationByEmail(TEST_EMAIL)).willReturn(authentication);
+        given(jwtTokenProvider.createAuthenticationByMember(any(Member.class))).willReturn(authentication);
         given(jwtTokenProvider.createAccessToken(any(), any())).willReturn(TEST_ACCESS_TOKEN);
         given(jwtTokenProvider.createRefreshToken(any())).willReturn(TEST_REFRESH_TOKEN);
 
@@ -81,6 +85,8 @@ class AuthServiceTest {
         assertThat(result.getAccessToken()).isEqualTo(TEST_ACCESS_TOKEN);
         assertThat(result.getRefreshToken()).isEqualTo(TEST_REFRESH_TOKEN);
         verify(redisTemplate).delete(TEST_EMAIL);
+        verify(jwtCookieProvider).createAccessCookie(TEST_ACCESS_TOKEN);
+        verify(jwtCookieProvider).createRefreshCookie(TEST_REFRESH_TOKEN);
     }
 
     @Test
@@ -95,7 +101,7 @@ class AuthServiceTest {
 
         given(valueOperations.get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
         given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(existingMember));
-        given(jwtTokenProvider.getAuthenticationByEmail(TEST_EMAIL)).willReturn(authentication);
+        given(jwtTokenProvider.createAuthenticationByMember(any(Member.class))).willReturn(authentication);
         given(jwtTokenProvider.createAccessToken(any(), any())).willReturn(TEST_ACCESS_TOKEN);
         given(jwtTokenProvider.createRefreshToken(any())).willReturn(TEST_REFRESH_TOKEN);
 

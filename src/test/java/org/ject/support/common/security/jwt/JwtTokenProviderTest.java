@@ -1,14 +1,13 @@
 package org.ject.support.common.security.jwt;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.ject.support.common.exception.GlobalErrorCode.AUTHENTICATION_REQUIRED;
 
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import org.ject.support.common.security.CustomUserDetails;
+import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetailService;
+import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Member;
 import org.ject.support.domain.member.Role;
@@ -22,10 +21,15 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+
 @ExtendWith(MockitoExtension.class)
 class JwtTokenProviderTest {
 
     private JwtTokenProvider jwtTokenProvider;
+
+    private JwtCookieProvider jwtCookieProvider;
 
     @Mock
     private CustomUserDetailService customUserDetailService;
@@ -38,9 +42,12 @@ class JwtTokenProviderTest {
 
     @BeforeEach
     void setUp() {
-        jwtTokenProvider = new JwtTokenProvider(customUserDetailService);
+        jwtTokenProvider = new JwtTokenProvider();
+        jwtCookieProvider = new JwtCookieProvider();
         ReflectionTestUtils.setField(jwtTokenProvider, "accessExpirationTime", 3600000L); // 1시간
         ReflectionTestUtils.setField(jwtTokenProvider, "refreshExpirationTime", 1209600000L); // 2주
+        ReflectionTestUtils.setField(jwtCookieProvider, "accessExpirationTime", 3600000L); // 1시간
+        ReflectionTestUtils.setField(jwtCookieProvider, "refreshExpirationTime", 1209600000L); // 2주
 
         testMember = Member.builder()
                 .id(1L)
@@ -83,8 +90,6 @@ class JwtTokenProviderTest {
     void getAuthenticationByToken() {
         // given
         String token = jwtTokenProvider.createAccessToken(authentication, testMember.getId());
-        when(customUserDetailService.loadUserByUsername(anyString()))
-                .thenReturn(new CustomUserDetails(testMember));
 
         // when
         Authentication resultAuth = jwtTokenProvider.getAuthenticationByToken(token);
@@ -92,6 +97,7 @@ class JwtTokenProviderTest {
         // then
         assertThat(resultAuth).isNotNull();
         assertThat(resultAuth.getName()).isEqualTo(testMember.getEmail());
+        assertThat(((CustomUserDetails) resultAuth.getPrincipal()).getMemberId()).isEqualTo(testMember.getId());
     }
 
     @Test
@@ -115,8 +121,8 @@ class JwtTokenProviderTest {
         String token = "test-token";
 
         // when
-        Cookie refreshCookie = JwtTokenProvider.createRefreshCookie(token);
-        Cookie accessCookie = JwtTokenProvider.createAccessCookie(token);
+        Cookie refreshCookie = jwtCookieProvider.createRefreshCookie(token);
+        Cookie accessCookie = jwtCookieProvider.createAccessCookie(token);
 
         // then
         assertThat(refreshCookie.getName()).isEqualTo("refreshToken");
@@ -133,8 +139,6 @@ class JwtTokenProviderTest {
     void reissueAccessToken() {
         // given
         String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
-        when(customUserDetailService.loadUserByUsername(anyString()))
-                .thenReturn(new CustomUserDetails(testMember));
 
         // when
         String newAccessToken = jwtTokenProvider.reissueAccessToken(refreshToken, testMember.getId());
@@ -143,6 +147,8 @@ class JwtTokenProviderTest {
         assertThat(newAccessToken).isNotNull();
         assertThat(jwtTokenProvider.validateToken(newAccessToken)).isTrue();
         assertThat(jwtTokenProvider.getMemberId(newAccessToken)).isEqualTo(testMember.getId());
+        Authentication resultAuth = jwtTokenProvider.getAuthenticationByToken(newAccessToken);
+        assertThat(resultAuth.getName()).isEqualTo(testMember.getEmail());
     }
 
     @Test
@@ -160,7 +166,8 @@ class JwtTokenProviderTest {
     void validateNullAuthentication() {
         // when & then
         assertThatThrownBy(() -> jwtTokenProvider.createAccessToken(null, testMember.getId()))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Authentication is required");
+                .isInstanceOf(GlobalException.class)
+                .extracting(e -> ((GlobalException) e).getErrorCode().getMessage())
+                .isEqualTo(AUTHENTICATION_REQUIRED.getMessage());
     }
 }

@@ -15,12 +15,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class CustomUserDetailServiceTest {
 
+    @InjectMocks
     private CustomUserDetailService userDetailService;
 
     @Mock
@@ -30,7 +32,6 @@ class CustomUserDetailServiceTest {
 
     @BeforeEach
     void setUp() {
-        userDetailService = new CustomUserDetailService(memberRepository);
         testMember = Member.builder()
                 .id(1L)
                 .email("test@example.com")
