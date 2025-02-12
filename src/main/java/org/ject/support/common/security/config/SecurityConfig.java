@@ -1,8 +1,8 @@
 package org.ject.support.common.security.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.response.JwtErrorResponseHelper;
 import org.ject.support.common.security.jwt.JwtAccessDeniedHandler;
 import org.ject.support.common.security.jwt.JwtAuthenticationEntryPoint;
 import org.ject.support.common.security.jwt.JwtAuthenticationFilter;
@@ -29,7 +29,7 @@ public class SecurityConfig {
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final JwtTokenProvider jwtTokenProvider;
-    private final ObjectMapper objectMapper;
+    private final JwtErrorResponseHelper jwtErrorResponseHelper;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/").permitAll() // TODO: 추후 API 개발 시 수정
                         .anyRequest().permitAll()
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, objectMapper),
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, jwtErrorResponseHelper),
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

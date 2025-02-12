@@ -1,10 +1,11 @@
 package org.ject.support.common.security;
 
 
-import static org.ject.support.common.security.SecurityErrorCode.EMPTY_ACCESS_TOKEN;
+import static org.ject.support.common.exception.GlobalErrorCode.EMPTY_ACCESS_TOKEN;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
@@ -32,7 +33,7 @@ public class ApiMemberArgumentResolver implements HandlerMethodArgumentResolver 
         String accessToken = jwtTokenProvider.resolveToken(request);
 
         if (accessToken == null) {
-            throw new SecurityException(EMPTY_ACCESS_TOKEN);
+            throw new GlobalException(EMPTY_ACCESS_TOKEN);
         }
 
         String token = jwtTokenProvider.resolveToken(request);
