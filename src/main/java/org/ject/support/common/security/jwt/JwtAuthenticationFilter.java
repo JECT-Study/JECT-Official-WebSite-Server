@@ -15,7 +15,7 @@ import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.response.JwtErrorResponseHelper;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.GenericFilterBean;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * JWT 토큰 기반의 인증을 처리하는 필터
@@ -27,20 +27,17 @@ import org.springframework.web.filter.GenericFilterBean;
 
 @Slf4j
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter extends GenericFilterBean {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtErrorResponseHelper jwtErrorResponseHelper;
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException,
-            ServletException {
-
-        HttpServletResponse res = (HttpServletResponse) response;
-
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
         try {
 
-            String token = jwtTokenProvider.resolveToken((HttpServletRequest) request);
+            String token = jwtTokenProvider.resolveToken(request);
 
             if (token == null) {
                 chain.doFilter(request, response);
@@ -59,7 +56,7 @@ public class JwtAuthenticationFilter extends GenericFilterBean {
         catch (GlobalException e) {
             log.error("GlobalException: {}", e.getErrorCode());
             request.setAttribute("exception", e.getErrorCode().getMessage());
-            jwtErrorResponseHelper.sendErrorResponse(res, e.getErrorCode());
+            jwtErrorResponseHelper.sendErrorResponse(response, e.getErrorCode());
         }
     }
 }
