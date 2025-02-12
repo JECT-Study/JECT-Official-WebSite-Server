@@ -66,25 +66,6 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public static Cookie createRefreshCookie(String refreshToken) {
-        String cookieName = "refreshToken";
-        Cookie cookie = new Cookie(cookieName, refreshToken);
-        cookie.setHttpOnly(true);
-        //cookie.setSecure(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(60 * 60 * 24); // accessToken 유효
-        return cookie;
-    }
-
-    public static Cookie createAccessCookie(String accessToken) {
-        String cookieName = "accessToken";
-        Cookie cookie = new Cookie(cookieName, accessToken);
-        cookie.setHttpOnly(true);
-        //cookie.setSecure(true); TODO : HTTPS 적용 시 적용 가능
-        cookie.setPath("/");
-        cookie.setMaxAge(60 * 60 * 24);
-        return cookie;
-    }
 
     public Authentication getAuthenticationByToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();

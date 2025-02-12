@@ -1,12 +1,12 @@
 package org.ject.support.domain.auth;
 
-import static org.ject.support.common.security.jwt.JwtTokenProvider.createAccessCookie;
-import static org.ject.support.common.security.jwt.JwtTokenProvider.createRefreshCookie;
+
 import static org.ject.support.domain.auth.AuthErrorCode.INVALID_AUTH_CODE;
 import static org.ject.support.domain.auth.AuthErrorCode.NOT_FOUND_AUTH_CODE;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.security.jwt.JwtCookieProvider;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.auth.AuthDto.AuthCodeResponse;
 import org.ject.support.domain.member.Member;
@@ -24,6 +24,7 @@ public class AuthService {
     private final RedisTemplate<String, String> redisTemplate;
     private final MemberRepository memberRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final JwtCookieProvider jwtCookieProvider;
 
     public AuthCodeResponse verifyEmailByAuthCode(HttpServletResponse response, String email, String userInputCode) {
         verifyAuthCode(email, userInputCode);
@@ -51,8 +52,8 @@ public class AuthService {
 
     // 쿠키 추가 메서드
     private void addCookie(HttpServletResponse response, String accessToken, String refreshToken) {
-        response.addCookie(createAccessCookie(accessToken));
-        response.addCookie(createRefreshCookie(refreshToken));
+        response.addCookie(jwtCookieProvider.createAccessCookie(accessToken));
+        response.addCookie(jwtCookieProvider.createRefreshCookie(refreshToken));
     }
 
     public void verifyAuthCode(String key, String userInputCode) {
