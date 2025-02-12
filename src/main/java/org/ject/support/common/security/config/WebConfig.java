@@ -3,7 +3,6 @@ package org.ject.support.common.security.config;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.ApiMemberArgumentResolver;
-import org.ject.support.common.security.GuestOrApiMemberArgumentResolver;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -17,7 +16,6 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-        resolvers.add(new GuestOrApiMemberArgumentResolver(jwtTokenProvider));
         resolvers.add(new ApiMemberArgumentResolver(jwtTokenProvider));
     }
 }
