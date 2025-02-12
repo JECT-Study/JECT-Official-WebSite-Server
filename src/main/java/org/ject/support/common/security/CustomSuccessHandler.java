@@ -30,12 +30,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
 
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-
-        String username = customUserDetails.getUsername();
-        Member member = memberRepository.findByEmail(username)
-                .orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
-
-        String accessToken = jwtTokenProvider.createAccessToken(authentication, member.getId());
+        String accessToken = jwtTokenProvider.createAccessToken(authentication, customUserDetails.getMemberId());
         String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
 
         response.addCookie(createRefreshCookie(refreshToken));
