@@ -3,11 +3,11 @@ package org.ject.support.common.security.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.security.Key;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.member.Member;
 import org.ject.support.domain.member.Role;
@@ -15,6 +15,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+
+import static org.ject.support.common.exception.GlobalErrorCode.AUTHENTICATION_REQUIRED;
 
 @Component
 @RequiredArgsConstructor
@@ -55,6 +57,8 @@ public class JwtTokenProvider {
         validateAuthentication(authentication);
         Claims claims = Jwts.claims();
         claims.setSubject(authentication.getName());
+        String role = ((CustomUserDetails) authentication.getPrincipal()).getAuthorities().iterator().next().getAuthority();
+        claims.put("role", role);
         Date now = new Date();
         Date expireDate = new Date(now.getTime() + refreshExpirationTime);
 
@@ -96,7 +100,7 @@ public class JwtTokenProvider {
 
     private void validateAuthentication(Authentication authentication) {
         if (authentication == null) {
-            throw new IllegalArgumentException("Authentication is required");
+            throw new GlobalException(AUTHENTICATION_REQUIRED);
         }
     }
 

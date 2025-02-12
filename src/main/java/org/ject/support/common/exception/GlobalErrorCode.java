@@ -14,6 +14,7 @@ public enum GlobalErrorCode implements ErrorCode {
     EMPTY_ACCESS_TOKEN("G-06", "Empty access token"),
     INVALID_ACCESS_TOKEN("G-07", "Invalid access token"),
     INVALID_PERMISSION("G-08", "Invalid permission"),
+    AUTHENTICATION_REQUIRED("G-09", "Authentication is required"),
     ;
 
     private final String code;
