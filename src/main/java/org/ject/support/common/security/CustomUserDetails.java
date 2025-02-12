@@ -21,6 +21,12 @@ public class CustomUserDetails implements UserDetails {
         this.role = member.getRole();
     }
 
+    public CustomUserDetails(String email, Long memberId, Role role) {
+        this.email = email;
+        this.memberId = memberId;
+        this.role = role;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<GrantedAuthority> collection = new ArrayList<>();

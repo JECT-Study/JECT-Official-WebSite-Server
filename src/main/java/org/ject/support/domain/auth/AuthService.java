@@ -33,7 +33,7 @@ public class AuthService {
             member = createTempMember(email);
         }
 
-        Authentication authentication = jwtTokenProvider.getAuthenticationByEmail(email);
+        Authentication authentication = jwtTokenProvider.createAuthenticationByMember(member);
         String accessToken = jwtTokenProvider.createAccessToken(authentication, member.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
 
@@ -45,9 +45,9 @@ public class AuthService {
 
     private Member createTempMember(String email) {
         Member member = TempMemberJoinRequest.toEntity(email);
-
         return memberRepository.save(member);
     }
+
 
     // 쿠키 추가 메서드
     private void addCookie(HttpServletResponse response, String accessToken, String refreshToken) {

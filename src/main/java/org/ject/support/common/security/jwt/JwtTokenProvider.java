@@ -9,11 +9,11 @@ import java.security.Key;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.CustomUserDetails;
-import org.ject.support.common.security.CustomUserDetailService;
+import org.ject.support.domain.member.Member;
+import org.ject.support.domain.member.Role;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -26,8 +26,6 @@ public class JwtTokenProvider {
     @Value("${spring.jwt.token.refresh-expiration-time}")
     private long refreshExpirationTime;
 
-    private final CustomUserDetailService customUserDetailService;
-
     private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
     /**
      * Access 토큰 생성
@@ -36,6 +34,8 @@ public class JwtTokenProvider {
         validateAuthentication(authentication);
         Claims claims = Jwts.claims();
         claims.put("memberId", memberId);
+        String role = ((CustomUserDetails) authentication.getPrincipal()).getAuthorities().iterator().next().getAuthority();
+        claims.put("role", role);
         claims.setSubject(authentication.getName());
         Date now = new Date();
         Date expireDate = new Date(now.getTime() + accessExpirationTime);
@@ -88,14 +88,12 @@ public class JwtTokenProvider {
 
     public Authentication getAuthenticationByToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
-        String userPrincipal = claims.getSubject();
-        UserDetails userDetails = customUserDetailService.loadUserByUsername(userPrincipal);
+        String email = claims.getSubject();
+        Long memberId = claims.get("memberId", Long.class);
+        Role role = Role.valueOf(claims.get("role", String.class).toUpperCase());
+        
+        CustomUserDetails userDetails = new CustomUserDetails(email, memberId, role);
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
-    }
-
-    public Authentication getAuthenticationByEmail(String email) {
-        CustomUserDetails customUserDetails = customUserDetailService.loadUserByUsername(email);
-        return new UsernamePasswordAuthenticationToken(customUserDetails, "", customUserDetails.getAuthorities());
     }
 
     public String resolveToken(HttpServletRequest request) {
@@ -128,17 +126,16 @@ public class JwtTokenProvider {
     }
 
     public Long extractMemberId(String refreshToken) {
-        Authentication authentication = getAuthenticationByToken(refreshToken);
-        String name = authentication.getName();
-        CustomUserDetails userDetails = customUserDetailService.loadUserByUsername(name);
-        if (userDetails != null) {
-            return userDetails.getMemberId();
-        }
-        return null;
+        return getMemberId(refreshToken);
     }
 
     public Long getMemberId(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
         return claims.get("memberId", Long.class);
+    }
+
+    public Authentication createAuthenticationByMember(Member member) {
+        CustomUserDetails userDetails = new CustomUserDetails(member);
+        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 }
