@@ -21,7 +21,7 @@ public class EmailSendService {
     private final Random random = new Random();
 
     // 인증 번호 만료 시간 (초)
-    private static final long EXPIRE_TIME = 300;
+    private static final long EXPIRE_TIME = 305;
     public static final int AUTH_CODE_LENGTH = 6;
 
     /**
