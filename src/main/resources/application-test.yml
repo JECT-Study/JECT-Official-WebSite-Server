@@ -27,10 +27,9 @@ spring:
       mail.smtp.starttls.enable: true
 
   jwt:
-    secret: secret
     token:
-      access-expiration-time: 360000
-      refresh-expiration-time: 8640000
+      access-expiration-time: 1800000  # 30분 (밀리초)
+      refresh-expiration-time: 604800000  # 7일 (밀리초)
 
 aws:
   access-key: accesskey
