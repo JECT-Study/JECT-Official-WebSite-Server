@@ -9,7 +9,7 @@ import java.security.Key;
 import java.util.Date;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.CustomUserDetails;
-import org.ject.support.common.security.MyUserDetailService;
+import org.ject.support.common.security.CustomUserDetailService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -26,7 +26,7 @@ public class JwtTokenProvider {
     @Value("${spring.jwt.token.refresh-expiration-time}")
     private long refreshExpirationTime;
 
-    private final MyUserDetailService myUserDetailService;
+    private final CustomUserDetailService customUserDetailService;
 
     private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
     /**
@@ -89,12 +89,12 @@ public class JwtTokenProvider {
     public Authentication getAuthenticationByToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
         String userPrincipal = claims.getSubject();
-        UserDetails userDetails = myUserDetailService.loadUserByUsername(userPrincipal);
+        UserDetails userDetails = customUserDetailService.loadUserByUsername(userPrincipal);
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
     public Authentication getAuthenticationByEmail(String email) {
-        CustomUserDetails customUserDetails = myUserDetailService.loadUserByUsername(email);
+        CustomUserDetails customUserDetails = customUserDetailService.loadUserByUsername(email);
         return new UsernamePasswordAuthenticationToken(customUserDetails, "", customUserDetails.getAuthorities());
     }
 
@@ -130,7 +130,7 @@ public class JwtTokenProvider {
     public Long extractMemberId(String refreshToken) {
         Authentication authentication = getAuthenticationByToken(refreshToken);
         String name = authentication.getName();
-        CustomUserDetails userDetails = myUserDetailService.loadUserByUsername(name);
+        CustomUserDetails userDetails = customUserDetailService.loadUserByUsername(name);
         if (userDetails != null) {
             return userDetails.getMemberId();
         }

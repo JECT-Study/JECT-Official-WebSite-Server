@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.ject.support.common.security.CustomUserDetails;
-import org.ject.support.common.security.MyUserDetailService;
+import org.ject.support.common.security.CustomUserDetailService;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Member;
 import org.ject.support.domain.member.Role;
@@ -28,7 +28,7 @@ class JwtTokenProviderTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @Mock
-    private MyUserDetailService myUserDetailService;
+    private CustomUserDetailService customUserDetailService;
 
     @Mock
     private HttpServletRequest request;
@@ -38,7 +38,7 @@ class JwtTokenProviderTest {
 
     @BeforeEach
     void setUp() {
-        jwtTokenProvider = new JwtTokenProvider(myUserDetailService);
+        jwtTokenProvider = new JwtTokenProvider(customUserDetailService);
         ReflectionTestUtils.setField(jwtTokenProvider, "accessExpirationTime", 3600000L); // 1시간
         ReflectionTestUtils.setField(jwtTokenProvider, "refreshExpirationTime", 1209600000L); // 2주
 
@@ -83,7 +83,7 @@ class JwtTokenProviderTest {
     void getAuthenticationByToken() {
         // given
         String token = jwtTokenProvider.createAccessToken(authentication, testMember.getId());
-        when(myUserDetailService.loadUserByUsername(anyString()))
+        when(customUserDetailService.loadUserByUsername(anyString()))
                 .thenReturn(new CustomUserDetails(testMember));
 
         // when
@@ -133,7 +133,7 @@ class JwtTokenProviderTest {
     void reissueAccessToken() {
         // given
         String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
-        when(myUserDetailService.loadUserByUsername(anyString()))
+        when(customUserDetailService.loadUserByUsername(anyString()))
                 .thenReturn(new CustomUserDetails(testMember));
 
         // when

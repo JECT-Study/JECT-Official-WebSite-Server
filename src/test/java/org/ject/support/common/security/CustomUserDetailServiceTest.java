@@ -19,9 +19,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class MyUserDetailServiceTest {
+class CustomUserDetailServiceTest {
 
-    private MyUserDetailService userDetailService;
+    private CustomUserDetailService userDetailService;
 
     @Mock
     private MemberRepository memberRepository;
@@ -30,7 +30,7 @@ class MyUserDetailServiceTest {
 
     @BeforeEach
     void setUp() {
-        userDetailService = new MyUserDetailService(memberRepository);
+        userDetailService = new CustomUserDetailService(memberRepository);
         testMember = Member.builder()
                 .id(1L)
                 .email("test@example.com")
