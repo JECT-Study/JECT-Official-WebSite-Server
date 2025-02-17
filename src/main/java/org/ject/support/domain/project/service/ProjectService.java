@@ -1,6 +1,7 @@
 package org.ject.support.domain.project.service;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectResponse;
 import org.ject.support.domain.project.repository.ProjectQueryRepository;
 import org.springframework.data.domain.Page;
@@ -18,5 +19,12 @@ public class ProjectService {
      */
     public Page<ProjectResponse> findProjectsBySemester(String semester, Pageable pageable) {
         return projectQueryRepository.findProjectsBySemester(semester, pageable);
+    }
+
+    /**
+     * 프로젝트 상세 정보를 조회합니다.
+     */
+    public ProjectDetailResponse findProjectDetails(Long projectId) {
+        return projectQueryRepository.findProjectDetails(projectId);
     }
 }
