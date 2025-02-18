@@ -17,6 +17,7 @@ import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -34,9 +35,9 @@ class S3ServiceTest {
 
     @BeforeEach
     void setUp() throws MalformedURLException {
-        testParameter = new TestParameter(123L, "test.pdf", Instant.now().plusSeconds(600));
+        testParameter = new TestParameter(123L, List.of("test1.pdf", "test2.pdf"), Instant.now().plusSeconds(600));
         PresignedPutObjectRequest mockRequest = mock(PresignedPutObjectRequest.class);
-        when(mockRequest.url()).thenReturn(URI.create(testParameter.expectedUrl).toURL());
+        when(mockRequest.url()).thenReturn(URI.create(testParameter.expectedUrls.get(0)).toURL());
         when(mockRequest.expiration()).thenReturn(testParameter.expirationTime);
         when(s3Presigner.presignPutObject((PutObjectPresignRequest) any())).thenReturn(mockRequest);
     }
@@ -45,28 +46,41 @@ class S3ServiceTest {
     @DisplayName("create pre-signed url")
     void create_presigned_url() {
         // when
-        CreatePresignedUrlResponse response =
-                s3Service.createPresignedUrl(testParameter.memberId, testParameter.fileName);
+        List<CreatePresignedUrlResponse> result =
+                s3Service.createPresignedUrl(testParameter.memberId, testParameter.fileNames);
 
         // then
-        assertThat(response.keyName()).contains(testParameter.fileName);
-        assertThat(response.presignedUrl()).contains(testParameter.expectedUrl);
-        assertThat(response.presignedUrl()).isEqualTo(testParameter.expectedUrl);
-        assertThat(response.expiration())
+        assertThat(result).hasSize(2);
+
+        CreatePresignedUrlResponse firstResponse = result.get(0);
+        assertThat(firstResponse.keyName()).contains(testParameter.fileNames.get(0));
+        assertThat(firstResponse.presignedUrl()).isEqualTo(testParameter.expectedUrls.get(0));
+        assertThat(firstResponse.expiration())
                 .isEqualTo(LocalDateTime.ofInstant(testParameter.expirationTime, ZoneId.systemDefault()));
+
+        CreatePresignedUrlResponse secondResponse = result.get(1);
+        assertThat(secondResponse.keyName()).contains(testParameter.fileNames.get(1));
     }
 
     @Test
     @DisplayName("create key name")
     void create_key_name() {
         // when
-        CreatePresignedUrlResponse response =
-                s3Service.createPresignedUrl(testParameter.memberId, testParameter.fileName);
+        List<CreatePresignedUrlResponse> result =
+                s3Service.createPresignedUrl(testParameter.memberId, testParameter.fileNames);
 
         // then
-        assertThat(response.keyName()).contains(testParameter.memberId.toString());
-        assertThat(removePrefix(response.keyName())).startsWith(testParameter.fileName);
-        assertThat(response.keyName()).contains("_");
+        assertThat(result).hasSize(2);
+
+        CreatePresignedUrlResponse firstResponse = result.get(0);
+        assertThat(firstResponse.keyName()).contains(testParameter.memberId.toString());
+        assertThat(removePrefix(firstResponse.keyName())).startsWith(testParameter.fileNames.get(0));
+        assertThat(firstResponse.keyName()).contains("_");
+
+        CreatePresignedUrlResponse secondResponse = result.get(1);
+        assertThat(secondResponse.keyName()).contains(testParameter.memberId.toString());
+        assertThat(removePrefix(secondResponse.keyName())).startsWith(testParameter.fileNames.get(1));
+        assertThat(secondResponse.keyName()).contains("_");
     }
 
     private String removePrefix(String keyName) {
@@ -76,17 +90,25 @@ class S3ServiceTest {
 
     static class TestParameter {
         Long memberId;
-        String fileName;
+        List<String> fileNames;
         Instant expirationTime;
-        String expectedKeyName;
-        String expectedUrl;
+        List<String> expectedKeyNames;
+        List<String> expectedUrls;
 
-        public TestParameter(Long memberId, String fileName, Instant expirationTime) {
+        public TestParameter(Long memberId, List<String> fileNames, Instant expirationTime) {
             this.memberId = memberId;
-            this.fileName = fileName;
-            this.expectedKeyName = String.format("%s/%s", memberId, "test.pdf_uuid");
-            this.expectedUrl = String.format("%s%s", "https://s3.test.com/", expectedKeyName);
+            this.fileNames = fileNames;
+            this.expectedKeyNames = fileNames.stream().map(fileName -> getExpectedKeyName(memberId, fileName)).toList();
+            this.expectedUrls = expectedKeyNames.stream().map(this::getExpectedUrls).toList();
             this.expirationTime = expirationTime;
+        }
+
+        private String getExpectedKeyName(Long memberId, String fileName) {
+            return String.format("%s/%s.pdf_uuid", memberId, fileName);
+        }
+
+        private String getExpectedUrls(String keyName) {
+            return String.format("%s%s", "https://s3.test.com/", keyName);
         }
     }
 }

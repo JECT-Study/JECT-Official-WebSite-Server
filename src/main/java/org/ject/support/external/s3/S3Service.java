@@ -29,17 +29,7 @@ public class S3Service {
     /**
      * 사용자가 첨부한 파일 이름과 해당 사용자의 식별자를 토대로 Pre-signed URL 생성
      */
-    public CreatePresignedUrlResponse createPresignedUrl(Long memberId, String fileName) {
-        String keyName = getKeyName(memberId, fileName);
-        PutObjectPresignRequest presignRequest = getPutObjectPresignRequest(keyName);
-        PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
-        return getCreatePresignedUrlResponse(keyName, presignedRequest);
-    }
-
-    /**
-     * 여러 개의 Pre-signed URL 생성
-     */
-    public List<CreatePresignedUrlResponse> createPresignedUrls(Long memberId, List<String> fileNames) {
+    public List<CreatePresignedUrlResponse> createPresignedUrl(Long memberId, List<String> fileNames) {
         return fileNames.stream()
                 .map(fileName -> {
                     String keyName = getKeyName(memberId, fileName);
@@ -69,10 +59,12 @@ public class S3Service {
                 .build();
     }
 
-    private CreatePresignedUrlResponse getCreatePresignedUrlResponse(String keyName, PresignedPutObjectRequest presignedRequest) {
-        return new CreatePresignedUrlResponse(
-                keyName,
-                presignedRequest.url().toExternalForm(),
-                LocalDateTime.ofInstant(presignedRequest.expiration(), ZoneId.systemDefault()));
+    private CreatePresignedUrlResponse getCreatePresignedUrlResponse(String keyName,
+                                                                     PresignedPutObjectRequest presignedRequest) {
+        return CreatePresignedUrlResponse.builder()
+                .keyName(keyName)
+                .presignedUrl(presignedRequest.url().toExternalForm())
+                .expiration(LocalDateTime.ofInstant(presignedRequest.expiration(), ZoneId.systemDefault()))
+                .build();
     }
 }
