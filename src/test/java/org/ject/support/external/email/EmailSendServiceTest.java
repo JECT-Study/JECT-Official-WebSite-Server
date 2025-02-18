@@ -2,12 +2,12 @@ package org.ject.support.external.email;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.ject.support.testconfig.IntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+@IntegrationTest
 class EmailSendServiceTest {
     @Autowired
     private EmailSendService emailSendService;

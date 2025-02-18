@@ -1,4 +1,4 @@
-package org.ject.support.domain.recruit;
+package org.ject.support.domain.recruit.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;

@@ -1,6 +1,7 @@
 package org.ject.support.external.s3;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.util.PeriodAccessible;
 import org.ject.support.domain.file.dto.CreatePresignedUrlResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class S3Service {
     /**
      * 사용자가 첨부한 파일 이름과 해당 사용자의 식별자를 토대로 Pre-signed URL 생성
      */
+    @PeriodAccessible
     public CreatePresignedUrlResponse createPresignedUrl(Long memberId, String fileName) {
         String keyName = getKeyName(memberId, fileName);
         PutObjectPresignRequest presignRequest = getPutObjectPresignRequest(keyName);
@@ -39,6 +41,7 @@ public class S3Service {
     /**
      * 여러 개의 Pre-signed URL 생성
      */
+    @PeriodAccessible
     public List<CreatePresignedUrlResponse> createPresignedUrls(Long memberId, List<String> fileNames) {
         return fileNames.stream()
                 .map(fileName -> {

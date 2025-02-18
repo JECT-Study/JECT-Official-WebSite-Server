@@ -22,6 +22,7 @@ import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
 @Component
 @RequiredArgsConstructor
 public class DynamoDbInitializer implements ApplicationRunner, DisposableBean {
+    private static boolean started = false;
     private static final String TABLE_NAME = "temporary_application";
     private static final String PK = "pk";
     private static final String SK = "sk";
@@ -31,9 +32,14 @@ public class DynamoDbInitializer implements ApplicationRunner, DisposableBean {
 
     @Override
     public void run(final ApplicationArguments args) throws Exception {
+        if (started) {
+            return;
+        }
+
         final String[] localArgs = {"-inMemory"};
         server = ServerRunner.createServerFromCommandLineArgs(localArgs);
         server.start();
+        started = true;
 
         if (ddbClient.listTables().tableNames().stream().anyMatch(tableName -> tableName.equals(TABLE_NAME))) {
             return;
@@ -45,7 +51,10 @@ public class DynamoDbInitializer implements ApplicationRunner, DisposableBean {
 
     @Override
     public void destroy() throws Exception {
-        server.stop();
+        if (server != null) {
+            server.stop();
+        }
+        started = false;
         log.info("Stopping DynamoDB Local");
     }
 

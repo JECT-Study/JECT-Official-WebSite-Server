@@ -14,9 +14,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.ject.support.testconfig.IntegrationTest;
 
-@SpringBootTest
+@IntegrationTest
 class TemporaryApplicationRepositoryTest {
     @Autowired
     private TemporaryApplicationRepository temporaryApplicationRepository;
