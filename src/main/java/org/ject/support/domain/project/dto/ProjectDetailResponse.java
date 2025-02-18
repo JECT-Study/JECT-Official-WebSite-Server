@@ -1,5 +1,6 @@
 package org.ject.support.domain.project.dto;
 
+import com.querydsl.core.annotations.QueryProjection;
 import lombok.Builder;
 
 import java.time.LocalDate;
@@ -19,4 +20,8 @@ public record ProjectDetailResponse(
         String description,
         String serviceUrl
 ) {
+
+    @QueryProjection
+    public ProjectDetailResponse {
+    }
 }

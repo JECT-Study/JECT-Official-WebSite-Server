@@ -7,6 +7,9 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 import org.ject.support.domain.base.BaseTimeEntity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -19,4 +22,8 @@ public class Team extends BaseTimeEntity {
 
     @Column(length = 30, nullable = false)
     private String name;
+
+    @OneToMany(mappedBy = "team", fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<TeamMember> teamMembers = new ArrayList<>();
 }

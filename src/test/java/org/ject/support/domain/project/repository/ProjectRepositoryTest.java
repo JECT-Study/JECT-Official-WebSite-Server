@@ -4,27 +4,28 @@ import org.ject.support.domain.member.*;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectResponse;
 import org.ject.support.domain.project.entity.Project;
+import org.ject.support.domain.project.exception.ProjectErrorCode;
+import org.ject.support.domain.project.exception.ProjectException;
+import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.ject.support.domain.member.JobFamily.*;
 
-@SpringBootTest
-@Transactional
-class ProjectQueryRepositoryTest {
-
-    @Autowired
-    private ProjectQueryRepository projectQueryRepository;
+@Import(QueryDslTestConfig.class)
+@DataJpaTest
+class ProjectRepositoryTest {
 
     @Autowired
     private ProjectRepository projectRepository;
@@ -58,7 +59,7 @@ class ProjectQueryRepositoryTest {
         projectRepository.saveAll(List.of(project1, project2, project3));
 
         // when
-        Page<ProjectResponse> result = projectQueryRepository.findProjectsBySemester("1기", PageRequest.of(0, 20));
+        Page<ProjectResponse> result = projectRepository.findProjectsBySemester("1기", PageRequest.of(0, 20));
 
         // then
         assertThat(result).isNotNull();
@@ -96,7 +97,8 @@ class ProjectQueryRepositoryTest {
         Project saved = projectRepository.save(project);
 
         // when
-        ProjectDetailResponse result = projectQueryRepository.findProjectDetails(saved.getId());
+        ProjectDetailResponse result = projectRepository.findProjectDetails(saved.getId())
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.NOT_FOUND));
 
         // then
         assertThat(result.name()).isEqualTo("projectName");
@@ -107,6 +109,16 @@ class ProjectQueryRepositoryTest {
         assertThat(result.backendDevelopers()).containsExactly("backendDev1");
         assertThat(result.startDate()).isEqualTo(LocalDate.of(2025, 3, 2));
         assertThat(result.endDate()).isEqualTo(LocalDate.of(2025, 6, 30));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 프로젝트 상세 정보 조회")
+    void find_project_details_not_found() {
+        // when
+        Optional<ProjectDetailResponse> result = projectRepository.findProjectDetails(1L);
+
+        // then
+        assertThat(result.isEmpty()).isTrue();
     }
 
     private Team createTeam(String teamName) {
