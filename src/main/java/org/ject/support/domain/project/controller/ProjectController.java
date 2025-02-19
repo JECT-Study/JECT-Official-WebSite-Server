@@ -27,7 +27,7 @@ public class ProjectController {
     }
 
     @GetMapping("/{projectId}")
-    public ProjectDetailResponse findProjects(@PathVariable Long projectId) {
+    public ProjectDetailResponse findProjectDetails(@PathVariable Long projectId) {
         return projectService.findProjectDetails(projectId);
     }
 }
