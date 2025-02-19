@@ -1,5 +1,6 @@
 package org.ject.support.domain.file.controller;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.file.dto.CreatePresignedUrlResponse;
 import org.ject.support.external.s3.S3Service;
@@ -7,8 +8,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/upload")

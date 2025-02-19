@@ -1,10 +1,9 @@
 package org.ject.support.domain.project.dto;
 
 import com.querydsl.core.annotations.QueryProjection;
-import lombok.Builder;
-
 import java.time.LocalDate;
 import java.util.List;
+import lombok.Builder;
 
 @Builder
 public record ProjectDetailResponse(

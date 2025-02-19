@@ -4,6 +4,8 @@ import com.querydsl.core.group.GroupBy;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectResponse;
@@ -14,10 +16,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.ject.support.domain.member.JobFamily.*;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.FE;
+import static org.ject.support.domain.member.JobFamily.PD;
+import static org.ject.support.domain.member.JobFamily.PM;
 import static org.ject.support.domain.member.QMember.member;
 import static org.ject.support.domain.member.QTeam.team;
 import static org.ject.support.domain.member.QTeamMember.teamMember;
