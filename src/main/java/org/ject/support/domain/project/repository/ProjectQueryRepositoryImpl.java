@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Repository;
 
+import static org.ject.support.domain.project.entity.Project.Category;
 import static org.ject.support.domain.project.entity.QProject.project;
 
 @Repository
@@ -20,7 +21,9 @@ public class ProjectQueryRepositoryImpl implements ProjectQueryRepository {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<ProjectResponse> findProjectsBySemester(final String semester, Pageable pageable) {
+    public Page<ProjectResponse> findProjectsByCategoryAndSemester(final Category category,
+                                                                   final String semester,
+                                                                   final Pageable pageable) {
         List<ProjectResponse> content = queryFactory.select(new QProjectResponse(
                         project.id,
                         project.thumbnailUrl,
@@ -30,7 +33,7 @@ public class ProjectQueryRepositoryImpl implements ProjectQueryRepository {
                         project.endDate
                 ))
                 .from(project)
-                .where(project.semester.eq(semester))
+                .where(project.category.eq(category), project.semester.eq(semester))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

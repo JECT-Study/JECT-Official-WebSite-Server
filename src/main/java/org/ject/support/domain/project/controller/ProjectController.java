@@ -3,6 +3,7 @@ package org.ject.support.domain.project.controller;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectResponse;
+import org.ject.support.domain.project.entity.Project;
 import org.ject.support.domain.project.service.ProjectService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,13 +22,14 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
-    public Page<ProjectResponse> findProjects(@RequestParam String semester,
-                                              @PageableDefault(size = 30) Pageable pageable) {
-        return projectService.findProjectsBySemester(semester, pageable);
+    public Page<ProjectResponse> findProjects(@RequestParam final Project.Category category,
+                                              @RequestParam final String semester,
+                                              @PageableDefault(size = 30) final Pageable pageable) {
+        return projectService.findProjects(category, semester, pageable);
     }
 
     @GetMapping("/{projectId}")
-    public ProjectDetailResponse findProjectDetails(@PathVariable Long projectId) {
+    public ProjectDetailResponse findProjectDetails(@PathVariable final Long projectId) {
         return projectService.findProjectDetails(projectId);
     }
 }

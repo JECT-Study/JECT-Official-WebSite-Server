@@ -9,7 +9,6 @@ import org.ject.support.domain.project.dto.ProjectIntroResponse;
 import org.ject.support.domain.project.dto.ProjectResponse;
 import org.ject.support.domain.project.entity.Project;
 import org.ject.support.domain.project.entity.ProjectIntro;
-import org.ject.support.domain.project.entity.ProjectIntro.Category;
 import org.ject.support.domain.project.exception.ProjectErrorCode;
 import org.ject.support.domain.project.exception.ProjectException;
 import org.ject.support.domain.project.repository.ProjectRepository;
@@ -32,15 +31,17 @@ public class ProjectService {
      * 주어진 기수의 프로젝트를 모두 조회합니다.
      */
     @Transactional(readOnly = true)
-    public Page<ProjectResponse> findProjectsBySemester(String semester, Pageable pageable) {
-        return projectRepository.findProjectsBySemester(semester, pageable);
+    public Page<ProjectResponse> findProjects(final Project.Category category,
+                                              final String semester,
+                                              final Pageable pageable) {
+        return projectRepository.findProjectsByCategoryAndSemester(category, semester, pageable);
     }
 
     /**
      * 프로젝트 상세 정보를 조회합니다.
      */
     @Transactional(readOnly = true)
-    public ProjectDetailResponse findProjectDetails(Long projectId) {
+    public ProjectDetailResponse findProjectDetails(final Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectException(ProjectErrorCode.NOT_FOUND));
 
@@ -53,7 +54,8 @@ public class ProjectService {
         return ProjectDetailResponse.toResponse(project, teamMemberNames, serviceIntros, devIntros);
     }
 
-    private List<ProjectIntroResponse> mapToResponsesByCategory(List<ProjectIntro> projectIntros, Category category) {
+    private List<ProjectIntroResponse> mapToResponsesByCategory(List<ProjectIntro> projectIntros,
+                                                                final ProjectIntro.Category category) {
         return projectIntros.stream()
                 .filter(projectIntro -> projectIntro.isCategory(category))
                 .map(ProjectIntroResponse::toResponse)
