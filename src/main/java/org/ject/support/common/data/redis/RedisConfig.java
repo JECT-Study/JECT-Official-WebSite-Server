@@ -1,4 +1,4 @@
-package org.ject.support.common.redis;
+package org.ject.support.common.data.redis;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -10,6 +10,7 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+
 
 @Configuration
 public class RedisConfig {
@@ -36,9 +37,8 @@ public class RedisConfig {
     }
 
     @Bean
-    @ConditionalOnMissingBean
-    public RedisTemplate<String, ?> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, ?> template = new RedisTemplate<>();
+    public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, String> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
         template.setKeySerializer(new StringRedisSerializer());

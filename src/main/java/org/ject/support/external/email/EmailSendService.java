@@ -1,16 +1,20 @@
 package org.ject.support.external.email;
 
+import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.Json2MapSerializer;
-import org.springframework.mail.MailException;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmailSendService {
     private final JavaMailSender mailSender;
     private final MessageGenerator messageGenerator;
@@ -37,7 +41,7 @@ public class EmailSendService {
     private void sendMail(final MimeMessagePreparator ...preparators) {
         try {
             mailSender.send(preparators);
-        } catch (MailException e) {
+        } catch (MailSendException e) {
             throw new MailSendException(MailErrorCode.MAIL_SEND_FAILURE);
         }
     }
