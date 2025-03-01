@@ -20,8 +20,8 @@ import software.amazon.awssdk.enhanced.dynamodb.mapper.annotations.DynamoDbConve
 @Setter
 @EqualsAndHashCode(callSuper = false)
 public class TemporaryApplication extends EntityWithPrimaryKey {
-    private static final String PK_PREFIX = "MEMBER";
-    private static final String SK_PREFIX = "TIMESTAMP";
+    public static final String PK_PREFIX = "MEMBER";
+    public static final String SK_PREFIX = "TIMESTAMP";
 
     private String memberId;
     private LocalDateTime timestamp;
