@@ -15,17 +15,21 @@ public class TemporaryApplyServiceImpl implements TemporaryApplyService {
     private final TemporaryApplicationRepository temporaryApplicationRepository;
 
     @Override
-    public void saveTemporaryApplication(final Long memberId,
-                                         final Map<String, String> answers) {
-        TemporaryApplication temporaryApplication = new TemporaryApplication(memberId.toString(), answers);
-        temporaryApplicationRepository.save(temporaryApplication);
+    public Map<String, String> findMembersRecentTemporaryApplication(final Long memberId) {
+        TemporaryApplication latestApplication =
+                temporaryApplicationRepository.findLatestByMemberId(memberId.toString()).stream()
+                        .findFirst()
+                        .orElseThrow(() -> new TemporaryApplicationException(TemporaryApplicationErrorCode.NOT_FOUND));
+
+        return latestApplication.getAnswers();
     }
 
     @Override
-    public Map<String, String> findMembersRecentTemporaryApplication(final JobFamily jobFamily, final Long memberId) {
-        TemporaryApplication latestApplication = temporaryApplicationRepository.findLatestByMemberId(memberId.toString())
-                .orElseThrow(()-> new TemporaryApplicationException(TemporaryApplicationErrorCode.NOT_FOUND));
-
-        return latestApplication.getAnswers();
+    public void saveTemporaryApplication(final Long memberId,
+                                         final Map<String, String> answers,
+                                         final JobFamily jobFamily) {
+        TemporaryApplication temporaryApplication =
+                new TemporaryApplication(memberId.toString(), answers, jobFamily.name());
+        temporaryApplicationRepository.save(temporaryApplication);
     }
 }
