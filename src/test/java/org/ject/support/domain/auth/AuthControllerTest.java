@@ -76,7 +76,7 @@ class AuthControllerTest {
         verify(response, times(2)).addCookie(any()); // access token과 refresh token 쿠키 각각 설정
     }
 }
-/*
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {"spring.data.redis.repositories.enabled=false", "server.port=0"})
@@ -125,5 +125,3 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
                 .andExpect(status().isOk());
     }
 }
-
- */
