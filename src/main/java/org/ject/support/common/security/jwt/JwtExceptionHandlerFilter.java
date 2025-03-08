@@ -23,7 +23,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JwtExceptionHandlerFilter extends OncePerRequestFilter {
+public class JwtExceptionHandlerFilter {
+    /*
 
     private final ObjectMapper objectMapper;
 
@@ -63,4 +64,6 @@ public class JwtExceptionHandlerFilter extends OncePerRequestFilter {
         String responseMessage = objectMapper.writeValueAsString(errorResponse);
         StreamUtils.copy(responseMessage.getBytes(StandardCharsets.UTF_8), response.getOutputStream());
     }
+
+     */
 }
