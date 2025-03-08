@@ -2,11 +2,16 @@ package org.ject.support.common.security.jwt;
 
 import static org.ject.support.common.exception.GlobalErrorCode.INVALID_ACCESS_TOKEN;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.exception.GlobalException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
@@ -22,8 +27,24 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
-                         AuthenticationException authException) {
+                         AuthenticationException authException) throws IOException {
 
+        /*
         throw new GlobalException(INVALID_ACCESS_TOKEN);
+
+         */
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setCharacterEncoding("utf-8");
+        response.setContentType("application/json");
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        Map<String, Object> jsonMessage = new HashMap<>();
+
+        String errorMessage = (String) request.getAttribute("exception");
+        jsonMessage.put("httpStatus", HttpStatus.UNAUTHORIZED);
+        jsonMessage.put("message", errorMessage);
+        String result = objectMapper.writeValueAsString(jsonMessage);
+
+        response.getWriter().write(result);
     }
 }
