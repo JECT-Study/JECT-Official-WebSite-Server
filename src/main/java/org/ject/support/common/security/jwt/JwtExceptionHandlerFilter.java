@@ -10,15 +10,17 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.exception.GlobalErrorCode;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.response.ApiResponse;
 import org.springframework.http.MediaType;
-import org.springframework.util.StreamUtils;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtExceptionHandlerFilter extends OncePerRequestFilter {
@@ -31,15 +33,18 @@ public class JwtExceptionHandlerFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws IOException {
-
         try {
             filterChain.doFilter(request, response);
+            log.info("Request URL: {}, Response Status: {}", request.getRequestURI(), response.getStatus());
         } catch (GlobalException e) {
             setErrorResponse(response, e.getErrorCode());
+            log.error("GlobalException: {}", e.getErrorCode().getMessage());
         } catch (AuthenticationException e) {
             setErrorResponse(response, INVALID_ACCESS_TOKEN);
+            log.error("AuthenticationException: {}", e.getMessage());
         } catch (Exception e) {
             setErrorResponse(response, INTERNAL_SERVER_ERROR);
+            log.error("Exception: {}", e.getMessage());
         }
     }
 
