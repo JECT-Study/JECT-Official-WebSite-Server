@@ -24,6 +24,12 @@ public class ApplyService implements ApplyUsecase {
 
     @Override
     @PeriodAccessible
+    public Map<String, String> getTemporaryApplication(final Long memberId) {
+        return temporaryApplyService.findMembersRecentTemporaryApplication(memberId);
+    }
+
+    @Override
+    @PeriodAccessible
     public void applyTemporary(JobFamily jobFamily, Long memberId, Map<String, String> answers) {
         //1. jobFamily를 통해 현재 기수 지원양식 id를 가져옴
         Recruit recruit = getPeriodRecruit(jobFamily);
@@ -32,7 +38,7 @@ public class ApplyService implements ApplyUsecase {
         validateQuestions(answers, recruit);
 
         //3. 지원서 저장
-        temporaryApplyService.saveTemporaryApplication(memberId, answers);
+        temporaryApplyService.saveTemporaryApplication(memberId, answers, jobFamily);
     }
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {

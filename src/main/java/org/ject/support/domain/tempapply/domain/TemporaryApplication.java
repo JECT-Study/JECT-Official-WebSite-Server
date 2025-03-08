@@ -6,6 +6,7 @@ import java.util.Map;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.ject.support.domain.member.JobFamily;
 import org.ject.support.external.dynamodb.domain.CompositeKey;
 import org.ject.support.external.dynamodb.domain.EntityWithPrimaryKey;
 import org.ject.support.external.dynamodb.util.LocalDateTimeConverter;
@@ -25,6 +26,7 @@ public class TemporaryApplication extends EntityWithPrimaryKey {
 
     private String memberId;
     private LocalDateTime timestamp;
+    private String jobFamily;
     private Map<String, String> answers;
 
     @DynamoDbAttribute(value = "member_id")
@@ -38,17 +40,27 @@ public class TemporaryApplication extends EntityWithPrimaryKey {
         return timestamp;
     }
 
+    public TemporaryApplication(final String memberId, final Map<String, String> answers, final String jobFamily) {
+        this.memberId = memberId;
+        this.timestamp = LocalDateTime.now();
+        this.answers = answers;
+        this.jobFamily = jobFamily;
+        this.pk = new CompositeKey(PK_PREFIX, this.memberId);
+        this.sk = new CompositeKey(SK_PREFIX, this.timestamp.toString());
+    }
+
     @DynamoDbAttribute(value = "answers")
     @DynamoDbConvertedBy(value = MapConverter.class)
     public Map<String, String> getAnswers() {
         return answers;
     }
 
-    public TemporaryApplication(final String memberId, final Map<String, String> answers) {
-        this.memberId = memberId;
-        this.timestamp = LocalDateTime.now();
-        this.answers = answers;
-        this.pk = new CompositeKey(PK_PREFIX, this.memberId);
-        this.sk = new CompositeKey(SK_PREFIX, this.timestamp.toString());
+    @DynamoDbAttribute(value = "job_family")
+    public String getJobFamily() {
+        return jobFamily;
+    }
+
+    public boolean isSameJobFamily(JobFamily jobFamily) {
+        return this.jobFamily.equals(jobFamily.name());
     }
 }
