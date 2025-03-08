@@ -4,9 +4,7 @@ import com.querydsl.core.annotations.QueryProjection;
 import lombok.Builder;
 
 @Builder
-public record JectalkResponse(String name,
-                            String youtubeUrl,
-                            String imageUrl) {
+public record JectalkResponse(Long id, String name, String youtubeUrl, String imageUrl, String summary) {
 
     @QueryProjection
     public JectalkResponse {

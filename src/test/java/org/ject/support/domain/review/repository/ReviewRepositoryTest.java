@@ -37,6 +37,13 @@ class ReviewRepositoryTest {
 
         // then
         assertThat(result.getContent()).hasSize(4);
+        result.getContent().forEach(reviewResponse -> {
+            assertThat(reviewResponse.id()).isNotNull();
+            assertThat(reviewResponse.title()).isNotNull();
+            assertThat(reviewResponse.linkUrl()).isNotNull();
+            assertThat(reviewResponse.description()).isNotNull();
+            assertThat(reviewResponse.summary()).isNotNull();
+        });
     }
 
     private Review createReview() {
@@ -44,6 +51,7 @@ class ReviewRepositoryTest {
                 .linkUrl("https://test.com")
                 .title("title")
                 .description("description")
+                .summary("summary")
                 .build();
     }
 }

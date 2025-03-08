@@ -60,11 +60,11 @@ class ProjectQueryRepositoryTest {
         assertThat(responses).hasSize(2);
 
         ProjectResponse firstResponse = responses.get(0);
+        assertThat(firstResponse.id()).isEqualTo(1);
         assertThat(firstResponse.name()).isEqualTo("projectName");
         assertThat(firstResponse.summary()).isEqualTo("summary");
         assertThat(firstResponse.thumbnailUrl()).isEqualTo("https://test.net/thumbnail.png");
-        assertThat(firstResponse.startDate()).isEqualTo(LocalDate.of(2025, 3, 2));
-        assertThat(firstResponse.endDate()).isEqualTo(LocalDate.of(2025, 6, 30));
+        assertThat(firstResponse.description()).isEqualTo("description");
     }
 
     @Test
@@ -91,6 +91,7 @@ class ProjectQueryRepositoryTest {
                 .thumbnailUrl("https://test.net/thumbnail.png")
                 .semester(semester)
                 .summary("summary")
+                .description("description")
                 .startDate(LocalDate.of(2025, 3, 2))
                 .endDate(LocalDate.of(2025, 6, 30))
                 .category(category)
