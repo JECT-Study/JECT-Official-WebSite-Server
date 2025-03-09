@@ -10,6 +10,7 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import java.security.Key;
 import java.util.Date;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
@@ -26,6 +27,12 @@ import static org.ject.support.common.exception.GlobalErrorCode.AUTHENTICATION_R
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
+    /**
+     * -- GETTER --
+     *  JWT 서명에 사용되는 비밀키 반환
+     */
+
+    @Getter
     private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
     @Value("${spring.jwt.token.access-expiration-time}")
     private long accessExpirationTime;

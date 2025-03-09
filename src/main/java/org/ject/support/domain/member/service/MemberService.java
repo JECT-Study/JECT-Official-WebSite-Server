@@ -55,7 +55,7 @@ public class MemberService {
      */
     private Member createTempMemberWithPin(RegisterRequest registerRequest, String email) {
         String encodedPin = passwordEncoder.encode(registerRequest.pin());
-        Member member = registerRequest.toEntity(encodedPin, email);
+        Member member = registerRequest.toEntity(email, encodedPin);
         return memberRepository.save(member);
     }
 }
