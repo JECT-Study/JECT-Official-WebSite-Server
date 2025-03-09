@@ -70,7 +70,7 @@ class MemberControllerTest {
         given(memberService.registerTempMember(any(RegisterRequest.class), anyString())).willReturn(response);
 
         // when & then
-        mockMvc.perform(post("/member/register")
+        mockMvc.perform(post("/member")
                 .header("Authorization", "Bearer " + TEST_VERIFICATION_TOKEN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -94,23 +94,14 @@ class MemberControllerIntegrationTest extends ApplicationPeriodTest {
     @Autowired
     private ObjectMapper objectMapper;
     
-    @Autowired
-    private MemberService memberService;
-    
-    @Autowired
-    private JwtTokenProvider jwtTokenProvider;
-    
     @BeforeEach
     void setUp() {
         // 실제 서비스를 사용하는 통합 테스트
     }
     
     private final String TEST_NAME = "홍길동";
-    private final String TEST_EMAIL = "test@example.com";
     private final String TEST_PHONE_NUMBER = "01012345678";
     private final String TEST_PIN = "123456";
-    private final String TEST_ACCESS_TOKEN = "test.access.token";
-    private final String TEST_REFRESH_TOKEN = "test.refresh.token";
     private final String TEST_VERIFICATION_TOKEN = "test.verification.token";
     
     @Test
@@ -123,7 +114,7 @@ class MemberControllerIntegrationTest extends ApplicationPeriodTest {
         // 대신 응답 구조만 확인
         
         // when & then
-        mockMvc.perform(post("/member/register")
+        mockMvc.perform(post("/member")
                 .header("Authorization", "Bearer " + TEST_VERIFICATION_TOKEN)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
