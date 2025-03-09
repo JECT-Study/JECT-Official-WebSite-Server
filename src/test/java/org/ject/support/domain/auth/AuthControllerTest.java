@@ -2,11 +2,11 @@ package org.ject.support.domain.auth;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import org.ject.support.common.security.jwt.JwtCookieProvider;
-import org.ject.support.domain.auth.AuthDto.AuthCodeResponse;
+import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeOnlyResponse;
 import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeRequest;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,54 +26,34 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 @ExtendWith(MockitoExtension.class)
 class AuthControllerTest {
-    // 기존 단위 테스트 유지
-
     @InjectMocks
     private AuthController authController;
 
     @Mock
     private AuthService authService;
 
-    @Mock
-    private JwtCookieProvider jwtCookieProvider;
-
-    @Mock
-    private HttpServletResponse response;
-
-    private final String TEST_NAME = "test";
     private final String TEST_EMAIL = "test@example.com";
-    private final String TEST_PHONE_NUMBER = "01012345678";
     private final String TEST_AUTH_CODE = "123456";
-    private final String TEST_ACCESS_TOKEN = "test.access.token";
-    private final String TEST_REFRESH_TOKEN = "test.refresh.token";
+    private final String TEST_VERIFICATION_TOKEN = "test.verification.token";
 
     @Test
-    @DisplayName("인증 코드 검증 및 쿠키 설정 성공")
+    @DisplayName("인증 코드 검증 및 인증 토큰 발급 성공")
     void verifyAuthCode_Success() {
         // given
-        VerifyAuthCodeRequest request =
-                new VerifyAuthCodeRequest(TEST_NAME, TEST_EMAIL, TEST_PHONE_NUMBER, TEST_AUTH_CODE);
+        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
+        VerifyAuthCodeOnlyResponse response = new VerifyAuthCodeOnlyResponse(TEST_VERIFICATION_TOKEN);
         
-        AuthCodeResponse authResponse = new AuthCodeResponse(TEST_ACCESS_TOKEN, TEST_REFRESH_TOKEN);
-        
-        given(authService.verifyEmailByAuthCode(
-            request.name(),
-            request.email(),
-            request.phoneNumber(),
-            request.authCode()
-        )).willReturn(authResponse);
+        given(authService.verifyEmailByAuthCodeOnly(request.email(), request.authCode()))
+            .willReturn(response);
 
         // when
-        authController.verifyAuthCode(response, request);
+        VerifyAuthCodeOnlyResponse result = authController.verifyAuthCode(request);
 
         // then
-        verify(jwtCookieProvider).createAccessCookie(TEST_ACCESS_TOKEN);
-        verify(jwtCookieProvider).createRefreshCookie(TEST_REFRESH_TOKEN);
-        verify(response, times(2)).addCookie(any()); // access token과 refresh token 쿠키 각각 설정
+        verify(authService).verifyEmailByAuthCodeOnly(TEST_EMAIL, TEST_AUTH_CODE);
+        org.assertj.core.api.Assertions.assertThat(result.verificationToken()).isEqualTo(TEST_VERIFICATION_TOKEN);
     }
 }
 
@@ -96,26 +76,21 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
     }
-    
-    private final String TEST_NAME = "test";
+
     private final String TEST_EMAIL = "test@example.com";
-    private final String TEST_PHONE_NUMBER = "01012345678";
     private final String TEST_AUTH_CODE = "123456";
-    private final String TEST_ACCESS_TOKEN = "test.access.token";
-    private final String TEST_REFRESH_TOKEN = "test.refresh.token";
+    private final String TEST_VERIFICATION_TOKEN = "test.verification.token";
     
     @Test
     @DisplayName("@PreAuthorize(\"permitAll()\") 설정으로 인증 없이 접근 가능한지 확인")
     void verifyAuthCode_WithPermitAll_ShouldAllowAccessWithoutAuthentication() throws Exception {
         // given
-        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(
-                TEST_NAME, TEST_EMAIL, TEST_PHONE_NUMBER, TEST_AUTH_CODE);
+        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
         
-        AuthCodeResponse authResponse = new AuthCodeResponse(TEST_ACCESS_TOKEN, TEST_REFRESH_TOKEN);
+        VerifyAuthCodeOnlyResponse response = new VerifyAuthCodeOnlyResponse(TEST_VERIFICATION_TOKEN);
         
-        given(authService.verifyEmailByAuthCode(
-                anyString(), anyString(), anyString(), anyString())
-        ).willReturn(authResponse);
+        given(authService.verifyEmailByAuthCodeOnly(anyString(), anyString()))
+            .willReturn(response);
         
         // when & then
         // 인증 없이 접근 가능한지 확인 (permitAll 설정)
