@@ -16,7 +16,7 @@ public class EmailController {
     private final EmailAuthService authEmailService;
 
     @PostMapping("/send/auth")
-    @PreAuthorize("permitAll()") // TODO: PostAuthorize 설정 추가
+    @PreAuthorize("permitAll()")
     public void sendAuthEmail(@RequestParam String email) {
         authEmailService.sendAuthCode(email);
     }
