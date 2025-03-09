@@ -51,6 +51,9 @@ public class Member extends BaseTimeEntity {
     @Column(columnDefinition = "varchar(10)", nullable = false)
     private Role role;
 
+    @Column(length = 255)
+    private String pin;
+
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
     @Builder.Default
     private List<TeamMember> teamMembers = new ArrayList<>();
