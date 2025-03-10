@@ -19,7 +19,7 @@ import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
-import org.ject.support.domain.member.dto.MemberDto.UpdateMemberRequest;
+import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
 import org.ject.support.domain.member.service.MemberService;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -95,22 +95,22 @@ class MemberControllerTest {
     }
     
     @Test
-    @DisplayName("회원 정보 업데이트 성공")
-    void updateMember_Success() throws Exception {
+    @DisplayName("임시회원 최초 프로필 등록 성공")
+    void registerInitialProfile_Success() throws Exception {
         // given
-        UpdateMemberRequest request = new UpdateMemberRequest(TEST_NAME, TEST_PHONE_NUMBER);
+        InitialProfileRequest request = new InitialProfileRequest(TEST_NAME, TEST_PHONE_NUMBER);
         Long memberId = 1L;
         
         // lenient 설정을 사용하여 엄격한 스텔빙 검사를 해제
-        lenient().doNothing().when(memberService).updateMember(any(), eq(memberId));
+        lenient().doNothing().when(memberService).registerInitialProfile(any(), eq(memberId));
 
-        // CustomUserDetails를 사용하여 인증 정보 설정
+        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_TEMP 권한)
         CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.TEMP);
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         // when & then
-        mockMvc.perform(put("/members")
+        mockMvc.perform(put("/members/profile/initial")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
@@ -120,7 +120,7 @@ class MemberControllerTest {
         // 테스트 후 인증 정보 초기화
         SecurityContextHolder.clearContext();
     }
-}
+
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -158,16 +158,17 @@ class MemberControllerIntegrationTest extends ApplicationPeriodTest {
     }
     
     @Test
-    @DisplayName("회원 정보 업데이트 API 통합 테스트")
+    @DisplayName("임시회원 최초 프로필 등록 API 통합 테스트")
     @AuthenticatedUser(memberId = 1L)
-    void updateMember_Integration() throws Exception {
+    void registerInitialProfile_Integration() throws Exception {
         // given
-        UpdateMemberRequest request = new UpdateMemberRequest(TEST_NAME, TEST_PHONE_NUMBER);
+        InitialProfileRequest request = new InitialProfileRequest(TEST_NAME, TEST_PHONE_NUMBER);
         
         // when & then
-        mockMvc.perform(put("/members")
+        mockMvc.perform(put("/members/profile/initial")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
+        }
     }
 }

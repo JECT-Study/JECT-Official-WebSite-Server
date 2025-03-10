@@ -4,9 +4,9 @@ import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_E
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.member.dto.MemberDto;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
-import org.ject.support.domain.member.dto.MemberDto.UpdateMemberRequest;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -61,11 +61,15 @@ public class MemberService {
         return memberRepository.save(member);
     }
 
+    /**
+     * 임시회원의 최초 프로필 정보(이름, 전화번호) 등록
+     * 임시회원(ROLE_TEMP)이 최초로 이름과 전화번호를 등록할 때 호출됩니다.
+     */
     @Transactional
-    public void updateMember(UpdateMemberRequest updateMemberRequest, Long memberId) {
+    public void registerInitialProfile(MemberDto.InitialProfileRequest request, Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
-        member.updateNameAndPhoneNumber(updateMemberRequest.name(), updateMemberRequest.phoneNumber());
+        member.updateNameAndPhoneNumber(request.name(), request.phoneNumber());
     }
 }

@@ -9,9 +9,9 @@ import static org.mockito.Mockito.verify;
 import java.util.Optional;
 
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
-import org.ject.support.domain.member.dto.MemberDto.UpdateMemberRequest;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -108,7 +108,7 @@ class MemberServiceTest {
     void updateMember_Success() {
         // given
         Long memberId = 1L;
-        UpdateMemberRequest request = new UpdateMemberRequest(TEST_NAME, TEST_PHONE_NUMBER);
+        InitialProfileRequest request = new InitialProfileRequest(TEST_NAME, TEST_PHONE_NUMBER);
         Member member = Member.builder()
                 .id(memberId)
                 .email(TEST_EMAIL)
@@ -118,7 +118,7 @@ class MemberServiceTest {
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
         
         // when
-        memberService.updateMember(request, memberId);
+        memberService.registerInitialProfile(request, memberId);
         
         // then
         assertThat(member.getName()).isEqualTo(TEST_NAME);
@@ -131,12 +131,12 @@ class MemberServiceTest {
     void updateMember_NotFoundMember_ThrowsException() {
         // given
         Long memberId = 1L;
-        UpdateMemberRequest request = new UpdateMemberRequest(TEST_NAME, TEST_PHONE_NUMBER);
+        InitialProfileRequest request = new InitialProfileRequest(TEST_NAME, TEST_PHONE_NUMBER);
         
         given(memberRepository.findById(memberId)).willReturn(Optional.empty());
         
         // when & then
-        assertThatThrownBy(() -> memberService.updateMember(request, memberId))
+        assertThatThrownBy(() -> memberService.registerInitialProfile(request, memberId))
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);

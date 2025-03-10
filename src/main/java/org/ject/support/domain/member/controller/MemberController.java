@@ -41,12 +41,16 @@ public class MemberController {
         return memberService.registerTempMember(request, email);
     }
 
-    @PutMapping
+    /**
+     * 임시회원의 최초 정보 등록 API
+     * 임시회원(ROLE_TEMP)이 이름과 전화번호를 처음 등록할 때 사용합니다.
+     */
+    @PutMapping("/profile/initial")
     @PreAuthorize("hasRole('ROLE_TEMP')")
-    public void updateMember(@AuthPrincipal Long memberId,
-                             @Valid @RequestBody MemberDto.UpdateMemberRequest request) {
+    public void registerInitialProfile(@AuthPrincipal Long memberId,
+                             @Valid @RequestBody MemberDto.InitialProfileRequest request) {
 
-        // 회원 정보 수정
-        memberService.updateMember(request, memberId);
+        // 임시회원의 최초 프로필 정보 등록
+        memberService.registerInitialProfile(request, memberId);
     }
 }

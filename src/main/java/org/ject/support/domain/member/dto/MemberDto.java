@@ -20,7 +20,10 @@ public class MemberDto {
         }
     }
 
-    public record UpdateMemberRequest (
+    /**
+     * 임시회원이 최초로 이름과 전화번호를 등록할 때 사용하는 DTO
+     */
+    public record InitialProfileRequest (
 
             @NotBlank @Pattern(regexp = "^[가-힣]{1,5}$", message = "한글 1~5글자만 입력 가능합니다.")
             String name,
