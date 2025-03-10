@@ -86,7 +86,7 @@ class ProjectServiceTest {
         assertThat(result.name()).isEqualTo(project.getName());
         assertThat(result.startDate()).isEqualTo(project.getStartDate());
         assertThat(result.endDate()).isEqualTo(project.getEndDate());
-        assertThat(result.teamMemberNames().projectManagers()).hasSize(0);
+        assertThat(result.teamMemberNames().productManagers()).hasSize(0);
         assertThat(result.teamMemberNames().productDesigners()).hasSize(1);
         assertThat(result.teamMemberNames().frontendDevelopers()).hasSize(2);
         assertThat(result.teamMemberNames().backendDevelopers()).hasSize(3);

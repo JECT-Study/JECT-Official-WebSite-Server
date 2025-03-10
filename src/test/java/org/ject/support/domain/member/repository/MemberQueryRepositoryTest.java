@@ -62,7 +62,7 @@ class MemberQueryRepositoryTest {
         TeamMemberNames teamMemberNames = memberRepository.findMemberNamesByTeamId(1L);
 
         // then
-        assertThat(teamMemberNames.projectManagers()).hasSize(0);
+        assertThat(teamMemberNames.productManagers()).hasSize(0);
         assertThat(teamMemberNames.productDesigners()).hasSize(1);
         assertThat(teamMemberNames.frontendDevelopers()).hasSize(1);
         assertThat(teamMemberNames.backendDevelopers()).hasSize(2);
