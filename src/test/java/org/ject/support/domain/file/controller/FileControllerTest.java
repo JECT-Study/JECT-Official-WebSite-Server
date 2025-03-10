@@ -47,10 +47,11 @@ class FileControllerTest extends ApplicationPeriodTest {
         member = Member.builder()
                 .email("test32@gmail.com")
                 .jobFamily(JobFamily.BE)
-                .name("test32")
+                .name("홍길동") // 한글 1~5글자로 수정
                 .role(USER)
-                .phoneNumber("01012345678")
+                .phoneNumber("01012345678") // 010으로 시작하는 11자리 수정
                 .semester("2025-1")
+                .pin("123456") // PIN 추가
                 .build();
         memberRepository.save(member);
     }

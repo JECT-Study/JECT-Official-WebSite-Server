@@ -42,10 +42,10 @@ class MemberQueryRepositoryTest {
         teamA = createTeam("teamA");
         teamRepository.save(teamA);
 
-        pd1 = createMember("pd1", "01011112223", "pd1Email", "1기", PD);
-        fe1 = createMember("fe1", "01011112224", "fe1Email", "1기", FE);
-        be1 = createMember("be1", "01011112225", "be1Email", "1기", BE);
-        be2 = createMember("be2", "01011112226", "be2Email", "1기", BE);
+        pd1 = createMember("김젝트", "01011112223", "pd1Email", "1기", PD);
+        fe1 = createMember("박젝트", "01011112224", "fe1Email", "1기", FE);
+        be1 = createMember("최젝트", "01011112225", "be1Email", "1기", BE);
+        be2 = createMember("왕젝트", "01011112226", "be2Email", "1기", BE);
         memberRepository.saveAll(List.of(pd1, fe1, be1, be2));
 
         teamApd1 = createTeamMember(teamA, pd1);
@@ -82,6 +82,7 @@ class MemberQueryRepositoryTest {
                 .semester(semester)
                 .jobFamily(jobFamily)
                 .role(Role.USER)
+                .pin("123456") // PIN 필드 추가
                 .build();
     }
 

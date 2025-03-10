@@ -74,10 +74,11 @@ class ApplyControllerTest extends ApplicationPeriodTest {
         member = Member.builder()
                 .email("test32@gmail.com")
                 .jobFamily(JobFamily.BE)
-                .name("test32")
+                .name("김젝트")
                 .role(USER)
                 .phoneNumber("01012345678")
                 .semester("2025-1")
+                .pin("123456") // PIN 필드 추가
                 .build();
         memberRepository.save(member);
     }

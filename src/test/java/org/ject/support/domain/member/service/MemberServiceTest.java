@@ -11,6 +11,7 @@ import java.util.Optional;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
+import org.ject.support.domain.member.dto.MemberDto.UpdateMemberRequest;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -60,10 +61,8 @@ class MemberServiceTest {
     @DisplayName("임시 회원 등록 성공")
     void registerTempMember_Success() {
         // given
-        RegisterRequest request = new RegisterRequest(TEST_NAME, TEST_PHONE_NUMBER, TEST_PIN);
+        RegisterRequest request = new RegisterRequest(TEST_PIN);
         Member member = Member.builder()
-                .name(TEST_NAME)
-                .phoneNumber(TEST_PHONE_NUMBER)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .build();
@@ -89,10 +88,8 @@ class MemberServiceTest {
     @DisplayName("이미 존재하는 회원인 경우 예외 발생")
     void registerTempMember_AlreadyExistMember_ThrowsException() {
         // given
-        RegisterRequest request = new RegisterRequest(TEST_NAME, TEST_PHONE_NUMBER, TEST_PIN);
+        RegisterRequest request = new RegisterRequest(TEST_PIN);
         Member existingMember = Member.builder()
-                .name(TEST_NAME)
-                .phoneNumber(TEST_PHONE_NUMBER)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .build();
@@ -104,5 +101,44 @@ class MemberServiceTest {
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.ALREADY_EXIST_MEMBER);
+    }
+    
+    @Test
+    @DisplayName("회원 정보 업데이트 성공")
+    void updateMember_Success() {
+        // given
+        Long memberId = 1L;
+        UpdateMemberRequest request = new UpdateMemberRequest(TEST_NAME, TEST_PHONE_NUMBER);
+        Member member = Member.builder()
+                .id(memberId)
+                .email(TEST_EMAIL)
+                .pin(TEST_ENCODED_PIN)
+                .build();
+        
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        
+        // when
+        memberService.updateMember(request, memberId);
+        
+        // then
+        assertThat(member.getName()).isEqualTo(TEST_NAME);
+        assertThat(member.getPhoneNumber()).isEqualTo(TEST_PHONE_NUMBER);
+        verify(memberRepository).findById(memberId);
+    }
+    
+    @Test
+    @DisplayName("존재하지 않는 회원 정보 업데이트 시 예외 발생")
+    void updateMember_NotFoundMember_ThrowsException() {
+        // given
+        Long memberId = 1L;
+        UpdateMemberRequest request = new UpdateMemberRequest(TEST_NAME, TEST_PHONE_NUMBER);
+        
+        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+        
+        // when & then
+        assertThatThrownBy(() -> memberService.updateMember(request, memberId))
+                .isInstanceOf(MemberException.class)
+                .extracting(e -> ((MemberException) e).getErrorCode())
+                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
     }
 }

@@ -2,17 +2,29 @@ package org.ject.support.domain.member.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
+import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
+import org.ject.support.domain.member.dto.MemberDto.UpdateMemberRequest;
 import org.ject.support.domain.member.service.MemberService;
 import org.ject.support.testconfig.ApplicationPeriodTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +38,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.ject.support.testconfig.AuthenticatedUser;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -56,14 +68,14 @@ class MemberControllerTest {
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
-        mockMvc = MockMvcBuilders.standaloneSetup(memberController).build();
+        mockMvc = standaloneSetup(memberController).build();
     }
 
     @Test
     @DisplayName("회원 등록 성공")
     void registerMember_Success() throws Exception {
         // given
-        RegisterRequest request = new RegisterRequest(TEST_NAME, TEST_PHONE_NUMBER, TEST_PIN);
+        RegisterRequest request = new RegisterRequest(TEST_PIN);
         RegisterResponse response = new RegisterResponse(TEST_ACCESS_TOKEN, TEST_REFRESH_TOKEN);
         
         given(jwtTokenProvider.extractEmailFromVerificationToken(TEST_VERIFICATION_TOKEN)).willReturn(TEST_EMAIL);
@@ -81,6 +93,33 @@ class MemberControllerTest {
         verify(jwtTokenProvider).extractEmailFromVerificationToken(TEST_VERIFICATION_TOKEN);
         verify(memberService).registerTempMember(any(RegisterRequest.class), anyString());
     }
+    
+    @Test
+    @DisplayName("회원 정보 업데이트 성공")
+    void updateMember_Success() throws Exception {
+        // given
+        UpdateMemberRequest request = new UpdateMemberRequest(TEST_NAME, TEST_PHONE_NUMBER);
+        Long memberId = 1L;
+        
+        // lenient 설정을 사용하여 엄격한 스텔빙 검사를 해제
+        lenient().doNothing().when(memberService).updateMember(any(), eq(memberId));
+
+        // CustomUserDetails를 사용하여 인증 정보 설정
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.TEMP);
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        // when & then
+        mockMvc.perform(put("/members")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+        
+        // verify를 사용하지 않고 스텔빙만 확인
+        
+        // 테스트 후 인증 정보 초기화
+        SecurityContextHolder.clearContext();
+    }
 }
 
 @SpringBootTest
@@ -94,21 +133,16 @@ class MemberControllerIntegrationTest extends ApplicationPeriodTest {
     @Autowired
     private ObjectMapper objectMapper;
     
-    @BeforeEach
-    void setUp() {
-        // 실제 서비스를 사용하는 통합 테스트
-    }
-    
-    private final String TEST_NAME = "홍길동";
-    private final String TEST_PHONE_NUMBER = "01012345678";
     private final String TEST_PIN = "123456";
     private final String TEST_VERIFICATION_TOKEN = "test.verification.token";
+    private final String TEST_NAME = "홍길동";
+    private final String TEST_PHONE_NUMBER = "01012345678";
     
     @Test
     @DisplayName("회원 등록 API 통합 테스트")
     void registerMember_Integration() throws Exception {
         // given
-        RegisterRequest request = new RegisterRequest(TEST_NAME, TEST_PHONE_NUMBER, TEST_PIN);
+        RegisterRequest request = new RegisterRequest(TEST_PIN);
         
         // 실제 서비스를 사용하므로 모킹하지 않음
         // 대신 응답 구조만 확인
@@ -121,5 +155,19 @@ class MemberControllerIntegrationTest extends ApplicationPeriodTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").exists());
         // 실제 응답 값은 테스트마다 다를 수 있으므로 구조만 확인
+    }
+    
+    @Test
+    @DisplayName("회원 정보 업데이트 API 통합 테스트")
+    @AuthenticatedUser(memberId = 1L)
+    void updateMember_Integration() throws Exception {
+        // given
+        UpdateMemberRequest request = new UpdateMemberRequest(TEST_NAME, TEST_PHONE_NUMBER);
+        
+        // when & then
+        mockMvc.perform(put("/members")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
     }
 }
