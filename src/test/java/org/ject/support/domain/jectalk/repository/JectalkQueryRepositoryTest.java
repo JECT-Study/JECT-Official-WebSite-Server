@@ -1,5 +1,6 @@
 package org.ject.support.domain.jectalk.repository;
 
+import java.util.List;
 import org.ject.support.domain.jectalk.dto.JectalkResponse;
 import org.ject.support.domain.jectalk.entity.Jectalk;
 import org.ject.support.testconfig.IntegrationTest;
@@ -9,8 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,9 +41,17 @@ class JectalkQueryRepositoryTest {
 
         List<JectalkResponse> responses = result.getContent();
         assertThat(responses).hasSize(2); // 현재 페이지의 데이터 개수
+        responses.forEach(jectalkResponse -> {
+            assertThat(jectalkResponse.id()).isNotNull();
+            assertThat(jectalkResponse.name()).isNotNull();
+            assertThat(jectalkResponse.imageUrl()).isNotNull();
+            assertThat(jectalkResponse.youtubeUrl()).isNotNull();
+            assertThat(jectalkResponse.summary()).isNotNull();
+        });
 
         JectalkResponse firstResponse = responses.get(0);
         assertThat(firstResponse.name()).isEqualTo("젝톡 3"); // ID 내림차순이므로 마지막에 생성된 데이터가 첫 번째
+        assertThat(firstResponse.summary()).isEqualTo("summary");
         assertThat(firstResponse.youtubeUrl()).isEqualTo("https://youtube.com/jectalk3");
         assertThat(firstResponse.imageUrl()).isEqualTo("https://image.com/jectalk3.png");
 
@@ -57,6 +64,7 @@ class JectalkQueryRepositoryTest {
         String urlSafeName = "jectalk" + name.replaceAll("[젝톡 ]", "");
         return Jectalk.builder()
                 .name(name)
+                .summary("summary")
                 .youtubeUrl("https://youtube.com/" + urlSafeName)
                 .imageUrl("https://image.com/" + urlSafeName + ".png")
                 .build();

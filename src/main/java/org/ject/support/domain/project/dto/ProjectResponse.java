@@ -10,8 +10,7 @@ public record ProjectResponse(Long id,
                               String thumbnailUrl,
                               String name,
                               String summary,
-                              LocalDate startDate,
-                              LocalDate endDate) {
+                              String description) {
 
     @QueryProjection
     public ProjectResponse {

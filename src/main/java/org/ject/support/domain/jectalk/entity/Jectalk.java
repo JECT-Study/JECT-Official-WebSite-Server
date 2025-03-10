@@ -20,6 +20,9 @@ public class Jectalk extends BaseTimeEntity {
     @Column(length = 50, nullable = false)
     private String name;
 
+    @Column(nullable = false)
+    private String summary;
+
     @Column(length = 2083)
     private String youtubeUrl;
 
