@@ -1,6 +1,14 @@
 package org.ject.support.external.s3;
 
-import org.ject.support.domain.file.dto.CreatePresignedUrlResponse;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import org.ject.support.domain.file.dto.UploadFileRequest;
+import org.ject.support.domain.file.dto.UploadFileResponse;
+import org.ject.support.domain.file.exception.FileException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,17 +20,24 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class S3ServiceTest {
+
+    private static final String CDN_DOMAIN = "https://test-ject-cdn.net";
+    private static final int EXPIRE_MINUTES = 10;
+
+    @Mock
+    PresignedPutObjectRequest presignedPutObjectRequest;
+
+    Instant expirationTime;
+    Long memberId;
+    List<UploadFileRequest> requests;
+    List<String> expectedPortfolioUploadUrls;
 
     @Mock
     private S3Presigner s3Presigner;
@@ -30,63 +45,81 @@ class S3ServiceTest {
     @InjectMocks
     private S3Service s3Service;
 
-    private TestParameter testParameter;
-
     @BeforeEach
-    void setUp() throws MalformedURLException {
-        testParameter = new TestParameter(123L, "test.pdf", Instant.now().plusSeconds(600));
-        PresignedPutObjectRequest mockRequest = mock(PresignedPutObjectRequest.class);
-        when(mockRequest.url()).thenReturn(URI.create(testParameter.expectedUrl).toURL());
-        when(mockRequest.expiration()).thenReturn(testParameter.expirationTime);
-        when(s3Presigner.presignPutObject((PutObjectPresignRequest) any())).thenReturn(mockRequest);
+    void setUp() {
+        requests = List.of(
+                new UploadFileRequest("portfolio1.pdf", "application/pdf", 12345),
+                new UploadFileRequest("portfolio2.pdf", "application/pdf", 12345));
+        expirationTime = Instant.now().plusSeconds(60 * EXPIRE_MINUTES);
+        memberId = 1L;
+        expectedPortfolioUploadUrls =
+                List.of(createExpectedUrl(memberId, "portfolio1.pdf"), createExpectedUrl(memberId, "portfolio2.pdf"));
     }
 
     @Test
-    @DisplayName("create pre-signed url")
-    void create_presigned_url() {
+    @DisplayName("포트폴리오 업로드를 위한 pre-signed url 생성")
+    void upload_portfolio() throws MalformedURLException {
+        // given
+        when(presignedPutObjectRequest.url()).thenReturn(URI.create(expectedPortfolioUploadUrls.get(0)).toURL());
+        when(presignedPutObjectRequest.expiration()).thenReturn(expirationTime);
+        when(s3Presigner.presignPutObject((PutObjectPresignRequest) any())).thenReturn(presignedPutObjectRequest);
+
         // when
-        CreatePresignedUrlResponse response =
-                s3Service.createPresignedUrl(testParameter.memberId, testParameter.fileName);
+        List<UploadFileResponse> result = s3Service.uploadPortfolios(1L, requests);
 
         // then
-        assertThat(response.keyName()).contains(testParameter.fileName);
-        assertThat(response.presignedUrl()).contains(testParameter.expectedUrl);
-        assertThat(response.presignedUrl()).isEqualTo(testParameter.expectedUrl);
-        assertThat(response.expiration())
-                .isEqualTo(LocalDateTime.ofInstant(testParameter.expirationTime, ZoneId.systemDefault()));
+        assertThat(result).hasSize(2);
+
+        UploadFileResponse firstResponse = result.get(0);
+        assertThat(firstResponse.keyName()).contains(requests.get(0).name());
+        assertThat(firstResponse.presignedUrl()).isEqualTo(expectedPortfolioUploadUrls.get(0));
+        assertThat(firstResponse.expiration())
+                .isEqualTo(LocalDateTime.ofInstant(expirationTime, ZoneId.systemDefault()));
+
+        UploadFileResponse secondResponse = result.get(1);
+        assertThat(secondResponse.keyName()).contains(requests.get(1).name());
     }
 
     @Test
-    @DisplayName("create key name")
-    void create_key_name() {
+    @DisplayName("객체 키 생성")
+    void create_key_name() throws MalformedURLException {
+        // given
+        when(presignedPutObjectRequest.url()).thenReturn(URI.create(expectedPortfolioUploadUrls.get(0)).toURL());
+        when(presignedPutObjectRequest.expiration()).thenReturn(expirationTime);
+        when(s3Presigner.presignPutObject((PutObjectPresignRequest) any())).thenReturn(presignedPutObjectRequest);
+
         // when
-        CreatePresignedUrlResponse response =
-                s3Service.createPresignedUrl(testParameter.memberId, testParameter.fileName);
+        List<UploadFileResponse> result =
+                s3Service.uploadPortfolios(memberId, requests);
 
         // then
-        assertThat(response.keyName()).contains(testParameter.memberId.toString());
-        assertThat(removePrefix(response.keyName())).startsWith(testParameter.fileName);
-        assertThat(response.keyName()).contains("_");
+        assertThat(result).hasSize(2);
+
+        for (int i = 0; i < 2; i++) {
+            UploadFileResponse firstResponse = result.get(i);
+            assertThat(firstResponse.keyName()).contains(memberId.toString());
+            assertThat(removePrefix(firstResponse.keyName())).startsWith(requests.get(i).name());
+            assertThat(firstResponse.keyName()).contains("_");
+        }
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 확장자로 인한 포트폴리오 업로드 실패")
+    void upload_portfolio_fail() {
+        // given
+        List<UploadFileRequest> invalidRequests = List.of(new UploadFileRequest("test.png", "image/png", 12345));
+
+        // when, then
+        assertThatThrownBy(() -> s3Service.uploadPortfolios(memberId, invalidRequests))
+                .isInstanceOf(FileException.class);
+    }
+
+    private String createExpectedUrl(Long memberId, String fileName) {
+        return String.format("%s/%d/%s", CDN_DOMAIN, memberId, fileName);
     }
 
     private String removePrefix(String keyName) {
-        String prefix = String.format("%s/", testParameter.memberId);
+        String prefix = String.format("%s/", memberId);
         return keyName.replace(prefix, "");
-    }
-
-    static class TestParameter {
-        Long memberId;
-        String fileName;
-        Instant expirationTime;
-        String expectedKeyName;
-        String expectedUrl;
-
-        public TestParameter(Long memberId, String fileName, Instant expirationTime) {
-            this.memberId = memberId;
-            this.fileName = fileName;
-            this.expectedKeyName = String.format("%s/%s", memberId, "test.pdf_uuid");
-            this.expectedUrl = String.format("%s%s", "https://s3.test.com/", expectedKeyName);
-            this.expirationTime = expirationTime;
-        }
     }
 }
