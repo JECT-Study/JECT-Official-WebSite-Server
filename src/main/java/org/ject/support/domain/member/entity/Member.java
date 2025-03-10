@@ -62,4 +62,9 @@ public class Member extends BaseTimeEntity {
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
     @Builder.Default
     private List<TeamMember> teamMembers = new ArrayList<>();
+
+    public void updateNameAndPhoneNumber(String name, String phoneNumber) {
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+    }
 }

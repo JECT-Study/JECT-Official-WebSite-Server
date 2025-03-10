@@ -20,7 +20,7 @@ public class MemberDto {
         }
     }
 
-    public record updateMemberRequest (
+    public record UpdateMemberRequest (
 
             @NotBlank @Pattern(regexp = "^[가-힣]{1,5}$", message = "한글 1~5글자만 입력 가능합니다.")
             String name,

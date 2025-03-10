@@ -2,12 +2,14 @@ package org.ject.support.domain.member.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto;
 import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
 import org.ject.support.domain.member.service.MemberService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,5 +39,14 @@ public class MemberController {
 
         // 임시 회원 생성 및 토큰 발급
         return memberService.registerTempMember(request, email);
+    }
+
+    @PutMapping
+    @PreAuthorize("hasRole('ROLE_TEMP')")
+    public void updateMember(@AuthPrincipal Long memberId,
+                             @Valid @RequestBody MemberDto.UpdateMemberRequest request) {
+
+        // 회원 정보 수정
+        memberService.updateMember(request, memberId);
     }
 }

@@ -6,7 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
+import org.ject.support.domain.member.dto.MemberDto.UpdateMemberRequest;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.springframework.security.core.Authentication;
@@ -57,5 +59,13 @@ public class MemberService {
         String encodedPin = passwordEncoder.encode(registerRequest.pin());
         Member member = registerRequest.toEntity(email, encodedPin);
         return memberRepository.save(member);
+    }
+
+    @Transactional
+    public void updateMember(UpdateMemberRequest updateMemberRequest, Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
+
+        member.updateNameAndPhoneNumber(updateMemberRequest.name(), updateMemberRequest.phoneNumber());
     }
 }
