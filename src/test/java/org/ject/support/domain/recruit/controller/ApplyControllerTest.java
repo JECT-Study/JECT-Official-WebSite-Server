@@ -2,6 +2,7 @@ package org.ject.support.domain.recruit.controller;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.ject.support.domain.member.Role.USER;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -9,12 +10,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.ject.support.testconfig.AuthenticatedUser;
@@ -26,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
 // Redis 관련 설정을 제외하고 필요한 설정만 포함합니다
@@ -82,46 +86,35 @@ class ApplyControllerTest extends ApplicationPeriodTest {
         memberRepository.save(member);
     }
 
-//    @Test
-//    @DisplayName("apply temporal test")
-//    @AuthenticatedUser
-//    @Transactional
-//    void test_temp_apply() throws Exception {
-//        mockMvc.perform(post("/apply/temp?jobFamily=BE")
-//                        .contentType("application/json")
-//                        .param("memberId", member.getId().toString())
-//                        .content("""
-//                                {
-//                                  "1": "answer1",
-//                                  "2": "answer2",
-//                                  "3": "answer3",
-//                                  "4": "answer4",
-//                                  "5": "answer5"
-//                                }""")
-//                )
-//                .andExpect(status().isOk())
-//                .andExpect(content().string(containsString("SUCCESS")))
-//                .andDo(print())
-//                .andReturn();
-//
-//        TemporaryApplication temporaryApplication
-//                = temporaryApplicationRepository.findLatestByMemberId(member.getId().toString()).orElseThrow();
-//
-//        assertThat(temporaryApplication.getAnswers().get("1")).isEqualTo("answer1");
-//        assertThat(temporaryApplication.getAnswers().get("2")).isEqualTo("answer2");
-//        assertThat(temporaryApplication.getAnswers().get("3")).isEqualTo("answer3");
-//        assertThat(temporaryApplication.getAnswers().get("4")).isEqualTo("answer4");
-//        assertThat(temporaryApplication.getAnswers().get("5")).isEqualTo("answer5");
-//    }
+    @Test
+    @DisplayName("apply temporal test")
+    @AuthenticatedUser
+    void test_temp_apply() throws Exception {
+        mockMvc.perform(post("/apply/temp")
+                        .contentType("application/json")
+                        .param("jobFamily", "BE")
+                        .content("""
+                                {
+                                  "1": "answer1",
+                                  "2": "answer2",
+                                  "3": "answer3",
+                                  "4": "answer4",
+                                  "5": "answer5"
+                                }""")
+                )
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn();
+    }
 
     @Test
     @DisplayName("invalid question id")
     @AuthenticatedUser
     @Transactional
     void invalid_question_id() throws Exception {
-        mockMvc.perform(post("/apply/temp?jobFamily=BE")
+        mockMvc.perform(post("/apply/temp")
                         .contentType("application/json")
-                        .param("memberId", member.getId().toString())
+                        .param("jobFamily", "BE")
                         .content("""
                                 {
                                   "1": "answer1",
@@ -138,4 +131,24 @@ class ApplyControllerTest extends ApplicationPeriodTest {
                 .andReturn();
     }
 
+    @Test
+    @AuthenticatedUser
+    void inquire_temporal_application() throws Exception {
+        // given: 테스트 데이터 저장
+        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of("1", "답변1", "2", "답변2"), "PM"));
+        temporaryApplicationRepository.save(
+                new TemporaryApplication("1", Map.of("3", "답변3", "4", "답변4", "5", "답변5"), "BE"));
+
+        // when & then
+        ResultActions resultActions = mockMvc.perform(get("/apply/temp"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("SUCCESS")))
+                .andExpectAll(
+                        content().string(containsString("답변3")),
+                        content().string(containsString("답변4")),
+                        content().string(containsString("답변5"))
+                );
+
+        resultActions.andDo(print());
+    }
 }
