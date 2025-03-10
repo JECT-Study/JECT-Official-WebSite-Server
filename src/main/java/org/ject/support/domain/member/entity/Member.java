@@ -9,6 +9,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -31,10 +33,12 @@ public class Member extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 20, nullable = false)
+    @Column(length = 20)
+    @Pattern(regexp = "^[가-힣]{1,5}$", message = "한글 1~5글자만 입력 가능합니다.")
     private String name;
 
-    @Column(length = 12, nullable = false, unique = true)
+    @Column(length = 12)
+    @Pattern(regexp = "^010\\d{8}$", message = "010으로 시작하는 11자리 숫자를 입력하세요.")
     private String phoneNumber;
 
     @Column(length = 30, nullable = false, unique = true)
@@ -52,6 +56,7 @@ public class Member extends BaseTimeEntity {
     private Role role;
 
     @Column(length = 255)
+    @NotNull
     private String pin;
 
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)

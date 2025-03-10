@@ -9,22 +9,25 @@ public class MemberDto {
 
     public record RegisterRequest (
 
-            @NotBlank @Pattern(regexp = "^[가-힣]{1,5}$", message = "한글 1~5글자만 입력 가능합니다.")
-            String name,
-
-            @NotBlank @Pattern(regexp = "^010\\d{8}$", message = "010으로 시작하는 11자리 숫자를 입력하세요.")
-            String phoneNumber,
             @NotBlank @Pattern(regexp = "^\\d{6}$", message = "PIN 번호는 6자리 숫자여야 합니다.") String pin) {
 
         public Member toEntity(String email, String encodedPin) {
             return Member.builder()
-                    .name(name)
-                    .phoneNumber(phoneNumber)
                     .email(email)
                     .pin(encodedPin)
                     .role(Role.TEMP)
                     .build();
         }
+    }
+
+    public record updateMemberRequest (
+
+            @NotBlank @Pattern(regexp = "^[가-힣]{1,5}$", message = "한글 1~5글자만 입력 가능합니다.")
+            String name,
+
+            @NotBlank @Pattern(regexp = "^010\\d{8}$", message = "010으로 시작하는 11자리 숫자를 입력하세요.")
+            String phoneNumber) {
+
     }
 
     public record RegisterResponse(String accessToken, String refreshToken) {
