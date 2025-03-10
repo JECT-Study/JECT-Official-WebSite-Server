@@ -34,6 +34,9 @@ public class RedisConfig {
     @Value("${spring.data.redis.password}")
     private String redisPassword;
 
+    @Value("${spring.data.redis.local}")
+    private boolean isLocal;
+
     @Bean
     @ConditionalOnMissingBean
     public RedisConnectionFactory redisConnectionFactory() {
@@ -41,6 +44,10 @@ public class RedisConfig {
 
         if (!redisPassword.isEmpty()) {
             redisConfig.setPassword(RedisPassword.of(redisPassword));
+        }
+
+        if (isLocal) {
+            return new LettuceConnectionFactory(redisConfig);
         }
 
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
