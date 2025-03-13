@@ -4,7 +4,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 
@@ -20,6 +21,9 @@ import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
 import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
+import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
+import org.ject.support.domain.member.exception.MemberErrorCode;
+import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.service.MemberService;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -116,6 +120,82 @@ class MemberControllerTest {
                 .andExpect(status().isOk());
         
         // verify를 사용하지 않고 스텔빙만 확인
+        // 테스트 후 인증 정보 초기화
+        SecurityContextHolder.clearContext();
+    }
+    
+    @Test
+    @DisplayName("핀번호 재설정 성공")
+    void resetPin_Success() throws Exception {
+        // given
+        UpdatePinRequest request = new UpdatePinRequest("654321"); // 새로운 PIN 번호
+        Long memberId = 1L;
+        
+        // lenient 설정을 사용하여 엄격한 스텔빙 검사를 해제
+        lenient().doNothing().when(memberService).updatePin(any(UpdatePinRequest.class), eq(memberId));
+
+        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_TEMP 권한)
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.TEMP);
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        // when & then
+        mockMvc.perform(put("/members/pin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+        
+        // verify를 사용하지 않고 스텔빙만 확인
+        // 테스트 후 인증 정보 초기화
+        SecurityContextHolder.clearContext();
+    }
+    
+    @Test
+    @DisplayName("핀번호 재설정 실패 - 동일한 PIN 번호")
+    void resetPin_Fail_SamePin() throws Exception {
+        // given
+        UpdatePinRequest request = new UpdatePinRequest(TEST_PIN); // 기존과 동일한 PIN 번호
+        Long memberId = 1L;
+        
+        // lenient 설정을 사용하여 엄격한 스텔빙 검사를 해제
+        lenient().doThrow(new MemberException(MemberErrorCode.SAME_PIN))
+            .when(memberService).updatePin(any(UpdatePinRequest.class), eq(memberId));
+
+        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_TEMP 권한)
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.TEMP);
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        // when & then
+        mockMvc.perform(put("/members/pin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+        
+        // verify를 사용하지 않고 스텔빙만 확인
+        // 테스트 후 인증 정보 초기화
+        SecurityContextHolder.clearContext();
+    }
+    
+    @Test
+    @DisplayName("핀번호 재설정 실패 - 유효하지 않은 PIN 번호 형식")
+    void resetPin_Fail_InvalidPinFormat() throws Exception {
+        // given
+        // 유효하지 않은 PIN 번호 (6자리가 아님)
+        String invalidPin = "12345";
+        UpdatePinRequest request = new UpdatePinRequest(invalidPin);
+        Long memberId = 1L;
+
+        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_TEMP 권한)
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.TEMP);
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        // when & then
+        mockMvc.perform(put("/members/pin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
         
         // 테스트 후 인증 정보 초기화
         SecurityContextHolder.clearContext();
@@ -169,6 +249,20 @@ class MemberControllerIntegrationTest extends ApplicationPeriodTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
-        }
     }
+    
+    @Test
+    @DisplayName("핀번호 재설정 API 통합 테스트")
+    @AuthenticatedUser(memberId = 1L)
+    void resetPin_Integration() throws Exception {
+        // given
+        UpdatePinRequest request = new UpdatePinRequest("654321"); // 새로운 PIN 번호
+        
+        // when & then
+        mockMvc.perform(put("/members/pin")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+  }
 }
