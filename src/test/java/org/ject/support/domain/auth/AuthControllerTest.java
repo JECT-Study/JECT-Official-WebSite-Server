@@ -106,9 +106,6 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
 
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_AUTH_CODE = "123456";
-    private final String TEST_VERIFICATION_TOKEN = "test.verification.token";
-    private final String TEST_ACCESS_TOKEN = "test.access.token";
-    private final String TEST_REFRESH_TOKEN = "test.refresh.token";
     
     @Test
     @DisplayName("@PreAuthorize(\"permitAll()\") 설정으로 인증 없이 접근 가능한지 확인")
