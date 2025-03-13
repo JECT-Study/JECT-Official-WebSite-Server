@@ -1,21 +1,21 @@
 package org.ject.support.domain.auth;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.ject.support.domain.auth.AuthDto.TokenRefreshRequest;
+import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
 import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeOnlyResponse;
 import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeRequest;
 import org.ject.support.testconfig.ApplicationPeriodTest;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -37,6 +37,9 @@ class AuthControllerTest {
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_AUTH_CODE = "123456";
     private final String TEST_VERIFICATION_TOKEN = "test.verification.token";
+    private final String TEST_REFRESH_TOKEN = "test.refresh.token";
+    private final String TEST_ACCESS_TOKEN = "test.access.token";
+    private final Long TEST_MEMBER_ID = 1L;
 
     @Test
     @DisplayName("인증 코드 검증 및 인증 토큰 발급 성공")
@@ -53,14 +56,31 @@ class AuthControllerTest {
 
         // then
         verify(authService).verifyEmailByAuthCodeOnly(TEST_EMAIL, TEST_AUTH_CODE);
-        org.assertj.core.api.Assertions.assertThat(result.verificationToken()).isEqualTo(TEST_VERIFICATION_TOKEN);
+        assertThat(result.verificationToken()).isEqualTo(TEST_VERIFICATION_TOKEN);
+    }
+    
+    @Test
+    @DisplayName("리프레시 토큰을 사용한 액세스 토큰 재발급 성공")
+    void refreshToken_Success() {
+        // given
+        TokenRefreshRequest request = new TokenRefreshRequest(TEST_REFRESH_TOKEN);
+        TokenRefreshResponse response = new TokenRefreshResponse(TEST_ACCESS_TOKEN);
+        
+        given(authService.refreshAccessToken(TEST_MEMBER_ID, request.refreshToken()))
+            .willReturn(response);
+
+        // when
+        TokenRefreshResponse result = authController.refreshToken(TEST_MEMBER_ID, request);
+
+        // then
+        verify(authService).refreshAccessToken(TEST_MEMBER_ID, TEST_REFRESH_TOKEN);
+        assertThat(result.accessToken()).isEqualTo(TEST_ACCESS_TOKEN);
     }
 }
 
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = true)
 @TestPropertySource(properties = {"spring.data.redis.repositories.enabled=false", "server.port=0"})
-@ExtendWith(MockitoExtension.class)
 class AuthControllerIntegrationTest extends ApplicationPeriodTest {
 
     @Autowired
@@ -68,18 +88,10 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
     
     @Autowired
     private ObjectMapper objectMapper;
-    
-    @Mock
-    private AuthService authService;
-
-    @BeforeEach
-    void setUp() {
-        MockitoAnnotations.openMocks(this);
-    }
 
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_AUTH_CODE = "123456";
-    private final String TEST_VERIFICATION_TOKEN = "test.verification.token";
+    private final String TEST_REFRESH_TOKEN = "test.refresh.token";
     
     @Test
     @DisplayName("@PreAuthorize(\"permitAll()\") 설정으로 인증 없이 접근 가능한지 확인")
@@ -87,14 +99,23 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
         // given
         VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
         
-        VerifyAuthCodeOnlyResponse response = new VerifyAuthCodeOnlyResponse(TEST_VERIFICATION_TOKEN);
-        
-        given(authService.verifyEmailByAuthCodeOnly(anyString(), anyString()))
-            .willReturn(response);
-        
         // when & then
         // 인증 없이 접근 가능한지 확인 (permitAll 설정)
         mockMvc.perform(post("/auth/code")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+    
+    @Test
+    @DisplayName("@PreAuthorize(\"hasRole('ROLE_TEMP')\") 설정으로 인증이 필요한지 확인")
+    void refreshToken_WithRoleTemp_ShouldRequireAuthentication() throws Exception {
+        // given
+        TokenRefreshRequest request = new TokenRefreshRequest(TEST_REFRESH_TOKEN);
+        
+        // when & then
+        // 인증 없이 접근 시 403 에러 발생 (hasRole('ROLE_TEMP') 설정)
+        mockMvc.perform(post("/auth/refresh")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());

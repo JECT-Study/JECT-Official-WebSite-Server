@@ -95,7 +95,7 @@ class FileControllerTest extends ApplicationPeriodTest {
                         .contentType("application/json")
                         .param("memberId", member.getId().toString())
                         .content(getContent()))
-                .andExpect(content().string(containsString("G-06")))
+                .andExpect(content().string(containsString("G-11")))
                 .andDo(print());
     }
 
@@ -127,7 +127,7 @@ class FileControllerTest extends ApplicationPeriodTest {
                                     }
                                 ]
                                 """))
-                .andExpect(content().string(containsString("G-06")))
+                .andExpect(content().string(containsString("G-11")))
                 .andDo(print());
     }
 
