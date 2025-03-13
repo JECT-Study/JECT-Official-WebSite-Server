@@ -16,7 +16,7 @@ public enum GlobalErrorCode implements ErrorCode {
     INVALID_PERMISSION("G-08", "Invalid permission"),
     AUTHENTICATION_REQUIRED("G-09", "Authentication is required"),
     INTERNAL_SERVER_ERROR("G-10", "Internal server error"),
-    OVER_PERIOD("G-06", "모집 기간이 아닙니다.");
+    OVER_PERIOD("G-11", "모집 기간이 아닙니다.");
 
     private final String code;
     private final String message;
