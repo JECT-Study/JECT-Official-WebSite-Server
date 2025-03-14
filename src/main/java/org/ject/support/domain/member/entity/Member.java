@@ -67,4 +67,8 @@ public class Member extends BaseTimeEntity {
         this.name = name;
         this.phoneNumber = phoneNumber;
     }
+
+    public void updatePin(String pin) {
+        this.pin = pin;
+    }
 }

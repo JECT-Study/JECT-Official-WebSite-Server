@@ -1,16 +1,5 @@
 package org.ject.support.domain.recruit.controller;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.ject.support.domain.member.Role.USER;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -19,9 +8,11 @@ import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
+import org.ject.support.external.dynamodb.domain.CompositeKey;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.ject.support.testconfig.AuthenticatedUser;
 import org.ject.support.testconfig.IntegrationTest;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +22,18 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.ject.support.domain.member.Role.USER;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // Redis 관련 설정을 제외하고 필요한 설정만 포함합니다
 @IntegrationTest
@@ -85,6 +88,11 @@ class ApplyControllerTest extends ApplicationPeriodTest {
                 .pin("123456") // PIN 필드 추가
                 .build();
         memberRepository.save(member);
+    }
+
+    @AfterEach
+    void tearDown() {
+        temporaryApplicationRepository.deleteAll();
     }
 
     @Test
@@ -151,5 +159,45 @@ class ApplyControllerTest extends ApplicationPeriodTest {
                 );
 
         resultActions.andDo(print());
+    }
+
+    @Test
+    @DisplayName("change job family")
+    @AuthenticatedUser
+    void change_job_family() throws Exception {
+        // given
+        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
+                "8", "answer 1-1 for 8",
+                "9", "answer 1-1 for 9",
+                "10", "answer 1-1 for 10"), "BE"));
+        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
+                "8", "answer 1-2 for 8",
+                "9", "answer 1-2 for 9",
+                "10", "answer 1-2 for 10"), "BE"));
+        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
+                "8", "answer 1-3 for 8",
+                "9", "answer 1-3 for 9",
+                "10", "answer 1-3 for 10"), "BE"));
+        temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of(
+                "8", "answer 2-1 for 8",
+                "9", "answer 2-1 for 9",
+                "10", "answer 2-1 for 10"), "BE"));
+        temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of(
+                "8", "answer 2-2 for 8",
+                "9", "answer 2-2 for 9",
+                "10", "answer 2-2 for 10"), "BE"));
+
+        // when, then
+        mockMvc.perform(put("/apply/job")
+                        .contentType("application/json")
+                        .content("\"FE\"")
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("SUCCESS")))
+                .andDo(print())
+                .andReturn();
+
+        assertThat(temporaryApplicationRepository.findByPartitionKey(new CompositeKey("MEMBER", "1"))).isEmpty();
+        assertThat(temporaryApplicationRepository.findByPartitionKey(new CompositeKey("MEMBER", "2"))).hasSize(2);
     }
 }

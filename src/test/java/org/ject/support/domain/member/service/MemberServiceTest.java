@@ -12,6 +12,7 @@ import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
+import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -140,5 +141,74 @@ class MemberServiceTest {
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+    }
+    
+    @Test
+    @DisplayName("핀번호 재설정 성공")
+    void updatePin_Success() {
+        // given
+        Long memberId = 1L;
+        String newPin = "654321";
+        UpdatePinRequest request = new UpdatePinRequest(newPin);
+        
+        Member member = Member.builder()
+                .id(memberId)
+                .email(TEST_EMAIL)
+                .pin(TEST_ENCODED_PIN)
+                .build();
+        
+        String newEncodedPin = "new_encoded_pin";
+        
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(passwordEncoder.matches(newPin, TEST_ENCODED_PIN)).willReturn(false); // 새 PIN이 기존과 다름
+        given(passwordEncoder.encode(newPin)).willReturn(newEncodedPin);
+        
+        // when
+        memberService.updatePin(request, memberId);
+        
+        // then
+        assertThat(member.getPin()).isEqualTo(newEncodedPin);
+        verify(memberRepository).findById(memberId);
+        verify(passwordEncoder).matches(newPin, TEST_ENCODED_PIN);
+        verify(passwordEncoder).encode(newPin);
+    }
+    
+    @Test
+    @DisplayName("핀번호 재설정 실패 - 존재하지 않는 회원")
+    void updatePin_NotFoundMember_ThrowsException() {
+        // given
+        Long memberId = 1L;
+        UpdatePinRequest request = new UpdatePinRequest("654321");
+        
+        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+        
+        // when & then
+        assertThatThrownBy(() -> memberService.updatePin(request, memberId))
+                .isInstanceOf(MemberException.class)
+                .extracting(e -> ((MemberException) e).getErrorCode())
+                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+    }
+    
+    @Test
+    @DisplayName("핀번호 재설정 실패 - 기존과 동일한 PIN 번호")
+    void updatePin_SamePin_ThrowsException() {
+        // given
+        Long memberId = 1L;
+        UpdatePinRequest request = new UpdatePinRequest(TEST_PIN);
+        
+        Member member = Member.builder()
+                .id(memberId)
+                .email(TEST_EMAIL)
+                .pin(TEST_ENCODED_PIN)
+                .build();
+        
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(true); // 기존과 같은 PIN
+        
+        // when & then
+        assertThatThrownBy(() -> memberService.updatePin(request, memberId))
+                .isInstanceOf(MemberException.class)
+                .extracting(e -> ((MemberException) e).getErrorCode())
+                .isEqualTo(MemberErrorCode.SAME_PIN);
     }
 }

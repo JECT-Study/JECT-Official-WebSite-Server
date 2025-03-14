@@ -53,4 +53,13 @@ public class MemberController {
         // 임시회원의 최초 프로필 정보 등록
         memberService.registerInitialProfile(request, memberId);
     }
+
+    @PutMapping("/pin")
+    @PreAuthorize("hasRole('ROLE_TEMP')")
+    public void resetPin(@AuthPrincipal Long memberId,
+                         @Valid @RequestBody MemberDto.UpdatePinRequest request) {
+
+        // 임시회원의 PIN 번호 재설정
+        memberService.updatePin(request, memberId);
+    }
 }

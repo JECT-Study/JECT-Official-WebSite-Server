@@ -25,4 +25,9 @@ public class TemporaryApplicationRepository extends AbstractDynamoDbRepository<T
         return findByPartitionWithSortType(partitionKey, TemporaryApplication.SK_PREFIX)
                 .stream().max(Comparator.comparing(TemporaryApplication::getTimestamp));
     }
+
+    public void deleteByMemberId(String memberId) {
+        CompositeKey partitionKey = new CompositeKey(TemporaryApplication.PK_PREFIX, memberId);
+        deleteByPartitionKey(partitionKey);
+    }
 }

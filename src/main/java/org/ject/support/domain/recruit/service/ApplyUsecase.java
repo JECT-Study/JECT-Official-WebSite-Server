@@ -7,4 +7,7 @@ public interface ApplyUsecase {
     Map<String, String> getTemporaryApplication(Long memberId);
 
     void applyTemporary(JobFamily jobFamily, Long memberId, Map<String, String> answers);
+
+
+    void changeJobFamily(Long memberId, JobFamily newJobFamily);
 }

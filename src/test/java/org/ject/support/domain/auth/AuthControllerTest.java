@@ -1,13 +1,16 @@
 package org.ject.support.domain.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.*;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.ject.support.domain.auth.AuthDto.TokenRefreshRequest;
 import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
+import org.ject.support.domain.auth.AuthDto.PinLoginRequest;
+import org.ject.support.domain.auth.AuthDto.PinLoginResponse;
 import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeOnlyResponse;
 import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeRequest;
 import org.ject.support.testconfig.ApplicationPeriodTest;
@@ -76,6 +79,40 @@ class AuthControllerTest {
         verify(authService).refreshAccessToken(TEST_MEMBER_ID, TEST_REFRESH_TOKEN);
         assertThat(result.accessToken()).isEqualTo(TEST_ACCESS_TOKEN);
     }
+    
+    @Test
+    @DisplayName("PIN 로그인 성공")
+    void loginWithPin_Success() {
+        // given
+        PinLoginRequest request = new PinLoginRequest(TEST_EMAIL, TEST_AUTH_CODE);
+        PinLoginResponse response = new PinLoginResponse(TEST_ACCESS_TOKEN, TEST_REFRESH_TOKEN);
+        
+        given(authService.loginWithPin(request.email(), request.pin()))
+            .willReturn(response);
+
+        // when
+        PinLoginResponse result = authController.loginWithPin(request);
+
+        // then
+        verify(authService).loginWithPin(TEST_EMAIL, TEST_AUTH_CODE);
+        org.assertj.core.api.Assertions.assertThat(result.accessToken()).isEqualTo(TEST_ACCESS_TOKEN);
+        org.assertj.core.api.Assertions.assertThat(result.refreshToken()).isEqualTo(TEST_REFRESH_TOKEN);
+    }
+    
+    @Test
+    @DisplayName("회원 존재 여부 확인 성공")
+    void isExistMember_Success() {
+        // given
+        given(authService.isExistMember(TEST_EMAIL))
+            .willReturn(true);
+
+        // when
+        boolean result = authController.isExistMember(TEST_EMAIL);
+
+        // then
+        verify(authService).isExistMember(TEST_EMAIL);
+        org.assertj.core.api.Assertions.assertThat(result).isTrue();
+    }
 }
 
 @SpringBootTest
@@ -116,8 +153,27 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
         // when & then
         // 인증 없이 접근 시 403 에러 발생 (hasRole('ROLE_TEMP') 설정)
         mockMvc.perform(post("/auth/refresh")
+                        
+    @DisplayName("PIN 로그인 API 인증 없이 접근 가능한지 확인")
+    void loginWithPin_WithPermitAll_ShouldAllowAccessWithoutAuthentication() throws Exception {
+        // given
+        PinLoginRequest request = new PinLoginRequest(TEST_EMAIL, TEST_AUTH_CODE);
+        
+        // when & then
+        // 인증 없이 접근 가능한지 확인 (permitAll 설정)
+        mockMvc.perform(post("/auth/login/pin")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+    }
+    
+    @Test
+    @DisplayName("회원 존재 여부 확인 API 인증 없이 접근 가능한지 확인")
+    void isExistMember_WithPermitAll_ShouldAllowAccessWithoutAuthentication() throws Exception {
+        // when & then
+        // 인증 없이 접근 가능한지 확인 (permitAll 설정)
+        mockMvc.perform(get("/auth/login/exist?email=" + TEST_EMAIL)
+                .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
 }

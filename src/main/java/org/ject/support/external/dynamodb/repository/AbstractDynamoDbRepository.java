@@ -2,8 +2,6 @@ package org.ject.support.external.dynamodb.repository;
 
 import io.awspring.cloud.dynamodb.DynamoDbTemplate;
 import jakarta.annotation.PostConstruct;
-import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.external.dynamodb.domain.CompositeKey;
 import org.ject.support.external.dynamodb.domain.EntityWithPrimaryKey;
@@ -12,6 +10,9 @@ import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 import software.amazon.awssdk.enhanced.dynamodb.model.QueryEnhancedRequest;
 import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
+
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -69,11 +70,24 @@ public abstract class AbstractDynamoDbRepository<T extends EntityWithPrimaryKey>
     }
 
     @Override
-    public void deleteAll(){
+    public void deleteAll() {
         ScanEnhancedRequest request = ScanEnhancedRequest.builder()
                 .build();
 
         dynamoDbTemplate.scan(request, entityClass)
                 .items().stream().forEach(dynamoDbTemplate::delete);
-    };
+    }
+
+    @Override
+    public void deleteByPartitionKey(final CompositeKey partitionKey) {
+        Key key = Key.builder()
+                .partitionValue(partitionKey.toString())
+                .build();
+        QueryEnhancedRequest queryEnhancedRequest = QueryEnhancedRequest.builder()
+                .queryConditional(QueryConditional.keyEqualTo(key))
+                .build();
+        dynamoDbTemplate.query(queryEnhancedRequest, entityClass)
+                .items()
+                .forEach(dynamoDbTemplate::delete);
+    }
 }
