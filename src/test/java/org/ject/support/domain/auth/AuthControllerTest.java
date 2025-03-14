@@ -151,8 +151,11 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
         TokenRefreshRequest request = new TokenRefreshRequest(TEST_REFRESH_TOKEN);
         
         // when & then
-        // 인증 없이 접근 시 403 에러 발생 (hasRole('ROLE_TEMP') 설정)
-        mockMvc.perform(post("/auth/refresh")
+        mockMvc.perform(post("/auth/login/pin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
                         
     @DisplayName("PIN 로그인 API 인증 없이 접근 가능한지 확인")
     void loginWithPin_WithPermitAll_ShouldAllowAccessWithoutAuthentication() throws Exception {

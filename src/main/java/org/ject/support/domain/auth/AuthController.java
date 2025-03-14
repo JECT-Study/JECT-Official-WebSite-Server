@@ -42,7 +42,8 @@ public class AuthController {
     @PreAuthorize("hasRole('ROLE_TEMP')")
     public TokenRefreshResponse refreshToken(@AuthPrincipal Long memberId, @RequestBody TokenRefreshRequest request) {
         return authService.refreshAccessToken(memberId, request.refreshToken());
-      
+    }
+
     /**
      * PIN 로그인 API
      * 이메일과 PIN 번호로 로그인하고 액세스 토큰과 리프레시 토큰을 발급합니다.

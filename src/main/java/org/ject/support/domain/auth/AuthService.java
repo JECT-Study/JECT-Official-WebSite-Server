@@ -112,17 +112,18 @@ public class AuthService {
             if (!jwtTokenProvider.validateToken(refreshToken)) {
                 throw new AuthException(INVALID_REFRESH_TOKEN);
             }
-            
+
             // 새 액세스 토큰 발급
             String newAccessToken = jwtTokenProvider.reissueAccessToken(refreshToken, memberId);
-            
+
             return new TokenRefreshResponse(newAccessToken);
         } catch (ExpiredJwtException e) {
             throw new AuthException(EXPIRED_REFRESH_TOKEN);
         } catch (JwtException e) {
             throw new AuthException(INVALID_REFRESH_TOKEN);
         }
-      
+    }
+
     public boolean isExistMember(String email) {
         return memberRepository.existsByEmail(email);
     }

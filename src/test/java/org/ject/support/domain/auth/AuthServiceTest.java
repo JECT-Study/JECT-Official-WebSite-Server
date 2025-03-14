@@ -169,9 +169,11 @@ class AuthServiceTest {
 
         // when & then
         assertThatThrownBy(() -> authService.refreshAccessToken(TEST_MEMBER_ID, TEST_REFRESH_TOKEN))
-            .isInstanceOf(AuthException.class)
-            .extracting(e -> ((AuthException) e).getErrorCode())
-            .isEqualTo(INVALID_REFRESH_TOKEN);
+                .isInstanceOf(AuthException.class)
+                .extracting(e -> ((AuthException) e).getErrorCode())
+                .isEqualTo(INVALID_REFRESH_TOKEN);
+    }
+
     @DisplayName("PIN 로그인 성공")
     void loginWithPin_Success() {
         // given
