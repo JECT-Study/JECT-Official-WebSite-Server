@@ -30,7 +30,9 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.ject.support.domain.member.Role.USER;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -104,12 +106,30 @@ class ApplyControllerTest extends ApplicationPeriodTest {
                         .param("jobFamily", "BE")
                         .content("""
                                 {
-                                  "1": "answer1",
-                                  "2": "answer2",
-                                  "3": "answer3",
-                                  "4": "answer4",
-                                  "5": "answer5"
-                                }""")
+                                    "answers": {
+                                        "8": "8번 답변임",
+                                        "9": "9번 답변임~",
+                                        "10": "10번 답변임~~",
+                                        "11": "11번.",
+                                        "12": "12번 답변~",
+                                        "13": "13이이이임"
+                                    },
+                                    "portfolios": [
+                                        {
+                                            "fileUrl": "filrUrlA",
+                                            "fileName": "fileNameA",
+                                            "fileSize": "105021",
+                                            "sequence": "1"
+                                        },
+                                        {
+                                            "fileUrl": "filrUrlB",
+                                            "fileName": "fileNameB",
+                                            "fileSize": "105021",
+                                            "sequence": "2"
+                                        }
+                                    ]
+                                }
+                                """)
                 )
                 .andExpect(status().isOk())
                 .andDo(print())
@@ -126,13 +146,30 @@ class ApplyControllerTest extends ApplicationPeriodTest {
                         .param("jobFamily", "BE")
                         .content("""
                                 {
-                                  "1": "answer1",
-                                  "2": "answer2",
-                                  "3": "answer3",
-                                  "4": "answer4",
-                                  "5": "answer5",
-                                  "6": "answer6"
-                                }""")
+                                    "answers": {
+                                        "8": "8번 답변임",
+                                        "9": "9번 답변임~",
+                                        "10": "10번 답변임~~",
+                                        "11": "11번.",
+                                        "12": "12번 답변~",
+                                        "14": "???"
+                                    },
+                                    "portfolios": [
+                                        {
+                                            "fileUrl": "filrUrlA",
+                                            "fileName": "fileNameA",
+                                            "fileSize": "105021",
+                                            "sequence": "1"
+                                        },
+                                        {
+                                            "fileUrl": "filrUrlB",
+                                            "fileName": "fileNameB",
+                                            "fileSize": "105021",
+                                            "sequence": "2"
+                                        }
+                                    ]
+                                }
+                                """)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("QUESTION_NOT_FOUND")))
@@ -144,9 +181,17 @@ class ApplyControllerTest extends ApplicationPeriodTest {
     @AuthenticatedUser
     void inquire_temporal_application() throws Exception {
         // given: 테스트 데이터 저장
-        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of("1", "답변1", "2", "답변2"), "PM"));
-        temporaryApplicationRepository.save(
-                new TemporaryApplication("1", Map.of("3", "답변3", "4", "답변4", "5", "답변5"), "BE"));
+        temporaryApplicationRepository.save(createTemporaryApplication(
+                "1",
+                Map.of("1", "답변1", "2", "답변2"),
+                "PM",
+                List.of(Map.of("key", "value"))));
+        temporaryApplicationRepository.save(createTemporaryApplication(
+                "1",
+                Map.of("3", "답변3", "4", "답변4", "5", "답변5"),
+                "BE",
+                List.of(Map.of("fileName", "nameNameA", "fileUrl", "https://~~A"),
+                        Map.of("fileName", "nameNameB", "fileUrl", "https://~~B"))));
 
         // when & then
         ResultActions resultActions = mockMvc.perform(get("/apply/temp"))
@@ -155,7 +200,9 @@ class ApplyControllerTest extends ApplicationPeriodTest {
                 .andExpectAll(
                         content().string(containsString("답변3")),
                         content().string(containsString("답변4")),
-                        content().string(containsString("답변5"))
+                        content().string(containsString("답변5")),
+                        content().string(containsString("fileName")),
+                        content().string(containsString("fileUrl"))
                 );
 
         resultActions.andDo(print());
@@ -169,23 +216,23 @@ class ApplyControllerTest extends ApplicationPeriodTest {
         temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
                 "8", "answer 1-1 for 8",
                 "9", "answer 1-1 for 9",
-                "10", "answer 1-1 for 10"), "BE"));
+                "10", "answer 1-1 for 10"), "BE", List.of(Map.of("key", "value"))));
         temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
                 "8", "answer 1-2 for 8",
                 "9", "answer 1-2 for 9",
-                "10", "answer 1-2 for 10"), "BE"));
+                "10", "answer 1-2 for 10"), "BE", List.of(Map.of("key", "value"))));
         temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
                 "8", "answer 1-3 for 8",
                 "9", "answer 1-3 for 9",
-                "10", "answer 1-3 for 10"), "BE"));
+                "10", "answer 1-3 for 10"), "BE", List.of(Map.of("key", "value"))));
         temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of(
                 "8", "answer 2-1 for 8",
                 "9", "answer 2-1 for 9",
-                "10", "answer 2-1 for 10"), "BE"));
+                "10", "answer 2-1 for 10"), "BE", List.of(Map.of("key", "value"))));
         temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of(
                 "8", "answer 2-2 for 8",
                 "9", "answer 2-2 for 9",
-                "10", "answer 2-2 for 10"), "BE"));
+                "10", "answer 2-2 for 10"), "BE", List.of(Map.of("key", "value"))));
 
         // when, then
         mockMvc.perform(put("/apply/job")
@@ -199,5 +246,12 @@ class ApplyControllerTest extends ApplicationPeriodTest {
 
         assertThat(temporaryApplicationRepository.findByPartitionKey(new CompositeKey("MEMBER", "1"))).isEmpty();
         assertThat(temporaryApplicationRepository.findByPartitionKey(new CompositeKey("MEMBER", "2"))).hasSize(2);
+    }
+
+    private TemporaryApplication createTemporaryApplication(String memberId,
+                                                            Map<String, String> answers,
+                                                            String jobFamily,
+                                                            List<Map<String, String>> portfolios) {
+        return new TemporaryApplication(memberId, answers, jobFamily, portfolios);
     }
 }

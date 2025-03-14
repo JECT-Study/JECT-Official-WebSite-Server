@@ -1,11 +1,5 @@
 package org.ject.support.external.dynamodb.repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
 import org.ject.support.external.dynamodb.domain.CompositeKey;
@@ -15,6 +9,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
 class TemporaryApplicationRepositoryTest {
@@ -32,7 +33,8 @@ class TemporaryApplicationRepositoryTest {
     @DisplayName("dynamodb repository save test")
     void dynamodb_save() {
         // given
-        TemporaryApplication temporaryApplication = new TemporaryApplication("1", Map.of("key", "value"), "BE");
+        TemporaryApplication temporaryApplication =
+                createTemporaryApplication("1", Map.of("key", "value"), "BE", List.of(Map.of("key", "value")));
 
         // when
         temporaryApplicationRepository.save(temporaryApplication);
@@ -50,13 +52,20 @@ class TemporaryApplicationRepositoryTest {
     @DisplayName("dynamodb repository find by partition key test")
     void find_by_partition_key() {
         // given
-        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("3", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("4", Map.of("key", "value"), "BE"));
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("1", Map.of("key", "value"), "BE", List.of(Map.of("key", "value"))));
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("1", Map.of("key", "value"), "BE", List.of(Map.of("key", "value"))));
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("1", Map.of("key", "value"), "BE", List.of(Map.of("key", "value"))));
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("2", Map.of("key", "value"), "FE", List.of(Map.of("key", "value"))));
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("2", Map.of("key", "value"), "FE", List.of(Map.of("key", "value"))));
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("3", Map.of("key", "value"), "BE", List.of(Map.of("key", "value"))));
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("4", Map.of("key", "value"), "BE", List.of(Map.of("key", "value"))));
 
         // when
         String prefix = "MEMBER";
@@ -80,13 +89,27 @@ class TemporaryApplicationRepositoryTest {
     @DisplayName("dynamodb repository find by partition with sort type test")
     void find_by_partition_with_sort_type() {
         // given
-        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("3", Map.of("key", "value"), "BE"));
-        temporaryApplicationRepository.save(new TemporaryApplication("4", Map.of("key", "value"), "BE"));
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("1", Map.of("key", "value"), "BE", List.of(Map.of("key", "value")))
+        );
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("1", Map.of("key", "value"), "BE", List.of(Map.of("key", "value")))
+        );
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("1", Map.of("key", "value"), "BE", List.of(Map.of("key", "value")))
+        );
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("2", Map.of("key", "value"), "FE", List.of(Map.of("key", "value")))
+        );
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("2", Map.of("key", "value"), "FE", List.of(Map.of("key", "value")))
+        );
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("3", Map.of("key", "value"), "BE", List.of(Map.of("key", "value")))
+        );
+        temporaryApplicationRepository.save(
+                createTemporaryApplication("4", Map.of("key", "value"), "BE", List.of(Map.of("key", "value")))
+        );
 
         // when
         String prefix = "TIMESTAMP";
@@ -109,26 +132,26 @@ class TemporaryApplicationRepositoryTest {
     @DisplayName("dynamodb repository delete by member id test")
     void delete_by_member_id() {
         // given
-        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
+        temporaryApplicationRepository.save(createTemporaryApplication("1", Map.of(
                 "8", "answer 1-1 for 8",
                 "9", "answer 1-1 for 9",
-                "10", "answer 1-1 for 10"), "BE"));
+                "10", "answer 1-1 for 10"), "BE", List.of(Map.of("key", "value"))));
         temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
                 "8", "answer 1-2 for 8",
                 "9", "answer 1-2 for 9",
-                "10", "answer 1-2 for 10"), "BE"));
+                "10", "answer 1-2 for 10"), "BE", List.of(Map.of("key", "value"))));
         temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
                 "8", "answer 1-3 for 8",
                 "9", "answer 1-3 for 9",
-                "10", "answer 1-3 for 10"), "BE"));
+                "10", "answer 1-3 for 10"), "BE", List.of(Map.of("key", "value"))));
         temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of(
                 "8", "answer 2-1 for 8",
                 "9", "answer 2-1 for 9",
-                "10", "answer 2-1 for 10"), "BE"));
+                "10", "answer 2-1 for 10"), "BE", List.of(Map.of("key", "value"))));
         temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of(
                 "8", "answer 2-2 for 8",
                 "9", "answer 2-2 for 9",
-                "10", "answer 2-2 for 10"), "BE"));
+                "10", "answer 2-2 for 10"), "BE", List.of(Map.of("key", "value"))));
 
         // when
         temporaryApplicationRepository.deleteByPartitionKey(new CompositeKey("MEMBER", "1"));
@@ -141,5 +164,12 @@ class TemporaryApplicationRepositoryTest {
         List<TemporaryApplication> temporaryApplicationsByMemberId2 =
                 temporaryApplicationRepository.findByPartitionKey(new CompositeKey("MEMBER", "2"));
         assertThat(temporaryApplicationsByMemberId2).hasSize(2);
+    }
+
+    private TemporaryApplication createTemporaryApplication(String memberId,
+                                                            Map<String, String> answers,
+                                                            String jobFamily,
+                                                            List<Map<String, String>> portfolios) {
+        return new TemporaryApplication(memberId, answers, jobFamily, portfolios);
     }
 }

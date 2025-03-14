@@ -30,6 +30,9 @@ public class Portfolio extends BaseTimeEntity {
     @Column(nullable = false)
     private Long fileSize;
 
+    @Column(nullable = false)
+    private int sequence;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_form_id", nullable = false)
     private ApplicationForm applicationForm;

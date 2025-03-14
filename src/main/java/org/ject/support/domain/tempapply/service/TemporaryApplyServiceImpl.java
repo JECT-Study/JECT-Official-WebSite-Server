@@ -1,8 +1,10 @@
 package org.ject.support.domain.tempapply.service;
 
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.recruit.dto.ApplyTemporaryResponse;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.exception.TemporaryApplicationErrorCode;
 import org.ject.support.domain.tempapply.exception.TemporaryApplicationException;
@@ -15,20 +17,21 @@ public class TemporaryApplyServiceImpl implements TemporaryApplyService {
     private final TemporaryApplicationRepository temporaryApplicationRepository;
 
     @Override
-    public Map<String, String> findMembersRecentTemporaryApplication(final Long memberId) {
+    public ApplyTemporaryResponse findMembersRecentTemporaryApplication(final Long memberId) {
         TemporaryApplication latestApplication =
                 temporaryApplicationRepository.findLatestByMemberId(memberId.toString())
                         .orElseThrow(() -> new TemporaryApplicationException(TemporaryApplicationErrorCode.NOT_FOUND));
 
-        return latestApplication.getAnswers();
+        return ApplyTemporaryResponse.of(latestApplication.getAnswers(), latestApplication.getPortfolios());
     }
 
     @Override
     public void saveTemporaryApplication(final Long memberId,
                                          final Map<String, String> answers,
-                                         final JobFamily jobFamily) {
+                                         final JobFamily jobFamily,
+                                         final List<Map<String, String>> portfolios) {
         TemporaryApplication temporaryApplication =
-                new TemporaryApplication(memberId.toString(), answers, jobFamily.name());
+                new TemporaryApplication(memberId.toString(), answers, jobFamily.name(), portfolios);
         temporaryApplicationRepository.save(temporaryApplication);
     }
 
