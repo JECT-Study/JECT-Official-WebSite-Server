@@ -114,6 +114,7 @@ public class AuthService {
             }
 
             Long memberId = jwtTokenProvider.extractMemberId(refreshToken);
+          
             // 새 액세스 토큰 발급
             String newAccessToken = jwtTokenProvider.reissueAccessToken(refreshToken, memberId);
 
