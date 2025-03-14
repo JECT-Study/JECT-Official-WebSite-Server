@@ -18,9 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 @IntegrationTest
 class TemporaryApplicationRepositoryTest {
+
     @Autowired
     private TemporaryApplicationRepository temporaryApplicationRepository;
-
 
     @AfterEach
     void tearDown() {
@@ -33,6 +33,7 @@ class TemporaryApplicationRepositoryTest {
     void dynamodb_save() {
         // given
         TemporaryApplication temporaryApplication = new TemporaryApplication("1", Map.of("key", "value"), "BE");
+
         // when
         temporaryApplicationRepository.save(temporaryApplication);
 
@@ -56,12 +57,13 @@ class TemporaryApplicationRepositoryTest {
         temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of("key", "value"), "BE"));
         temporaryApplicationRepository.save(new TemporaryApplication("3", Map.of("key", "value"), "BE"));
         temporaryApplicationRepository.save(new TemporaryApplication("4", Map.of("key", "value"), "BE"));
+
         // when
         String prefix = "MEMBER";
         List<TemporaryApplication> members1 = temporaryApplicationRepository.findByPartitionKey(
                 new CompositeKey(prefix, "1"));
-        // then
 
+        // then
         assertThat(members1).hasSize(3);
         assertThat(members1).allMatch(temporaryApplication -> temporaryApplication.getMemberId().equals("1"));
         assertThat(members1).isSortedAccordingTo(Comparator.comparing(TemporaryApplication::getTimestamp));
@@ -85,6 +87,7 @@ class TemporaryApplicationRepositoryTest {
         temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of("key", "value"), "BE"));
         temporaryApplicationRepository.save(new TemporaryApplication("3", Map.of("key", "value"), "BE"));
         temporaryApplicationRepository.save(new TemporaryApplication("4", Map.of("key", "value"), "BE"));
+
         // when
         String prefix = "TIMESTAMP";
         List<TemporaryApplication> members1 = temporaryApplicationRepository.findByPartitionWithSortType(
@@ -101,4 +104,42 @@ class TemporaryApplicationRepositoryTest {
         assertThat(members2).isSortedAccordingTo(Comparator.comparing(TemporaryApplication::getTimestamp));
     }
 
+    @Order(4)
+    @Test
+    @DisplayName("dynamodb repository delete by member id test")
+    void delete_by_member_id() {
+        // given
+        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
+                "8", "answer 1-1 for 8",
+                "9", "answer 1-1 for 9",
+                "10", "answer 1-1 for 10"), "BE"));
+        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
+                "8", "answer 1-2 for 8",
+                "9", "answer 1-2 for 9",
+                "10", "answer 1-2 for 10"), "BE"));
+        temporaryApplicationRepository.save(new TemporaryApplication("1", Map.of(
+                "8", "answer 1-3 for 8",
+                "9", "answer 1-3 for 9",
+                "10", "answer 1-3 for 10"), "BE"));
+        temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of(
+                "8", "answer 2-1 for 8",
+                "9", "answer 2-1 for 9",
+                "10", "answer 2-1 for 10"), "BE"));
+        temporaryApplicationRepository.save(new TemporaryApplication("2", Map.of(
+                "8", "answer 2-2 for 8",
+                "9", "answer 2-2 for 9",
+                "10", "answer 2-2 for 10"), "BE"));
+
+        // when
+        temporaryApplicationRepository.deleteByPartitionKey(new CompositeKey("MEMBER", "1"));
+
+        // then
+        List<TemporaryApplication> temporaryApplicationsByMemberId1 =
+                temporaryApplicationRepository.findByPartitionKey(new CompositeKey("MEMBER", "1"));
+        assertThat(temporaryApplicationsByMemberId1).isEmpty();
+
+        List<TemporaryApplication> temporaryApplicationsByMemberId2 =
+                temporaryApplicationRepository.findByPartitionKey(new CompositeKey("MEMBER", "2"));
+        assertThat(temporaryApplicationsByMemberId2).hasSize(2);
+    }
 }
