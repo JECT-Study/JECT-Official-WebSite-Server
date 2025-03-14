@@ -124,6 +124,7 @@ class AuthServiceTest {
     void refreshAccessToken_Success() {
         // given
         given(jwtTokenProvider.validateToken(TEST_REFRESH_TOKEN)).willReturn(true);
+        given(jwtTokenProvider.extractMemberId(TEST_REFRESH_TOKEN)).willReturn(TEST_MEMBER_ID);
         given(jwtTokenProvider.reissueAccessToken(TEST_REFRESH_TOKEN, TEST_MEMBER_ID)).willReturn(TEST_ACCESS_TOKEN);
 
         // when
