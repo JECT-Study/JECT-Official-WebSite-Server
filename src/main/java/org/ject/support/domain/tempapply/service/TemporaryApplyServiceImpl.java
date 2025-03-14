@@ -31,4 +31,16 @@ public class TemporaryApplyServiceImpl implements TemporaryApplyService {
                 new TemporaryApplication(memberId.toString(), answers, jobFamily.name());
         temporaryApplicationRepository.save(temporaryApplication);
     }
+
+    @Override
+    public boolean hasSameJobFamilyWithRecentTemporaryApplication(final Long memberId, final JobFamily jobFamily) {
+        TemporaryApplication temporaryApplication = temporaryApplicationRepository.findLatestByMemberId(memberId.toString())
+                .orElseThrow(() -> new TemporaryApplicationException(TemporaryApplicationErrorCode.NOT_FOUND));
+        return temporaryApplication.isSameJobFamily(jobFamily);
+    }
+
+    @Override
+    public void deleteTemporaryApplicationsByMemberId(final Long memberId) {
+        temporaryApplicationRepository.deleteByMemberId(memberId.toString());
+    }
 }
