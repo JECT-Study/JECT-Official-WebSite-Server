@@ -16,11 +16,9 @@ import io.jsonwebtoken.JwtException;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
 
 import java.util.Optional;
 
-import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.auth.AuthDto.PinLoginResponse;
 import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeOnlyResponse;
 import org.ject.support.domain.member.Role;
@@ -129,7 +127,7 @@ class AuthServiceTest {
         given(jwtTokenProvider.reissueAccessToken(TEST_REFRESH_TOKEN, TEST_MEMBER_ID)).willReturn(TEST_ACCESS_TOKEN);
 
         // when
-        TokenRefreshResponse result = authService.refreshAccessToken(TEST_MEMBER_ID, TEST_REFRESH_TOKEN);
+        TokenRefreshResponse result = authService.refreshAccessToken(TEST_REFRESH_TOKEN);
 
         // then
         assertThat(result.accessToken()).isEqualTo(TEST_ACCESS_TOKEN);
@@ -142,7 +140,7 @@ class AuthServiceTest {
         given(jwtTokenProvider.validateToken(TEST_REFRESH_TOKEN)).willReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> authService.refreshAccessToken(TEST_MEMBER_ID, TEST_REFRESH_TOKEN))
+        assertThatThrownBy(() -> authService.refreshAccessToken(TEST_REFRESH_TOKEN))
             .isInstanceOf(AuthException.class)
             .extracting(e -> ((AuthException) e).getErrorCode())
             .isEqualTo(INVALID_REFRESH_TOKEN);
@@ -155,7 +153,7 @@ class AuthServiceTest {
         given(jwtTokenProvider.validateToken(TEST_REFRESH_TOKEN)).willThrow(new ExpiredJwtException(null, null, "만료된 토큰"));
 
         // when & then
-        assertThatThrownBy(() -> authService.refreshAccessToken(TEST_MEMBER_ID, TEST_REFRESH_TOKEN))
+        assertThatThrownBy(() -> authService.refreshAccessToken(TEST_REFRESH_TOKEN))
             .isInstanceOf(AuthException.class)
             .extracting(e -> ((AuthException) e).getErrorCode())
             .isEqualTo(EXPIRED_REFRESH_TOKEN);
@@ -168,7 +166,7 @@ class AuthServiceTest {
         given(jwtTokenProvider.validateToken(TEST_REFRESH_TOKEN)).willThrow(JwtException.class);
 
         // when & then
-        assertThatThrownBy(() -> authService.refreshAccessToken(TEST_MEMBER_ID, TEST_REFRESH_TOKEN))
+        assertThatThrownBy(() -> authService.refreshAccessToken(TEST_REFRESH_TOKEN))
                 .isInstanceOf(AuthException.class)
                 .extracting(e -> ((AuthException) e).getErrorCode())
                 .isEqualTo(INVALID_REFRESH_TOKEN);
@@ -188,7 +186,7 @@ class AuthServiceTest {
         given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(true);
         given(jwtTokenProvider.createAuthenticationByMember(member)).willReturn(authentication);
         given(jwtTokenProvider.createAccessToken(authentication, TEST_MEMBER_ID)).willReturn(TEST_ACCESS_TOKEN);
-        given(jwtTokenProvider.createRefreshToken(authentication)).willReturn(TEST_REFRESH_TOKEN);
+        given(jwtTokenProvider.createRefreshToken(authentication, member.getId())).willReturn(TEST_REFRESH_TOKEN);
         
         // when
         PinLoginResponse response = authService.loginWithPin(TEST_EMAIL, TEST_PIN);

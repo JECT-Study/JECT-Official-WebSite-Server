@@ -75,7 +75,7 @@ class JwtTokenProviderTest {
     @DisplayName("Refresh 토큰 생성 테스트")
     void createRefreshToken() {
         // when
-        String token = jwtTokenProvider.createRefreshToken(authentication);
+        String token = jwtTokenProvider.createRefreshToken(authentication, testMember.getId());
 
         // then
         assertThat(token).isNotNull();
@@ -135,7 +135,7 @@ class JwtTokenProviderTest {
     @DisplayName("토큰 재발급 테스트")
     void reissueAccessToken() {
         // given
-        String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
+        String refreshToken = jwtTokenProvider.createRefreshToken(authentication, testMember.getId());
 
         // when
         String newAccessToken = jwtTokenProvider.reissueAccessToken(refreshToken, testMember.getId());

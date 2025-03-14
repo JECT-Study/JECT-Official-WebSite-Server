@@ -75,7 +75,7 @@ public class AuthService {
         // 인증 및 토큰 발급
         Authentication authentication = jwtTokenProvider.createAuthenticationByMember(member);
         String accessToken = jwtTokenProvider.createAccessToken(authentication, member.getId());
-        String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
+        String refreshToken = jwtTokenProvider.createRefreshToken(authentication, member.getId());
         
         return new PinLoginResponse(accessToken, refreshToken);
     }
@@ -106,13 +106,14 @@ public class AuthService {
      * @throws AuthException 리프레시 토큰이 유효하지 않거나 만료된 경우
      */
     @Transactional
-    public TokenRefreshResponse refreshAccessToken(Long memberId, String refreshToken) {
+    public TokenRefreshResponse refreshAccessToken(String refreshToken) {
         try {
             // 리프레시 토큰 유효성 검증
             if (!jwtTokenProvider.validateToken(refreshToken)) {
                 throw new AuthException(INVALID_REFRESH_TOKEN);
             }
 
+            Long memberId = jwtTokenProvider.extractMemberId(refreshToken);
             // 새 액세스 토큰 발급
             String newAccessToken = jwtTokenProvider.reissueAccessToken(refreshToken, memberId);
 

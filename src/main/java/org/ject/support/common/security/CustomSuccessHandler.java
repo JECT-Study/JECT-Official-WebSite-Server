@@ -24,7 +24,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         String accessToken = jwtTokenProvider.createAccessToken(authentication, customUserDetails.getMemberId());
-        String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
+        String refreshToken = jwtTokenProvider.createRefreshToken(authentication, customUserDetails.getMemberId());
 
         response.addCookie(jwtCookieProvider.createRefreshCookie(refreshToken));
         response.addCookie(jwtCookieProvider.createAccessCookie(accessToken));

@@ -48,7 +48,7 @@ public class MemberService {
         // 인증 및 토큰 발급
         Authentication authentication = jwtTokenProvider.createAuthenticationByMember(member);
         String accessToken = jwtTokenProvider.createAccessToken(authentication, member.getId());
-        String refreshToken = jwtTokenProvider.createRefreshToken(authentication);
+        String refreshToken = jwtTokenProvider.createRefreshToken(authentication, member.getId());
 
         return new RegisterResponse(accessToken, refreshToken);
     }

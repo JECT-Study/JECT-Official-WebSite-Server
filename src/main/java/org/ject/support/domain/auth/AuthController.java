@@ -39,9 +39,9 @@ public class AuthController {
      * 리프레시 토큰이 유효한 경우 새로운 액세스 토큰을 발급합니다.
      */
     @PostMapping("/refresh")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
-    public TokenRefreshResponse refreshToken(@AuthPrincipal Long memberId, @RequestBody TokenRefreshRequest request) {
-        return authService.refreshAccessToken(memberId, request.refreshToken());
+    @PreAuthorize("permitAll()")
+    public TokenRefreshResponse refreshToken(@RequestBody TokenRefreshRequest request) {
+        return authService.refreshAccessToken(request.refreshToken());
     }
 
     /**

@@ -73,7 +73,7 @@ class MemberServiceTest {
         given(memberRepository.save(any(Member.class))).willReturn(member);
         given(jwtTokenProvider.createAuthenticationByMember(any(Member.class))).willReturn(authentication);
         given(jwtTokenProvider.createAccessToken(any(Authentication.class), any())).willReturn(TEST_ACCESS_TOKEN);
-        given(jwtTokenProvider.createRefreshToken(any(Authentication.class))).willReturn(TEST_REFRESH_TOKEN);
+        given(jwtTokenProvider.createRefreshToken(any(Authentication.class), any())).willReturn(TEST_REFRESH_TOKEN);
 
         // when
         RegisterResponse response = memberService.registerTempMember(request, TEST_EMAIL);

@@ -63,9 +63,10 @@ public class JwtTokenProvider {
     /**
      * Refresh 토큰 생성
      */
-    public String createRefreshToken(Authentication authentication) {
+    public String createRefreshToken(Authentication authentication, Long memberId) {
         validateAuthentication(authentication);
         Claims claims = Jwts.claims();
+        claims.put("memberId", memberId);
         claims.setSubject(authentication.getName());
         String role = ((CustomUserDetails) authentication.getPrincipal()).getAuthorities().iterator().next().getAuthority();
         claims.put("role", role);

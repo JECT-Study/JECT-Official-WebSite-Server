@@ -69,14 +69,14 @@ class AuthControllerTest {
         TokenRefreshRequest request = new TokenRefreshRequest(TEST_REFRESH_TOKEN);
         TokenRefreshResponse response = new TokenRefreshResponse(TEST_ACCESS_TOKEN);
         
-        given(authService.refreshAccessToken(TEST_MEMBER_ID, request.refreshToken()))
+        given(authService.refreshAccessToken(request.refreshToken()))
             .willReturn(response);
 
         // when
-        TokenRefreshResponse result = authController.refreshToken(TEST_MEMBER_ID, request);
+        TokenRefreshResponse result = authController.refreshToken(request);
 
         // then
-        verify(authService).refreshAccessToken(TEST_MEMBER_ID, TEST_REFRESH_TOKEN);
+        verify(authService).refreshAccessToken(TEST_REFRESH_TOKEN);
         assertThat(result.accessToken()).isEqualTo(TEST_ACCESS_TOKEN);
     }
     
