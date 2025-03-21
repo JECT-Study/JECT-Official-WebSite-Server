@@ -13,6 +13,8 @@ import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.ject.support.common.security.CustomUserDetails;
+import org.ject.support.domain.member.Role;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -87,17 +89,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
     }
     
-    /**
-     * 이메일 기반으로 verification 인증 정보 생성
-     * 이 인증은 회원 등록 API에만 접근 가능하도록 제한된 권한을 가짐
-     */
     private Authentication createVerificationAuthentication(String email) {
         // 임시 인증 정보 생성 (이메일만 포함, 권한은 VERIFICATION 으로 제한)
         List<GrantedAuthority> authorities = Collections.singletonList(
                 new SimpleGrantedAuthority("ROLE_VERIFICATION"));
         
+        // String 대신 CustomUserDetails 객체 생성
+        CustomUserDetails userDetails = new CustomUserDetails(email, null, Role.VERIFICATION); // 또는 적절한 Role 사용
+        
         return new UsernamePasswordAuthenticationToken(
-                email, "", authorities);
+                userDetails, "", authorities);
     }
 }
 

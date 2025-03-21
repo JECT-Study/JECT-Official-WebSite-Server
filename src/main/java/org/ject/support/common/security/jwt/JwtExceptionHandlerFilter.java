@@ -5,6 +5,7 @@ import static org.ject.support.common.exception.GlobalErrorCode.INVALID_ACCESS_T
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -42,9 +43,14 @@ public class JwtExceptionHandlerFilter extends OncePerRequestFilter {
         } catch (AuthenticationException e) {
             setErrorResponse(response, INVALID_ACCESS_TOKEN);
             log.error("AuthenticationException: {}", e.getMessage());
-        } catch (Exception e) {
-            setErrorResponse(response, INTERNAL_SERVER_ERROR);
-            log.error("Exception: {}", e.getMessage());
+        } catch (ServletException e) {
+            if (e.getCause() instanceof ClassCastException) {
+                setErrorResponse(response, INVALID_ACCESS_TOKEN);
+                log.error("ClassCastException: {}", e.getCause().getMessage());
+            } else {
+                setErrorResponse(response, INTERNAL_SERVER_ERROR);
+                log.error("Exception: {}", e.getMessage());
+            }
         }
     }
 
