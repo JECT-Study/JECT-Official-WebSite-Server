@@ -4,5 +4,5 @@ import java.time.LocalDateTime;
 import lombok.Builder;
 
 @Builder
-public record UploadFileResponse(String keyName, String presignedUrl, LocalDateTime expiration) {
+public record UploadFileResponse(String cdnUrl, String presignedUrl, LocalDateTime expiration) {
 }

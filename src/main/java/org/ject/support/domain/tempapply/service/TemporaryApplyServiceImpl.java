@@ -24,7 +24,7 @@ public class TemporaryApplyServiceImpl implements TemporaryApplyService {
                 temporaryApplicationRepository.findLatestByMemberId(memberId.toString())
                         .orElseThrow(() -> new TemporaryApplicationException(TemporaryApplicationErrorCode.NOT_FOUND));
 
-        return ApplyTemporaryResponse.of(latestApplication.getAnswers(), latestApplication.getPortfolios());
+        return ApplyTemporaryResponse.from(latestApplication);
     }
 
     @Override

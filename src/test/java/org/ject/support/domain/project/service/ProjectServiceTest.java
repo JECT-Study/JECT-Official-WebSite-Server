@@ -1,6 +1,7 @@
 package org.ject.support.domain.project.service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.ject.support.domain.member.dto.TeamMemberNames;
@@ -59,7 +60,7 @@ class ProjectServiceTest {
                 .id(1L)
                 .semester("1기")
                 .summary("summary")
-                .techStack("tech stack")
+                .techStack("java,Spring, JPA, QueryDSL,MySQL,AWS")
                 .startDate(LocalDate.of(2025, 3, 2))
                 .endDate(LocalDate.of(2025, 6, 30))
                 .description("description")
@@ -90,7 +91,6 @@ class ProjectServiceTest {
         assertThat(result.teamMemberNames().productDesigners()).hasSize(1);
         assertThat(result.teamMemberNames().frontendDevelopers()).hasSize(2);
         assertThat(result.teamMemberNames().backendDevelopers()).hasSize(3);
-        assertThat(result.techStack()).isEqualTo(project.getTechStack());
         assertThat(result.description()).isEqualTo(project.getDescription());
         assertThat(result.serviceUrl()).isEqualTo(project.getServiceUrl());
         assertThat(result.serviceIntros()).hasSize(3);
@@ -123,6 +123,22 @@ class ProjectServiceTest {
         // when, then
         assertThatThrownBy(() -> projectService.findProjectDetails(1L))
                 .isInstanceOf(ProjectException.class);
+    }
+
+    @Test
+    @DisplayName("프로젝트 상세 조회 시 기술 스택을 배열 형태로 반환")
+    void get_tech_stack_for_list() {
+        // given
+        when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
+        when(memberRepository.findMemberNamesByTeamId(1L)).thenReturn(
+                new TeamMemberNames(projectManagers, productDesigners, frontendDevelopers, backendDevelopers));
+
+        // when
+        ProjectDetailResponse result = projectService.findProjectDetails(1L);
+
+        // then
+        assertThat(result.techStack()).isExactlyInstanceOf(ArrayList.class);
+        assertThat(result.techStack()).containsExactly("java", "Spring", "JPA", "QueryDSL", "MySQL", "AWS");
     }
 
     private ProjectIntro createProjectIntro(Long id, String imageUrl, Category category, int sequence) {

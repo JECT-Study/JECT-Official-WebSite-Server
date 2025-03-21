@@ -14,7 +14,7 @@ public record ProjectDetailResponse(
         LocalDate startDate,
         LocalDate endDate,
         TeamMemberNames teamMemberNames,
-        String techStack,
+        List<String> techStack,
         String description,
         String serviceUrl,
         List<ProjectIntroResponse> serviceIntros,

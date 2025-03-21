@@ -30,6 +30,9 @@ public class S3Service {
     @Value("${aws.s3.bucket}")
     private String bucket;
 
+    @Value("aws.cloudfront.domain")
+    private String cloudfrontDomain;
+
     /**
      * 지원자가 첨부한 포트폴리오 파일 이름과 해당 지원자의 식별자를 토대로 Pre-signed URL 생성
      */
@@ -63,7 +66,7 @@ public class S3Service {
                     PutObjectPresignRequest presignRequest =
                             getPutObjectPresignRequest(keyName, request.contentType(), request.contentLength());
                     PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
-                    return getUploadFileResponse(keyName, presignedRequest);
+                    return getUploadFileResponse(cloudfrontDomain + keyName, presignedRequest);
                 })
                 .toList();
     }
@@ -85,9 +88,9 @@ public class S3Service {
                 .build();
     }
 
-    private UploadFileResponse getUploadFileResponse(String keyName, PresignedPutObjectRequest presignedRequest) {
+    private UploadFileResponse getUploadFileResponse(String cdnUrl, PresignedPutObjectRequest presignedRequest) {
         return UploadFileResponse.builder()
-                .keyName(keyName)
+                .cdnUrl(cdnUrl)
                 .presignedUrl(presignedRequest.url().toExternalForm())
                 .expiration(LocalDateTime.ofInstant(presignedRequest.expiration(), ZoneId.systemDefault()))
                 .build();

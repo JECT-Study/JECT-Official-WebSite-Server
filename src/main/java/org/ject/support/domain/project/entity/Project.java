@@ -14,7 +14,10 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,8 +50,13 @@ public class Project extends BaseTimeEntity {
     @Column(length = 100, nullable = false)
     private String summary;
 
+    @Column
     private String techStack;
+
+    @Column
     private LocalDate startDate;
+
+    @Column
     private LocalDate endDate;
 
     @Column(columnDefinition = "text")
@@ -68,6 +76,12 @@ public class Project extends BaseTimeEntity {
     @OrderBy("sequence asc")
     @Builder.Default
     private List<ProjectIntro> projectIntros = new ArrayList<>();
+
+    public List<String> getTechStack() {
+        return Arrays.stream(techStack.split(","))
+                .map(String::trim)
+                .collect(Collectors.toList());
+    }
 
     public enum Category {
         MAIN, HACKATHON

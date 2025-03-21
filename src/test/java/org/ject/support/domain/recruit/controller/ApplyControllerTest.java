@@ -224,6 +224,7 @@ class ApplyControllerTest extends ApplicationPeriodTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("SUCCESS")))
                 .andExpectAll(
+                        content().string(containsString("jobFamily")),
                         content().string(containsString("답변3")),
                         content().string(containsString("답변4")),
                         content().string(containsString("답변5")),
