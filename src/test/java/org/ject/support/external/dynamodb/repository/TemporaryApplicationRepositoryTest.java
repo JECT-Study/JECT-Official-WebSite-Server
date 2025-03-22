@@ -1,6 +1,6 @@
 package org.ject.support.external.dynamodb.repository;
 
-import org.ject.support.domain.recruit.dto.ApplyTemporaryPortfolio;
+import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
 import org.ject.support.external.dynamodb.domain.CompositeKey;
@@ -208,11 +208,11 @@ class TemporaryApplicationRepositoryTest {
     private TemporaryApplication createTemporaryApplication(String memberId,
                                                             Map<String, String> answers,
                                                             String jobFamily,
-                                                            List<ApplyTemporaryPortfolio> portfolios) {
+                                                            List<ApplyPortfolioDto> portfolios) {
         return new TemporaryApplication(memberId, answers, jobFamily, portfolios);
     }
 
-    private ApplyTemporaryPortfolio createApplyTemporaryPortfolio(String sequence) {
-        return new ApplyTemporaryPortfolio("url", "name", "10202", sequence);
+    private ApplyPortfolioDto createApplyTemporaryPortfolio(String sequence) {
+        return new ApplyPortfolioDto("url", "name", "10202", sequence);
     }
 }

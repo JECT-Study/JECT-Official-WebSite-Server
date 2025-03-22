@@ -1,13 +1,9 @@
 package org.ject.support.external.s3;
 
 import com.google.common.net.MediaType;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.util.PeriodAccessible;
+import org.ject.support.domain.file.dto.Constants;
 import org.ject.support.domain.file.dto.UploadFileRequest;
 import org.ject.support.domain.file.dto.UploadFileResponse;
 import org.ject.support.domain.file.exception.FileErrorCode;
@@ -18,6 +14,12 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +41,7 @@ public class S3Service {
     @PeriodAccessible
     public List<UploadFileResponse> uploadPortfolios(Long memberId, List<UploadFileRequest> requests) {
         validatePortfolioExtension(requests);
+        validatePortfolioSize(requests);
         return createPresignedUrls(memberId, requests);
     }
 
@@ -57,6 +60,15 @@ public class S3Service {
 
     private boolean isTypePdf(String contentType) {
         return MediaType.parse(contentType).is(MediaType.PDF);
+    }
+
+    private void validatePortfolioSize(List<UploadFileRequest> requests) {
+        long totalSize = requests.stream()
+                .mapToLong(UploadFileRequest::contentLength)
+                .sum();
+        if (totalSize > Constants.PORTFOLIO_MAX_SIZE) {
+            throw new FileException(FileErrorCode.EXCEEDED_PORTFOLIO_MAX_SIZE);
+        }
     }
 
     private List<UploadFileResponse> createPresignedUrls(Long memberId, List<UploadFileRequest> requests) {

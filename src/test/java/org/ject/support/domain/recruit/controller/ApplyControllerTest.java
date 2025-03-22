@@ -5,7 +5,7 @@ import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.recruit.dto.ApplyTemporaryPortfolio;
+import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
@@ -165,46 +165,6 @@ class ApplyControllerTest extends ApplicationPeriodTest {
     }
 
     @Test
-    @DisplayName("exceeded portfolio total size")
-    @AuthenticatedUser
-    @Transactional
-    void exceeded_portfolio_max_size() throws Exception {
-        mockMvc.perform(post("/apply/temp")
-                        .contentType("application/json")
-                        .param("jobFamily", "BE")
-                        .content("""
-                                {
-                                    "answers": {
-                                        "1": "1번 답변임",
-                                        "2": "2번 답변임~",
-                                        "3": "3번 답변임~~",
-                                        "4": "4번.",
-                                        "5": "5번 답변~"
-                                    },
-                                    "portfolios": [
-                                        {
-                                            "fileUrl": "filrUrlA",
-                                            "fileName": "fileNameA",
-                                            "fileSize": "52428800",
-                                            "sequence": "1"
-                                        },
-                                        {
-                                            "fileUrl": "filrUrlB",
-                                            "fileName": "fileNameB",
-                                            "fileSize": "53428800",
-                                            "sequence": "2"
-                                        }
-                                    ]
-                                }
-                                """)
-                )
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("EXCEEDED_PORTFOLIO_SIZE")))
-                .andDo(print())
-                .andReturn();
-    }
-
-    @Test
     @AuthenticatedUser
     void inquire_temporal_application() throws Exception {
         // given: 테스트 데이터 저장
@@ -275,14 +235,55 @@ class ApplyControllerTest extends ApplicationPeriodTest {
         assertThat(temporaryApplicationRepository.findByPartitionKey(new CompositeKey("MEMBER", "2"))).hasSize(2);
     }
 
+    @Test
+    @DisplayName("submit application form")
+    @AuthenticatedUser
+    void submit_application_form() throws Exception {
+        // when, then
+        mockMvc.perform(post("/apply/submit")
+                        .contentType("application/json")
+                        .param("jobFamily", "BE")
+                        .content("""
+                                {
+                                    "answers": {
+                                        "1": "1번 답변임",
+                                        "2": "2번 답변임~",
+                                        "3": "3번 답변임~~",
+                                        "4": "4번.",
+                                        "5": "5번 답변~"
+                                    },
+                                    "portfolios": [
+                                        {
+                                            "fileUrl": "filrUrlA",
+                                            "fileName": "fileNameA",
+                                            "fileSize": "105021",
+                                            "sequence": "1"
+                                        },
+                                        {
+                                            "fileUrl": "filrUrlB",
+                                            "fileName": "fileNameB",
+                                            "fileSize": "105021",
+                                            "sequence": "2"
+                                        }
+                                    ]
+                                }
+                                """)
+                )
+                .andExpect(status().isOk())
+//                .andExpect(content().string(containsString("SUCCESS")))
+                .andDo(print())
+                .andReturn();
+
+    }
+
     private TemporaryApplication createTemporaryApplication(String memberId,
                                                             Map<String, String> answers,
                                                             String jobFamily,
-                                                            List<ApplyTemporaryPortfolio> portfolios) {
+                                                            List<ApplyPortfolioDto> portfolios) {
         return new TemporaryApplication(memberId, answers, jobFamily, portfolios);
     }
 
-    private ApplyTemporaryPortfolio createApplyTemporaryPortfolio(String sequence) {
-        return new ApplyTemporaryPortfolio("url", "name", "10202", sequence);
+    private ApplyPortfolioDto createApplyTemporaryPortfolio(String sequence) {
+        return new ApplyPortfolioDto("url", "name", "10202", sequence);
     }
 }

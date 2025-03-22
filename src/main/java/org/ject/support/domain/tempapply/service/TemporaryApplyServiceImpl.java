@@ -2,7 +2,7 @@ package org.ject.support.domain.tempapply.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.recruit.dto.ApplyTemporaryPortfolio;
+import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
 import org.ject.support.domain.recruit.dto.ApplyTemporaryResponse;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.exception.TemporaryApplicationErrorCode;
@@ -31,7 +31,7 @@ public class TemporaryApplyServiceImpl implements TemporaryApplyService {
     public void saveTemporaryApplication(final Long memberId,
                                          final Map<String, String> answers,
                                          final JobFamily jobFamily,
-                                         final List<ApplyTemporaryPortfolio> portfolios) {
+                                         final List<ApplyPortfolioDto> portfolios) {
         TemporaryApplication temporaryApplication =
                 new TemporaryApplication(memberId.toString(), answers, jobFamily.name(), portfolios);
         temporaryApplicationRepository.save(temporaryApplication);

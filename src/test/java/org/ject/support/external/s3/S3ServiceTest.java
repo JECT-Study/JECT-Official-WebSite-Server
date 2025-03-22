@@ -1,11 +1,5 @@
 package org.ject.support.external.s3;
 
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.List;
 import org.ject.support.domain.file.dto.UploadFileRequest;
 import org.ject.support.domain.file.dto.UploadFileResponse;
 import org.ject.support.domain.file.exception.FileException;
@@ -19,6 +13,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -107,6 +108,21 @@ class S3ServiceTest {
     void upload_portfolio_fail() {
         // given
         List<UploadFileRequest> invalidRequests = List.of(new UploadFileRequest("test.png", "image/png", 12345));
+
+        // when, then
+        assertThatThrownBy(() -> s3Service.uploadPortfolios(memberId, invalidRequests))
+                .isInstanceOf(FileException.class);
+    }
+
+
+    @Test
+    @DisplayName("포트폴리오 최대 용량을 초과해 업로드 실패")
+    void exceeded_portfolio_max_size() {
+        // given
+        List<UploadFileRequest> invalidRequests = List.of(
+                new UploadFileRequest("test1.pdf", "application/pdf", 53428800),
+                new UploadFileRequest("test2.pdf", "application/pdf", 53428800)
+        );
 
         // when, then
         assertThatThrownBy(() -> s3Service.uploadPortfolios(memberId, invalidRequests))

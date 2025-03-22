@@ -13,11 +13,20 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class Json2MapSerializer {
     private final ObjectMapper objectMapper;
+
     public Map<String,String> serializeAsMap(final Object object) {
         try {
             String json = objectMapper.writeValueAsString(object);
             return objectMapper.readValue(json, new TypeReference<>() {
             });
+        } catch (JsonProcessingException e) {
+            throw new GlobalException(GlobalErrorCode.JSON_MARSHALLING_FAILURE);
+        }
+    }
+
+    public String serializeAsString(final Map<String, String> map) {
+        try {
+            return objectMapper.writeValueAsString(map);
         } catch (JsonProcessingException e) {
             throw new GlobalException(GlobalErrorCode.JSON_MARSHALLING_FAILURE);
         }

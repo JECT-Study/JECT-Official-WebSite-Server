@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @IntegrationTest
 @AutoConfigureMockMvc
@@ -129,6 +130,35 @@ class FileControllerTest extends ApplicationPeriodTest {
                                 """))
                 .andExpect(content().string(containsString("G-11")))
                 .andDo(print());
+    }
+
+    @Test
+    @DisplayName("exceeded portfolio total size")
+    @AuthenticatedUser
+    @Transactional
+    void exceeded_portfolio_max_size() throws Exception {
+        mockMvc.perform(post("/upload/portfolios")
+                        .contentType("application/json")
+                        .param("memberId", member.getId().toString())
+                        .content("""
+                                [
+                                    {
+                                        "name": "test1.pdf",
+                                        "contentType": "application/pdf",
+                                        "contentLength": 53428800
+                                    },
+                                    {
+                                        "name": "test2.pdf",
+                                        "contentType": "application/pdf",
+                                        "contentLength": 52428800
+                                    }
+                                ]
+                                """)
+                )
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("EXCEEDED_PORTFOLIO_SIZE")))
+                .andDo(print())
+                .andReturn();
     }
 
     private String getContent() {

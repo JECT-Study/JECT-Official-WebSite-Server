@@ -1,6 +1,6 @@
 package org.ject.support.external.dynamodb.util;
 
-import org.ject.support.domain.recruit.dto.ApplyTemporaryPortfolio;
+import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class ApplyTemporaryPortfolioConverter implements AttributeConverter<List<ApplyTemporaryPortfolio>> {
+public class ApplyTemporaryPortfolioConverter implements AttributeConverter<List<ApplyPortfolioDto>> {
 
     private static final String FILE_URL = "fileUrl";
     private static final String FILE_NAME = "fileName";
@@ -19,7 +19,7 @@ public class ApplyTemporaryPortfolioConverter implements AttributeConverter<List
     private static final String SEQUENCE = "sequence";
 
     @Override
-    public AttributeValue transformFrom(List<ApplyTemporaryPortfolio> portfolios) {
+    public AttributeValue transformFrom(List<ApplyPortfolioDto> portfolios) {
         return AttributeValue.builder()
                 .l(portfolios.stream()
                         .map(portfolio -> AttributeValue.builder()
@@ -35,7 +35,7 @@ public class ApplyTemporaryPortfolioConverter implements AttributeConverter<List
     }
 
     @Override
-    public List<ApplyTemporaryPortfolio> transformTo(AttributeValue attributeValue) {
+    public List<ApplyPortfolioDto> transformTo(AttributeValue attributeValue) {
         return attributeValue.l().stream()
                 .map(value -> {
                     Map<String, AttributeValue> map = value.m();
@@ -51,14 +51,14 @@ public class ApplyTemporaryPortfolioConverter implements AttributeConverter<List
                     String sequence = Optional.ofNullable(map.get(SEQUENCE))
                             .map(AttributeValue::s)
                             .orElse("");
-                    return new ApplyTemporaryPortfolio(fileUrl, fileName, fileSize, sequence);
+                    return new ApplyPortfolioDto(fileUrl, fileName, fileSize, sequence);
                 })
                 .collect(Collectors.toList());
     }
 
     @Override
-    public EnhancedType<List<ApplyTemporaryPortfolio>> type() {
-        return EnhancedType.listOf(EnhancedType.of(ApplyTemporaryPortfolio.class));
+    public EnhancedType<List<ApplyPortfolioDto>> type() {
+        return EnhancedType.listOf(EnhancedType.of(ApplyPortfolioDto.class));
     }
 
     @Override

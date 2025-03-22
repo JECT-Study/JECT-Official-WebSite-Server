@@ -7,9 +7,8 @@ import java.util.Map;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.recruit.dto.ApplyTemporaryPortfolio;
+import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
 import org.ject.support.external.dynamodb.domain.CompositeKey;
 import org.ject.support.external.dynamodb.domain.EntityWithPrimaryKey;
 import org.ject.support.external.dynamodb.util.ApplyTemporaryPortfolioConverter;
@@ -32,12 +31,12 @@ public class TemporaryApplication extends EntityWithPrimaryKey {
     private LocalDateTime timestamp;
     private String jobFamily;
     private Map<String, String> answers;
-    private List<ApplyTemporaryPortfolio> portfolios;
+    private List<ApplyPortfolioDto> portfolios;
 
     public TemporaryApplication(final String memberId,
                                 final Map<String, String> answers,
                                 final String jobFamily,
-                                final List<ApplyTemporaryPortfolio> portfolios) {
+                                final List<ApplyPortfolioDto> portfolios) {
         this.memberId = memberId;
         this.timestamp = LocalDateTime.now();
         this.answers = answers;
@@ -71,7 +70,7 @@ public class TemporaryApplication extends EntityWithPrimaryKey {
 
     @DynamoDbAttribute(value = "portfolios")
     @DynamoDbConvertedBy(value = ApplyTemporaryPortfolioConverter.class)
-    public List<ApplyTemporaryPortfolio> getPortfolios() {
+    public List<ApplyPortfolioDto> getPortfolios() {
         return portfolios;
     }
 

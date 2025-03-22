@@ -5,6 +5,7 @@ import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.dto.ApplyTemporaryRequest;
 import org.ject.support.domain.recruit.dto.ApplyTemporaryResponse;
+import org.ject.support.domain.recruit.dto.SubmitApplicationRequest;
 import org.ject.support.domain.recruit.service.ApplyUsecase;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,7 +37,16 @@ public class ApplyController {
     }
 
     @PutMapping("/job")
+    @PreAuthorize("hasRole('ROLE_TEMP')")
     public void changeJobFamily(@AuthPrincipal Long memberId, @RequestBody JobFamily newJobFamily) {
         applyUsecase.changeJobFamily(memberId, newJobFamily);
+    }
+
+    @PostMapping("/submit")
+    @PreAuthorize("hasRole('ROLE_TEMP')")
+    public void submitApplication(@AuthPrincipal Long memberId,
+                                  @RequestParam JobFamily jobFamily,
+                                  @RequestBody SubmitApplicationRequest request) {
+        applyUsecase.submitApplication(memberId, jobFamily, request.answers(), request.portfolios());
     }
 }
