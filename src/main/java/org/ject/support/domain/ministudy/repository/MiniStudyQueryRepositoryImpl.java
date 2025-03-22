@@ -2,13 +2,15 @@ package org.ject.support.domain.ministudy.repository;
 
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.data.RestPage;
+import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.ministudy.dto.MiniStudyResponse;
 import org.ject.support.domain.ministudy.dto.QMiniStudyResponse;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 import static org.ject.support.domain.ministudy.entity.QMiniStudy.miniStudy;
 
@@ -19,7 +21,7 @@ public class MiniStudyQueryRepositoryImpl implements MiniStudyQueryRepository {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public RestPage<MiniStudyResponse> findMiniStudies(Pageable pageable) {
+    public Page<MiniStudyResponse> findMiniStudies(Pageable pageable) {
         List<MiniStudyResponse> content = queryFactory
                 .select(new QMiniStudyResponse(
                         miniStudy.id,
@@ -38,6 +40,6 @@ public class MiniStudyQueryRepositoryImpl implements MiniStudyQueryRepository {
                 .select(miniStudy.count())
                 .from(miniStudy);
 
-        return new RestPage<>(content, pageable.getPageNumber(), pageable.getPageSize(), countQuery.fetchFirst());
+        return PageResponse.from(content, pageable, countQuery.fetchFirst());
     }
 }

@@ -1,8 +1,6 @@
 package org.ject.support.domain.project.service;
 
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.data.RestPage;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
@@ -14,9 +12,12 @@ import org.ject.support.domain.project.exception.ProjectErrorCode;
 import org.ject.support.domain.project.exception.ProjectException;
 import org.ject.support.domain.project.repository.ProjectRepository;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import static org.ject.support.domain.project.entity.ProjectIntro.Category.DEV;
 import static org.ject.support.domain.project.entity.ProjectIntro.Category.SERVICE;
@@ -33,9 +34,9 @@ public class ProjectService {
      */
     @Cacheable(value = "project", key = "#category + ':' + #semester + ':' + #pageable.pageNumber")
     @Transactional(readOnly = true)
-    public RestPage<ProjectResponse> findProjects(final Project.Category category,
-                                                  final String semester,
-                                                  final Pageable pageable) {
+    public Page<ProjectResponse> findProjects(final Project.Category category,
+                                              final String semester,
+                                              final Pageable pageable) {
         return projectRepository.findProjectsByCategoryAndSemester(category, semester, pageable);
     }
 

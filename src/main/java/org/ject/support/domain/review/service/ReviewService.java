@@ -1,10 +1,10 @@
 package org.ject.support.domain.review.service;
 
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.data.RestPage;
 import org.ject.support.domain.review.dto.ReviewResponse;
 import org.ject.support.domain.review.repository.ReviewRepository;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +17,7 @@ public class ReviewService {
 
     @Cacheable(value = "review", key = "#pageable.pageNumber")
     @Transactional(readOnly = true)
-    public RestPage<ReviewResponse> findReviews(Pageable pageable) {
+    public Page<ReviewResponse> findReviews(Pageable pageable) {
         return reviewRepository.findReviews(pageable);
     }
 }
