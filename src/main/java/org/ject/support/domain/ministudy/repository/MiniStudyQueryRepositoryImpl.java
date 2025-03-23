@@ -1,18 +1,17 @@
 package org.ject.support.domain.ministudy.repository;
 
+import static org.ject.support.domain.ministudy.entity.QMiniStudy.miniStudy;
+
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.ministudy.dto.MiniStudyResponse;
 import org.ject.support.domain.ministudy.dto.QMiniStudyResponse;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-
-import static org.ject.support.domain.ministudy.entity.QMiniStudy.miniStudy;
 
 @Repository
 @RequiredArgsConstructor
@@ -40,6 +39,6 @@ public class MiniStudyQueryRepositoryImpl implements MiniStudyQueryRepository {
                 .select(miniStudy.count())
                 .from(miniStudy);
 
-        return PageResponse.from(content, pageable, countQuery.fetchFirst());
+        return new PageImpl<>(content, pageable, countQuery.fetchFirst());
     }
 }
