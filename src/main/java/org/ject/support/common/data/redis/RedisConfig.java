@@ -1,8 +1,8 @@
 package org.ject.support.common.data.redis;
 
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
@@ -23,6 +23,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 @EnableCaching
+@RequiredArgsConstructor
 public class RedisConfig {
 
     @Value("${spring.data.redis.host}")
@@ -36,6 +37,8 @@ public class RedisConfig {
 
     @Value("${spring.data.redis.local}")
     private boolean isLocal;
+
+    private final ObjectMapper redisObjectMapper;
 
     @Bean
     @ConditionalOnMissingBean
@@ -80,11 +83,7 @@ public class RedisConfig {
 
     private RedisCacheConfiguration redisCacheConfiguration() {
         StringRedisSerializer redisKeySerializer = new StringRedisSerializer();
-        GenericJackson2JsonRedisSerializer redisValueSerializer = new GenericJackson2JsonRedisSerializer()
-                .configure(objectMapper -> {
-                    objectMapper.registerModule(new JavaTimeModule());
-                    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-                });
+        GenericJackson2JsonRedisSerializer redisValueSerializer = new GenericJackson2JsonRedisSerializer(redisObjectMapper);// page serialize를 위한 objectMapper
         return RedisCacheConfiguration
                 .defaultCacheConfig()
                 .disableCachingNullValues()
