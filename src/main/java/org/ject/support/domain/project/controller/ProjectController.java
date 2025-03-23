@@ -21,7 +21,7 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
-    public Page<ProjectResponse> findProjects(@RequestParam final Project.Category category,
+    public Page<ProjectResponse> findProjects(@RequestParam(defaultValue = "MAIN") final Project.Category category,
                                               @RequestParam final String semester,
                                               final Pageable pageable) {
         return projectService.findProjects(category, semester, pageable);
