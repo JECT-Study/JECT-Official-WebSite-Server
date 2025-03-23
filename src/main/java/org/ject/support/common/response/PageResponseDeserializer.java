@@ -7,15 +7,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.List;
 import org.springframework.boot.jackson.JsonComponent;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
 @JsonComponent
-public class PageResponseDeserializer extends JsonDeserializer<Page<?>> {
+public class PageResponseDeserializer extends JsonDeserializer<PageImpl<?>> {
 
     @Override
-    public Page<?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+    public PageImpl<?> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         JsonNode node = p.getCodec().readTree(p);
         JsonNode contentNode = node.get("content");
         JsonNode pageableNode = node.get("pageable");
