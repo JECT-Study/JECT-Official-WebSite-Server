@@ -3,7 +3,6 @@ package org.ject.support.common.security.jwt;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.ject.support.common.exception.GlobalException;
-import org.ject.support.common.security.CustomUserDetailService;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
@@ -31,9 +30,6 @@ class JwtTokenProviderTest {
     private JwtCookieProvider jwtCookieProvider;
 
     @Mock
-    private CustomUserDetailService customUserDetailService;
-
-    @Mock
     private HttpServletRequest request;
 
     private Member testMember;
@@ -45,6 +41,11 @@ class JwtTokenProviderTest {
         jwtCookieProvider = new JwtCookieProvider();
         ReflectionTestUtils.setField(jwtTokenProvider, "accessExpirationTime", 3600000L); // 1시간
         ReflectionTestUtils.setField(jwtTokenProvider, "refreshExpirationTime", 1209600000L); // 2주
+        
+        // secretKey 초기화 추가
+        String salt = "secretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkey";
+        ReflectionTestUtils.setField(jwtTokenProvider, "salt", salt);
+        jwtTokenProvider.init(); // PostConstruct 메서드 직접 호출
 
         testMember = Member.builder()
                 .id(1L)
