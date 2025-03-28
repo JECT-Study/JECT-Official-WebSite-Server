@@ -5,6 +5,8 @@ import static org.mockito.Mockito.verify;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.dto.Constants;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,9 +30,6 @@ class RecruitScheduleServiceTest {
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
 
-    @Autowired
-    private RecruitScheduleService recruitScheduleService;
-
     @MockitoBean
     private TaskScheduler recruitScheduler;
 
@@ -40,13 +40,10 @@ class RecruitScheduleServiceTest {
         Recruit recruit = Recruit.builder()
                 .semester("2025-1")
                 .jobFamily(JobFamily.BE)
-                .startDate(LocalDate.now())
-                .endDate(LocalDate.now().plusDays(1))
+                .startDate(LocalDateTime.now())
+                .endDate(LocalDateTime.now().plusDays(1))
                 .build();
         recruitRepository.save(recruit);
-
-        RecruitOpenedEvent event = new RecruitOpenedEvent(recruit.getId());
-        recruitScheduleService.handleRecruitOpened(event);
 
         // 스케줄 등록 직후
         Boolean beforeScheduleFinishedFlag = Boolean.valueOf(redisTemplate.opsForValue().get(Constants.PERIOD_FLAG));

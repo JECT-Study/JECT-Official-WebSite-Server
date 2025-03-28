@@ -25,7 +25,7 @@ import org.ject.support.domain.tempapply.service.TemporaryApplyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -112,7 +112,7 @@ public class ApplyService implements ApplyUsecase {
 
     //TODO 2025 02 20 17:07:14 : caching
     private Recruit getPeriodRecruit(final JobFamily jobFamily) {
-        return recruitRepository.findActiveRecruits(LocalDate.now()).stream()
+        return recruitRepository.findActiveRecruits(LocalDateTime.now()).stream()
                 .filter(recruit -> recruit.getJobFamily().equals(jobFamily))
                 .findAny()
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND));

@@ -8,7 +8,7 @@ import org.ject.support.domain.recruit.dto.QQuestionResponse;
 import org.ject.support.domain.recruit.dto.QuestionResponse;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.ject.support.domain.recruit.domain.QQuestion.question;
@@ -21,7 +21,7 @@ public class QuestionQueryRepositoryImpl implements QuestionQueryRepository {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<QuestionResponse> findByJobFamilyOfActiveRecruit(final LocalDate currentDate,
+    public List<QuestionResponse> findByJobFamilyOfActiveRecruit(final LocalDateTime now,
                                                                  final JobFamily jobFamily) {
         return queryFactory.select(new QQuestionResponse(
                         question.id,
@@ -34,12 +34,12 @@ public class QuestionQueryRepositoryImpl implements QuestionQueryRepository {
                         question.maxLength))
                 .from(question)
                 .leftJoin(question.recruit, recruit)
-                .where(isWithinRecruitPeriod(currentDate), recruit.jobFamily.eq(jobFamily))
+                .where(isWithinRecruitPeriod(now), recruit.jobFamily.eq(jobFamily))
                 .orderBy(question.sequence.asc())
                 .fetch();
     }
 
-    private BooleanExpression isWithinRecruitPeriod(LocalDate currentDate) {
-        return recruit.startDate.before(currentDate).and(recruit.endDate.after(currentDate));
+    private BooleanExpression isWithinRecruitPeriod(LocalDateTime now) {
+        return recruit.startDate.before(now).and(recruit.endDate.after(now));
     }
 }

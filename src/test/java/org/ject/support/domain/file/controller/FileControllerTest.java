@@ -1,6 +1,5 @@
 package org.ject.support.domain.file.controller;
 
-import java.time.LocalDate;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -18,6 +17,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.ject.support.domain.member.Role.USER;
@@ -65,8 +66,8 @@ class FileControllerTest extends ApplicationPeriodTest {
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
                 .semester("2021-1")
-                .startDate(LocalDate.now().minusDays(1))
-                .endDate(LocalDate.now().plusDays(1))
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
                 .build());
 
         mockMvc.perform(post("/upload/portfolios")
@@ -86,8 +87,8 @@ class FileControllerTest extends ApplicationPeriodTest {
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
                 .semester("2021-1")
-                .startDate(LocalDate.now().plusDays(3))
-                .endDate(LocalDate.now().plusDays(5))
+                .startDate(LocalDateTime.now().plusDays(3))
+                .endDate(LocalDateTime.now().plusDays(5))
                 .build());
 
         when(redisTemplate.opsForValue().get(Constants.PERIOD_FLAG)).thenReturn(Boolean.toString(false));
@@ -109,8 +110,8 @@ class FileControllerTest extends ApplicationPeriodTest {
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
                 .semester("2021-1")
-                .startDate(LocalDate.now().plusDays(3))
-                .endDate(LocalDate.now().plusDays(5))
+                .startDate(LocalDateTime.now().plusDays(3))
+                .endDate(LocalDateTime.now().plusDays(5))
                 .build());
 
         when(redisTemplate.opsForValue().get(Constants.PERIOD_FLAG)).thenReturn(Boolean.toString(false));

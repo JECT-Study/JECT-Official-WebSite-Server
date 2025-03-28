@@ -11,7 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -39,11 +39,11 @@ public class Recruit extends BaseTimeEntity {
     @Column(length = 20, nullable = false)
     private String semester;
 
-    @Column
-    private LocalDate startDate;
+    @Column(nullable = false)
+    private LocalDateTime startDate;
 
-    @Column
-    private LocalDate endDate;
+    @Column(nullable = false)
+    private LocalDateTime endDate;
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(45)", nullable = false)
@@ -62,7 +62,7 @@ public class Recruit extends BaseTimeEntity {
      * @return 지원 `기한`인지
      */
     public Boolean isRecruitingPeriod() {
-        LocalDate now = LocalDate.now();
+        LocalDateTime now = LocalDateTime.now();
         return startDate.isBefore(now) && endDate.isAfter(now);
     }
 

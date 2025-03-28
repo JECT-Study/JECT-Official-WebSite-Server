@@ -45,6 +45,8 @@ aws:
     bucket: bucket
   dynamodb:
     endpoint: http://localhost:8000
+  cloudfront:
+    domain: https://d2lmyznn5nj2bl.cloudfront.net/
 
 decorator:
   datasource:

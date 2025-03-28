@@ -1,7 +1,5 @@
 package org.ject.support.domain.recruit.service;
 
-import java.time.Instant;
-import java.time.ZoneId;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.dto.Constants;
@@ -14,6 +12,9 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.time.Instant;
+import java.time.ZoneId;
 
 @Service
 @RequiredArgsConstructor
@@ -29,13 +30,13 @@ public class RecruitScheduleService {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleRecruitOpened(RecruitOpenedEvent event) {
         Recruit recruit = getRecruit(event);
+        System.out.println("recruit.getId() = " + recruit.getId());
 
         //end date 전에는 flag를 true로
         redisTemplate.opsForValue().set(Constants.PERIOD_FLAG, Boolean.TRUE.toString());
 
-
         Instant triggerTime = recruit.getEndDate()
-                .atStartOfDay(ZoneId.systemDefault())
+                .atZone(ZoneId.systemDefault())
                 .toInstant();
 
         recruitScheduler.schedule(() -> {

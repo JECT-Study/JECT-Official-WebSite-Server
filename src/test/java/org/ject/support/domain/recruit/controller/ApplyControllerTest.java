@@ -24,7 +24,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -70,8 +70,8 @@ class ApplyControllerTest extends ApplicationPeriodTest {
         );
 
         Recruit recruit = Recruit.builder()
-                .startDate(LocalDate.now().minusDays(1))
-                .endDate(LocalDate.now().plusDays(1))
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
                 .semester("2025-1")
                 .jobFamily(JobFamily.BE)
                 .build();

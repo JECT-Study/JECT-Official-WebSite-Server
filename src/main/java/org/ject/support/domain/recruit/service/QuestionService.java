@@ -8,7 +8,7 @@ import org.ject.support.domain.recruit.repository.QuestionRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -20,6 +20,6 @@ public class QuestionService {
     @PeriodAccessible
     @Transactional(readOnly = true)
     public List<QuestionResponse> findQuestions(final JobFamily jobFamily) {
-        return questionRepository.findByJobFamilyOfActiveRecruit(LocalDate.now(), jobFamily);
+        return questionRepository.findByJobFamilyOfActiveRecruit(LocalDateTime.now(), jobFamily);
     }
 }

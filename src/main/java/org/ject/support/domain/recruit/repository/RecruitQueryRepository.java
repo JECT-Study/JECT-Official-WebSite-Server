@@ -5,5 +5,5 @@ import java.util.Optional;
 import org.ject.support.domain.recruit.domain.Recruit;
 
 public interface RecruitQueryRepository {
-    Optional<Recruit> findByStartDateAfterAndEndDateBefore(LocalDateTime time);
+    Optional<Recruit> findByStartDateAfterAndEndDateBefore(LocalDateTime now);
 }
