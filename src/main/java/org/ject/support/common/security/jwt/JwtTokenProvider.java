@@ -5,8 +5,9 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import java.security.Key;
 import java.util.Date;
@@ -27,21 +28,21 @@ import static org.ject.support.common.exception.GlobalErrorCode.AUTHENTICATION_R
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
-    /**
-     * -- GETTER --
-     *  JWT 서명에 사용되는 비밀키 반환
-     */
-
-    @Getter
-    private final Key secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+    @Getter //TODO: SecurityFilter 개선 때 수정
+    private Key secretKey;
     @Value("${spring.jwt.token.access-expiration-time}")
     private long accessExpirationTime;
     @Value("${spring.jwt.token.refresh-expiration-time}")
     private long refreshExpirationTime;
+    @Value("${spring.jwt.token.secret}")
+    private String salt;
 
-    /**
-     * Access 토큰 생성
-     */
+    @PostConstruct
+    public void init() {
+        final byte[] decodeSecret = Decoders.BASE64.decode(salt);
+        this.secretKey = Keys.hmacShaKeyFor(decodeSecret);
+    }
+
     public String createAccessToken(Authentication authentication, Long memberId) {
         validateAuthentication(authentication);
         Claims claims = Jwts.claims();
