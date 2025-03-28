@@ -5,6 +5,7 @@ import org.ject.support.common.util.PeriodAccessible;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.dto.QuestionResponse;
 import org.ject.support.domain.recruit.repository.QuestionRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ public class QuestionService {
 
     private final QuestionRepository questionRepository;
 
+    @Cacheable(value = "question", key = "#jobFamily")
     @PeriodAccessible
     @Transactional(readOnly = true)
     public List<QuestionResponse> findQuestions(final JobFamily jobFamily) {
