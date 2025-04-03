@@ -19,7 +19,8 @@ import org.springframework.core.io.support.ResourcePatternResolver;
 public enum EmailTemplate {
     ACCEPTANCE("email-template", "ject notification"),
     REJECTION("email-template", "ject notification"),
-    CERTIFICATE("email-template", "ject certificate");
+    CERTIFICATE("email-template", "ject certificate"),
+    PIN_RESET("email-template", "ject pin reset"); // TODO: HTML 템플릿별로 수정 필요
 
     private final String templateName;// template file name
     private final String subject;// email subject
