@@ -1,28 +1,26 @@
 package org.ject.support.domain.auth;
 
 
-import static org.ject.support.domain.auth.AuthErrorCode.EXPIRED_REFRESH_TOKEN;
-import static org.ject.support.domain.auth.AuthErrorCode.INVALID_AUTH_CODE;
-import static org.ject.support.domain.auth.AuthErrorCode.INVALID_REFRESH_TOKEN;
-import static org.ject.support.domain.auth.AuthErrorCode.INVALID_CREDENTIALS;
-import static org.ject.support.domain.auth.AuthErrorCode.NOT_FOUND_AUTH_CODE;
-import static org.ject.support.domain.member.exception.MemberErrorCode.NOT_FOUND_MEMBER;
+import static org.ject.support.domain.auth.AuthErrorCode.*;
+import static org.ject.support.domain.member.exception.MemberErrorCode.*;
 
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
-import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
-import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
 import org.ject.support.domain.auth.AuthDto.PinLoginResponse;
+import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
 import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeOnlyResponse;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.external.email.EmailTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -43,12 +41,25 @@ public class AuthService {
      * @param userInputCode 사용자가 입력한 인증번호
      */
     @Transactional
-    public VerifyAuthCodeOnlyResponse verifyEmailByAuthCodeOnly(String email, String userInputCode) {
+    public VerifyAuthCodeOnlyResponse verifyEmailByAuthCodeOnly(String email, String userInputCode,
+                                                                EmailTemplate template) {
         // 인증번호 검증
         verifyAuthCode(email, userInputCode);
 
+        // 핀 재설정 이메일 요청일 경우, accessToken 발급
+        if (template == EmailTemplate.PIN_RESET) {
+            Member member = findMember(email);
+
+            Authentication authentication = jwtTokenProvider.createAuthenticationByMember(member);
+            String accessToken = jwtTokenProvider.createAccessToken(authentication, member.getId());
+
+            return new VerifyAuthCodeOnlyResponse(accessToken);
+        }
+
         // 임시 토큰 발급 - 인증번호 검증이 완료되었음을 증명하는 토큰
         String verificationToken = jwtTokenProvider.createVerificationToken(email);
+
+        deleteAuthCode(email);
 
         // 임시 토큰 반환
         return new VerifyAuthCodeOnlyResponse(verificationToken);
@@ -64,8 +75,7 @@ public class AuthService {
     @Transactional
     public PinLoginResponse loginWithPin(String email, String pin) {
         // 이메일로 회원 조회
-        Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+        Member member = findMember(email);
         
         // PIN 번호 검증
         if (!passwordEncoder.matches(pin, member.getPin())) {
@@ -78,6 +88,11 @@ public class AuthService {
         String refreshToken = jwtTokenProvider.createRefreshToken(authentication, member.getId());
         
         return new PinLoginResponse(accessToken, refreshToken);
+    }
+
+    private Member findMember(String email) {
+        return memberRepository.findByEmail(email)
+                .orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
     }
 
     private void verifyAuthCode(String email, String userInputCode) {
@@ -93,8 +108,9 @@ public class AuthService {
         if (!userInputCode.equals(redisCode)) {
             throw new AuthException(INVALID_AUTH_CODE);
         }
+    }
 
-        // 인증 성공
+    private void deleteAuthCode(String email) {
         redisTemplate.delete(email);
     }
 

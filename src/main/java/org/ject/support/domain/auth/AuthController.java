@@ -2,13 +2,13 @@ package org.ject.support.domain.auth;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.domain.auth.AuthDto.TokenRefreshRequest;
 import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
 import org.ject.support.domain.auth.AuthDto.PinLoginRequest;
 import org.ject.support.domain.auth.AuthDto.PinLoginResponse;
 import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeOnlyResponse;
 import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeRequest;
+import org.ject.support.external.email.EmailTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,8 +30,9 @@ public class AuthController {
      */
     @PostMapping("/code")
     @PreAuthorize("permitAll()")
-    public VerifyAuthCodeOnlyResponse verifyAuthCode(@RequestBody VerifyAuthCodeRequest request) {
-        return authService.verifyEmailByAuthCodeOnly(request.email(), request.authCode());
+    public VerifyAuthCodeOnlyResponse verifyAuthCode(@RequestBody VerifyAuthCodeRequest request,
+                                                     @RequestParam EmailTemplate template) {
+        return authService.verifyEmailByAuthCodeOnly(request.email(), request.authCode(), template);
     }
     
     /**
