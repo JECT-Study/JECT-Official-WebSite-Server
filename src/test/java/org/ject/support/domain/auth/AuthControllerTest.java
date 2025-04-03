@@ -7,6 +7,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import org.ject.support.external.email.EmailTemplate;
+
 import org.ject.support.domain.auth.AuthDto.TokenRefreshRequest;
 import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
 import org.ject.support.domain.auth.AuthDto.PinLoginRequest;
@@ -50,16 +52,36 @@ class AuthControllerTest {
         // given
         VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
         VerifyAuthCodeOnlyResponse response = new VerifyAuthCodeOnlyResponse(TEST_VERIFICATION_TOKEN);
+        EmailTemplate template = EmailTemplate.CERTIFICATE;
         
-        given(authService.verifyEmailByAuthCodeOnly(request.email(), request.authCode()))
+        given(authService.verifyEmailByAuthCodeOnly(request.email(), request.authCode(), template))
             .willReturn(response);
 
         // when
-        VerifyAuthCodeOnlyResponse result = authController.verifyAuthCode(request);
+        VerifyAuthCodeOnlyResponse result = authController.verifyAuthCode(request, template);
 
         // then
-        verify(authService).verifyEmailByAuthCodeOnly(TEST_EMAIL, TEST_AUTH_CODE);
-        assertThat(result.verificationToken()).isEqualTo(TEST_VERIFICATION_TOKEN);
+        verify(authService).verifyEmailByAuthCodeOnly(TEST_EMAIL, TEST_AUTH_CODE, template);
+        assertThat(result.token()).isEqualTo(TEST_VERIFICATION_TOKEN);
+    }
+    
+    @Test
+    @DisplayName("PIN 재설정을 위한 인증 코드 검증 및 액세스 토큰 발급 성공")
+    void verifyAuthCode_PinReset_Success() {
+        // given
+        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
+        VerifyAuthCodeOnlyResponse response = new VerifyAuthCodeOnlyResponse(TEST_ACCESS_TOKEN);
+        EmailTemplate template = EmailTemplate.PIN_RESET;
+        
+        given(authService.verifyEmailByAuthCodeOnly(request.email(), request.authCode(), template))
+            .willReturn(response);
+
+        // when
+        VerifyAuthCodeOnlyResponse result = authController.verifyAuthCode(request, template);
+
+        // then
+        verify(authService).verifyEmailByAuthCodeOnly(TEST_EMAIL, TEST_AUTH_CODE, template);
+        assertThat(result.token()).isEqualTo(TEST_ACCESS_TOKEN);
     }
     
     @Test
@@ -140,7 +162,8 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
         // 인증 없이 접근 가능한지 확인 (permitAll 설정)
         mockMvc.perform(post("/auth/code")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .param("template", EmailTemplate.CERTIFICATE.name()))
                 .andExpect(status().isOk());
     }
     
@@ -157,6 +180,7 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
                 .andExpect(status().isOk());
     }
                         
+    @Test
     @DisplayName("PIN 로그인 API 인증 없이 접근 가능한지 확인")
     void loginWithPin_WithPermitAll_ShouldAllowAccessWithoutAuthentication() throws Exception {
         // given
