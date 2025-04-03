@@ -53,6 +53,8 @@ public class AuthService {
             Authentication authentication = jwtTokenProvider.createAuthenticationByMember(member);
             String accessToken = jwtTokenProvider.createAccessToken(authentication, member.getId());
 
+            deleteAuthCode(email);
+
             return new VerifyAuthCodeOnlyResponse(accessToken);
         }
 
