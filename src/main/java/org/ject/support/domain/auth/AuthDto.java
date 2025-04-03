@@ -11,7 +11,7 @@ public class AuthDto {
     }
 
     public record VerifyAuthCodeOnlyResponse(String token) {
-        // 인증번호 검증 성공 시 발급되는 토큰
+        // 인증번호 검증 성공 시 발급되는 access 또는 vericiation 토큰
     }
     
     public record PinLoginRequest(
