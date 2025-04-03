@@ -20,10 +20,10 @@ public class EmailAuthService {
     private final RedisTemplate<String, String> redisTemplate;
     private final EmailSendService emailSendService;
 
-    public void sendAuthCode(String email) {
+    public void sendAuthCode(String email, EmailTemplate template) {
         String authCode = generateAuthCode();
         storeAuthCode(email, authCode);
-        sendAuthCodeEmail(email, authCode);
+        sendAuthCodeEmail(email, authCode, template);
     }
 
     private String generateAuthCode() {
@@ -40,11 +40,11 @@ public class EmailAuthService {
         log.info("인증 번호 전송 - email: {}, code: {}", email, authCode);
     }
 
-    private void sendAuthCodeEmail(String email, String authCode) {
+    private void sendAuthCodeEmail(String email, String authCode, EmailTemplate template) {
         // TODO: 정책 추가 시 인증 번호 전송 횟수 제한 로직 추가
         emailSendService.sendEmail(
             email,
-            EmailTemplate.CERTIFICATE,
+            template,
             Map.of("to", email, "value", authCode)
         );
     }
