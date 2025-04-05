@@ -1,10 +1,10 @@
 package org.ject.support.domain.member;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.ject.support.domain.member.entity.Member;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class MemberTest {
 
@@ -15,7 +15,7 @@ class MemberTest {
         String name = "John Doe";
         String phoneNumber = "01012345678";
         String email = "john@example.com";
-        String semester = "2024-1";
+        Long semesterId = 1L;
         JobFamily jobFamily = JobFamily.BE;
         Role role = Role.USER;
 
@@ -24,7 +24,7 @@ class MemberTest {
                 .name(name)
                 .phoneNumber(phoneNumber)
                 .email(email)
-                .semester(semester)
+                .semesterId(1L)
                 .jobFamily(jobFamily)
                 .role(role)
                 .build();
@@ -33,7 +33,7 @@ class MemberTest {
         assertThat(member.getName()).isEqualTo(name);
         assertThat(member.getPhoneNumber()).isEqualTo(phoneNumber);
         assertThat(member.getEmail()).isEqualTo(email);
-        assertThat(member.getSemester()).isEqualTo(semester);
+        assertThat(member.getSemesterId()).isEqualTo(semesterId);
         assertThat(member.getJobFamily()).isEqualTo(jobFamily);
         assertThat(member.getRole()).isEqualTo(role);
     }
@@ -60,7 +60,7 @@ class MemberTest {
         assertThat(member.getPhoneNumber()).isEqualTo(phoneNumber);
         assertThat(member.getEmail()).isEqualTo(email);
         assertThat(member.getRole()).isEqualTo(role);
-        assertThat(member.getSemester()).isNull();
+        assertThat(member.getSemesterId()).isNull();
         assertThat(member.getJobFamily()).isNull();
     }
 }

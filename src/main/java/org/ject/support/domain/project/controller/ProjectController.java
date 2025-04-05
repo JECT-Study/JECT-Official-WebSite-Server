@@ -22,9 +22,9 @@ public class ProjectController {
 
     @GetMapping
     public Page<ProjectResponse> findProjects(@RequestParam final Project.Category category,
-                                              @RequestParam final String semester,
+                                              @RequestParam final Long semesterId,
                                               final Pageable pageable) {
-        return projectService.findProjects(category, semester, pageable);
+        return projectService.findProjects(category, semesterId, pageable);
     }
 
     @GetMapping("/{projectId}")

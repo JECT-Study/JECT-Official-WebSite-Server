@@ -13,9 +13,11 @@ public class WithAuthenticatedUserSecurityContextFactory implements WithSecurity
     public SecurityContext createSecurityContext(AuthenticatedUser annotation) {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         String email = annotation.email();
+        boolean isAdmin = annotation.isAdmin();
         long memberId = annotation.memberId();
 
-        CustomUserDetails userDetails = new CustomUserDetails(email, memberId, Role.USER);
+        Role role = isAdmin ? Role.ADMIN : Role.USER;
+        CustomUserDetails userDetails = new CustomUserDetails(email, memberId, role);
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
 
         context.setAuthentication(auth);

@@ -1,5 +1,15 @@
 package org.ject.support.domain.recruit.controller;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.ject.support.domain.member.Role.USER;
+import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDateTime;
+import java.util.List;
 import org.assertj.core.api.Assertions;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
@@ -16,19 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.hamcrest.Matchers.containsString;
-import static org.ject.support.domain.member.Role.USER;
-import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @IntegrationTest
 @AutoConfigureMockMvc
@@ -64,7 +62,7 @@ class QuestionControllerTest {
         Recruit recruit = Recruit.builder()
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
-                .semester("2025-1")
+                .semesterId(1L)
                 .jobFamily(JobFamily.BE)
                 .build();
 
@@ -80,7 +78,7 @@ class QuestionControllerTest {
                 .name("김젝트")
                 .role(USER)
                 .phoneNumber("01012345678")
-                .semester("2025-1")
+                .semesterId(1L)
                 .pin("123456") // PIN 필드 추가
                 .build();
         memberRepository.save(member);

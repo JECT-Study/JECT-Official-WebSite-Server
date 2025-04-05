@@ -1,5 +1,11 @@
 package org.ject.support.external.dynamodb.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
@@ -10,13 +16,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @IntegrationTest
 class TemporaryApplicationRepositoryTest {
@@ -168,7 +167,7 @@ class TemporaryApplicationRepositoryTest {
 
     @Order(4)
     @Test
-    @DisplayName("dynamodb repository delete by member id test")
+    @DisplayName("dynamodb repository delete by member semesterId test")
     void delete_by_member_id() {
         // given
         temporaryApplicationRepository.save(createTemporaryApplication("1", Map.of(

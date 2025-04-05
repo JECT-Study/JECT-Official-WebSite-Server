@@ -4,20 +4,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.dto.Constants;
-import org.ject.support.domain.recruit.dto.RecruitOpenedEvent;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.testconfig.IntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -38,7 +34,7 @@ class RecruitScheduleServiceTest {
     void test_schedule_end_date_of_recruit() {
         // given
         Recruit recruit = Recruit.builder()
-                .semester("2025-1")
+                .semesterId(1L)
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now())
                 .endDate(LocalDateTime.now().plusDays(1))

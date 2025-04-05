@@ -7,7 +7,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import java.util.Optional;
-
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
@@ -45,6 +44,9 @@ class MemberServiceTest {
     @Mock
     private Authentication authentication;
 
+    @Mock
+    private OngoingSemesterProvider ongoingSemesterProvider;
+
     private final String TEST_NAME = "홍길동";
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_PHONE_NUMBER = "01012345678";
@@ -74,7 +76,7 @@ class MemberServiceTest {
         given(jwtTokenProvider.createAuthenticationByMember(any(Member.class))).willReturn(authentication);
         given(jwtTokenProvider.createAccessToken(any(Authentication.class), any())).willReturn(TEST_ACCESS_TOKEN);
         given(jwtTokenProvider.createRefreshToken(any(Authentication.class), any())).willReturn(TEST_REFRESH_TOKEN);
-
+        given(ongoingSemesterProvider.getOngoingSemesterId()).willReturn(1L);
         // when
         RegisterResponse response = memberService.registerTempMember(request, TEST_EMAIL);
 

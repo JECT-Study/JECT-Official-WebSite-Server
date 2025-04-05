@@ -9,4 +9,5 @@ import org.springframework.security.test.context.support.WithSecurityContext;
 public @interface AuthenticatedUser {
     long memberId() default 1L;
     String email() default "test1@gmail.com";
+    boolean isAdmin() default false;
 }

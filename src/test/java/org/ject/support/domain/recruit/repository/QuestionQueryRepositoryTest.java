@@ -1,5 +1,13 @@
 package org.ject.support.domain.recruit.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.FE;
+import static org.ject.support.domain.recruit.domain.Question.InputType.FILE;
+import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
+
+import java.time.LocalDateTime;
+import java.util.List;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
@@ -10,15 +18,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.recruit.domain.Question.InputType.FILE;
-import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
@@ -57,7 +56,7 @@ class QuestionQueryRepositoryTest {
 
     private Recruit createRecruit(LocalDateTime now, JobFamily be) {
         return Recruit.builder()
-                .semester("1기")
+                .semesterId(1L)
                 .startDate(now.minusDays(1))
                 .endDate(now.plusDays(1))
                 .jobFamily(be)

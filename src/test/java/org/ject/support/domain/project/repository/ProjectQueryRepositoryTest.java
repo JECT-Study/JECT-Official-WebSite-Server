@@ -1,5 +1,9 @@
 package org.ject.support.domain.project.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.project.entity.Project.Category.HACKATHON;
+import static org.ject.support.domain.project.entity.Project.Category.MAIN;
+
 import java.time.LocalDate;
 import java.util.List;
 import org.ject.support.domain.member.entity.Team;
@@ -15,10 +19,6 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.ject.support.domain.project.entity.Project.Category.HACKATHON;
-import static org.ject.support.domain.project.entity.Project.Category.MAIN;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
@@ -44,14 +44,14 @@ class ProjectQueryRepositoryTest {
     @DisplayName("기수별 프로젝트 목록 조회")
     void find_projects_by_semester() {
         // given
-        Project project1 = createProject(MAIN, "1기", team1);
-        Project project2 = createProject(MAIN, "1기", team2);
-        Project project3 = createProject(MAIN, "2기", team3);
+        Project project1 = createProject(MAIN, 1L, team1);
+        Project project2 = createProject(MAIN, 1L, team2);
+        Project project3 = createProject(MAIN, 2L, team3);
         projectRepository.saveAll(List.of(project1, project2, project3));
 
         // when
         Page<ProjectResponse> result =
-                projectRepository.findProjectsByCategoryAndSemester(MAIN, "1기", PageRequest.of(0, 30));
+                projectRepository.findProjectsByCategoryAndSemester(MAIN, 1L, PageRequest.of(0, 30));
 
         // then
         assertThat(result).isNotNull();
@@ -71,25 +71,25 @@ class ProjectQueryRepositoryTest {
     @DisplayName("특정 년월에 진행한 해커톤 프로젝트 목록 조회")
     void find_hackathon_projects() {
         // given
-        Project project1 = createProject(MAIN, "1기", team1);
-        Project project2 = createProject(HACKATHON, "25.03", team2);
-        Project project3 = createProject(HACKATHON, "25.03", team3);
-        Project project4 = createProject(HACKATHON, "25.08", team1);
+        Project project1 = createProject(MAIN, 1L, team1);
+        Project project2 = createProject(HACKATHON, 2L, team2);
+        Project project3 = createProject(HACKATHON, 2L, team3);
+        Project project4 = createProject(HACKATHON, 3L, team1);
         projectRepository.saveAll(List.of(project1, project2, project3, project4));
 
         // when
         Page<ProjectResponse> result =
-                projectRepository.findProjectsByCategoryAndSemester(HACKATHON, "25.03", PageRequest.of(0, 30));
+                projectRepository.findProjectsByCategoryAndSemester(HACKATHON, 2L, PageRequest.of(0, 30));
 
         // then
         assertThat(result.getContent()).hasSize(2);
     }
 
-    private Project createProject(Project.Category category, String semester, Team team) {
+    private Project createProject(Project.Category category, Long semesterId, Team team) {
         return Project.builder()
                 .name("projectName")
                 .thumbnailUrl("https://test.net/thumbnail.png")
-                .semester(semester)
+                .semesterId(semesterId)
                 .summary("summary")
                 .description("description")
                 .startDate(LocalDate.of(2025, 3, 2))

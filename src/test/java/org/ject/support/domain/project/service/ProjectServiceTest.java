@@ -1,5 +1,11 @@
 package org.ject.support.domain.project.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ject.support.domain.project.entity.ProjectIntro.Category;
+import static org.ject.support.domain.project.entity.ProjectIntro.builder;
+import static org.mockito.Mockito.when;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,12 +27,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.domain.project.entity.ProjectIntro.Category;
-import static org.ject.support.domain.project.entity.ProjectIntro.builder;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectServiceTest {
@@ -58,7 +58,7 @@ class ProjectServiceTest {
         ProjectIntro devIntro1 = createProjectIntro(4L, "devImage1.png", Category.DEV, 1);
         project = Project.builder()
                 .id(1L)
-                .semester("1기")
+                .semesterId(1L)
                 .summary("summary")
                 .techStack("java,Spring, JPA, QueryDSL,MySQL,AWS")
                 .startDate(LocalDate.of(2025, 3, 2))

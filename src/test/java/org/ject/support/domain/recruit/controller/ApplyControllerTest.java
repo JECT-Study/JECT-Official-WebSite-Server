@@ -1,5 +1,19 @@
 package org.ject.support.domain.recruit.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.ject.support.domain.member.Role.USER;
+import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -23,21 +37,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.ject.support.domain.member.Role.USER;
-import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // Redis 관련 설정을 제외하고 필요한 설정만 포함합니다
 @IntegrationTest
@@ -72,7 +71,7 @@ class ApplyControllerTest extends ApplicationPeriodTest {
         Recruit recruit = Recruit.builder()
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
-                .semester("2025-1")
+                .semesterId(1L)
                 .jobFamily(JobFamily.BE)
                 .build();
 
@@ -88,7 +87,7 @@ class ApplyControllerTest extends ApplicationPeriodTest {
                 .name("김젝트")
                 .role(USER)
                 .phoneNumber("01012345678")
-                .semester("2025-1")
+                .semesterId(1L)
                 .pin("123456") // PIN 필드 추가
                 .build();
         memberRepository.save(member);
@@ -139,7 +138,7 @@ class ApplyControllerTest extends ApplicationPeriodTest {
     }
 
     @Test
-    @DisplayName("invalid question id")
+    @DisplayName("invalid question semesterId")
     @AuthenticatedUser
     @Transactional
     void invalid_question_id() throws Exception {

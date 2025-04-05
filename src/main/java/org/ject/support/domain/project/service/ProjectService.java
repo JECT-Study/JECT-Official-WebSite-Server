@@ -1,5 +1,9 @@
 package org.ject.support.domain.project.service;
 
+import static org.ject.support.domain.project.entity.ProjectIntro.Category.DEV;
+import static org.ject.support.domain.project.entity.ProjectIntro.Category.SERVICE;
+
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -17,11 +21,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
-import static org.ject.support.domain.project.entity.ProjectIntro.Category.DEV;
-import static org.ject.support.domain.project.entity.ProjectIntro.Category.SERVICE;
-
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
@@ -32,12 +31,12 @@ public class ProjectService {
     /**
      * 주어진 기수의 프로젝트를 모두 조회합니다.
      */
-    @Cacheable(value = "project", key = "#category + ':' + #semester + ':' + #pageable.pageNumber")
+    @Cacheable(value = "project", key = "#category + ':' + #semesterId + ':' + #pageable.pageNumber")
     @Transactional(readOnly = true)
     public Page<ProjectResponse> findProjects(final Project.Category category,
-                                              final String semester,
+                                              final Long semesterId,
                                               final Pageable pageable) {
-        return projectRepository.findProjectsByCategoryAndSemester(category, semester, pageable);
+        return projectRepository.findProjectsByCategoryAndSemester(category, semesterId, pageable);
     }
 
     /**

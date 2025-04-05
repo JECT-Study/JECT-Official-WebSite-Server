@@ -11,6 +11,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +28,9 @@ import org.ject.support.domain.member.JobFamily;
 @Getter
 @Entity
 @Builder
+@Table(uniqueConstraints = {
+        @UniqueConstraint(name = "uq_recruit_semester_job_family", columnNames = {"semester_id", "job_family"})
+})
 @DynamicUpdate
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -36,8 +41,8 @@ public class Recruit extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(length = 20, nullable = false)
-    private String semester;
+    @Column(name = "semester_id", nullable = false)
+    private Long semesterId;
 
     @Column(nullable = false)
     private LocalDateTime startDate;
@@ -46,7 +51,7 @@ public class Recruit extends BaseTimeEntity {
     private LocalDateTime endDate;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "varchar(45)", nullable = false)
+    @Column(name = "job_family", columnDefinition = "varchar(45)", nullable = false)
     private JobFamily jobFamily;
 
     @OneToMany(mappedBy = "recruit", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)

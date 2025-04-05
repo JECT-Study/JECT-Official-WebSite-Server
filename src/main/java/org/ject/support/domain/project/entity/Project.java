@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -44,8 +43,8 @@ public class Project extends BaseTimeEntity {
     @Column(columnDefinition = "varchar(30)", nullable = false)
     private Project.Category category;
 
-    @Column(length = 20, nullable = false)
-    private String semester;
+    @Column(nullable = false)
+    private Long semesterId;
 
     @Column(length = 100, nullable = false)
     private String summary;

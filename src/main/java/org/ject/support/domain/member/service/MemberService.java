@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final OngoingSemesterProvider ongoingSemesterProvider;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
 
@@ -59,7 +60,9 @@ public class MemberService {
      */
     private Member createTempMemberWithPin(RegisterRequest registerRequest, String email) {
         String encodedPin = passwordEncoder.encode(registerRequest.pin());
-        Member member = registerRequest.toEntity(email, encodedPin);
+        Long ongoingSemesterId = ongoingSemesterProvider.getOngoingSemesterId();
+        Member member = registerRequest.toEntity(email, encodedPin, ongoingSemesterId);
+
         return memberRepository.save(member);
     }
 

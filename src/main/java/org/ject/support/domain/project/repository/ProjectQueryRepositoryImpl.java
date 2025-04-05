@@ -1,7 +1,11 @@
 package org.ject.support.domain.project.repository;
 
+import static org.ject.support.domain.project.entity.Project.Category;
+import static org.ject.support.domain.project.entity.QProject.project;
+
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.project.dto.ProjectResponse;
@@ -9,11 +13,6 @@ import org.ject.support.domain.project.dto.QProjectResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-
-import static org.ject.support.domain.project.entity.Project.Category;
-import static org.ject.support.domain.project.entity.QProject.project;
 
 @Repository
 @RequiredArgsConstructor
@@ -23,7 +22,7 @@ public class ProjectQueryRepositoryImpl implements ProjectQueryRepository {
 
     @Override
     public Page<ProjectResponse> findProjectsByCategoryAndSemester(final Category category,
-                                                                   final String semester,
+                                                                   final Long semesterId,
                                                                    final Pageable pageable) {
         List<ProjectResponse> content = queryFactory.select(new QProjectResponse(
                         project.id,
@@ -33,7 +32,7 @@ public class ProjectQueryRepositoryImpl implements ProjectQueryRepository {
                         project.description
                 ))
                 .from(project)
-                .where(project.category.eq(category), project.semester.eq(semester))
+                .where(project.category.eq(category), project.semesterId.eq(semesterId))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

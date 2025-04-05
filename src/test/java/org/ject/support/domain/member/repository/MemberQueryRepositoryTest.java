@@ -1,5 +1,10 @@
 package org.ject.support.domain.member.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.FE;
+import static org.ject.support.domain.member.JobFamily.PD;
+
 import java.util.List;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
@@ -14,11 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.PD;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
@@ -79,7 +79,7 @@ class MemberQueryRepositoryTest {
                 .name(name)
                 .phoneNumber(phoneNumber)
                 .email(email)
-                .semester(semester)
+                .semesterId(1L)
                 .jobFamily(jobFamily)
                 .role(Role.USER)
                 .pin("123456") // PIN 필드 추가

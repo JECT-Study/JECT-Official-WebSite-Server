@@ -1,5 +1,14 @@
 package org.ject.support.domain.file.controller;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.ject.support.domain.member.Role.USER;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDateTime;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -17,16 +26,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-
-import static org.hamcrest.Matchers.containsString;
-import static org.ject.support.domain.member.Role.USER;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @IntegrationTest
 @AutoConfigureMockMvc
@@ -52,7 +51,7 @@ class FileControllerTest extends ApplicationPeriodTest {
                 .name("홍길동") // 한글 1~5글자로 수정
                 .role(USER)
                 .phoneNumber("01012345678") // 010으로 시작하는 11자리 수정
-                .semester("2025-1")
+                .semesterId(1L)
                 .pin("123456") // PIN 추가
                 .build();
         memberRepository.save(member);
@@ -65,7 +64,7 @@ class FileControllerTest extends ApplicationPeriodTest {
     void test_access_period() throws Exception {
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
-                .semester("2021-1")
+                .semesterId(1L)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .build());
@@ -86,7 +85,7 @@ class FileControllerTest extends ApplicationPeriodTest {
         // given
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
-                .semester("2021-1")
+                .semesterId(1L)
                 .startDate(LocalDateTime.now().plusDays(3))
                 .endDate(LocalDateTime.now().plusDays(5))
                 .build());
@@ -109,7 +108,7 @@ class FileControllerTest extends ApplicationPeriodTest {
         // given
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
-                .semester("2021-1")
+                .semesterId(1L)
                 .startDate(LocalDateTime.now().plusDays(3))
                 .endDate(LocalDateTime.now().plusDays(5))
                 .build());
