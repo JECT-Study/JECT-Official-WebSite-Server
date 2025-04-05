@@ -1,6 +1,7 @@
 package org.ject.support.domain.recruit.domain;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -16,7 +17,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.ject.support.common.util.StringListConverter;
 import org.ject.support.domain.base.BaseTimeEntity;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Builder
@@ -42,14 +47,22 @@ public class Question extends BaseTimeEntity {
     @Column(length = 100, nullable = false)
     private String title;
 
+    @Column(length = 30, nullable = false)
+    private String label;
+
     @Column
-    private String body;
+    @Convert(converter = StringListConverter.class)
+    @Builder.Default
+    private List<String> selectOptions = new ArrayList<>();
 
     @Column
     private String inputHint;
 
     @Column
-    private Integer maxLength;
+    private Integer maxTextLength; // 최대 글자수 (공백 포함)
+
+    @Column
+    private Integer maxFileSize; // 최대 파일 크기 (MB)
 
     @Setter
     @ManyToOne(fetch = FetchType.LAZY)
@@ -57,6 +70,6 @@ public class Question extends BaseTimeEntity {
     private Recruit recruit;
 
     public enum InputType {
-        TEXT, URL, FILE
+        SELECT, TEXT, URL, FILE
     }
 }

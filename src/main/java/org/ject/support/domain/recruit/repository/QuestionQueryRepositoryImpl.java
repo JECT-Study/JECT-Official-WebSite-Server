@@ -29,9 +29,11 @@ public class QuestionQueryRepositoryImpl implements QuestionQueryRepository {
                         question.inputType,
                         question.isRequired,
                         question.title,
-                        question.body,
+                        question.label,
+                        question.selectOptions,
                         question.inputHint,
-                        question.maxLength))
+                        question.maxTextLength,
+                        question.maxFileSize))
                 .from(question)
                 .leftJoin(question.recruit, recruit)
                 .where(isWithinRecruitPeriod(now), recruit.jobFamily.eq(jobFamily))

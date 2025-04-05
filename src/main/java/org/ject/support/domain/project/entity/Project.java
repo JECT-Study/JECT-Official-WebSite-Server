@@ -1,6 +1,7 @@
 package org.ject.support.domain.project.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -12,19 +13,18 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.ject.support.common.util.StringListConverter;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.entity.Team;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -51,7 +51,9 @@ public class Project extends BaseTimeEntity {
     private String summary;
 
     @Column
-    private String techStack;
+    @Convert(converter = StringListConverter.class)
+    @Builder.Default
+    private List<String> techStack = new ArrayList<>();
 
     @Column
     private LocalDate startDate;
@@ -76,12 +78,6 @@ public class Project extends BaseTimeEntity {
     @OrderBy("sequence asc")
     @Builder.Default
     private List<ProjectIntro> projectIntros = new ArrayList<>();
-
-    public List<String> getTechStack() {
-        return Arrays.stream(techStack.split(","))
-                .map(String::trim)
-                .collect(Collectors.toList());
-    }
 
     public enum Category {
         MAIN, HACKATHON

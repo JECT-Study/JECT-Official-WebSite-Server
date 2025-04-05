@@ -85,6 +85,31 @@ class ProjectQueryRepositoryTest {
         assertThat(result.getContent()).hasSize(2);
     }
 
+    @Test
+    @DisplayName("techStack이 List<String>와 JSON 문자열 간 정상 변환됨")
+    void convert_tech_stack() {
+        // given
+        List<String> techStack = List.of("Java", "Spring Boot", "MySQL", "JPA");
+
+        Project project = Project.builder()
+                .name("name")
+                .category(Project.Category.MAIN)
+                .semester("2025-1")
+                .summary("summary")
+                .techStack(techStack)
+                .startDate(LocalDate.of(2025, 3, 1))
+                .endDate(LocalDate.of(2025, 6, 30))
+                .team(team1)
+                .build();
+
+        // when
+        Project saved = projectRepository.save(project);
+        Project found = projectRepository.findById(saved.getId()).orElseThrow();
+
+        // then
+        assertThat(found.getTechStack()).containsExactly("Java", "Spring Boot", "MySQL", "JPA");
+    }
+
     private Project createProject(Project.Category category, String semester, Team team) {
         return Project.builder()
                 .name("projectName")

@@ -60,7 +60,7 @@ class ProjectServiceTest {
                 .id(1L)
                 .semester("1기")
                 .summary("summary")
-                .techStack("java,Spring, JPA, QueryDSL,MySQL,AWS")
+                .techStack(List.of("java", "Spring", "JPA", "QueryDSL", "MySQL", "AWS"))
                 .startDate(LocalDate.of(2025, 3, 2))
                 .endDate(LocalDate.of(2025, 6, 30))
                 .description("description")
@@ -137,7 +137,6 @@ class ProjectServiceTest {
         ProjectDetailResponse result = projectService.findProjectDetails(1L);
 
         // then
-        assertThat(result.techStack()).isExactlyInstanceOf(ArrayList.class);
         assertThat(result.techStack()).containsExactly("java", "Spring", "JPA", "QueryDSL", "MySQL", "AWS");
     }
 

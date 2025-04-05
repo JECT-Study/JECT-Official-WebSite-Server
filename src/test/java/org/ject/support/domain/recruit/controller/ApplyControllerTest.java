@@ -62,11 +62,11 @@ class ApplyControllerTest extends ApplicationPeriodTest {
     @BeforeEach
     void setUp() {
         List<Question> questions = List.of(
-                Question.builder().sequence(1).inputType(TEXT).isRequired(true).title("title1").body("question1").build(),
-                Question.builder().sequence(2).inputType(TEXT).isRequired(true).title("title2").body("question2").build(),
-                Question.builder().sequence(3).inputType(TEXT).isRequired(true).title("title3").body("question3").build(),
-                Question.builder().sequence(4).inputType(TEXT).isRequired(true).title("title4").body("question4").build(),
-                Question.builder().sequence(5).inputType(TEXT).isRequired(true).title("title5").body("question5").build()
+                Question.builder().sequence(1).inputType(TEXT).isRequired(true).title("title1").label("label1").build(),
+                Question.builder().sequence(2).inputType(TEXT).isRequired(true).title("title2").label("label2").build(),
+                Question.builder().sequence(3).inputType(TEXT).isRequired(true).title("title3").label("label3").build(),
+                Question.builder().sequence(4).inputType(TEXT).isRequired(true).title("title4").label("label4").build(),
+                Question.builder().sequence(5).inputType(TEXT).isRequired(true).title("title5").label("label5").build()
         );
 
         Recruit recruit = Recruit.builder()
