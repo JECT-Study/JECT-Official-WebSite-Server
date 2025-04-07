@@ -130,6 +130,7 @@ def generated = 'src/main/generated'
 
 tasks.withType(JavaCompile).configureEach {
     options.annotationProcessorPath = configurations.querydsl
+    options.compilerArgs += '--enable-preview'
 }
 
 sourceSets {
