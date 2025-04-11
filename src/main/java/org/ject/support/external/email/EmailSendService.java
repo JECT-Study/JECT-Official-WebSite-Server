@@ -40,8 +40,6 @@ public class EmailSendService {
         eventPublisher.publishEvent(new EmailSendEvent(preparators));
     }
 
-
-
     public record MailSendRequest(
             String to,
             EmailTemplate template,
