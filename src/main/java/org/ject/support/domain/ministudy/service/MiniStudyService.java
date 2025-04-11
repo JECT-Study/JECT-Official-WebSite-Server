@@ -15,7 +15,7 @@ public class MiniStudyService {
 
     private final MiniStudyRepository miniStudyRepository;
 
-    @Cacheable(value = "ministudy", key = "#pageable.pageNumber")
+    @Cacheable(value = "ministudy", key = "#pageable.pageNumber + ':' + #pageable.pageSize")
     @Transactional(readOnly = true)
     public Page<MiniStudyResponse> findMiniStudies(Pageable pageable) {
         return miniStudyRepository.findMiniStudies(pageable);

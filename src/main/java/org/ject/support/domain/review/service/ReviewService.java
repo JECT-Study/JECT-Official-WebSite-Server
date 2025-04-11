@@ -15,7 +15,7 @@ public class ReviewService {
 
     private final ReviewRepository reviewRepository;
 
-    @Cacheable(value = "review", key = "#pageable.pageNumber")
+    @Cacheable(value = "review", key = "#pageable.pageNumber + ':' + #pageable.pageSize")
     @Transactional(readOnly = true)
     public Page<ReviewResponse> findReviews(Pageable pageable) {
         return reviewRepository.findReviews(pageable);

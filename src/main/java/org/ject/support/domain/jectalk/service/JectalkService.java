@@ -15,7 +15,7 @@ public class JectalkService {
 
     private final JectalkRepository jectalkRepository;
 
-    @Cacheable(value = "jectalk", key = "#pageable.pageNumber")
+    @Cacheable(value = "jectalk", key = "#pageable.pageNumber + ':' + #pageable.pageSize")
     @Transactional(readOnly = true)
     public Page<JectalkResponse> findJectalks(Pageable pageable) {
         return jectalkRepository.findJectalks(pageable);
