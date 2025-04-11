@@ -5,7 +5,8 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.Json2MapSerializer;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.ject.support.external.email.event.EmailSendEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.stereotype.Service;
 
@@ -13,9 +14,9 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Slf4j
 public class EmailSendService {
-    private final JavaMailSender mailSender;
     private final MessageGenerator messageGenerator;
     private final Json2MapSerializer json2MapSerializer;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 단건 email 전송
@@ -36,11 +37,7 @@ public class EmailSendService {
     }
 
     private void sendMail(final MimeMessagePreparator ...preparators) {
-        Thread thread = Thread.startVirtualThread(() -> mailSender.send(preparators));
-        thread.setUncaughtExceptionHandler((t, e) -> {
-            log.error("가상 스레드에서 메일 전송 실패 {}: {}", t.getName(), e.getMessage(), e);
-            throw new MailSendException(MailErrorCode.MAIL_SEND_FAILURE);
-        });
+        eventPublisher.publishEvent(new EmailSendEvent(preparators));
     }
 
 
