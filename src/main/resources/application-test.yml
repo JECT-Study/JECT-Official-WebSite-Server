@@ -10,6 +10,10 @@ spring:
     driver-class-name: org.h2.Driver
     username: sa
     password:
+  threads:
+    virtual:
+      enabled: true
+
 
   h2:
     console:
@@ -54,10 +58,7 @@ decorator:
       enable-logging: false
 
 logging:
-  level:
-    org:
-      springframework:
-        jdbc: trace
+  config: classpath:logs/logback-local.xml
 
 security:
   cors:
