@@ -58,10 +58,6 @@ decorator:
       enable-logging: false
 
 logging:
-  level:
-    org:
-      springframework:
-        jdbc: trace
   config: classpath:logs/logback-local.xml
 
 security:
