@@ -38,9 +38,6 @@ public class SecurityConfig {
     @Value("${security.cors.allowed-origins}")
     private String allowedOrigins;
 
-    @Value("${security.cors.allowed-origins-https}")
-    private String allowedOriginsHttps;
-
     @Value("${security.cors.allowed-origins-client}")
     private String allowedOriginsClient;
 
@@ -80,7 +77,6 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOriginPattern(allowedOrigins);
-        configuration.addAllowedOriginPattern(allowedOriginsHttps);
         configuration.addAllowedOriginPattern(allowedOriginsClient);
         configuration.addAllowedHeader("*");
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE"));

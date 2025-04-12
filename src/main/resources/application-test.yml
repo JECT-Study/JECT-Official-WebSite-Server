@@ -63,5 +63,6 @@ logging:
 security:
   cors:
     allowed-origins: http://localhost:8080
-    allowed-origins-https: https://localhost:443
     allowed-origins-client: http://localhost:3000
+    cookie:
+      domain: localhost
