@@ -8,6 +8,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import java.security.Key;
 import java.util.Date;
@@ -43,7 +44,7 @@ public class JwtTokenProvider {
         this.secretKey = Keys.hmacShaKeyFor(decodeSecret);
     }
 
-    public String createAccessToken(Authentication authentication, Long memberId) {
+    public String createAccessToken(Authentication authentication, Long memberId) { // TODO: 리팩토링 필요
         validateAuthentication(authentication);
         Claims claims = Jwts.claims();
         claims.put("memberId", memberId);
@@ -101,10 +102,22 @@ public class JwtTokenProvider {
     }
 
     public String resolveToken(HttpServletRequest request) {
+        // 헤더에서 토큰 가져오기
         String bearerToken = request.getHeader("Authorization");
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
+        
+        // 헤더에 토큰이 없으면 쿠키에서 토큰 가져오기
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("accessToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        
         return null;
     }
 
