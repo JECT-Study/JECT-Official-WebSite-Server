@@ -108,6 +108,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
 
+    // logback
+    implementation "ca.pjer:logback-awslogs-appender:1.6.0"
+    implementation platform("io.awspring.cloud:spring-cloud-aws-dependencies:3.0.0")
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter'
+
 }
 
 configurations {

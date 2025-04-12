@@ -1,0 +1,27 @@
+<configuration>
+    <springProperty name="ACCESS_KEY" source="aws.cloudwatch.access-key"/>
+    <springProperty name="SECRET_KEY" source="aws.cloudwatch.secret-key"/>
+    <springProperty name="LOG_REGION" source="aws.cloudwatch.region"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %clr(%5level) %cyan(%logger) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="AWS_LOGS" class="ca.pjer.logback.AwsLogsAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>info</level>
+        </filter>
+        <logGroupName>JECT-log</logGroupName>
+        <logStreamUuidPrefix>JECT-log-</logStreamUuidPrefix>
+        <logRegion>${LOG_REGION}</logRegion>
+        <accessKeyId>${ACCESS_KEY}</accessKeyId>
+        <secretAccessKey>${SECRET_KEY}</secretAccessKey>
+    </appender>
+
+    <logger name="org.ject.support" level="DEBUG" />
+    <root level="INFO">
+        <appender-ref ref="AWS_LOGS"/>
+    </root>
+</configuration>

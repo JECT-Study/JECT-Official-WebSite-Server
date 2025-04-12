@@ -62,6 +62,7 @@ logging:
     org:
       springframework:
         jdbc: trace
+  config: classpath:logs/logback-local.xml
 
 security:
   cors:
