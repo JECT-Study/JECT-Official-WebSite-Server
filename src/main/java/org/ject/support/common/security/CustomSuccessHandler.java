@@ -33,4 +33,10 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         response.addCookie(jwtCookieProvider.createVerificationCookie(verificationToken));
     }
+
+    public void onAuthenticationSuccess(HttpServletResponse response, String refreshToken, Long memberId) {
+        String newAccessToken = jwtTokenProvider.reissueAccessToken(refreshToken, memberId);
+
+        response.addCookie(jwtCookieProvider.createAccessCookie(newAccessToken));
+    }
 }

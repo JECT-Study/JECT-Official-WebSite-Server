@@ -1,15 +1,12 @@
 package org.ject.support.domain.auth;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.auth.AuthDto.TokenRefreshRequest;
-import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
+import org.ject.support.common.security.CustomSuccessHandler;
+import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.auth.AuthDto.PinLoginRequest;
-import org.ject.support.domain.auth.AuthDto.PinLoginResponse;
-import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeOnlyResponse;
 import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeRequest;
 import org.ject.support.external.email.EmailTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,12 +14,19 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
+    private final CustomSuccessHandler customSuccessHandler;
+    private final JwtTokenProvider jwtTokenProvider;
 
     /**
      * 인증번호 검증 API
@@ -30,9 +34,15 @@ public class AuthController {
      */
     @PostMapping("/code")
     @PreAuthorize("permitAll()")
-    public VerifyAuthCodeOnlyResponse verifyAuthCode(@RequestBody VerifyAuthCodeRequest request,
-                                                     @RequestParam EmailTemplate template) {
-        return authService.verifyEmailByAuthCodeOnly(request.email(), request.authCode(), template);
+    public void verifyAuthCode(@RequestBody VerifyAuthCodeRequest verifyAuthCodeRequest, HttpServletRequest request,
+                               HttpServletResponse response, @RequestParam EmailTemplate template) {
+        if (template == EmailTemplate.CERTIFICATE) { // TODO: 추후 리팩토링 필요
+            Authentication authentication = authService.verifyEmailByAuthCodeOnly(verifyAuthCodeRequest.email(),
+                    verifyAuthCodeRequest.authCode());
+            customSuccessHandler.onAuthenticationSuccess(request, response, authentication);
+        } else if (template == EmailTemplate.PIN_RESET) {
+            customSuccessHandler.onAuthenticationSuccess(response, verifyAuthCodeRequest.email());
+        }
     }
     
     /**
@@ -41,18 +51,23 @@ public class AuthController {
      */
     @PostMapping("/refresh")
     @PreAuthorize("permitAll()")
-    public TokenRefreshResponse refreshToken(@RequestBody TokenRefreshRequest request) {
-        return authService.refreshAccessToken(request.refreshToken());
+    public void refreshToken(HttpServletRequest request, HttpServletResponse response) {
+        String refreshToken = jwtTokenProvider.resolveRefreshToken(request);
+        Long memberId = authService.refreshAccessToken(refreshToken);
+        customSuccessHandler.onAuthenticationSuccess(response, refreshToken, memberId);
     }
 
     /**
      * PIN 로그인 API
      * 이메일과 PIN 번호로 로그인하고 액세스 토큰과 리프레시 토큰을 발급합니다.
+     * CustomSuccessHandler를 통해 쿠키에 토큰을 저장합니다.
      */
     @PostMapping("/login/pin")
     @PreAuthorize("permitAll()")
-    public PinLoginResponse loginWithPin(@RequestBody @Valid PinLoginRequest request) {
-        return authService.loginWithPin(request.email(), request.pin());
+    public void loginWithPin(@RequestBody @Valid PinLoginRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
+        Authentication authentication = authService.loginWithPin(request.email(), request.pin());
+        
+        customSuccessHandler.onAuthenticationSuccess(httpRequest, response, authentication);
     }
 
     @GetMapping("/login/exist")
