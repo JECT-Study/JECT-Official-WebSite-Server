@@ -106,7 +106,7 @@ class JwtTokenProviderTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
 
         // when
-        String resolvedToken = jwtTokenProvider.resolveToken(request);
+        String resolvedToken = jwtTokenProvider.resolveAccessToken(request);
 
         // then
         assertThat(resolvedToken).isEqualTo(token);
