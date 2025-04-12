@@ -8,12 +8,12 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class JwtCookieProvider {
-    
-    @Value("${spring.jwt.token.access-expiration-time}")
-    private long accessExpirationTime;
 
     @Value("${spring.jwt.token.refresh-expiration-time}")
     private long refreshExpirationTime;
+
+    @Value("${security.cors.cookie.domain}")
+    private String domain;
 
     public Cookie createRefreshCookie(String refreshToken) {
         String cookieName = "refreshToken";
@@ -29,6 +29,7 @@ public class JwtCookieProvider {
         Cookie cookie = new Cookie(cookieName, token);
         cookie.setHttpOnly(true);
         cookie.setSecure(true);
+        cookie.setDomain(domain);
         cookie.setPath("/");
         cookie.setMaxAge((int)(refreshExpirationTime / 1000));
 
