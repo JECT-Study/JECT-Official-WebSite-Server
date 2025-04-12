@@ -20,13 +20,17 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) {
-
-
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         String accessToken = jwtTokenProvider.createAccessToken(authentication, customUserDetails.getMemberId());
         String refreshToken = jwtTokenProvider.createRefreshToken(authentication, customUserDetails.getMemberId());
 
         response.addCookie(jwtCookieProvider.createRefreshCookie(refreshToken));
         response.addCookie(jwtCookieProvider.createAccessCookie(accessToken));
+    }
+
+    public void onAuthenticationSuccess(HttpServletResponse response, String email) {
+        String verificationToken = jwtTokenProvider.createVerificationToken(email);
+
+        response.addCookie(jwtCookieProvider.createVerificationCookie(verificationToken));
     }
 }
