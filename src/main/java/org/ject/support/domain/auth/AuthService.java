@@ -8,6 +8,9 @@ import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.external.email.EmailTemplate;
+import org.ject.support.external.email.MailErrorCode;
+import org.ject.support.external.email.MailSendException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,16 +30,38 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
-
     /**
-     * 인증번호 검증만 수행하고 임시 토큰을 발급합니다.
-     * 이메일 인증 -> 인증번호 입력 단계에서 호출됩니다.
-     * 인증번호 검증이 성공하면 Authentication 객체를 반환합니다.
+     * 이메일 템플릿 타입에 따라 인증번호를 검증하고 적절한 결과를 반환합니다.
+     *
      * @param email 인증할 이메일 주소
-     * @param userInputCode 사용자가 입력한 인증번호
+     * @param authCode 사용자가 입력한 인증번호
+     * @param template 이메일 템플릿 타입
+     * @return 템플릿 타입에 따른 결과 객체 (Authentication 또는 String)
      */
     @Transactional
-    public Authentication verifyEmailByAuthCodeOnly(String email, String userInputCode) {
+    public AuthVerificationResult verifyAuthCodeByTemplate(String email, String authCode, EmailTemplate template) {
+        if (template == EmailTemplate.CERTIFICATE) {
+            // 인증번호 검증 후 Authentication 객체 반환
+            Authentication authentication = verifyEmailByAuthCodeOnly(email, authCode);
+            return new AuthVerificationResult(authentication);
+        } else if (template == EmailTemplate.PIN_RESET) {
+            // 인증번호 검증 후 이메일만 반환
+            verifyAuthCode(email, authCode);
+            deleteAuthCode(email);
+            return new AuthVerificationResult(email);
+        }
+
+        throw new MailSendException(MailErrorCode.INVALID_MAIL_TEMPLATE);
+    }
+    /**
+     * 이메일 인증번호를 검증하고 인증된 사용자의 Authentication 객체를 반환합니다.
+     *
+     * @param email 인증할 이메일 주소
+     * @param userInputCode 사용자가 입력한 인증번호
+     * @return 인증된 사용자의 Authentication 객체
+     */
+
+    private Authentication verifyEmailByAuthCodeOnly(String email, String userInputCode) {
         // 인증번호 검증
         verifyAuthCode(email, userInputCode);
         Member member = findMember(email);
@@ -107,8 +132,7 @@ public class AuthService {
                 throw new AuthException(INVALID_REFRESH_TOKEN);
             }
 
-            Long memberId = jwtTokenProvider.extractMemberId(refreshToken);
-            return memberId;
+            return jwtTokenProvider.extractMemberId(refreshToken);
         } catch (ExpiredJwtException e) {
             throw new AuthException(EXPIRED_REFRESH_TOKEN);
         } catch (JwtException e) {

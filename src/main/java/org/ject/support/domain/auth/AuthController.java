@@ -36,12 +36,15 @@ public class AuthController {
     @PreAuthorize("permitAll()")
     public void verifyAuthCode(@RequestBody VerifyAuthCodeRequest verifyAuthCodeRequest, HttpServletRequest request,
                                HttpServletResponse response, @RequestParam EmailTemplate template) {
-        if (template == EmailTemplate.CERTIFICATE) { // TODO: 추후 리팩토링 필요
-            Authentication authentication = authService.verifyEmailByAuthCodeOnly(verifyAuthCodeRequest.email(),
-                    verifyAuthCodeRequest.authCode());
-            customSuccessHandler.onAuthenticationSuccess(request, response, authentication);
-        } else if (template == EmailTemplate.PIN_RESET) {
-            customSuccessHandler.onAuthenticationSuccess(response, verifyAuthCodeRequest.email());
+        // 서비스 레이어에서 템플릿 타입에 따른 인증 검증 결과 반환
+        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(
+                verifyAuthCodeRequest.email(), verifyAuthCodeRequest.authCode(), template);
+        
+        // 결과에 따라 적절한 응답 처리
+        if (result.hasAuthentication()) {
+            customSuccessHandler.onAuthenticationSuccess(request, response, result.getAuthentication());
+        } else {
+            customSuccessHandler.onAuthenticationSuccess(response, result.getEmail());
         }
     }
     
