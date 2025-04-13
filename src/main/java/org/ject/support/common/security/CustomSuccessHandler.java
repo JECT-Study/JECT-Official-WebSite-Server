@@ -28,12 +28,23 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         response.addCookie(jwtCookieProvider.createAccessCookie(accessToken));
     }
 
+    /**
+     * 이메일 인증 성공 시 호출되는 메서드
+     * @param response HttpServletResponse
+     * @param email 인증된 이메일
+     */
     public void onAuthenticationSuccess(HttpServletResponse response, String email) {
         String verificationToken = jwtTokenProvider.createVerificationToken(email);
 
         response.addCookie(jwtCookieProvider.createVerificationCookie(verificationToken));
     }
 
+    /**
+     * 리프레시 토큰을 통한 액세스 토큰 재발급 성공 시 호출되는 메서드
+     * @param response HttpServletResponse
+     * @param refreshToken 재발급된 리프레시 토큰
+     * @param memberId 회원 ID
+     */
     public void onAuthenticationSuccess(HttpServletResponse response, String refreshToken, Long memberId) {
         String newAccessToken = jwtTokenProvider.reissueAccessToken(refreshToken, memberId);
 
