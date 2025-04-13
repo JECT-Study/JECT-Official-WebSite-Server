@@ -9,14 +9,18 @@ import static org.ject.support.domain.auth.AuthErrorCode.INVALID_CREDENTIALS;
 import static org.ject.support.domain.auth.AuthErrorCode.NOT_FOUND_AUTH_CODE;
 import static org.ject.support.domain.member.exception.MemberErrorCode.NOT_FOUND_MEMBER;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
 
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
 import org.ject.support.external.email.EmailTemplate;
+import org.ject.support.external.email.MailErrorCode;
+import org.ject.support.external.email.MailSendException;
 import static org.mockito.Mockito.lenient;
 
 import java.util.Optional;
@@ -80,48 +84,6 @@ class AuthServiceTest {
     }
 
     @Test
-    @DisplayName("이메일 인증 코드 검증 성공 - 인증 토큰 발급")
-    void verifyEmailByAuthCodeOnly_Success() {
-        // given
-        given(valueOperations.get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
-        given(jwtTokenProvider.createVerificationToken(TEST_EMAIL)).willReturn(TEST_VERIFICATION_TOKEN);
-
-        // when
-        VerifyAuthCodeOnlyResponse result = authService.verifyEmailByAuthCodeOnly(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.CERTIFICATE);
-
-        // then
-        assertThat(result.token()).isEqualTo(TEST_VERIFICATION_TOKEN);
-        verify(redisTemplate).delete(TEST_EMAIL); // 인증 코드 검증 후 Redis에서 코드 삭제 검증
-    }
-
-    @Test
-    @DisplayName("인증 코드 검증 실패 - 잘못된 코드")
-    void verifyEmailByAuthCodeOnly_InvalidCode_ThrowsException() {
-        // given
-        String wrongCode = "wrong_code";
-        given(valueOperations.get(anyString())).willReturn(TEST_AUTH_CODE);
-
-        // when & then
-        assertThatThrownBy(() -> authService.verifyEmailByAuthCodeOnly(TEST_EMAIL, wrongCode, EmailTemplate.CERTIFICATE))
-            .isInstanceOf(AuthException.class)
-            .extracting(e -> ((AuthException) e).getErrorCode())
-            .isEqualTo(INVALID_AUTH_CODE);
-    }
-
-    @Test
-    @DisplayName("인증 코드 검증 실패 - 만료된 코드")
-    void verifyEmailByAuthCodeOnly_ExpiredCode_ThrowsException() {
-        // given
-        given(valueOperations.get(anyString())).willReturn(null);
-
-        // when & then
-        assertThatThrownBy(() -> authService.verifyEmailByAuthCodeOnly(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.CERTIFICATE))
-            .isInstanceOf(AuthException.class)
-            .extracting(e -> ((AuthException) e).getErrorCode())
-            .isEqualTo(NOT_FOUND_AUTH_CODE);
-    }
-    
-    @Test
     @DisplayName("PIN 재설정을 위한 이메일 인증 코드 검증 성공 - 액세스 토큰 발급")
     void verifyEmailByAuthCodeOnly_PinReset_Success() {
         // given
@@ -138,10 +100,12 @@ class AuthServiceTest {
         given(jwtTokenProvider.createAccessToken(authentication, TEST_MEMBER_ID)).willReturn(TEST_ACCESS_TOKEN);
 
         // when
-        VerifyAuthCodeOnlyResponse result = authService.verifyEmailByAuthCodeOnly(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET);
+        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET);
 
         // then
-        assertThat(result.token()).isEqualTo(TEST_ACCESS_TOKEN);
+        assertThat(result).isNotNull();
+        assertThat(result.hasAuthentication()).isFalse();
+        assertThat(result.getEmail()).isEqualTo(TEST_EMAIL);
         verify(redisTemplate).delete(TEST_EMAIL);
     }
     
@@ -154,10 +118,10 @@ class AuthServiceTest {
         given(jwtTokenProvider.reissueAccessToken(TEST_REFRESH_TOKEN, TEST_MEMBER_ID)).willReturn(TEST_ACCESS_TOKEN);
 
         // when
-        TokenRefreshResponse result = authService.refreshAccessToken(TEST_REFRESH_TOKEN);
+        Long result = authService.refreshAccessToken(TEST_REFRESH_TOKEN);
 
         // then
-        assertThat(result.accessToken()).isEqualTo(TEST_ACCESS_TOKEN);
+        assertThat(result).isEqualTo(TEST_MEMBER_ID);
     }
     
     @Test
@@ -217,11 +181,10 @@ class AuthServiceTest {
         given(jwtTokenProvider.createRefreshToken(authentication, member.getId())).willReturn(TEST_REFRESH_TOKEN);
         
         // when
-        PinLoginResponse response = authService.loginWithPin(TEST_EMAIL, TEST_PIN);
+        Authentication result = authService.loginWithPin(TEST_EMAIL, TEST_PIN);
         
         // then
-        assertThat(response.accessToken()).isEqualTo(TEST_ACCESS_TOKEN);
-        assertThat(response.refreshToken()).isEqualTo(TEST_REFRESH_TOKEN);
+        assertThat(result).isEqualTo(authentication);
     }
     
     @Test
@@ -282,5 +245,64 @@ class AuthServiceTest {
         
         // then
         assertThat(result).isFalse();
+    }
+    
+    @Test
+    @DisplayName("인증번호 검증 - CERTIFICATE 템플릿")
+    void verifyAuthCodeByTemplate_WithCertificateTemplate_ReturnsAuthenticationResult() {
+        // given
+        Member member = Member.builder()
+                .email(TEST_EMAIL)
+                .name("테스트")
+                .build();
+        Authentication mockAuthentication = mock(Authentication.class);
+        
+        given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(member));
+        given(redisTemplate.opsForValue().get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
+        given(jwtTokenProvider.createAuthenticationByMember(any(Member.class))).willReturn(mockAuthentication);
+        
+        // when
+        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.CERTIFICATE);
+        
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.hasAuthentication()).isTrue();
+        assertThat(result.getAuthentication()).isEqualTo(mockAuthentication);
+        assertThat(result.getEmail()).isNull();
+        
+        // Redis에서 인증 코드가 삭제되었는지 확인
+        verify(redisTemplate).delete(TEST_EMAIL);
+    }
+    
+    @Test
+    @DisplayName("인증번호 검증 - PIN_RESET 템플릿")
+    void verifyAuthCodeByTemplate_WithPinResetTemplate_ReturnsEmailResult() {
+        // given
+        given(redisTemplate.opsForValue().get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
+        
+        // when
+        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET);
+        
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.hasAuthentication()).isFalse();
+        assertThat(result.getAuthentication()).isNull();
+        assertThat(result.getEmail()).isEqualTo(TEST_EMAIL);
+        
+        // Redis에서 인증 코드가 삭제되었는지 확인
+        verify(redisTemplate).delete(TEST_EMAIL);
+    }
+    
+    @Test
+    @DisplayName("인증번호 검증 - 유효하지 않은 템플릿")
+    void verifyAuthCodeByTemplate_WithInvalidTemplate_ThrowsException() {
+        // given
+        EmailTemplate invalidTemplate = null;
+        
+        // when & then
+        assertThatThrownBy(() -> 
+            authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, invalidTemplate)
+        ).isInstanceOf(MailSendException.class)
+         .hasFieldOrPropertyWithValue("errorCode", MailErrorCode.INVALID_MAIL_TEMPLATE);
     }
 }
