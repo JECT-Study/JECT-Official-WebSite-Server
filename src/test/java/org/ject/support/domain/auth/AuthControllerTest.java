@@ -1,29 +1,17 @@
 package org.ject.support.domain.auth;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import org.ject.support.external.email.EmailTemplate;
 import org.ject.support.common.security.CustomSuccessHandler;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
-
-import org.ject.support.domain.auth.AuthDto.TokenRefreshRequest;
-import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
 import org.ject.support.domain.auth.AuthDto.PinLoginRequest;
-import org.ject.support.domain.auth.AuthDto.PinLoginResponse;
-import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeOnlyResponse;
+import org.ject.support.domain.auth.AuthDto.TokenRefreshRequest;
 import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeRequest;
-import org.ject.support.domain.auth.AuthVerificationResult;
+import org.ject.support.external.email.EmailTemplate;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,15 +22,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -86,7 +72,7 @@ class AuthControllerTest {
         authController.verifyAuthCode(request, mock(HttpServletRequest.class), mock(HttpServletResponse.class), template);
 
         // then
-        verify(authService).verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, template);
+        verify(authService).verifyAuthCodeByTemplate(eq(TEST_EMAIL), eq(TEST_AUTH_CODE), eq(template));
         verify(customSuccessHandler).onAuthenticationSuccess(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(mockAuthentication));
     }
     
@@ -169,10 +155,10 @@ class AuthControllerTest {
 @TestPropertySource(properties = {"spring.data.redis.repositories.enabled=false", "server.port=0"})
 class AuthControllerIntegrationTest extends ApplicationPeriodTest {
 
-    @Mock
+    @MockitoBean
     private AuthService authService;
     
-    @Mock
+    @MockitoBean
     private CustomSuccessHandler customSuccessHandler;
 
     @Autowired
@@ -191,9 +177,13 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
         // given
         VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
         
+        // Redis에서 인증 코드를 반환하도록 설정
+        when(valueOperations.get(TEST_EMAIL)).thenReturn(TEST_AUTH_CODE);
+        
         // AuthService의 verifyAuthCodeByTemplate 메서드를 모킹
+        // PIN_RESET 템플릿은 이메일만 필요함
         AuthVerificationResult mockResult = new AuthVerificationResult(TEST_EMAIL);
-        given(authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.CERTIFICATE))
+        given(authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET))
             .willReturn(mockResult);
         
         // 쿠키 발급을 위한 모킹 설정
@@ -208,15 +198,13 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
         MvcResult result = mockMvc.perform(post("/auth/code")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request))
-                .param("template", EmailTemplate.CERTIFICATE.name()))
+                .param("template", EmailTemplate.PIN_RESET.name()))
                 .andExpect(status().isOk())
                 .andReturn();
         
         // 응답 상태 코드 확인
         MockHttpServletResponse response = result.getResponse();
         assertThat(response.getStatus()).isEqualTo(200);
-        
-        // 쿠키 발급 확인
         verify(customSuccessHandler).onAuthenticationSuccess(any(HttpServletResponse.class), eq(TEST_EMAIL));
     }
     
