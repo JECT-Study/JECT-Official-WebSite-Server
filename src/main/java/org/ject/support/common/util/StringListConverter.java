@@ -4,10 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
+import java.util.ArrayList;
+import java.util.List;
 import org.ject.support.common.exception.GlobalErrorCode;
 import org.ject.support.common.exception.GlobalException;
-
-import java.util.List;
 
 
 public class StringListConverter implements AttributeConverter<List<String>, String> {
@@ -30,8 +30,8 @@ public class StringListConverter implements AttributeConverter<List<String>, Str
 
     @Override
     public List<String> convertToEntityAttribute(String dbData) {
-        if (dbData == null) {
-            return null;
+        if (dbData == null || dbData.isBlank()) {
+            return new ArrayList<>();
         }
         try {
             return objectMapper.readValue(dbData, LIST_TYPE_REFERENCE);
