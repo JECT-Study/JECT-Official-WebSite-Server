@@ -17,7 +17,6 @@ import static org.mockito.Mockito.mock;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
-import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
 import org.ject.support.external.email.EmailTemplate;
 import org.ject.support.external.email.MailErrorCode;
 import org.ject.support.external.email.MailSendException;
@@ -25,8 +24,6 @@ import static org.mockito.Mockito.lenient;
 
 import java.util.Optional;
 
-import org.ject.support.domain.auth.AuthDto.PinLoginResponse;
-import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeOnlyResponse;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberException;

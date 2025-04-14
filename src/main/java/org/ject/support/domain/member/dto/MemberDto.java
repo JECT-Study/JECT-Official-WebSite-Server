@@ -34,9 +34,6 @@ public class MemberDto {
 
     }
 
-    public record RegisterResponse(String accessToken, String refreshToken) {
-    }
-
     public record UpdatePinRequest(
             @NotBlank @Pattern(regexp = "^\\d{6}$", message = "PIN 번호는 6자리 숫자여야 합니다.") String pin) {
     }

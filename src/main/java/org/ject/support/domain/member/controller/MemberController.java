@@ -34,7 +34,7 @@ public class MemberController {
      */
     @PostMapping
     @PreAuthorize("hasRole('ROLE_VERIFICATION')")
-    public void registerMember(HttpServletRequest request, HttpServletResponse response,
+    public boolean registerMember(HttpServletRequest request, HttpServletResponse response,
                                            @Valid @RequestBody MemberDto.RegisterRequest registerRequest) {
 
         // 쿠키에서 verification 토큰 추출
@@ -46,6 +46,8 @@ public class MemberController {
         // 임시 회원 생성 및 토큰 발급
         Authentication authentication = memberService.registerTempMember(registerRequest, email);
         customSuccessHandler.onAuthenticationSuccess(request, response, authentication);
+
+        return true;
     }
 
     /**
