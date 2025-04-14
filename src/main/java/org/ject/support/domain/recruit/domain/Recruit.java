@@ -11,11 +11,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,12 +20,13 @@ import org.hibernate.annotations.DynamicUpdate;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.JobFamily;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Entity
 @Builder
-@Table(uniqueConstraints = {
-        @UniqueConstraint(name = "uq_recruit_semester_job_family", columnNames = {"semester_id", "job_family"})
-})
 @DynamicUpdate
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -54,6 +50,10 @@ public class Recruit extends BaseTimeEntity {
     @Column(name = "job_family", columnDefinition = "varchar(45)", nullable = false)
     private JobFamily jobFamily;
 
+    @Column(name = "is_closed", nullable = false)
+    @Builder.Default
+    private boolean isClosed = false;
+
     @OneToMany(mappedBy = "recruit", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Question> questions = new ArrayList<>();
@@ -73,5 +73,11 @@ public class Recruit extends BaseTimeEntity {
 
     public boolean isInvalidQuestionId(final Long questionId) {
         return questions.stream().noneMatch(question -> question.getId().equals(questionId));
+    }
+
+    public void update(JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate) {
+        this.jobFamily = jobFamily;
+        this.startDate = startDate;
+        this.endDate = endDate;
     }
 }
