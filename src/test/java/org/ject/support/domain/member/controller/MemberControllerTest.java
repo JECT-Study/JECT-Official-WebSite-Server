@@ -5,21 +5,21 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.standaloneSetup;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.ject.support.common.security.CustomSuccessHandler;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
-import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
 import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
 import org.ject.support.domain.member.exception.MemberErrorCode;
@@ -58,6 +58,9 @@ class MemberControllerTest {
     @Mock
     private JwtTokenProvider jwtTokenProvider;
 
+    @Mock
+    private CustomSuccessHandler customSuccessHandler;
+
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
@@ -65,8 +68,6 @@ class MemberControllerTest {
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_PHONE_NUMBER = "01012345678";
     private final String TEST_PIN = "123456";
-    private final String TEST_ACCESS_TOKEN = "test.access.token";
-    private final String TEST_REFRESH_TOKEN = "test.refresh.token";
     private final String TEST_VERIFICATION_TOKEN = "test.verification.token";
 
     @BeforeEach
@@ -80,22 +81,28 @@ class MemberControllerTest {
     void registerMember_Success() throws Exception {
         // given
         RegisterRequest request = new RegisterRequest(TEST_PIN);
-        RegisterResponse response = new RegisterResponse(TEST_ACCESS_TOKEN, TEST_REFRESH_TOKEN);
+        Authentication mockAuthentication = new UsernamePasswordAuthenticationToken(
+                new CustomUserDetails(TEST_EMAIL, 1L, Role.TEMP), "", null);
         
+        given(jwtTokenProvider.resolveVerificationToken(any())).willReturn(TEST_VERIFICATION_TOKEN);
         given(jwtTokenProvider.extractEmailFromVerificationToken(TEST_VERIFICATION_TOKEN)).willReturn(TEST_EMAIL);
-        given(memberService.registerTempMember(any(RegisterRequest.class), anyString())).willReturn(response);
+        given(memberService.registerTempMember(any(RegisterRequest.class), anyString())).willReturn(mockAuthentication);
+        
+        // customSuccessHandler.onAuthenticationSuccess 메소드 호출 모킹
+        doNothing().when(customSuccessHandler).onAuthenticationSuccess(any(HttpServletRequest.class), any(
+                HttpServletResponse.class), any(Authentication.class));
 
         // when & then
         mockMvc.perform(post("/members")
-                .header("Authorization", "Bearer " + TEST_VERIFICATION_TOKEN)
+                .cookie(new jakarta.servlet.http.Cookie("verificationToken", TEST_VERIFICATION_TOKEN))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessToken").exists())
-                .andExpect(jsonPath("$.refreshToken").exists());
+                .andExpect(status().isOk());
         
+        verify(jwtTokenProvider).resolveVerificationToken(any());
         verify(jwtTokenProvider).extractEmailFromVerificationToken(TEST_VERIFICATION_TOKEN);
-        verify(memberService).registerTempMember(any(RegisterRequest.class), anyString());
+        verify(memberService).registerTempMember(any(RegisterRequest.class), eq(TEST_EMAIL));
+        verify(customSuccessHandler).onAuthenticationSuccess(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(mockAuthentication));
     }
     
     @Test
@@ -225,16 +232,15 @@ class MemberControllerIntegrationTest extends ApplicationPeriodTest {
         RegisterRequest request = new RegisterRequest(TEST_PIN);
         
         // 실제 서비스를 사용하므로 모킹하지 않음
-        // 대신 응답 구조만 확인
+        // 대신 응답 상태만 확인
         
         // when & then
         mockMvc.perform(post("/members")
-                .header("Authorization", "Bearer " + TEST_VERIFICATION_TOKEN)
+                .cookie(new jakarta.servlet.http.Cookie("verificationToken", TEST_VERIFICATION_TOKEN))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$").exists());
-        // 실제 응답 값은 테스트마다 다를 수 있으므로 구조만 확인
+                .andExpect(status().isOk());
+        // 응답 본문이 없으므로 상태 코드만 확인
     }
     
     @Test

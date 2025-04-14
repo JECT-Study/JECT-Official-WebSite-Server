@@ -56,11 +56,31 @@ class AuthControllerTest {
     private final Long TEST_MEMBER_ID = 1L;
 
     @Test
-    @DisplayName("인증 코드 검증 - CERTIFICATE 템플릿 - 인증 토큰 발급 성공")
+    @DisplayName("인증 코드 검증 - CERTIFICATE 템플릿 - 이메일만 반환 성공")
     void verifyAuthCode_WithCertificateTemplate_Success() {
         // given
         VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
         EmailTemplate template = EmailTemplate.CERTIFICATE;
+        
+        AuthVerificationResult mockResult = new AuthVerificationResult(TEST_EMAIL);
+        
+        given(authService.verifyAuthCodeByTemplate(request.email(), request.authCode(), template))
+            .willReturn(mockResult);
+
+        // when
+        authController.verifyAuthCode(request, mock(HttpServletRequest.class), mock(HttpServletResponse.class), template);
+
+        // then
+        verify(authService).verifyAuthCodeByTemplate(eq(TEST_EMAIL), eq(TEST_AUTH_CODE), eq(template));
+        verify(customSuccessHandler).onAuthenticationSuccess(any(HttpServletResponse.class), eq(TEST_EMAIL));
+    }
+    
+    @Test
+    @DisplayName("인증 코드 검증 - PIN_RESET 템플릿 - 인증 토큰 발급 성공")
+    void verifyAuthCode_WithPinResetTemplate_Success() {
+        // given
+        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
+        EmailTemplate template = EmailTemplate.PIN_RESET;
         
         Authentication mockAuthentication = mock(Authentication.class);
         AuthVerificationResult mockResult = new AuthVerificationResult(mockAuthentication);
@@ -72,28 +92,8 @@ class AuthControllerTest {
         authController.verifyAuthCode(request, mock(HttpServletRequest.class), mock(HttpServletResponse.class), template);
 
         // then
-        verify(authService).verifyAuthCodeByTemplate(eq(TEST_EMAIL), eq(TEST_AUTH_CODE), eq(template));
-        verify(customSuccessHandler).onAuthenticationSuccess(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(mockAuthentication));
-    }
-    
-    @Test
-    @DisplayName("인증 코드 검증 - PIN_RESET 템플릿 - 성공")
-    void verifyAuthCode_WithPinResetTemplate_Success() {
-        // given
-        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
-        EmailTemplate template = EmailTemplate.PIN_RESET;
-        
-        AuthVerificationResult mockResult = new AuthVerificationResult(TEST_EMAIL);
-        
-        given(authService.verifyAuthCodeByTemplate(request.email(), request.authCode(), template))
-            .willReturn(mockResult);
-
-        // when
-        authController.verifyAuthCode(request, mock(HttpServletRequest.class), mock(HttpServletResponse.class), template);
-
-        // then
         verify(authService).verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, template);
-        verify(customSuccessHandler).onAuthenticationSuccess(any(HttpServletResponse.class), eq(TEST_EMAIL));
+        verify(customSuccessHandler).onAuthenticationSuccess(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(mockAuthentication));
     }
     
     @Test
@@ -181,17 +181,18 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
         when(valueOperations.get(TEST_EMAIL)).thenReturn(TEST_AUTH_CODE);
         
         // AuthService의 verifyAuthCodeByTemplate 메서드를 모킹
-        // PIN_RESET 템플릿은 이메일만 필요함
-        AuthVerificationResult mockResult = new AuthVerificationResult(TEST_EMAIL);
+        // PIN_RESET 템플릿은 Authentication 객체 반환
+        Authentication mockAuthentication = mock(Authentication.class);
+        AuthVerificationResult mockResult = new AuthVerificationResult(mockAuthentication);
         given(authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET))
             .willReturn(mockResult);
         
         // 쿠키 발급을 위한 모킹 설정
         doAnswer(invocation -> {
-            HttpServletResponse response = invocation.getArgument(0);
+            HttpServletResponse response = invocation.getArgument(1);
             response.addCookie(new Cookie("verification", "test-verification-token"));
             return null;
-        }).when(customSuccessHandler).onAuthenticationSuccess(any(HttpServletResponse.class), eq(TEST_EMAIL));
+        }).when(customSuccessHandler).onAuthenticationSuccess(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(mockAuthentication));
         
         // when & then
         // 인증 없이 접근 가능한지 확인 (permitAll 설정)
@@ -205,7 +206,7 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
         // 응답 상태 코드 확인
         MockHttpServletResponse response = result.getResponse();
         assertThat(response.getStatus()).isEqualTo(200);
-        verify(customSuccessHandler).onAuthenticationSuccess(any(HttpServletResponse.class), eq(TEST_EMAIL));
+        verify(customSuccessHandler).onAuthenticationSuccess(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(mockAuthentication));
     }
     
     @Test

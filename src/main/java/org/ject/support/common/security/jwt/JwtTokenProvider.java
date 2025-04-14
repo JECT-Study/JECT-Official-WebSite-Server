@@ -107,25 +107,23 @@ public class JwtTokenProvider {
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
-        
-        // 헤더에 토큰이 없으면 쿠키에서 토큰 가져오기
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("accessToken".equals(cookie.getName())) {
-                    return cookie.getValue();
-                }
-            }
-        }
-        
-        return null;
+        // 쿠키에서 토큰 가져오기
+        return getTokenByCookie(request, "accessToken");
+    }
+
+    public String resolveVerificationToken(HttpServletRequest request) {
+        return getTokenByCookie(request, "verificationToken");
     }
 
     public String resolveRefreshToken(HttpServletRequest request) {
+        return getTokenByCookie(request, "refreshToken");
+    }
+
+    private String getTokenByCookie(HttpServletRequest request, String cookieName) {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if ("refreshToken".equals(cookie.getName())) {
+                if (cookieName.equals(cookie.getName())) {
                     return cookie.getValue();
                 }
             }

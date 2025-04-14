@@ -17,7 +17,6 @@ import static org.mockito.Mockito.mock;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
-import org.ject.support.domain.auth.AuthDto.TokenRefreshResponse;
 import org.ject.support.external.email.EmailTemplate;
 import org.ject.support.external.email.MailErrorCode;
 import org.ject.support.external.email.MailSendException;
@@ -25,8 +24,6 @@ import static org.mockito.Mockito.lenient;
 
 import java.util.Optional;
 
-import org.ject.support.domain.auth.AuthDto.PinLoginResponse;
-import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeOnlyResponse;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberException;
@@ -104,9 +101,9 @@ class AuthServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.hasAuthentication()).isFalse();
-        assertThat(result.getEmail()).isEqualTo(TEST_EMAIL);
-        verify(redisTemplate).delete(TEST_EMAIL);
+        assertThat(result.hasAuthentication()).isTrue();
+        assertThat(result.getAuthentication()).isEqualTo(authentication);
+        assertThat(result.getEmail()).isNull();
     }
     
     @Test
@@ -249,7 +246,26 @@ class AuthServiceTest {
     
     @Test
     @DisplayName("인증번호 검증 - CERTIFICATE 템플릿")
-    void verifyAuthCodeByTemplate_WithCertificateTemplate_ReturnsAuthenticationResult() {
+    void verifyAuthCodeByTemplate_WithCertificateTemplate_ReturnsEmailResult() {
+        // given
+        given(redisTemplate.opsForValue().get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
+        
+        // when
+        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.CERTIFICATE);
+        
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.hasAuthentication()).isFalse();
+        assertThat(result.getAuthentication()).isNull();
+        assertThat(result.getEmail()).isEqualTo(TEST_EMAIL);
+        
+        // Redis에서 인증 코드가 삭제되었는지 확인
+        verify(redisTemplate).delete(TEST_EMAIL);
+    }
+    
+    @Test
+    @DisplayName("인증번호 검증 - PIN_RESET 템플릿")
+    void verifyAuthCodeByTemplate_WithPinResetTemplate_ReturnsAuthenticationResult() {
         // given
         Member member = Member.builder()
                 .email(TEST_EMAIL)
@@ -262,32 +278,13 @@ class AuthServiceTest {
         given(jwtTokenProvider.createAuthenticationByMember(any(Member.class))).willReturn(mockAuthentication);
         
         // when
-        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.CERTIFICATE);
+        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET);
         
         // then
         assertThat(result).isNotNull();
         assertThat(result.hasAuthentication()).isTrue();
         assertThat(result.getAuthentication()).isEqualTo(mockAuthentication);
         assertThat(result.getEmail()).isNull();
-        
-        // Redis에서 인증 코드가 삭제되었는지 확인
-        verify(redisTemplate).delete(TEST_EMAIL);
-    }
-    
-    @Test
-    @DisplayName("인증번호 검증 - PIN_RESET 템플릿")
-    void verifyAuthCodeByTemplate_WithPinResetTemplate_ReturnsEmailResult() {
-        // given
-        given(redisTemplate.opsForValue().get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
-        
-        // when
-        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET);
-        
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.hasAuthentication()).isFalse();
-        assertThat(result.getAuthentication()).isNull();
-        assertThat(result.getEmail()).isEqualTo(TEST_EMAIL);
         
         // Redis에서 인증 코드가 삭제되었는지 확인
         verify(redisTemplate).delete(TEST_EMAIL);

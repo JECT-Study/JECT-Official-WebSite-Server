@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
-import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
@@ -33,7 +32,7 @@ public class MemberService {
      * 인증 토큰을 통해 검증된 이메일로 회원을 조회하고, PIN 번호를 암호화하여 저장합니다.
      */
     @Transactional
-    public RegisterResponse registerTempMember(RegisterRequest registerRequest, String email) {
+    public Authentication registerTempMember(RegisterRequest registerRequest, String email) {
         // 이메일로 회원 조회
         Member member = memberRepository.findByEmail(email)
                 .orElse(null);
@@ -47,11 +46,7 @@ public class MemberService {
         }
 
         // 인증 및 토큰 발급
-        Authentication authentication = jwtTokenProvider.createAuthenticationByMember(member);
-        String accessToken = jwtTokenProvider.createAccessToken(authentication, member.getId());
-        String refreshToken = jwtTokenProvider.createRefreshToken(authentication, member.getId());
-
-        return new RegisterResponse(accessToken, refreshToken);
+        return jwtTokenProvider.createAuthenticationByMember(member);
     }
 
     /**

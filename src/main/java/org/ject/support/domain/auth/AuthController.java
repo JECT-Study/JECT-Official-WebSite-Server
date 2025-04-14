@@ -34,8 +34,8 @@ public class AuthController {
      */
     @PostMapping("/code")
     @PreAuthorize("permitAll()")
-    public void verifyAuthCode(@RequestBody VerifyAuthCodeRequest verifyAuthCodeRequest, HttpServletRequest request,
-                               HttpServletResponse response, @RequestParam EmailTemplate template) {
+    public boolean verifyAuthCode(@RequestBody VerifyAuthCodeRequest verifyAuthCodeRequest, HttpServletRequest request,
+                                       HttpServletResponse response, @RequestParam EmailTemplate template) {
         // 서비스 레이어에서 템플릿 타입에 따른 인증 검증 결과 반환
         AuthVerificationResult result = authService.verifyAuthCodeByTemplate(
                 verifyAuthCodeRequest.email(), verifyAuthCodeRequest.authCode(), template);
@@ -46,6 +46,8 @@ public class AuthController {
         } else {
             customSuccessHandler.onAuthenticationSuccess(response, result.getEmail());
         }
+
+        return true;
     }
     
     /**
@@ -54,10 +56,12 @@ public class AuthController {
      */
     @PostMapping("/refresh")
     @PreAuthorize("permitAll()")
-    public void refreshToken(HttpServletRequest request, HttpServletResponse response) {
+    public boolean refreshToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = jwtTokenProvider.resolveRefreshToken(request);
         Long memberId = authService.refreshAccessToken(refreshToken);
         customSuccessHandler.onAuthenticationSuccess(response, refreshToken, memberId);
+
+        return true;
     }
 
     /**
@@ -67,10 +71,12 @@ public class AuthController {
      */
     @PostMapping("/login/pin")
     @PreAuthorize("permitAll()")
-    public void loginWithPin(@RequestBody @Valid PinLoginRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
+    public boolean loginWithPin(@RequestBody @Valid PinLoginRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
         Authentication authentication = authService.loginWithPin(request.email(), request.pin());
         
         customSuccessHandler.onAuthenticationSuccess(httpRequest, response, authentication);
+
+        return true;
     }
 
     @GetMapping("/login/exist")
