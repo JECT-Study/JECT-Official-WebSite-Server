@@ -10,7 +10,6 @@ import java.util.Optional;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
-import org.ject.support.domain.member.dto.MemberDto.RegisterResponse;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
@@ -52,8 +51,6 @@ class MemberServiceTest {
     private final String TEST_PHONE_NUMBER = "01012345678";
     private final String TEST_PIN = "123456";
     private final String TEST_ENCODED_PIN = "encoded_pin";
-    private final String TEST_ACCESS_TOKEN = "test.access.token";
-    private final String TEST_REFRESH_TOKEN = "test.refresh.token";
 
     @BeforeEach
     void setUp() {
@@ -74,17 +71,15 @@ class MemberServiceTest {
         given(passwordEncoder.encode(TEST_PIN)).willReturn(TEST_ENCODED_PIN);
         given(memberRepository.save(any(Member.class))).willReturn(member);
         given(jwtTokenProvider.createAuthenticationByMember(any(Member.class))).willReturn(authentication);
-        given(jwtTokenProvider.createAccessToken(any(Authentication.class), any())).willReturn(TEST_ACCESS_TOKEN);
-        given(jwtTokenProvider.createRefreshToken(any(Authentication.class), any())).willReturn(TEST_REFRESH_TOKEN);
         given(ongoingSemesterProvider.getOngoingSemesterId()).willReturn(1L);
         // when
-        RegisterResponse response = memberService.registerTempMember(request, TEST_EMAIL);
+        Authentication result = memberService.registerTempMember(request, TEST_EMAIL);
 
         // then
-        assertThat(response.accessToken()).isEqualTo(TEST_ACCESS_TOKEN);
-        assertThat(response.refreshToken()).isEqualTo(TEST_REFRESH_TOKEN);
+        assertThat(result).isEqualTo(authentication);
         verify(memberRepository).save(any(Member.class));
         verify(passwordEncoder).encode(TEST_PIN);
+        verify(jwtTokenProvider).createAuthenticationByMember(any(Member.class));
     }
 
     @Test
