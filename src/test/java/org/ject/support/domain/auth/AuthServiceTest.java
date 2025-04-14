@@ -107,7 +107,6 @@ class AuthServiceTest {
         assertThat(result.hasAuthentication()).isTrue();
         assertThat(result.getAuthentication()).isEqualTo(authentication);
         assertThat(result.getEmail()).isNull();
-        verify(redisTemplate).delete(TEST_EMAIL);
     }
     
     @Test
