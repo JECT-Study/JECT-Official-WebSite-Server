@@ -41,12 +41,12 @@ public class AuthService {
     @Transactional
     public AuthVerificationResult verifyAuthCodeByTemplate(String email, String authCode, EmailTemplate template) {
         if (template == EmailTemplate.CERTIFICATE) {
-            // 인증번호 검증 후 Authentication 객체 반환
+            // 인증번호 검증 후 이메일 반환
             verifyAuthCode(email, authCode);
             deleteAuthCode(email);
             return new AuthVerificationResult(email);
         } else if (template == EmailTemplate.PIN_RESET) {
-            // 인증번호 검증 후 이메일만 반환
+            // 인증번호 검증 후 Authentication 객체 반환
             Authentication authentication = verifyEmailByAuthCodeOnly(email, authCode);
             return new AuthVerificationResult(authentication);
         }
