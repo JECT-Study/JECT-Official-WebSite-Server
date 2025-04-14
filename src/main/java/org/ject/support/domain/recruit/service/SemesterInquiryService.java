@@ -1,8 +1,8 @@
 package org.ject.support.domain.recruit.service;
 
-import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.recruit.dto.SemesterListResponse;
+import org.ject.support.domain.recruit.dto.SemesterResponse;
+import org.ject.support.domain.recruit.dto.SemesterResponses;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -15,11 +15,12 @@ public class SemesterInquiryService implements SemesterInquiryUsecase {
     private final SemesterRepository semesterRepository;
 
     @Override
-    @Cacheable(value = "semester", key = "'allSemesters'")
+    @Cacheable(value = "semester", key = "'all'")
     @Transactional(readOnly = true)
-    public List<SemesterListResponse> getAllSemesters() {
-        return semesterRepository.findAll().stream()
-                .map(SemesterListResponse::from)
-                .toList();
+    public SemesterResponses getAllSemesters() {
+        return new SemesterResponses(semesterRepository.findAll()
+                .stream()
+                .map(SemesterResponse::from)
+                .toList());
     }
 }
