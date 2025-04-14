@@ -3,12 +3,9 @@ package org.ject.support.domain.auth;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.auth.AuthErrorCode.EXPIRED_REFRESH_TOKEN;
-import static org.ject.support.domain.auth.AuthErrorCode.INVALID_AUTH_CODE;
 import static org.ject.support.domain.auth.AuthErrorCode.INVALID_REFRESH_TOKEN;
 import static org.ject.support.domain.auth.AuthErrorCode.INVALID_CREDENTIALS;
-import static org.ject.support.domain.auth.AuthErrorCode.NOT_FOUND_AUTH_CODE;
 import static org.ject.support.domain.member.exception.MemberErrorCode.NOT_FOUND_MEMBER;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -245,13 +242,13 @@ class AuthServiceTest {
     }
     
     @Test
-    @DisplayName("인증번호 검증 - CERTIFICATE 템플릿")
+    @DisplayName("인증번호 검증 - AUTH_CODE 템플릿")
     void verifyAuthCodeByTemplate_WithCertificateTemplate_ReturnsEmailResult() {
         // given
         given(redisTemplate.opsForValue().get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
         
         // when
-        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.CERTIFICATE);
+        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.AUTH_CODE);
         
         // then
         assertThat(result).isNotNull();

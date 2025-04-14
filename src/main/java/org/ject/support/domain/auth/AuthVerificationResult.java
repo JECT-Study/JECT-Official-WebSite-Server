@@ -13,7 +13,7 @@ public class AuthVerificationResult {
     private final Authentication authentication;
     private final String email;
 
-    // CERTIFICATE 템플릿용 생성자
+    // AUTH_CODE 템플릿용 생성자
     public AuthVerificationResult(Authentication authentication) {
         this.authentication = authentication;
         this.email = null;

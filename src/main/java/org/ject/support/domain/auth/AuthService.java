@@ -40,7 +40,7 @@ public class AuthService {
      */
     @Transactional
     public AuthVerificationResult verifyAuthCodeByTemplate(String email, String authCode, EmailTemplate template) {
-        if (template == EmailTemplate.CERTIFICATE) {
+        if (template == EmailTemplate.AUTH_CODE) {
             // 인증번호 검증 후 이메일 반환
             verifyAuthCode(email, authCode);
             deleteAuthCode(email);

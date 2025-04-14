@@ -56,11 +56,11 @@ class AuthControllerTest {
     private final Long TEST_MEMBER_ID = 1L;
 
     @Test
-    @DisplayName("인증 코드 검증 - CERTIFICATE 템플릿 - 이메일만 반환 성공")
+    @DisplayName("인증 코드 검증 - AUTH_CODE 템플릿 - 이메일만 반환 성공")
     void verifyAuthCode_WithCertificateTemplate_Success() {
         // given
         VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
-        EmailTemplate template = EmailTemplate.CERTIFICATE;
+        EmailTemplate template = EmailTemplate.AUTH_CODE;
         
         AuthVerificationResult mockResult = new AuthVerificationResult(TEST_EMAIL);
         
