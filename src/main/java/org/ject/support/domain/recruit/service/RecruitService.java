@@ -38,6 +38,8 @@ public class RecruitService implements RecruitUsecase {
                 .map(request -> request.toEntity(ongoingSemesterId))
                 .toList();
         recruitRepository.saveAll(recruits);
+
+        throw new RuntimeException();
     }
 
     @Override
