@@ -40,4 +40,14 @@ class RecruitFlagServiceTest {
         // then
         assertThat(redisTemplate.opsForValue().get("RECRUIT_FLAG:BE")).isEqualTo("true");
     }
+
+    @Test
+    @DisplayName("recruit flag 제거")
+    void delete_recruit_flag() {
+        // when
+        recruitFlagService.deleteRecruitFlag("RECRUIT_FLAG:BE");
+
+        // then
+        assertThat(redisTemplate.opsForValue().get("RECRUIT_FLAG:BE")).isEqualTo(null);
+    }
 }
