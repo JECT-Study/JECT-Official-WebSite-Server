@@ -4,11 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.service.OngoingSemesterProvider;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.dto.RecruitCanceledEvent;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ public class RecruitService implements RecruitUsecase {
 
     private final RecruitRepository recruitRepository;
     private final OngoingSemesterProvider ongoingSemesterProvider;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public void registerRecruits(List<RecruitRegisterRequest> requests) {
@@ -35,12 +38,13 @@ public class RecruitService implements RecruitUsecase {
                 .map(request -> request.toEntity(ongoingSemesterId))
                 .toList();
         recruitRepository.saveAll(recruits);
+
+        throw new RuntimeException();
     }
 
     @Override
     public void updateRecruit(Long recruitId, RecruitUpdateRequest request) {
-        Recruit recruit = recruitRepository.findById(recruitId)
-                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND));
+        Recruit recruit = getRecruit(recruitId);
 
         if (recruit.isClosed()) {
             throw new RecruitException(RecruitErrorCode.UPDATE_NOT_ALLOW_FOR_CLOSED);
@@ -51,7 +55,9 @@ public class RecruitService implements RecruitUsecase {
 
     @Override
     public void cancelRecruit(Long recruitId) {
-        recruitRepository.deleteById(recruitId);
+        Recruit recruit = getRecruit(recruitId);
+        recruitRepository.delete(recruit);
+        eventPublisher.publishEvent(new RecruitCanceledEvent(recruit.getJobFamily()));
     }
 
     private void validateDuplicatedJobFamily(List<RecruitRegisterRequest> requests, Long ongoingSemesterId) {
@@ -61,5 +67,10 @@ public class RecruitService implements RecruitUsecase {
         if (recruitRepository.existsByJobFamilyAndIsNotClosed(ongoingSemesterId, jobFamilies)) {
             throw new RecruitException(RecruitErrorCode.DUPLICATED_JOB_FAMILY);
         }
+    }
+
+    private Recruit getRecruit(Long recruitId) {
+        return recruitRepository.findById(recruitId)
+                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND));
     }
 }

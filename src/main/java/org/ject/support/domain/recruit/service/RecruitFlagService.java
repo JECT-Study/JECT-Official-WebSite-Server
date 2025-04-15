@@ -23,4 +23,8 @@ public class RecruitFlagService {
                 Duration.between(LocalDateTime.now(), recruit.getEndDate())
         );
     }
+
+    public void deleteRecruitFlag(String recruitFlag) {
+        redisTemplate.delete(recruitFlag);
+    }
 }
