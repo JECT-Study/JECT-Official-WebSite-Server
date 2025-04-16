@@ -51,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 chain.doFilter(request, response);
                 return;
             } catch (Exception e) {
-                log.debug("엑세스 토큰 인증 실패: {}", e.getMessage());
+                log.error("엑세스 토큰 인증 실패: {}", e.getMessage());
             }
         }
 
@@ -65,7 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 chain.doFilter(request, response);
                 return;
             } catch (Exception e) {
-                log.debug("검증 토큰 인증 실패: {}", e.getMessage());
+                log.error("검증 토큰 인증 실패: {}", e.getMessage());
             }
         }
 
