@@ -41,52 +41,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        String token = jwtTokenProvider.resolveAccessToken(request);
 
-        if (token != null && jwtTokenProvider.validateToken(token)) {
+        String accessToken = jwtTokenProvider.resolveAccessToken(request);
+
+        if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
             try {
-                // 토큰 타입 확인
-                if (isVerificationToken(token)) {
-                    // verification 토큰인 경우 별도 처리
-                    // 이메일만 추출하여 간단한 인증 정보 생성
-                    String email = jwtTokenProvider.extractEmailFromVerificationToken(token);
-                    Authentication auth = createVerificationAuthentication(email);
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                } else {
-                    // 일반 인증 토큰인 경우 기존 방식으로 처리
-                    Authentication auth = jwtTokenProvider.getAuthenticationByToken(token);
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                }
+                Authentication auth = jwtTokenProvider.getAuthenticationByToken(accessToken);
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                chain.doFilter(request, response);
+                return;
             } catch (Exception e) {
-                log.error("토큰 처리 중 오류 발생: {}", e.getMessage());
-                // 토큰 처리 중 오류가 발생해도 요청은 계속 진행
+                log.debug("엑세스 토큰 인증 실패: {}", e.getMessage());
             }
         }
 
-        chain.doFilter(request, response);
-    }
-    
-    /**
-     * 주어진 토큰이 verification 토큰인지 확인
-     */
-    private boolean isVerificationToken(String token) {
-        try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(jwtTokenProvider.getSecretKey())
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-            
-            // type 필드가 있는지 확인
-            if (claims.containsKey("type")) {
-                String type = claims.get("type", String.class);
-                return "verification".equals(type);
+        String verificationToken = jwtTokenProvider.resolveVerificationToken(request);
+        if (verificationToken != null && jwtTokenProvider.validateToken(verificationToken)) {
+            try {
+                // verification 토큰에서 이메일 추출
+                String email = jwtTokenProvider.extractEmailFromVerificationToken(verificationToken);
+                Authentication auth = createVerificationAuthentication(email);
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                chain.doFilter(request, response);
+                return;
+            } catch (Exception e) {
+                log.debug("검증 토큰 인증 실패: {}", e.getMessage());
             }
-            return false;
-        } catch (Exception e) {
-            log.debug("토큰 타입 확인 중 예외 발생: {}", e.getMessage());
-            return false;
         }
+
+        // 두 토큰 모두 없거나 유효하지 않으면, 인증 없이 진행
+        chain.doFilter(request, response);
     }
     
     private Authentication createVerificationAuthentication(String email) {
