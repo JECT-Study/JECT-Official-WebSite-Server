@@ -35,6 +35,7 @@ class SecurityConfigTest extends ApplicationPeriodTest {
         SimpleGrantedAuthority tempAuthority = new SimpleGrantedAuthority("ROLE_TEMP");
         SimpleGrantedAuthority userAuthority = new SimpleGrantedAuthority("ROLE_USER");
         SimpleGrantedAuthority adminAuthority = new SimpleGrantedAuthority("ROLE_ADMIN");
+        SimpleGrantedAuthority verificationAuthority = new SimpleGrantedAuthority("ROLE_VERIFICATION");
 
         // when & then
         // ADMIN > USER > TEMP 계층 구조 확인
@@ -60,7 +61,7 @@ class SecurityConfigTest extends ApplicationPeriodTest {
                 .contains(userAuthority.getAuthority(), tempAuthority.getAuthority())
                 .doesNotContain(adminAuthority.getAuthority());
 
-        // TEMP는 다른 권한을 포함하지 않음
+        // TEMP > VERIFICATION 계층 구조 확인
         List<String> tempAuthorities = roleHierarchy.getReachableGrantedAuthorities(
                 java.util.Collections.singleton(tempAuthority))
                 .stream()
@@ -68,7 +69,8 @@ class SecurityConfigTest extends ApplicationPeriodTest {
                 .toList();
                 
         assertThat(tempAuthorities)
-                .containsOnly(tempAuthority.getAuthority());
+                .contains(tempAuthority.getAuthority(), verificationAuthority.getAuthority())
+                .doesNotContain(adminAuthority.getAuthority(), userAuthority.getAuthority());
     }
 
     @Test
