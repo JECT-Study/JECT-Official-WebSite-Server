@@ -41,11 +41,15 @@ public class SecurityConfig {
     @Value("${security.cors.allowed-origins-client}")
     private String allowedOriginsClient;
 
+    @Value("${security.cors.allowed-origins-client-dev}")
+    private String allowedOriginsClientDev;
+
     @Bean
     public static RoleHierarchy roleHierarchy() {
         return RoleHierarchyImpl.fromHierarchy("""
                 ROLE_ADMIN > ROLE_USER
                 ROLE_USER > ROLE_TEMP
+                ROLE_TEMP > ROLE_VERIFICATION
                 """);
     }
 
@@ -78,6 +82,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.addAllowedOriginPattern(allowedOrigins);
         configuration.addAllowedOriginPattern(allowedOriginsClient);
+        configuration.addAllowedOriginPattern(allowedOriginsClientDev);
         configuration.addAllowedHeader("*");
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE"));
         configuration.setAllowCredentials(true);

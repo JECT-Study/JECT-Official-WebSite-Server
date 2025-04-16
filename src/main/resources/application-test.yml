@@ -64,5 +64,6 @@ security:
   cors:
     allowed-origins: http://localhost:8080
     allowed-origins-client: http://localhost:3000
+    allowed-origins-client-dev: http://localhost:3000
     cookie:
       domain: localhost
