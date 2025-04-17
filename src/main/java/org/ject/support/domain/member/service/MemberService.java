@@ -82,8 +82,8 @@ public class MemberService {
         member.updatePin(encodedPin);
     }
 
-    @Transactional
-    public boolean checkIsInitialed(@AuthPrincipal Long memberId) {
+    @Transactional(readOnly = true)
+    public boolean checkIsInitialed(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
