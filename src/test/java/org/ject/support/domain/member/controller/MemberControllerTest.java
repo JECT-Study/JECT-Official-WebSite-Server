@@ -156,6 +156,8 @@ class MemberControllerTest {
         // 테스트 후 인증 정보 초기화
         SecurityContextHolder.clearContext();
     }
+
+    /*
     
     @Test
     @DisplayName("핀번호 재설정 실패 - 동일한 PIN 번호")
@@ -183,6 +185,8 @@ class MemberControllerTest {
         // 테스트 후 인증 정보 초기화
         SecurityContextHolder.clearContext();
     }
+
+     */
     
     @Test
     @DisplayName("핀번호 재설정 실패 - 유효하지 않은 PIN 번호 형식")

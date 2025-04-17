@@ -157,7 +157,6 @@ class MemberServiceTest {
         String newEncodedPin = "new_encoded_pin";
         
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(passwordEncoder.matches(newPin, TEST_ENCODED_PIN)).willReturn(false); // 새 PIN이 기존과 다름
         given(passwordEncoder.encode(newPin)).willReturn(newEncodedPin);
         
         // when
@@ -166,7 +165,6 @@ class MemberServiceTest {
         // then
         assertThat(member.getPin()).isEqualTo(newEncodedPin);
         verify(memberRepository).findById(memberId);
-        verify(passwordEncoder).matches(newPin, TEST_ENCODED_PIN);
         verify(passwordEncoder).encode(newPin);
     }
     
@@ -185,7 +183,8 @@ class MemberServiceTest {
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
     }
-    
+
+    /*
     @Test
     @DisplayName("핀번호 재설정 실패 - 기존과 동일한 PIN 번호")
     void updatePin_SamePin_ThrowsException() {
@@ -208,4 +207,5 @@ class MemberServiceTest {
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.SAME_PIN);
     }
+     */
 }

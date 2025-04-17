@@ -1,7 +1,6 @@
 package org.ject.support.domain.member.service;
 
 import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
-import static org.ject.support.domain.member.exception.MemberErrorCode.SAME_PIN;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
@@ -77,10 +76,6 @@ public class MemberService {
     public void updatePin(UpdatePinRequest request, Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-
-        if (passwordEncoder.matches(request.pin(), member.getPin())) {
-            throw new MemberException(SAME_PIN);
-        }
 
         String encodedPin = passwordEncoder.encode(request.pin());
         member.updatePin(encodedPin);
