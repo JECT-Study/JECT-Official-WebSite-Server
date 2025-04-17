@@ -227,7 +227,7 @@ class MemberControllerTest {
         SecurityContextHolder.getContext().setAuthentication(auth);
         
         // when & then
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/members/initial-status")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/members/profile/initial/status")
                 .contentType(MediaType.APPLICATION_JSON)
                 .principal(auth))
                 .andExpect(status().isOk())
@@ -252,7 +252,7 @@ class MemberControllerTest {
         SecurityContextHolder.getContext().setAuthentication(auth);
         
         // when & then
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/members/initial-status")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/members/profile/initial/status")
                 .contentType(MediaType.APPLICATION_JSON)
                 .principal(auth))
                 .andExpect(status().isOk())
