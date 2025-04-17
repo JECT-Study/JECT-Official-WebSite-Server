@@ -73,7 +73,7 @@ public class MemberController {
         memberService.updatePin(request, memberId);
     }
 
-    @GetMapping("/initial-status")
+    @GetMapping("/profile/initial/status")
     @PreAuthorize("hasRole('ROLE_TEMP')")
     public boolean isInitialMember(@AuthPrincipal Long memberId) {
         // 임시회원의 최초 프로필 정보 등록 여부 확인
