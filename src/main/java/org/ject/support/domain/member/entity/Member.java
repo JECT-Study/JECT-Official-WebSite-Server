@@ -71,4 +71,8 @@ public class Member extends BaseTimeEntity {
     public void updatePin(String pin) {
         this.pin = pin;
     }
+
+    public boolean isInitialed() {
+        return this.name != null && this.phoneNumber != null;
+    }
 }

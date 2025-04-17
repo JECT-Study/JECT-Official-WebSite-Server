@@ -3,6 +3,7 @@ package org.ject.support.domain.member.service;
 import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
@@ -79,5 +80,13 @@ public class MemberService {
 
         String encodedPin = passwordEncoder.encode(request.pin());
         member.updatePin(encodedPin);
+    }
+
+    @Transactional
+    public boolean checkIsInitialed(@AuthPrincipal Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
+
+        return member.isInitialed();
     }
 }

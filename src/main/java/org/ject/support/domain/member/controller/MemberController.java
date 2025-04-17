@@ -11,6 +11,7 @@ import org.ject.support.domain.member.dto.MemberDto;
 import org.ject.support.domain.member.service.MemberService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -70,5 +71,12 @@ public class MemberController {
 
         // 임시회원의 PIN 번호 재설정
         memberService.updatePin(request, memberId);
+    }
+
+    @GetMapping("/initial-status")
+    @PreAuthorize("hasRole('ROLE_TEMP')")
+    public boolean isInitialMember(@AuthPrincipal Long memberId) {
+        // 임시회원의 최초 프로필 정보 등록 여부 확인
+        return memberService.checkIsInitialed(memberId);
     }
 }
