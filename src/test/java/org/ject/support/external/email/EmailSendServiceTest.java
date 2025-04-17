@@ -65,7 +65,7 @@ class EmailSendServiceTest {
         ArgumentCaptor<EmailSendEvent> eventCaptor = ArgumentCaptor.forClass(EmailSendEvent.class);
         
         // when
-        emailSendService.sendEmail(testEmail, EmailTemplate.ACCEPTANCE, params);
+        emailSendService.sendEmail(testEmail, EmailTemplate.AUTH_CODE, params);
         
         // then
         verify(eventPublisher).publishEvent(eventCaptor.capture());
