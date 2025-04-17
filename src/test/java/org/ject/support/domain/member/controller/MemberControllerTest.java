@@ -211,6 +211,56 @@ class MemberControllerTest {
         // 테스트 후 인증 정보 초기화
         SecurityContextHolder.clearContext();
     }
+    
+    @Test
+    @DisplayName("임시회원 최초 프로필 등록 여부 확인 성공 - 등록된 경우")
+    void isInitialMember_Success_True() throws Exception {
+        // given
+        Long memberId = 1L;
+        
+        // 모킹 설정을 lenient로 변경하여 엄격한 스텁 검사를 비활성화
+        lenient().when(memberService.checkIsInitialed(any())).thenReturn(true);
+        
+        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_TEMP 권한)
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.TEMP);
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        
+        // when & then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/members/initial-status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .principal(auth))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("true"));
+        
+        // 테스트 후 인증 정보 초기화
+        SecurityContextHolder.clearContext();
+    }
+    
+    @Test
+    @DisplayName("임시회원 최초 프로필 등록 여부 확인 성공 - 미등록된 경우")
+    void isInitialMember_Success_False() throws Exception {
+        // given
+        Long memberId = 1L;
+        
+        // 모킹 설정을 lenient로 변경하여 엄격한 스텁 검사를 비활성화
+        lenient().when(memberService.checkIsInitialed(any())).thenReturn(false);
+        
+        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_TEMP 권한)
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.TEMP);
+        Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(auth);
+        
+        // when & then
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/members/initial-status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .principal(auth))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string("false"));
+        
+        // 테스트 후 인증 정보 초기화
+        SecurityContextHolder.clearContext();
+    }
 
 
 @SpringBootTest
