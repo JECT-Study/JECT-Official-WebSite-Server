@@ -14,7 +14,6 @@ spring:
     virtual:
       enabled: true
 
-
   h2:
     console:
       enabled: true
@@ -26,14 +25,6 @@ spring:
       port: 6379
       password:
       local: true
-
-  mail:
-    host: smtp.gmail.com
-    username: qkenrdl05@gmail.com
-    password: pfmd qump wwmk lszw
-    properties:
-      mail.smtp.auth: true
-      mail.smtp.starttls.enable: true
 
   jwt:
     token:
@@ -51,6 +42,8 @@ aws:
     endpoint: http://localhost:8000
   cloudfront:
     domain: https://d2lmyznn5nj2bl.cloudfront.net/
+  ses:
+    from-email-address: jectofficial@ject.kr
 
 decorator:
   datasource:
