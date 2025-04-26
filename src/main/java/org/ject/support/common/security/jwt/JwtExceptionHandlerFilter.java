@@ -1,15 +1,10 @@
 package org.ject.support.common.security.jwt;
 
-import static org.ject.support.common.exception.GlobalErrorCode.INTERNAL_SERVER_ERROR;
-import static org.ject.support.common.exception.GlobalErrorCode.INVALID_ACCESS_TOKEN;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.exception.GlobalErrorCode;
@@ -20,6 +15,12 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+import static org.ject.support.common.exception.GlobalErrorCode.INTERNAL_SERVER_ERROR;
+import static org.ject.support.common.exception.GlobalErrorCode.INVALID_ACCESS_TOKEN;
 
 @Slf4j
 @Component
@@ -34,9 +35,11 @@ public class JwtExceptionHandlerFilter extends OncePerRequestFilter {
             HttpServletResponse response,
             FilterChain filterChain
     ) throws IOException {
+        long startMillis = System.currentTimeMillis();
         try {
+            log.info("Request URL: {}, Request Method: {}",
+                    request.getRequestURI(), request.getMethod());
             filterChain.doFilter(request, response);
-            log.info("Request URL: {}, Response Status: {}", request.getRequestURI(), response.getStatus());
         } catch (GlobalException e) {
             setErrorResponse(response, e.getErrorCode());
             log.error("GlobalException: {}", e.getErrorCode().getMessage());
@@ -51,6 +54,9 @@ public class JwtExceptionHandlerFilter extends OncePerRequestFilter {
                 setErrorResponse(response, INTERNAL_SERVER_ERROR);
                 log.error("Exception: {}", e.getMessage());
             }
+        } finally {
+            long endMillis = System.currentTimeMillis();
+            log.info("Response Status: {}, Duration: {}ms", response.getStatus(), endMillis - startMillis);
         }
     }
 
