@@ -1,8 +1,9 @@
-package org.ject.support.external.email;
+package org.ject.support.external.email.service;
 
 import java.security.SecureRandom;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ject.support.external.email.domain.EmailTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -17,13 +18,13 @@ public class EmailAuthService {
     private static final int AUTH_CODE_LENGTH = 6;
     private static final long EXPIRE_TIME = 300L; // 5분
 
-    private final RedisTemplate<String, String> redisTemplate;
     private final EmailSendService emailSendService;
+    private final RedisTemplate<String, String> redisTemplate;
 
     public void sendAuthCode(String email, EmailTemplate template) {
         String authCode = generateAuthCode();
-        storeAuthCode(email, authCode);
         sendAuthCodeEmail(email, authCode, template);
+        storeAuthCode(email, authCode);
     }
 
     private String generateAuthCode() {
@@ -35,17 +36,12 @@ public class EmailAuthService {
         return builder.toString();
     }
 
-    private void storeAuthCode(String email, String authCode) {
-        redisTemplate.opsForValue().set(email, authCode, Duration.ofSeconds(EXPIRE_TIME));
+    private void sendAuthCodeEmail(String email, String authCode, EmailTemplate template) {
+        emailSendService.sendEmail(email, template, Map.of("auth-code", authCode));
         log.info("인증 번호 전송 - email: {}, code: {}", email, authCode);
     }
 
-    private void sendAuthCodeEmail(String email, String authCode, EmailTemplate template) {
-        // TODO: 정책 추가 시 인증 번호 전송 횟수 제한 로직 추가
-        emailSendService.sendEmail(
-            email,
-            template,
-            Map.of("to", email, "value", authCode)
-        );
+    private void storeAuthCode(String email, String authCode) {
+        redisTemplate.opsForValue().set(email, authCode, Duration.ofSeconds(EXPIRE_TIME));
     }
 }

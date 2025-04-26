@@ -8,9 +8,9 @@ import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
-import org.ject.support.external.email.EmailTemplate;
-import org.ject.support.external.email.MailErrorCode;
-import org.ject.support.external.email.MailSendException;
+import org.ject.support.external.email.domain.EmailTemplate;
+import org.ject.support.external.email.exception.EmailErrorCode;
+import org.ject.support.external.email.exception.EmailException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -51,7 +51,7 @@ public class AuthService {
             return new AuthVerificationResult(authentication);
         }
 
-        throw new MailSendException(MailErrorCode.INVALID_MAIL_TEMPLATE);
+        throw new EmailException(EmailErrorCode.INVALID_EMAIL_TEMPLATE);
     }
     /**
      * 이메일 인증번호를 검증하고 인증된 사용자의 Authentication 객체를 반환합니다.
