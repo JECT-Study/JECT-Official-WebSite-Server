@@ -1,4 +1,4 @@
-package org.ject.support.external.email;
+package org.ject.support.external.email.domain;
 
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
@@ -22,8 +22,8 @@ public enum EmailTemplate {
     AUTH_CODE("auth-code-email-template", "젝트 이메일 인증 코드 안내"),
     PIN_RESET("pin-reset-email-template", "젝트 PIN 재설정 인증 코드 안내");
 
-    private final String templateName;// template file name
-    private final String subject;// email subject
+    private final String templateName; // template file name
+    private final String subject; // email subject
 
     @PostConstruct
     private void validateFileName() throws IOException {

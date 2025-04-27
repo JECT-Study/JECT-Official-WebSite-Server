@@ -14,9 +14,9 @@ import static org.mockito.Mockito.mock;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
-import org.ject.support.external.email.EmailTemplate;
-import org.ject.support.external.email.MailErrorCode;
-import org.ject.support.external.email.MailSendException;
+import org.ject.support.external.email.domain.EmailTemplate;
+import org.ject.support.external.email.exception.EmailErrorCode;
+import org.ject.support.external.email.exception.EmailException;
 import static org.mockito.Mockito.lenient;
 
 import java.util.Optional;
@@ -296,7 +296,7 @@ class AuthServiceTest {
         // when & then
         assertThatThrownBy(() -> 
             authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, invalidTemplate)
-        ).isInstanceOf(MailSendException.class)
-         .hasFieldOrPropertyWithValue("errorCode", MailErrorCode.INVALID_MAIL_TEMPLATE);
+        ).isInstanceOf(EmailException.class)
+         .hasFieldOrPropertyWithValue("errorCode", EmailErrorCode.INVALID_EMAIL_TEMPLATE);
     }
 }
