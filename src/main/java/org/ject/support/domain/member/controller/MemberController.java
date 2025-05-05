@@ -36,7 +36,7 @@ public class MemberController {
     @PostMapping
     @PreAuthorize("hasRole('ROLE_VERIFICATION')")
     public boolean registerMember(HttpServletRequest request, HttpServletResponse response,
-                                           @Valid @RequestBody MemberDto.RegisterRequest registerRequest) {
+                                  @Valid @RequestBody MemberDto.RegisterRequest registerRequest) {
 
         // 쿠키에서 verification 토큰 추출
         String token = jwtTokenProvider.resolveVerificationToken(request);

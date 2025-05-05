@@ -37,7 +37,7 @@ public class EmailAuthService {
     }
 
     private void sendAuthCodeEmail(String email, String authCode, EmailTemplate template) {
-        emailSendService.sendEmail(email, template, Map.of("auth-code", authCode));
+        emailSendService.sendTemplatedEmail(email, template, Map.of("auth-code", authCode));
         log.info("인증 번호 전송 - email: {}, code: {}", email, authCode);
     }
 
