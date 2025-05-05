@@ -3,6 +3,7 @@ package org.ject.support.domain.tempapply.service;
 import java.util.List;
 import java.util.Map;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
 import org.ject.support.domain.recruit.dto.ApplyTemporaryResponse;
 
@@ -21,12 +22,12 @@ public interface TemporaryApplyService {
                                   List<ApplyPortfolioDto> portfolios);
 
     /**
-     * 변경 요청한 직군이 사용자의 최근 임시 지원서의 직군과 동일한지 판별
-     */
-    boolean hasSameJobFamilyWithRecentTemporaryApplication(Long memberId, JobFamily jobFamily);
-
-    /**
      * 사용자의 임시 지원서를 모두 제거
      */
     void deleteTemporaryApplicationsByMemberId(Long memberId);
+
+    /**
+     * 활성화된 모집 기간 중 저장된 임시 지원서의 사용자 ID 중복 없이 조회
+     */
+    List<Long> findMemberIdsByActiveRecruits(List<Recruit> activeRecruits);
 }

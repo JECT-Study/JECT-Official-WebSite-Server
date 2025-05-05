@@ -20,7 +20,8 @@ public enum EmailTemplate {
     ACCEPTANCE("email-template", "ject notification"),
     REJECTION("email-template", "ject notification"),
     AUTH_CODE("auth-code-email-template", "젝트 이메일 인증 코드 안내"),
-    PIN_RESET("pin-reset-email-template", "젝트 PIN 재설정 인증 코드 안내");
+    PIN_RESET("pin-reset-email-template", "젝트 PIN 재설정 인증 코드 안내"),
+    REMIND_APPLY("remind-apply-email-template", "젝트 지원서 접수 마감일 안내");
 
     private final String templateName; // template file name
     private final String subject; // email subject

@@ -1,12 +1,16 @@
 package org.ject.support.domain.tempapply.repository;
 
 import io.awspring.cloud.dynamodb.DynamoDbTemplate;
-import java.util.Comparator;
-import java.util.Optional;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.external.dynamodb.domain.CompositeKey;
 import org.ject.support.external.dynamodb.repository.AbstractDynamoDbRepository;
 import org.springframework.stereotype.Repository;
+import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
+
+import java.time.LocalDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class TemporaryApplicationRepository extends AbstractDynamoDbRepository<TemporaryApplication> {
@@ -24,6 +28,17 @@ public class TemporaryApplicationRepository extends AbstractDynamoDbRepository<T
         CompositeKey partitionKey = new CompositeKey(TemporaryApplication.PK_PREFIX, memberId);
         return findByPartitionWithSortType(partitionKey, TemporaryApplication.SK_PREFIX)
                 .stream().max(Comparator.comparing(TemporaryApplication::getTimestamp));
+    }
+
+    public List<String> findMemberIdsByJobFamilyAndAfter(String jobFamily, LocalDateTime recruitStartDateTime) {
+        ScanEnhancedRequest scanEnhancedRequest = ScanEnhancedRequest.builder().build();
+        return dynamoDbTemplate.scan(scanEnhancedRequest, entityClass)
+                .items().stream()
+                .filter(item -> item.getTimestamp().isAfter(recruitStartDateTime))
+                .filter(item -> item.getJobFamily().equals(jobFamily))
+                .map(TemporaryApplication::getMemberId)
+                .distinct()
+                .toList();
     }
 
     public void deleteByMemberId(String memberId) {

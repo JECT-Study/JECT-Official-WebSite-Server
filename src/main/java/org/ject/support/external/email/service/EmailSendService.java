@@ -7,13 +7,17 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.sesv2.SesV2Client;
 import software.amazon.awssdk.services.sesv2.model.Body;
+import software.amazon.awssdk.services.sesv2.model.BulkEmailContent;
+import software.amazon.awssdk.services.sesv2.model.BulkEmailEntry;
 import software.amazon.awssdk.services.sesv2.model.Content;
 import software.amazon.awssdk.services.sesv2.model.Destination;
 import software.amazon.awssdk.services.sesv2.model.EmailContent;
 import software.amazon.awssdk.services.sesv2.model.Message;
+import software.amazon.awssdk.services.sesv2.model.SendBulkEmailRequest;
 import software.amazon.awssdk.services.sesv2.model.SendEmailRequest;
 import software.amazon.awssdk.services.sesv2.model.Template;
 
+import java.util.List;
 import java.util.Map;
 
 @Service
@@ -34,17 +38,14 @@ public class EmailSendService {
         Destination destination = getDestination(to);
 
         // 사용할 템플릿 선택 및 변수 매핑
-        Template template = Template.builder()
-                .templateName(emailTemplate.getTemplateName())
-                .templateData(map2JsonSerializer.serializeAsString(parameter))
-                .build();
+        Template template = getTemplate(emailTemplate.getTemplateName(), parameter);
 
         // 이메일 콘텐츠 설정
         EmailContent emailContent = EmailContent.builder()
                 .template(template)
                 .build();
 
-        // 이메일 요청 객체 생성
+        // 이메일 발송 요청 객체 생성
         SendEmailRequest emailRequest = getSendEmailRequest(destination, emailContent);
 
         // AWS SES를 통해 이메일 발송 요청
@@ -76,9 +77,39 @@ public class EmailSendService {
         sesV2Client.sendEmail(emailRequest);
     }
 
+    /**
+     * 대량 email 발송 (template)
+     */
+    public void sendBulkTemplatedEmail(List<String> toList, EmailTemplate emailTemplate, Map<String, String> parameter) {
+        // BulkEmailEntry 생성
+        BulkEmailEntry bulkEmailEntry = BulkEmailEntry.builder()
+                .destination(Destination.builder().toAddresses(toList).build())
+                .build();
+
+        // 사용할 템플릿 선택 및 변수 매핑
+        Template template = getTemplate(emailTemplate.getTemplateName(), parameter);
+
+        // 이메일 발송 요청 객체 생성
+        SendBulkEmailRequest sendBulkEmailRequest = SendBulkEmailRequest.builder()
+                .bulkEmailEntries(bulkEmailEntry)
+                .defaultContent(BulkEmailContent.builder().template(template).build())
+                .fromEmailAddress(from)
+                .build();
+
+        // 이메일 발송
+        sesV2Client.sendBulkEmail(sendBulkEmailRequest);
+    }
+
     private Destination getDestination(String to) {
         return Destination.builder()
                 .toAddresses(to)
+                .build();
+    }
+
+    private Template getTemplate(String templateName, Map<String, String> parameter) {
+        return Template.builder()
+                .templateName(templateName)
+                .templateData(map2JsonSerializer.serializeAsString(parameter))
                 .build();
     }
 
