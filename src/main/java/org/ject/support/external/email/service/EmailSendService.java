@@ -1,5 +1,6 @@
 package org.ject.support.external.email.service;
 
+import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.external.email.domain.EmailTemplate;
@@ -81,23 +82,25 @@ public class EmailSendService {
      * 대량 email 발송 (template)
      */
     public void sendBulkTemplatedEmail(List<String> toList, EmailTemplate emailTemplate, Map<String, String> parameter) {
-        // BulkEmailEntry 생성
-        BulkEmailEntry bulkEmailEntry = BulkEmailEntry.builder()
-                .destination(Destination.builder().toAddresses(toList).build())
-                .build();
-
         // 사용할 템플릿 선택 및 변수 매핑
         Template template = getTemplate(emailTemplate.getTemplateName(), parameter);
 
-        // 이메일 발송 요청 객체 생성
-        SendBulkEmailRequest sendBulkEmailRequest = SendBulkEmailRequest.builder()
-                .bulkEmailEntries(bulkEmailEntry)
-                .defaultContent(BulkEmailContent.builder().template(template).build())
-                .fromEmailAddress(from)
-                .build();
+        // 50개씩 나눠서 이메일 발송
+        Lists.partition(toList, 50).forEach(batch -> {
+            List<BulkEmailEntry> entries = batch.stream()
+                    .map(this::getBulkEmailEntry)
+                    .toList();
 
-        // 이메일 발송
-        sesV2Client.sendBulkEmail(sendBulkEmailRequest);
+            // 이메일 발송 요청 객체 생성
+            SendBulkEmailRequest sendBulkEmailRequest = SendBulkEmailRequest.builder()
+                    .bulkEmailEntries(entries)
+                    .defaultContent(BulkEmailContent.builder().template(template).build())
+                    .fromEmailAddress(from)
+                    .build();
+
+            // 이메일 발송
+            sesV2Client.sendBulkEmail(sendBulkEmailRequest);
+        });
     }
 
     private Destination getDestination(String to) {
@@ -123,5 +126,11 @@ public class EmailSendService {
 
     private Content getContent(String subject) {
         return Content.builder().data(subject).build();
+    }
+
+    private BulkEmailEntry getBulkEmailEntry(String to) {
+        return BulkEmailEntry.builder()
+                .destination(getDestination(to))
+                .build();
     }
 }
