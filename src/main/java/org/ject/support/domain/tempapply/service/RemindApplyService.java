@@ -4,8 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
-import org.ject.support.external.email.domain.EmailTemplate;
-import org.ject.support.external.email.service.EmailSendService;
+import org.ject.support.external.email.service.SesEmailSendService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -15,15 +14,17 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class EmailApplyRemindService implements ApplyRemindUsecase {
+public class RemindApplyService implements RemindApplyUsecase {
+
+    private static final String EMAIL_SEND_GROUP = "remind_apply";
 
     private final RecruitRepository recruitRepository;
     private final MemberRepository memberRepository;
     private final TemporaryApplyService temporaryApplyService;
-    private final EmailSendService emailSendService;
+    private final SesEmailSendService emailSendService;
 
     @Override
-    public void remindToApply() {
+    public void remindApply() {
         // 현재 활성화된 모집 정보 조회
         List<Recruit> activeRecruits = recruitRepository.findActiveRecruits(LocalDateTime.now());
 
@@ -35,8 +36,8 @@ public class EmailApplyRemindService implements ApplyRemindUsecase {
 
         // 필터링한 지원자들에게 리마인드
         emailSendService.sendBulkTemplatedEmail(
+                EMAIL_SEND_GROUP,
                 targetEmails,
-                EmailTemplate.REMIND_APPLY,
                 Map.of("deadline", formatDeadline(activeRecruits.getLast().getEndDate())));
     }
 

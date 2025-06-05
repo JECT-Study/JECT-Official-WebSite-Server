@@ -1,12 +1,11 @@
 package org.ject.support.external.email.service;
 
-import java.security.SecureRandom;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.ject.support.external.email.domain.EmailTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Map;
 
@@ -17,14 +16,15 @@ public class EmailAuthService {
 
     private static final int AUTH_CODE_LENGTH = 6;
     private static final long EXPIRE_TIME = 300L; // 5분
+    private static final String EMAIL_SEND_GROUP = "email_auth";
 
-    private final EmailSendService emailSendService;
+    private final SesEmailSendService emailSendService;
     private final RedisTemplate<String, String> redisTemplate;
 
-    public void sendAuthCode(String email, EmailTemplate template) {
+    public void sendAuthCode(String toAddress) {
         String authCode = generateAuthCode();
-        sendAuthCodeEmail(email, authCode, template);
-        storeAuthCode(email, authCode);
+        sendAuthCodeEmail(toAddress, authCode);
+        storeAuthCode(toAddress, authCode);
     }
 
     private String generateAuthCode() {
@@ -36,12 +36,12 @@ public class EmailAuthService {
         return builder.toString();
     }
 
-    private void sendAuthCodeEmail(String email, String authCode, EmailTemplate template) {
-        emailSendService.sendTemplatedEmail(email, template, Map.of("auth-code", authCode));
-        log.info("인증 번호 전송 - email: {}, code: {}", email, authCode);
+    private void sendAuthCodeEmail(String toAddress, String authCode) {
+        emailSendService.sendTemplatedEmail(EMAIL_SEND_GROUP, toAddress, Map.of("auth-code", authCode));
+        log.info("인증 번호 전송 - email: {}, code: {}", toAddress, authCode);
     }
 
-    private void storeAuthCode(String email, String authCode) {
-        redisTemplate.opsForValue().set(email, authCode, Duration.ofSeconds(EXPIRE_TIME));
+    private void storeAuthCode(String toAddress, String authCode) {
+        redisTemplate.opsForValue().set(toAddress, authCode, Duration.ofSeconds(EXPIRE_TIME));
     }
 }
