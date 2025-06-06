@@ -26,13 +26,15 @@ public class RecruitSavedEventHandler {
         Recruit recruit = recruitRepository.findById(event.recruitId())
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND));
 
-        // 등록된 모집이 활성화되어 있다면 즉시 flag 캐싱
         if (recruit.isRecruitingPeriod()) {
+            // 등록된 모집이 활성화되어 있다면 즉시 flag 캐싱
             recruitFlagService.setRecruitFlag(recruit);
-            return;
+        } else {
+            // 등록된 모집의 시작일이 미래 시점이라면 스케줄 등록
+            recruitScheduleService.scheduleRecruitOpen(recruit);
         }
 
-        // 등록된 모집의 시작일이 미래 시점이라면 스케줄 등록
-        recruitScheduleService.scheduleRecruitOpen(recruit);
+        // 모집 마감 하루 전 리마인드 스케줄 등록
+        recruitScheduleService.scheduleRemindApply(recruit);
     }
 }

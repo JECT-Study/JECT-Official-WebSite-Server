@@ -24,12 +24,12 @@ public class RemindApplyService implements RemindApplyUsecase {
     private final SesEmailSendService emailSendService;
 
     @Override
-    public void remindApply() {
+    public void remindApply(Long recruitId) {
         // 현재 활성화된 모집 정보 조회
-        List<Recruit> activeRecruits = recruitRepository.findActiveRecruits(LocalDateTime.now());
+        Recruit recruit = recruitRepository.findActiveRecruitById(recruitId, LocalDateTime.now());
 
         // 모집 기간 중 지원서 임시 저장한 지원자 ID 모두 조회
-        List<Long> applicantIds = temporaryApplyService.findMemberIdsByActiveRecruits(activeRecruits);
+        List<Long> applicantIds = temporaryApplyService.findMemberIdsByRecruit(recruit);
 
         // 지원서 최종 제출하지 않은 지원자 필터링
         List<String> targetEmails = memberRepository.findEmailsByIdsAndNotApply(applicantIds);
@@ -38,7 +38,7 @@ public class RemindApplyService implements RemindApplyUsecase {
         emailSendService.sendBulkTemplatedEmail(
                 EMAIL_SEND_GROUP,
                 targetEmails,
-                Map.of("deadline", formatDeadline(activeRecruits.getLast().getEndDate())));
+                Map.of("deadline", formatDeadline(recruit.getEndDate())));
     }
 
     private String formatDeadline(LocalDateTime recruitEndDate) {

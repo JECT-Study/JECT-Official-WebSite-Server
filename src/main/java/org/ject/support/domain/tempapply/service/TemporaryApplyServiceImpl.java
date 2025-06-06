@@ -44,13 +44,12 @@ public class TemporaryApplyServiceImpl implements TemporaryApplyService {
     }
 
     @Override
-    public List<Long> findMemberIdsByActiveRecruits(List<Recruit> activeRecruits) {
-        return activeRecruits.stream()
-                .flatMap(recruit -> temporaryApplicationRepository
-                        .findMemberIdsByJobFamilyAndAfter(recruit.getJobFamily().name(), recruit.getStartDate())
-                        .stream()
-                        .distinct()
-                        .map(Long::parseLong))
+    public List<Long> findMemberIdsByRecruit(Recruit recruit) {
+        return temporaryApplicationRepository
+                .findMemberIdsByJobFamilyAndAfter(recruit.getJobFamily().name(), recruit.getStartDate())
+                .stream()
+                .distinct()
+                .map(Long::parseLong)
                 .toList();
     }
 }

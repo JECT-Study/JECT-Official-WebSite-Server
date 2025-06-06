@@ -2,5 +2,5 @@ package org.ject.support.domain.tempapply.service;
 
 public interface RemindApplyUsecase {
 
-    void remindApply();
+    void remindApply(Long recruitId);
 }

@@ -29,5 +29,5 @@ public interface TemporaryApplyService {
     /**
      * 활성화된 모집 기간 중 저장된 임시 지원서의 사용자 ID 중복 없이 조회
      */
-    List<Long> findMemberIdsByActiveRecruits(List<Recruit> activeRecruits);
+    List<Long> findMemberIdsByRecruit(Recruit recruit);
 }

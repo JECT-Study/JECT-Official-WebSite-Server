@@ -1,6 +1,5 @@
 package org.ject.support.domain.tempapply.service;
 
-import org.assertj.core.api.Assertions;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
@@ -17,10 +16,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.PD;
-import static org.ject.support.domain.member.JobFamily.PM;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.member.JobFamily.*;
 
 @IntegrationTest
 @Transactional
@@ -54,11 +51,16 @@ class TemporaryApplyServiceImplTest {
         temporaryApplicationRepository.save(createTemporaryApplication("5", Map.of(), "PD"));
 
         // when
-        List<Long> result = temporaryApplyService
-                .findMemberIdsByActiveRecruits(List.of(getRecruit(PM), getRecruit(PD), getRecruit(FE), getRecruit(BE)));
+        List<Long> resultOfPm = temporaryApplyService.findMemberIdsByRecruit(getRecruit(PM));
+        List<Long> resultOfPd = temporaryApplyService.findMemberIdsByRecruit(getRecruit(PD));
+        List<Long> resultOfFe = temporaryApplyService.findMemberIdsByRecruit(getRecruit(FE));
+        List<Long> resultOfBe = temporaryApplyService.findMemberIdsByRecruit(getRecruit(BE));
 
         // then
-        Assertions.assertThat(result).hasSize(5);
+        assertThat(resultOfPm).hasSize(0);
+        assertThat(resultOfPd).hasSize(1);
+        assertThat(resultOfFe).hasSize(2);
+        assertThat(resultOfBe).hasSize(2);
     }
 
     private Recruit getRecruit(JobFamily jobFamily) {
