@@ -16,14 +16,13 @@ public class EmailAuthService {
 
     private static final int AUTH_CODE_LENGTH = 6;
     private static final long EXPIRE_TIME = 300L; // 5분
-    private static final String EMAIL_SEND_GROUP = "email_auth";
 
     private final SesEmailSendService emailSendService;
     private final RedisTemplate<String, String> redisTemplate;
 
-    public void sendAuthCode(String toAddress) {
+    public void sendAuthCode(String sendGroupCode, String toAddress) {
         String authCode = generateAuthCode();
-        sendAuthCodeEmail(toAddress, authCode);
+        sendAuthCodeEmail(sendGroupCode, toAddress, authCode);
         storeAuthCode(toAddress, authCode);
     }
 
@@ -36,8 +35,8 @@ public class EmailAuthService {
         return builder.toString();
     }
 
-    private void sendAuthCodeEmail(String toAddress, String authCode) {
-        emailSendService.sendTemplatedEmail(EMAIL_SEND_GROUP, toAddress, Map.of("auth-code", authCode));
+    private void sendAuthCodeEmail(String sendGroupCode, String toAddress, String authCode) {
+        emailSendService.sendTemplatedEmail(sendGroupCode, toAddress, Map.of("auth-code", authCode));
         log.info("인증 번호 전송 - email: {}, code: {}", toAddress, authCode);
     }
 
