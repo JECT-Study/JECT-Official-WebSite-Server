@@ -45,7 +45,7 @@ public class RecruitScheduleService {
         }, triggerTime));
     }
 
-    public void cancelJob(Long recruitId) {
+    public void cancelJobs(Long recruitId) {
         ScheduledFuture<?> removedRecruitOpenJob = scheduledJobs.remove(RECRUIT_OPEN_JOB_KEY_PREFIX + recruitId);
         if (removedRecruitOpenJob != null) {
             removedRecruitOpenJob.cancel(false);

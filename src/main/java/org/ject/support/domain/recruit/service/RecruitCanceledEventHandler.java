@@ -21,6 +21,6 @@ public class RecruitCanceledEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleRecruitCanceled(RecruitCanceledEvent event) {
         recruitFlagService.deleteRecruitFlag(String.format("%s%s", RECRUIT_FLAG_PREFIX, event.jobFamily()));
-        recruitScheduleService.cancelJob(event.recruitId());
+        recruitScheduleService.cancelJobs(event.recruitId());
     }
 }

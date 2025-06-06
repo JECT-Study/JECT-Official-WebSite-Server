@@ -2,7 +2,7 @@ package org.ject.support.domain.recruit.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.recruit.dto.RecruitSavedEvent;
+import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
@@ -12,17 +12,21 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 @Service
 @RequiredArgsConstructor
-public class RecruitSavedEventHandler {
+public class RecruitUpdatedEventHandler {
 
     private final RecruitRepository recruitRepository;
     private final RecruitFlagService recruitFlagService;
     private final RecruitScheduleService recruitScheduleService;
 
     /**
-     * 모집 등록 시 호출됨
+     * 모집 수정 시 호출됨
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleRecruitSaved(RecruitSavedEvent event) {
+    public void handleRecruitUpdated(RecruitUpdatedEvent event) {
+        // 기존 스케줄 작업 제거
+        recruitScheduleService.cancelJobs(event.recruitId());
+
+        // 수정된 모집 정보 조회
         Recruit recruit = recruitRepository.findById(event.recruitId())
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND));
 
