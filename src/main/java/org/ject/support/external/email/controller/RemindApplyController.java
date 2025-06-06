@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/emails/send")
 @RequiredArgsConstructor
-public class RemindApplyEmailSendController {
+public class RemindApplyController {
 
     private final RemindApplyService remindApplyService;
 
@@ -20,7 +20,7 @@ public class RemindApplyEmailSendController {
      */
     @PostMapping("/remind/apply")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public void sendRemindApplyEmail() {
+    public void remindApply() {
         remindApplyService.remindApply();
     }
 }
