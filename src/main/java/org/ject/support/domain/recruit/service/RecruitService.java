@@ -55,7 +55,7 @@ public class RecruitService implements RecruitUsecase {
     public void cancelRecruit(Long recruitId) {
         Recruit recruit = getRecruit(recruitId);
         recruitRepository.delete(recruit);
-        eventPublisher.publishEvent(new RecruitCanceledEvent(recruit.getJobFamily()));
+        eventPublisher.publishEvent(new RecruitCanceledEvent(recruit.getId(), recruit.getJobFamily()));
     }
 
     private void validateDuplicatedJobFamily(List<RecruitRegisterRequest> requests, Long ongoingSemesterId) {

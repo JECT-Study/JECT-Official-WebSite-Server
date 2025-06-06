@@ -13,6 +13,7 @@ import static org.ject.support.domain.recruit.dto.Constants.RECRUIT_FLAG_PREFIX;
 public class RecruitCanceledEventHandler {
 
     private final RecruitFlagService recruitFlagService;
+    private final RecruitScheduleService recruitScheduleService;
 
     /**
      * 모집 취소 시 호출됨
@@ -20,5 +21,6 @@ public class RecruitCanceledEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleRecruitCanceled(RecruitCanceledEvent event) {
         recruitFlagService.deleteRecruitFlag(String.format("%s%s", RECRUIT_FLAG_PREFIX, event.jobFamily()));
+        recruitScheduleService.cancelJob(event.recruitId());
     }
 }
