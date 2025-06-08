@@ -7,6 +7,7 @@ import org.ject.support.external.email.domain.EmailSendGroup;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
 import org.ject.support.external.email.repository.EmailSendGroupRepository;
+import org.ject.support.external.infrastructure.SesRateLimiter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.sesv2.SesV2Client;
@@ -19,6 +20,8 @@ import software.amazon.awssdk.services.sesv2.model.SendBulkEmailRequest;
 import software.amazon.awssdk.services.sesv2.model.SendEmailRequest;
 import software.amazon.awssdk.services.sesv2.model.Template;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -26,12 +29,12 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SesEmailSendService implements EmailSendService {
 
-    private static final int MAX_BULK_EMAIL_RECIPIENTS = 50;
     private static final String GROUP_CODE_TAG_NAME = "group_code";
 
-    private final SesV2Client sesV2Client;
     private final Map2JsonSerializer map2JsonSerializer;
     private final EmailSendGroupRepository emailSendGroupRepository;
+    private final SesV2Client sesV2Client;
+    private final SesRateLimiter rateLimiter;
 
     @Value("${aws.ses.from-email-address}")
     private String from;
@@ -74,25 +77,26 @@ public class SesEmailSendService implements EmailSendService {
         // 이메일 그룹 식별용 태그 설정
         MessageTag messageTag = getMessageTag(sendGroup.getCode());
 
-        // 수신자 리스트를 50명씩 분할하여 전송
-        Lists.partition(toList, MAX_BULK_EMAIL_RECIPIENTS).forEach(batch -> {
-            List<BulkEmailEntry> entries = batch.stream()
-                    .map(to -> BulkEmailEntry.builder()
-                            .destination(getDestination(to))
-                            .build())
-                    .toList();
+        // 수신자 리스트를 초당 전송량만큼 분할하여 전송
+        Lists.partition(toList, rateLimiter.getRateLimitPerSecond())
+                .forEach(chunk -> {
+                    rateLimiter.consume(chunk.size());
 
-            // 대량 이메일 요청 생성
-            SendBulkEmailRequest sendBulkEmailRequest = SendBulkEmailRequest.builder()
-                    .bulkEmailEntries(entries)
-                    .defaultContent(content)
-                    .fromEmailAddress(from)
-                    .defaultEmailTags(messageTag)
-                    .build();
+                    List<BulkEmailEntry> entries = chunk.stream()
+                            .map(to -> BulkEmailEntry.builder()
+                                    .destination(getDestination(to))
+                                    .build())
+                            .toList();
 
-            // 대량 이메일 전송
-            sesV2Client.sendBulkEmail(sendBulkEmailRequest);
-        });
+                    SendBulkEmailRequest sendBulkEmailRequest = SendBulkEmailRequest.builder()
+                            .bulkEmailEntries(entries)
+                            .defaultContent(content)
+                            .fromEmailAddress(from)
+                            .defaultEmailTags(messageTag)
+                            .build();
+
+                    sesV2Client.sendBulkEmail(sendBulkEmailRequest);
+                });
     }
 
     private EmailSendGroup getSendGroup(String sendGroupCode) {
