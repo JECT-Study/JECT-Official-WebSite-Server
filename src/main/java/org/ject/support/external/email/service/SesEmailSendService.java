@@ -120,7 +120,8 @@ public class SesEmailSendService implements EmailSendService {
     private MessageTag getMessageTag(String groupCode) {
         return MessageTag.builder()
                 .name(GROUP_CODE_TAG_NAME)
-                .value(groupCode)
+                .value(String.format("%s_%s",
+                        groupCode, LocalDate.now().format(DateTimeFormatter.ofPattern("yy.MM.dd"))))
                 .build();
     }
 }
