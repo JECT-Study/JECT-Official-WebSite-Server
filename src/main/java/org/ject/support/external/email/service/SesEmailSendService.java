@@ -38,41 +38,43 @@ public class SesEmailSendService implements EmailSendService {
 
     @Override
     public void sendTemplatedEmail(String sendGroupCode, String to, Map<String, String> params) {
-        // 이메일 전송 그룹 조회
+        // 전송 그룹 정보 조회
         EmailSendGroup sendGroup = getSendGroup(sendGroupCode);
 
-        // 사용할 템플릿 선택 및 변수 매핑
-        Template template = getTemplate(sendGroup.getTemplateName(), params);
-
-        // 수신자(destination) 설정
-        Destination destination = getDestination(to);
-
-        // 이메일 콘텐츠 설정
+        // 이메일 콘텐츠 구성
         EmailContent emailContent = EmailContent.builder()
-                .template(template)
+                .template(getTemplate(sendGroup.getTemplateName(), params))
                 .build();
 
-        // 이메일 발송 요청 객체 생성
+        // 이메일 그룹 식별용 태그 설정
+        MessageTag messageTag = getMessageTag(sendGroup.getCode());
+
+        // 단건 이메일 요청 생성
         SendEmailRequest emailRequest = SendEmailRequest.builder()
-                .destination(destination)
+                .destination(getDestination(to))
                 .content(emailContent)
                 .fromEmailAddress(from)
-                .emailTags(getMessageTag(sendGroup.getCode()))
+                .emailTags(messageTag)
                 .build();
 
-        // 이메일 발송
+        // 이메일 전송
         sesV2Client.sendEmail(emailRequest);
     }
 
     @Override
     public void sendBulkTemplatedEmail(String sendGroupCode, List<String> toList, Map<String, String> params) {
-        // 이메일 전송 그룹 조회
+        // 전송 그룹 정보 조회
         EmailSendGroup sendGroup = getSendGroup(sendGroupCode);
 
-        // 사용할 템플릿 선택 및 변수 매핑
-        Template template = getTemplate(sendGroup.getTemplateName(), params);
+        // 이메일 콘텐츠 구성
+        BulkEmailContent content = BulkEmailContent.builder()
+                .template(getTemplate(sendGroup.getTemplateName(), params))
+                .build();
 
-        // 전송 가능한 수신자 수로 나눈 후 이메일 발송
+        // 이메일 그룹 식별용 태그 설정
+        MessageTag messageTag = getMessageTag(sendGroup.getCode());
+
+        // 수신자 리스트를 50명씩 분할하여 전송
         Lists.partition(toList, MAX_BULK_EMAIL_RECIPIENTS).forEach(batch -> {
             List<BulkEmailEntry> entries = batch.stream()
                     .map(to -> BulkEmailEntry.builder()
@@ -80,17 +82,15 @@ public class SesEmailSendService implements EmailSendService {
                             .build())
                     .toList();
 
-            // 이메일 발송 요청 객체 생성
+            // 대량 이메일 요청 생성
             SendBulkEmailRequest sendBulkEmailRequest = SendBulkEmailRequest.builder()
                     .bulkEmailEntries(entries)
-                    .defaultContent(BulkEmailContent.builder()
-                            .template(template)
-                            .build())
+                    .defaultContent(content)
                     .fromEmailAddress(from)
-                    .defaultEmailTags(getMessageTag(sendGroup.getCode()))
+                    .defaultEmailTags(messageTag)
                     .build();
 
-            // 이메일 발송
+            // 대량 이메일 전송
             sesV2Client.sendBulkEmail(sendBulkEmailRequest);
         });
     }
