@@ -7,6 +7,7 @@ import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.dto.RecruitCanceledEvent;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
+import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
@@ -43,19 +44,22 @@ public class RecruitService implements RecruitUsecase {
     @Override
     public void updateRecruit(Long recruitId, RecruitUpdateRequest request) {
         Recruit recruit = getRecruit(recruitId);
-
         if (recruit.isClosed()) {
             throw new RecruitException(RecruitErrorCode.UPDATE_NOT_ALLOW_FOR_CLOSED);
         }
-
         recruit.update(request.jobFamily(), request.startDate(), request.endDate());
+        eventPublisher.publishEvent(new RecruitUpdatedEvent(
+                recruit.getId(),
+                recruit.getJobFamily(),
+                recruit.getStartDate(),
+                recruit.getEndDate()));
     }
 
     @Override
     public void cancelRecruit(Long recruitId) {
         Recruit recruit = getRecruit(recruitId);
         recruitRepository.delete(recruit);
-        eventPublisher.publishEvent(new RecruitCanceledEvent(recruit.getJobFamily()));
+        eventPublisher.publishEvent(new RecruitCanceledEvent(recruit.getId(), recruit.getJobFamily()));
     }
 
     private void validateDuplicatedJobFamily(List<RecruitRegisterRequest> requests, Long ongoingSemesterId) {
