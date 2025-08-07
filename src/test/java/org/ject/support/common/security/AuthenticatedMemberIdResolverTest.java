@@ -51,6 +51,7 @@ class AuthenticatedMemberIdResolverTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     @DisplayName("@AuthPrincipal이 붙은 Long 타입 파라미터를 지원한다")
     void supportsParameter() {
         // given
@@ -65,6 +66,7 @@ class AuthenticatedMemberIdResolverTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     @DisplayName("@AuthPrincipal이 없는 Long 타입 파라미터는 지원하지 않는다")
     void notSupportsParameterWithoutAnnotation() {
         // given
