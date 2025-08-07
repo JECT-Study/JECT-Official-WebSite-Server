@@ -1,9 +1,11 @@
-package org.ject.support.domain.auth;
+package org.ject.support.domain.auth.controller;
 
 import org.ject.support.common.security.CustomSuccessHandler;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
-import org.ject.support.domain.auth.AuthDto.PinLoginRequest;
-import org.ject.support.domain.auth.AuthDto.VerifyAuthCodeRequest;
+import org.ject.support.domain.auth.dto.AuthDto.PinLoginRequest;
+import org.ject.support.domain.auth.dto.AuthDto.VerifyAuthCodeRequest;
+import org.ject.support.domain.auth.service.AuthService;
+import org.ject.support.domain.auth.dto.AuthVerificationResult;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
