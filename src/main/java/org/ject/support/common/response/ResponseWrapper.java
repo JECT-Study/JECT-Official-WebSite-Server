@@ -23,9 +23,18 @@ public class ResponseWrapper implements ResponseBodyAdvice<Object> {
                                   final MediaType selectedContentType,
                                   final Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                   final ServerHttpRequest request, final ServerHttpResponse response) {
+        // Swagger 관련 요청일 경우 래핑하지 않음
+        String path = request.getURI().getPath();
+        if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui")) {
+            return body;
+        }
+
+        // Error Response 반환
         if (body instanceof ErrorCode errorCode) {
             return new ApiResponse<>(errorCode.getCode(),errorCode.getMessage());
         }
+
+        // Success Response 반환
         return new ApiResponse<>("SUCCESS", body);
     }
 }
