@@ -50,6 +50,7 @@ public class SpringdocConfig {
                     .forEach(entry -> {
                         ApiResponse response = entry.getValue();
 
+                        // 등록된 헤더 정보 추가
                         for (Header header : methodAnnotation.headers()) {
                             response.addHeaderObject(header.name(),
                                     new io.swagger.v3.oas.models.headers.Header()
@@ -57,11 +58,12 @@ public class SpringdocConfig {
                                             .schema(new Schema<>().type("string")));
                         }
 
+                        // response 스키마에 커스텀 공통 응답 객체 형태 주입
                         if (response.getContent() != null) {
                             response.getContent().forEach((mediaTypeKey, mediaType) -> {
                                 Schema<?> originalSchema = mediaType.getSchema();
 
-                                // 새로운 응답 스키마 만들기
+                                // 새로운 응답 schema 만들기
                                 Schema<Object> wrapperSchema = new Schema<>();
                                 wrapperSchema.addProperties("status", new Schema<>().example(EX_SUCCESS_STATUS));
                                 wrapperSchema.addProperties("data", originalSchema);
