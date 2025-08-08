@@ -18,22 +18,25 @@ import java.util.List;
 @RestController
 @RequestMapping("/recruits")
 @RequiredArgsConstructor
-public class RecruitController {
+public class RecruitController implements RecruitApi {
 
     private final RecruitUsecase recruitUsecase;
 
+    @Override
     @PostMapping
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void registerRecruit(@RequestBody List<RecruitRegisterRequest> requests) {
         recruitUsecase.registerRecruits(requests);
     }
 
+    @Override
     @PutMapping("/{recruitId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void updateRecruit(@PathVariable Long recruitId, @RequestBody RecruitUpdateRequest request) {
         recruitUsecase.updateRecruit(recruitId, request);
     }
 
+    @Override
     @DeleteMapping("/{recruitId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void cancelRecruit(@PathVariable Long recruitId) {

@@ -13,10 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/jectalks")
 @RequiredArgsConstructor
-public class JectalkController {
+public class JectalkController implements JectalkApi {
 
     private final JectalkService jectalkService;
 
+    @Override
     @GetMapping
     public Page<JectalkResponse> findJectalks(@PageableDefault(size = 12) Pageable pageable) {
         return jectalkService.findJectalks(pageable);

@@ -19,15 +19,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/apply")
 @RequiredArgsConstructor
-public class ApplyController {
+public class ApplyController implements ApplyApi {
     private final ApplyUsecase applyUsecase;
 
+    @Override
     @GetMapping("/temp")
     @PreAuthorize("hasRole('ROLE_TEMP')")
     public ApplyTemporaryResponse getTemporaryApplication(@AuthPrincipal Long memberId) {
         return applyUsecase.getTemporaryApplication(memberId);
     }
 
+    @Override
     @PostMapping("/temp")
     @PreAuthorize("hasRole('ROLE_TEMP')")
     public void applyTemporary(@AuthPrincipal Long memberId,
@@ -36,12 +38,14 @@ public class ApplyController {
         applyUsecase.applyTemporary(jobFamily, memberId, request.answers(), request.portfolios());
     }
 
+    @Override
     @DeleteMapping("/temp")
     @PreAuthorize("hasRole('ROLE_TEMP')")
     public void deleteTemporaryApplications(@AuthPrincipal Long memberId) {
         applyUsecase.deleteTemporaryApplications(memberId);
     }
 
+    @Override
     @PostMapping("/submit")
     @PreAuthorize("hasRole('ROLE_TEMP')")
     public void submitApplication(@AuthPrincipal Long memberId,
@@ -50,6 +54,7 @@ public class ApplyController {
         applyUsecase.submitApplication(memberId, jobFamily, request.answers(), request.portfolios());
     }
 
+    @Override
     @GetMapping("/status")
     @PreAuthorize("hasRole('ROLE_TEMP')")
     public boolean checkApplyStatus(@AuthPrincipal Long memberId) {

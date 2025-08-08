@@ -16,10 +16,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/projects")
 @RequiredArgsConstructor
-public class ProjectController {
+public class ProjectController implements ProjectApi {
 
     private final ProjectService projectService;
 
+    @Override
     @GetMapping
     public Page<ProjectResponse> findProjects(@RequestParam final Project.Category category,
                                               @RequestParam(required = false) final Long semesterId,
@@ -27,6 +28,7 @@ public class ProjectController {
         return projectService.findProjects(category, semesterId, pageable);
     }
 
+    @Override
     @GetMapping("/{projectId}")
     public ProjectDetailResponse findProjectDetails(@PathVariable final Long projectId) {
         return projectService.findProjectDetails(projectId);

@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/members")
 @RequiredArgsConstructor
-public class MemberController {
+public class MemberController implements MemberApi {
 
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;
@@ -33,6 +33,7 @@ public class MemberController {
      * 인증번호 검증 후 발급받은 토큰을 통해 인증된 사용자만 접근 가능합니다.
      * PIN 번호를 암호화하여 임시 회원을 생성합니다.
      */
+    @Override
     @PostMapping
     @PreAuthorize("hasRole('ROLE_VERIFICATION')")
     public boolean registerMember(HttpServletRequest request, HttpServletResponse response,
@@ -55,6 +56,7 @@ public class MemberController {
      * 임시회원의 최초 정보 등록 API
      * 임시회원(ROLE_TEMP)이 이름과 전화번호를 처음 등록할 때 사용합니다.
      */
+    @Override
     @PutMapping("/profile/initial")
     @PreAuthorize("hasRole('ROLE_TEMP')")
     public void registerInitialProfile(@AuthPrincipal Long memberId,
@@ -64,6 +66,7 @@ public class MemberController {
         memberService.registerInitialProfile(request, memberId);
     }
 
+    @Override
     @PutMapping("/pin")
     @PreAuthorize("hasRole('ROLE_TEMP')")
     public void resetPin(@AuthPrincipal Long memberId,
@@ -73,6 +76,7 @@ public class MemberController {
         memberService.updatePin(request, memberId);
     }
 
+    @Override
     @GetMapping("/profile/initial/status")
     @PreAuthorize("hasRole('ROLE_TEMP')")
     public boolean isInitialMember(@AuthPrincipal Long memberId) {

@@ -13,10 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/ministudies")
 @RequiredArgsConstructor
-public class MiniStudyController {
+public class MiniStudyController implements MiniStudyApi {
 
     private final MiniStudyService miniStudyService;
 
+    @Override
     @GetMapping
     public Page<MiniStudyResponse> findMiniStudies(@PageableDefault(size = 12) Pageable pageable) {
         return miniStudyService.findMiniStudies(pageable);

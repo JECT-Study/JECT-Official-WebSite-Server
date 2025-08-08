@@ -15,10 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/semesters")
-public class SemesterController {
+public class SemesterController implements SemesterApi {
     private final SemesterRegisterUsecase semesterRegisterUsecase;
     private final SemesterInquiryUsecase semesterInquiryUsecase;
 
+    @Override
     @PostMapping
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void register(@RequestBody SemesterRegisterRequest request) {
@@ -30,6 +31,7 @@ public class SemesterController {
      *
      * @return 기수 목록
      */
+    @Override
     @GetMapping
     public SemesterResponses getAllSemesters() {
         return semesterInquiryUsecase.getAllSemesters();

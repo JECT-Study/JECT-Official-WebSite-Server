@@ -11,10 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/email")
 @RequiredArgsConstructor
-public class EmailAuthController {
+public class EmailAuthController implements EmailAuthApi {
 
     private final EmailAuthService emailAuthService;
 
+    @Override
     @PostMapping("/send/auth")
     @PreAuthorize("permitAll()")
     public void sendAuthEmail(@RequestParam String sendGroupCode, @RequestParam String email) {
