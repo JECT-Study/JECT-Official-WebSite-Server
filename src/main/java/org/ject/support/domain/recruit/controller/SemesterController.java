@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/semesters")
-public class SemesterController implements SemesterApi {
+public class SemesterController implements SemesterApiSpec {
     private final SemesterRegisterUsecase semesterRegisterUsecase;
     private final SemesterInquiryUsecase semesterInquiryUsecase;
 

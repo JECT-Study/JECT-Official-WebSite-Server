@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/ministudies")
 @RequiredArgsConstructor
-public class MiniStudyController implements MiniStudyApi {
+public class MiniStudyController implements MiniStudyApiSpec {
 
     private final MiniStudyService miniStudyService;
 

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/apply/questions")
 @RequiredArgsConstructor
-public class QuestionController implements QuestionApi {
+public class QuestionController implements QuestionApiSpec {
 
     private final QuestionService questionService;
 

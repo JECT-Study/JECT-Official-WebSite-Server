@@ -18,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/recruits")
 @RequiredArgsConstructor
-public class RecruitController implements RecruitApi {
+public class RecruitController implements RecruitApiSpec {
 
     private final RecruitUsecase recruitUsecase;
 

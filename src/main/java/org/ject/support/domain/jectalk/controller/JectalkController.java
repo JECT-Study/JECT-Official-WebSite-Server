@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/jectalks")
 @RequiredArgsConstructor
-public class JectalkController implements JectalkApi {
+public class JectalkController implements JectalkApiSpec {
 
     private final JectalkService jectalkService;
 

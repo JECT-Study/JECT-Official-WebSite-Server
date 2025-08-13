@@ -21,7 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/members")
 @RequiredArgsConstructor
-public class MemberController implements MemberApi {
+public class MemberController implements MemberApiSpec {
 
     private final MemberService memberService;
     private final JwtTokenProvider jwtTokenProvider;

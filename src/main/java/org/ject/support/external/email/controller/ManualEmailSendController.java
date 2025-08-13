@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/emails/send/manual")
 @RequiredArgsConstructor
-public class ManualEmailSendController implements ManualEmailSendApi {
+public class ManualEmailSendController implements ManualEmailSendApiSpec {
 
     private final SesEmailSendService emailSendService;
 

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/apply")
 @RequiredArgsConstructor
-public class ApplyController implements ApplyApi {
+public class ApplyController implements ApplyApiSpec {
     private final ApplyUsecase applyUsecase;
 
     @Override

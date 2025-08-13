@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/projects")
 @RequiredArgsConstructor
-public class ProjectController implements ProjectApi {
+public class ProjectController implements ProjectApiSpec {
 
     private final ProjectService projectService;
 

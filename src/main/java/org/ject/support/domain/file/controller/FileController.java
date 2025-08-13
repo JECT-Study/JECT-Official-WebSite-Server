@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/upload")
 @RequiredArgsConstructor
-public class FileController implements FileApi {
+public class FileController implements FileApiSpec {
 
     private final S3Service s3Service;
 

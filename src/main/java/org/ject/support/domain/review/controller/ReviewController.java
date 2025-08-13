@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/reviews")
 @RequiredArgsConstructor
-public class ReviewController implements ReviewApi {
+public class ReviewController implements ReviewApiSpec {
 
     private final ReviewService reviewService;
 

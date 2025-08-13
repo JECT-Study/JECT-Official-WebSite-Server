@@ -3,21 +3,21 @@ package org.ject.support.domain.auth.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.ject.support.common.springdoc.Header;
-import org.ject.support.common.springdoc.CustomApiResponse;
 import org.ject.support.domain.auth.dto.AuthDto;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Auth", description = "인증 API")
-public interface AuthApi {
+public interface AuthApiSpec {
 
     @Operation(
             summary = "인증번호 검증",
@@ -33,11 +33,13 @@ public interface AuthApi {
                     },
                     required = true)
     })
-    @CustomApiResponse(headers = {
-            @Header(name = "refreshToken", description = "리프레시 토큰"),
-            @Header(name = "accessToken", description = "액세스 토큰"),
-            @Header(name = "verificationToken", description = "검증 토큰")
-    })
+    @ApiResponse(
+            headers = {
+                    @Header(name = "refreshToken", description = "프레시레시 토큰"),
+                    @Header(name = "accessToken", description = "액세스 토큰"),
+                    @Header(name = "verificationToken", description = "검증 토큰")
+            }
+    )
     boolean verifyAuthCode(@RequestBody AuthDto.VerifyAuthCodeRequest verifyAuthCodeRequest,
                            HttpServletRequest request, HttpServletResponse response,
                            @RequestParam EmailTemplate template);
@@ -46,19 +48,16 @@ public interface AuthApi {
             summary = "리프레시 토큰을 이용한 액세스 토큰 재발급",
             description = "리프레시 토큰이 유효한 경우 새로운 액세스 토큰을 발급합니다."
     )
-    @CustomApiResponse
     boolean refreshToken(HttpServletRequest request, HttpServletResponse response);
 
     @Operation(
             summary = "PIN 로그인",
             description = "이메일과 PIN 번호로 로그인하고 액세스 토큰과 리프레시 토큰을 발급합니다.")
-    @CustomApiResponse
     boolean loginWithPin(@RequestBody @Valid AuthDto.PinLoginRequest request,
                          HttpServletRequest httpRequest, HttpServletResponse response);
 
     @Operation(
             summary = "이메일 가입 여부 확인",
             description = "입력한 이메일이 이미 가입된 사용자인지 여부를 확인합니다.")
-    @CustomApiResponse
     boolean isExistMember(@RequestParam String email);
 }
