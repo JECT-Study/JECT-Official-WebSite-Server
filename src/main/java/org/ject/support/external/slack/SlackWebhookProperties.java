@@ -1,0 +1,13 @@
+package org.ject.support.external.slack;
+
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
+@Data
+@Configuration
+@ConfigurationProperties(prefix = "notification.slack.webhook")
+public class SlackWebhookProperties {
+
+    private String adminLogin;
+}

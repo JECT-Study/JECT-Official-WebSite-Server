@@ -116,6 +116,9 @@ dependencies {
 
     // Bucket4j
     implementation 'com.bucket4j:bucket4j-core:8.10.1'
+
+    // Slack
+    implementation 'com.slack.api:slack-api-client:1.45.3'
 }
 
 configurations {
