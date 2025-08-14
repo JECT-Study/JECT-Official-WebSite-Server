@@ -12,12 +12,12 @@ import org.springframework.core.env.Environment;
 @RequiredArgsConstructor
 public class SlackComponent {
 
-    private final SlackWebhookProperties slackWebhookProperties;
     private final Slack slack;
+    private final SlackConfig slackConfig;
     private final Environment environment;
 
     public void sendAdminLoginMessage(String message) {
-        sendSlackMessage(message, slackWebhookProperties.getAdminLogin());
+        sendSlackMessage(message, slackConfig.getAdminLoginWebhook());
     }
 
     private void sendSlackMessage(String message, String webhookUri) {
