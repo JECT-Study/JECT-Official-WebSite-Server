@@ -25,7 +25,7 @@ public class ResponseWrapper implements ResponseBodyAdvice<Object> {
                                   final ServerHttpRequest request, final ServerHttpResponse response) {
         // Swagger 관련 요청일 경우 래핑하지 않음
         String path = request.getURI().getPath();
-        if (path.startsWith("/v3/api-docs") || path.startsWith("/swagger-ui")) {
+        if (path.contains("/v3/api-docs") || path.contains("/swagger-ui")) {
             return body;
         }
 
