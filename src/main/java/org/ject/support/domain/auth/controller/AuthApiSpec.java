@@ -15,7 +15,6 @@ import org.ject.support.common.springdoc.ApiErrorResponse;
 import org.ject.support.common.springdoc.ApiErrorResponses;
 import org.ject.support.domain.auth.dto.AuthDto;
 import org.ject.support.domain.auth.exception.AuthErrorCode;
-import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -65,13 +64,7 @@ public interface AuthApiSpec {
     })
     boolean refreshToken(HttpServletRequest request, HttpServletResponse response);
 
-    @Operation(
-            summary = "PIN 로그인",
-            description = "이메일과 PIN 번호로 로그인하고 액세스 토큰과 리프레시 토큰을 발급합니다.")
-    @ApiErrorResponses(responses = {
-            @ApiErrorResponse(value = MemberErrorCode.class, code = 404, name = "NOT_FOUND_MEMBER"),
-            @ApiErrorResponse(value = AuthErrorCode.class, code = 400, name = "INVALID_CREDENTIALS")
-    })
+    @Operation(hidden = true)
     boolean loginWithPin(@RequestBody @Valid AuthDto.PinLoginRequest request,
                          HttpServletRequest httpRequest, HttpServletResponse response);
 
