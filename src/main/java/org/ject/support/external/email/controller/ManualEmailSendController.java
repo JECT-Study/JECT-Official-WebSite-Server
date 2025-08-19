@@ -13,16 +13,18 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/emails/send/manual")
 @RequiredArgsConstructor
-public class ManualEmailSendController {
+public class ManualEmailSendController implements ManualEmailSendApiSpec {
 
     private final SesEmailSendService emailSendService;
 
+    @Override
     @PostMapping
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void sendManualTemplatedEmail(@RequestBody SendManualTemplatedEmailRequest request) {
         emailSendService.sendTemplatedEmail(request.sendGroupCode(), request.to(), request.content());
     }
 
+    @Override
     @PostMapping("/bulk")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void sendManualBulkTemplatedEmail(@RequestBody SendManualBulkTemplatedEmailRequest request) {
