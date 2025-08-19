@@ -1,0 +1,106 @@
+name: continuous deployment (dev)
+
+on:
+  push:
+    branches:
+      - dev
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  EC2_HOST: ${{ secrets.EC2_HOST_DEV }}
+  EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Copy the configuration file in S3
+        run: |
+          aws s3 cp s3://ject-bucket/properties/application-prod.yml \
+          ./src/main/resources/application-prod.yml
+
+      - name: Build with Gradle
+        run: ./gradlew clean build -x test
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ env.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ env.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+      
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Copy deployment script to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ec2-user
+          key: ${{ env.EC2_SSH_KEY }}
+          source: "deploy.sh"
+          target: "/home/ec2-user/app/"
+
+      - name: Blue-Green Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        with:
+          host: ${{ env.EC2_HOST }}
+          username: ec2-user
+          key: ${{ env.EC2_SSH_KEY }}
+          envs: ECR_REGISTRY,ECR_REPOSITORY,IMAGE_TAG
+          script: |
+            cd /home/ec2-user/app
+            chmod +x deploy.sh
+            export ECR_REGISTRY=$ECR_REGISTRY
+            export ECR_REPOSITORY=$ECR_REPOSITORY  
+            export IMAGE_TAG=$IMAGE_TAG
+            ./deploy.sh deploy
