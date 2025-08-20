@@ -21,7 +21,7 @@ RUN apt-get update && \
     addgroup --system spring && adduser --system spring --ingroup spring
 
 #COPY --from=builder /app/build/libs/ject-home.jar app.jar
-COPY build/libs/*.jar app.jar
+COPY build/libs/ject*.jar app.jar
 RUN chown spring:spring app.jar
 
 USER spring:spring
