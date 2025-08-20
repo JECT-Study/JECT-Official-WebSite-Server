@@ -45,8 +45,8 @@ jobs:
 
       - name: Copy the configuration file in S3
         run: |
-          aws s3 cp s3://ject-bucket/properties/application-prod.yml \
-          ./src/main/resources/application-prod.yml
+          aws s3 cp s3://ject-bucket/properties/application-dev.yml \
+          ./src/main/resources/application-dev.yml
 
       - name: Build with Gradle
         run: ./gradlew clean build -x test
