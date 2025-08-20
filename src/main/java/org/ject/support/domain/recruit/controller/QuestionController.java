@@ -13,10 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/apply/questions")
 @RequiredArgsConstructor
-public class QuestionController {
+public class QuestionController implements QuestionApiSpec {
 
     private final QuestionService questionService;
 
+    @Override
     @GetMapping
     @PreAuthorize("hasRole('ROLE_TEMP')")
     public QuestionResponses findQuestions(@RequestParam JobFamily jobFamily) {

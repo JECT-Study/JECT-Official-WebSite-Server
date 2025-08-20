@@ -1,4 +1,4 @@
-package org.ject.support.domain.auth;
+package org.ject.support.domain.auth.dto;
 
 import lombok.Getter;
 import org.springframework.security.core.Authentication;

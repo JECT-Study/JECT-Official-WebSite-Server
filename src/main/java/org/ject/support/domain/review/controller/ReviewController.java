@@ -12,10 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/reviews")
 @RequiredArgsConstructor
-public class ReviewController {
+public class ReviewController implements ReviewApiSpec {
 
     private final ReviewService reviewService;
 
+    @Override
     @GetMapping
     public Page<ReviewResponse> findReviews(Pageable pageable) {
         return reviewService.findReviews(pageable);
