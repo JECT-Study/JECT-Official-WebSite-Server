@@ -15,10 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/upload")
 @RequiredArgsConstructor
-public class FileController {
+public class FileController implements FileApiSpec {
 
     private final S3Service s3Service;
 
+    @Override
     @PreAuthorize("hasRole('ROLE_USER')")
     @PostMapping("/contents")
     public List<UploadFileResponse> uploadContents(@AuthPrincipal final Long memberId,
@@ -26,6 +27,7 @@ public class FileController {
         return s3Service.uploadContents(memberId, requests);
     }
 
+    @Override
     @PreAuthorize("hasRole('ROLE_TEMP')")
     @PostMapping("/portfolios")
     public List<UploadFileResponse> uploadPortfolios(@AuthPrincipal final Long memberId,

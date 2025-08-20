@@ -1,10 +1,12 @@
-package org.ject.support.domain.auth;
+package org.ject.support.domain.auth.service;
 
 
-import static org.ject.support.domain.auth.AuthErrorCode.*;
+import static org.ject.support.domain.auth.exception.AuthErrorCode.*;
 import static org.ject.support.domain.member.exception.MemberErrorCode.*;
 
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.auth.exception.AuthException;
+import org.ject.support.domain.auth.dto.AuthVerificationResult;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
