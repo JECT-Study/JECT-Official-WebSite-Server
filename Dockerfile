@@ -31,4 +31,5 @@ ENV JAVA_OPTS="-Xms512m -Xmx1024m -XX:+UseG1GC -XX:G1HeapRegionSize=16m -XX:+Use
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8080/health || exit 1
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=dev -Duser.timezone=Asia/Seoul -jar app.jar"]
+#ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dspring.profiles.active=dev -Duser.timezone=Asia/Seoul -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -Dspring.profiles.active=dev -Duser.timezone=Asia/Seoul -jar app.jar"]
