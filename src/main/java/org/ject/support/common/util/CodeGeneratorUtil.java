@@ -5,6 +5,10 @@ import java.util.stream.Collectors;
 
 public class CodeGeneratorUtil {
 
+    private CodeGeneratorUtil() {
+        throw new UnsupportedOperationException("인스턴스화 방지");
+    }
+
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     private static final int DIGIT_BOUND = 10;
 
