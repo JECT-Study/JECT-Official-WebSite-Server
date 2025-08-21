@@ -77,14 +77,14 @@ jobs:
           
           echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      - name: Copy deployment script to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ env.EC2_HOST }}
-          username: ec2-user
-          key: ${{ env.EC2_SSH_KEY }}
-          source: "deploy.sh"
-          target: "/home/ec2-user/app/"
+      # - name: Copy deployment script to EC2
+      #   uses: appleboy/scp-action@v0.1.7
+      #   with:
+      #     host: ${{ env.EC2_HOST }}
+      #     username: ec2-user
+      #     key: ${{ env.EC2_SSH_KEY }}
+      #     source: "deploy.sh"
+      #     target: "/home/ec2-user/app/"
 
       - name: Blue-Green Deploy to EC2
         uses: appleboy/ssh-action@v1.0.3
