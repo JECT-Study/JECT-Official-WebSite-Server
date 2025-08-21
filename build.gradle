@@ -152,9 +152,6 @@ jacocoTestReport {
     reports {
         html.required.set(true)
         xml.required.set(true)
-
-        html.destination file(project.layout.buildDirectory.dir("jacoco/report.html")) as File
-        xml.destination file(project.layout.buildDirectory.dir("jacoco/report.xml")) as File
     }
 
     afterEvaluate {
