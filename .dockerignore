@@ -1,0 +1,11 @@
+.git
+.gitignore
+.DS_Store
+build/
+.gradle/
+gradle-wrapper.jar
+*.md
+src/test/
+*.env
+.env.*
+!build/libs/*.jar
