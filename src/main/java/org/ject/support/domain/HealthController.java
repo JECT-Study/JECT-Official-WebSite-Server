@@ -11,7 +11,7 @@ public class HealthController {
     @Operation(hidden = true)
     @GetMapping("/health")
     public ResponseEntity<String> health() {
-        System.out.println("Health check endpoint hit");
+        System.out.println("Health check endpoint hit2");
         return ResponseEntity.ok("OK");
     }
 }
