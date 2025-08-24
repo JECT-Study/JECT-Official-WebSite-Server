@@ -6,6 +6,7 @@ import org.ject.support.domain.admin.dto.AdminAuthSendSlackRequest;
 import org.ject.support.domain.admin.dto.AdminAuthSendSlackResponse;
 import org.ject.support.domain.admin.dto.AdminVerifySlackRequest;
 import org.ject.support.domain.admin.dto.AdminVerifySlackResponse;
+import org.ject.support.domain.admin.service.AdminAuthService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,11 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/admin")
 public class AdminAuthController implements AdminAuthApiSpec {
 
+    private final AdminAuthService adminAuthService;
+
     @PostMapping("/auth/slack-codes")
     public AdminAuthSendSlackResponse sendAdminAuthSlackCode(@RequestBody @Valid AdminAuthSendSlackRequest request) {
-        // TODO : 관리자 인증 코드 전송 로직 구현
+        String email = adminAuthService.sendSlackAdminAuthCode(request.email());
         return AdminAuthSendSlackResponse.builder()
-                .email("test@tset.com")
+                .email(email)
                 .build();
     }
 
