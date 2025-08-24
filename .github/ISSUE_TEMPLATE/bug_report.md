@@ -2,8 +2,8 @@
 name: Bug report
 about: Create a report to help us improve
 title: "[BUG]"
-labels: ''
-assignees: 
+labels: "\U0001F468\U0001F3FB‍\U0001F4BBbackend"
+assignees: ''
 
 ---
 
