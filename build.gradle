@@ -136,6 +136,12 @@ configurations {
     querydsl.extendsFrom compileClasspath
 }
 
+def jacocoExcludes = [
+        '**/Q*.class',      // QueryDSL Q*
+        '**/exception/**',
+        '**/dto/**'
+]
+
 test {
     useJUnitPlatform(){
         // throughput test 제외
@@ -157,10 +163,7 @@ jacocoTestReport {
     afterEvaluate {
         classDirectories.setFrom(
                 files(classDirectories.files.collect {
-                    fileTree(dir: it, excludes: [
-                            '**/exception/**',
-                            '**/dto/**'
-                    ])
+                    fileTree(dir: it, excludes: jacocoExcludes)
                 })
         )
     }
@@ -179,10 +182,7 @@ jacocoTestCoverageVerification {
                 minimum = 0.70  // 최소 70% 이상 만족
             }
 
-            excludes = [
-                    '*.exception.*',
-                    '*.dto.*'
-            ]
+            excludes = jacocoExcludes
         }
     }
 }
