@@ -33,10 +33,6 @@ class CodeGeneratorUtilTest {
         // when
         String code = CodeGeneratorUtil.generateAlphaNumCode(length);
 
-        for (int i = 0; i < 50; i++) {
-            System.out.println(CodeGeneratorUtil.generateAlphaNumCode(length));
-        }
-
         // then
         assertNotNull(code);
         assertEquals(length, code.length());
