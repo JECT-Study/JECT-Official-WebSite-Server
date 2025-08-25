@@ -6,13 +6,14 @@ import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
 import org.ject.support.domain.recruit.dto.ApplyTemporaryResponse;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
-import org.ject.support.domain.tempapply.exception.TemporaryApplicationErrorCode;
 import org.ject.support.domain.tempapply.exception.TemporaryApplicationException;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+
+import static org.ject.support.domain.tempapply.exception.TemporaryApplicationErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +24,7 @@ public class TemporaryApplyServiceImpl implements TemporaryApplyService {
     public ApplyTemporaryResponse findMembersRecentTemporaryApplication(final Long memberId) {
         TemporaryApplication latestApplication =
                 temporaryApplicationRepository.findLatestByMemberId(memberId.toString())
-                        .orElseThrow(() -> new TemporaryApplicationException(TemporaryApplicationErrorCode.NOT_FOUND));
+                        .orElseThrow(() -> new TemporaryApplicationException(NOT_FOUND_TEMP_APPLICATION_FORM));
 
         return ApplyTemporaryResponse.from(latestApplication);
     }

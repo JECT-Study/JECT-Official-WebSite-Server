@@ -46,7 +46,7 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public ProjectDetailResponse findProjectDetails(final Long projectId) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ProjectException(ProjectErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new ProjectException(ProjectErrorCode.NOT_FOUND_PROJECT));
 
         TeamMemberNames teamMemberNames = memberRepository.findMemberNamesByTeamId(project.getTeam().getId());
 

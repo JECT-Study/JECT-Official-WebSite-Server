@@ -49,7 +49,7 @@ public class GlobalExceptionHandler{
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     protected ErrorCode handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
-        GlobalErrorCode errorCode = GlobalErrorCode.METHOD_NOT_ALLOWED;
+        GlobalErrorCode errorCode = GlobalErrorCode.REQUEST_METHOD_NOT_ALLOWED;
         logException(e, errorCode);
         return errorCode;
     }
@@ -88,9 +88,6 @@ public class GlobalExceptionHandler{
      * 예외 정보를 로깅 (ErrorCode 메시지 사용)
      */
     private void logException(final Exception e, final ErrorCode errorCode) {
-        log.error(LOG_FORMAT,
-                e.getClass(),
-                errorCode.getCode(),
-                errorCode.getMessage());
+        log.error(LOG_FORMAT, e.getClass(), errorCode.getCode(), errorCode.getMessage());
     }
 }

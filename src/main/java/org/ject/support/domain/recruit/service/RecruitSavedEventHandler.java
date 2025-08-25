@@ -24,7 +24,7 @@ public class RecruitSavedEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleRecruitSaved(RecruitSavedEvent event) {
         Recruit recruit = recruitRepository.findById(event.recruitId())
-                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
 
         if (recruit.isRecruitingPeriod()) {
             // 등록된 모집이 활성화되어 있다면 즉시 flag 캐싱

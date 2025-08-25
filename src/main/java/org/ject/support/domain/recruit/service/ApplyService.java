@@ -105,7 +105,7 @@ public class ApplyService implements ApplyUsecase {
                 .map(Long::parseLong)
                 .filter(recruit::isInvalidQuestionId)
                 .forEach(key -> {
-                    throw new QuestionException(QuestionErrorCode.NOT_FOUND);
+                    throw new QuestionException(QuestionErrorCode.NOT_FOUND_QUESTION);
                 });
     }
 
@@ -114,7 +114,7 @@ public class ApplyService implements ApplyUsecase {
         return recruitRepository.findActiveRecruits(LocalDateTime.now()).stream()
                 .filter(recruit -> recruit.getJobFamily().equals(jobFamily))
                 .findAny()
-                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
 
     private ApplicationForm createApplicationForm(Map<String, String> answers, Member applicant, Recruit recruit) {
