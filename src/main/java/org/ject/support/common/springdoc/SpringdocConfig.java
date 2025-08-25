@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -28,5 +29,21 @@ public class SpringdocConfig {
                         .addSecuritySchemes("Bearer Token", securityScheme))
                 .addServersItem(new Server().url("/"))
                 .info(info);
+    }
+
+    @Bean
+    public GroupedOpenApi coreApi() {
+        return GroupedOpenApi.builder()
+                .group("Core API")
+                .pathsToExclude("/admin/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi adminApi() {
+        return GroupedOpenApi.builder()
+                .group("Admin API")
+                .pathsToMatch("/admin/**")
+                .build();
     }
 }
