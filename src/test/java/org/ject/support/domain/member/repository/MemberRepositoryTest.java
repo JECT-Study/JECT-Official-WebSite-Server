@@ -4,7 +4,6 @@ import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.testconfig.QueryDslTestConfig;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -21,8 +20,7 @@ class MemberRepositoryTest {
     @Autowired MemberRepository memberRepository;
 
     @Test
-    @DisplayName("이메일과 역활로 회원을 조회시 존재하는 회원을 반환한다")
-    void findByEmailAndRole_find() {
+    void 이메일과_역활로_회원을_조회시_존재하는_회원을_반환한다() {
         // given
         String email = "test@example.com";
         Role role = Role.ADMIN;
@@ -39,8 +37,7 @@ class MemberRepositoryTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 이메일과 역활로 회원을 조회시 빈 Optional을 반환한다")
-    void testFindByEmailAndRole_NoMatch() {
+    void 존재하지_않는_이메일과_역활로_회원을_조회시_빈_Optional을_반환한다() {
         // given
         String findEmail = "notfound@example.com";
         Role findRole = Role.ADMIN;
@@ -60,7 +57,7 @@ class MemberRepositoryTest {
                 .semesterId(1L)
                 .jobFamily(jobFamily)
                 .role(role)
-                .pin("123456") // PIN 필드 추가
+                .pin("123456")
                 .build();
     }
 }

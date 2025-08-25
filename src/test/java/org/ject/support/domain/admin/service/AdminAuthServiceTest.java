@@ -7,7 +7,6 @@ import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.external.infrastructure.SlackRateLimiter;
 import org.ject.support.external.slack.SlackComponent;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -45,8 +44,7 @@ class AdminAuthServiceTest {
     SlackComponent slackComponent;
 
     @Test
-    @DisplayName("입력받은 Email에 대한 관리자가 존재하지 않을 경우, NOT_FOUND_ADMIN 예외 발생")
-    void sendSlackAdminAuthCode_NotFoundAdmin() {
+    void 입력받은_Email에_대한_관리자가_존재하지_않을_경우_NOT_FOUND_ADMIN_예외_발생() {
         // given
         String email = "test.com";
         given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
@@ -60,8 +58,7 @@ class AdminAuthServiceTest {
     }
 
     @Test
-    @DisplayName("관리자 로그인 시도가 초당 허용량을 초과한 경우, TOO_MANY_REQUESTS 예외 발생")
-    void sendSlackAdminAuthCode_TooManyRequests() {
+    void 관리자_로그인_시도가_초당_허용량을_초과한_경우_TOO_MANY_REQUESTS_예외_발생() {
         // given
         String email = "test.com";
         Member adminMember = Member.builder()
@@ -81,8 +78,7 @@ class AdminAuthServiceTest {
     }
 
     @Test
-    @DisplayName("관리자 로그인 시도를 성공한 경우, 관리자의 Email 반환")
-    void sendSlackAdminAuthCode_Success() {
+    void 관리자_로그인_시도를_성공한_경우_관리자의_Email_반환() {
         // given
         long memberId = 1L;
         String email = "test.com";

@@ -1,6 +1,5 @@
 package org.ject.support.common.util;
 
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -10,8 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CodeGeneratorUtilTest {
 
     @Test
-    @DisplayName("길이가 6인 랜덤한 숫자 생성을 요청하면 6자리 숫자 코드가 생성된다")
-    void generateDigitCode_length_and_pattern_check() {
+    void 길이가_6인_랜덤한_숫자_생성을_요청하면_6자리_숫자_코드가_생성된다() {
         // given
         int length = 6;
 
@@ -25,8 +23,7 @@ class CodeGeneratorUtilTest {
     }
 
     @Test
-    @DisplayName("길이가 6인 랜덤한 알파벳과 숫자 생성을 요청하면 6자리 코드가 생성된다")
-    void generateAlphaNumCode_length_and_pattern_check() {
+    void 길이가_6인_랜덤한_알파벳과_숫자_생성을_요청하면_6자리_코드가_생성된다() {
         // given
         int length = 6;
 
