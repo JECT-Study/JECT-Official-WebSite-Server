@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.1'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'org.ject'
@@ -22,6 +23,10 @@ configurations {
 repositories {
     mavenCentral()
     maven { url 'https://s3-us-west-2.amazonaws.com/dynamodb-local/release' }
+}
+
+jacoco {
+    toolVersion = "0.8.12"
 }
 
 dependencies {
@@ -131,6 +136,12 @@ configurations {
     querydsl.extendsFrom compileClasspath
 }
 
+def jacocoExcludes = [
+        '**/Q*',      // QueryDSL Q*
+        '**/exception/**',
+        '**/dto/**'
+]
+
 test {
     useJUnitPlatform(){
         // throughput test 제외
@@ -138,6 +149,42 @@ test {
     }
     // test profile로 테스트
     systemProperty 'spring.profiles.active', 'test'
+
+    // 테스트 종료 후 jacoco 실행
+    finalizedBy(jacocoTestReport)
+}
+
+jacocoTestReport {
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+    }
+
+    afterEvaluate {
+        classDirectories.setFrom(
+                files(classDirectories.files.collect {
+                    fileTree(dir: it, excludes: jacocoExcludes)
+                })
+        )
+    }
+
+    finalizedBy(jacocoTestCoverageVerification)
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            enabled = true // 규칙 활성화
+
+            limit {
+                counter = "LINE" // 라인 커버리지
+                value = "COVEREDRATIO"
+                minimum = 0.70  // 최소 70% 이상 만족
+            }
+
+            excludes = jacocoExcludes
+        }
+    }
 }
 
 def generated = 'src/main/generated'
