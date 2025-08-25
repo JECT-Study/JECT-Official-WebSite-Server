@@ -10,8 +10,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CodeGeneratorUtilTest {
 
     @Test
-    @DisplayName("랜덤 인증 숫자 코드 생성 테스트")
-    void generateDigitCode_length_check() {
+    @DisplayName("길이가 6인 랜덤한 숫자 생성을 요청하면 6자리 숫자 코드가 생성된다")
+    void generateDigitCode_length_and_pattern_check() {
         // given
         int length = 6;
 
@@ -25,8 +25,8 @@ class CodeGeneratorUtilTest {
     }
 
     @Test
-    @DisplayName("랜덤 인증 코드(숫자+대문자) 생성 테스트")
-    void generateAlphaNumCode_length_check() {
+    @DisplayName("길이가 6인 랜덤한 알파벳과 숫자 생성을 요청하면 6자리 코드가 생성된다")
+    void generateAlphaNumCode_length_and_pattern_check() {
         // given
         int length = 6;
 
