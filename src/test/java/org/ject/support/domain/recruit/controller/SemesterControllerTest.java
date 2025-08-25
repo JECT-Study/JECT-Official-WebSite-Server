@@ -70,7 +70,7 @@ class SemesterControllerTest {
 
         String reqJson = objectMapper.writeValueAsString(request);
         // when
-        mockMvc.perform(post("/semesters")
+        mockMvc.perform(post("/admin/semesters")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
                 .andExpect(status().isOk())
@@ -100,7 +100,7 @@ class SemesterControllerTest {
 
         String reqJson = objectMapper.writeValueAsString(request);
         // when
-        mockMvc.perform(post("/semesters")
+        mockMvc.perform(post("/admin/semesters")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
                 .andExpect(status().isOk())
