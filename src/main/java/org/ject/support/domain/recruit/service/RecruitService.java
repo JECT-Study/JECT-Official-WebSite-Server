@@ -73,6 +73,6 @@ public class RecruitService implements RecruitUsecase {
 
     private Recruit getRecruit(Long recruitId) {
         return recruitRepository.findById(recruitId)
-                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
 }

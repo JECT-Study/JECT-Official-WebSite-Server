@@ -45,9 +45,9 @@ public interface AuthApiSpec {
             }
     )
     @ApiErrorResponses(responses = {
-            @ApiErrorResponse(value = AuthErrorCode.class, code = 400, name = "INVALID_AUTH_CODE"),
-            @ApiErrorResponse(value = AuthErrorCode.class, code = 404, name = "NOT_FOUND_AUTH_CODE"),
-            @ApiErrorResponse(value = EmailErrorCode.class, code = 400, name = "INVALID_EMAIL_TEMPLATE")
+            @ApiErrorResponse(value = AuthErrorCode.class, name = "INVALID_AUTH_CODE"),
+            @ApiErrorResponse(value = AuthErrorCode.class, name = "NOT_FOUND_AUTH_CODE"),
+            @ApiErrorResponse(value = EmailErrorCode.class, name = "INVALID_EMAIL_TEMPLATE")
     })
     boolean verifyAuthCode(@RequestBody AuthDto.VerifyAuthCodeRequest verifyAuthCodeRequest,
                            HttpServletRequest request, HttpServletResponse response,
@@ -58,9 +58,8 @@ public interface AuthApiSpec {
             description = "리프레시 토큰이 유효한 경우 새로운 액세스 토큰을 발급합니다."
     )
     @ApiErrorResponses(responses = {
-            @ApiErrorResponse(value = AuthErrorCode.class, code = 400, name = "INVALID_REFRESH_TOKEN"),
-            @ApiErrorResponse(value = AuthErrorCode.class, code = 400, name = "EXPIRED_REFRESH_TOKEN"),
-            @ApiErrorResponse(value = AuthErrorCode.class, code = 400, name = "INVALID_REFRESH_TOKEN")
+            @ApiErrorResponse(value = AuthErrorCode.class, name = "INVALID_REFRESH_TOKEN"),
+            @ApiErrorResponse(value = AuthErrorCode.class, name = "EXPIRED_REFRESH_TOKEN")
     })
     boolean refreshToken(HttpServletRequest request, HttpServletResponse response);
 

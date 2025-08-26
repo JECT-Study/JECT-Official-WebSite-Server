@@ -19,7 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import static org.ject.support.common.exception.GlobalErrorCode.INTERNAL_SERVER_ERROR;
+import static org.ject.support.common.exception.GlobalErrorCode.AUTHENTICATION_PROCESSING_ERROR;
 import static org.ject.support.common.exception.GlobalErrorCode.INVALID_ACCESS_TOKEN;
 
 @Slf4j
@@ -51,7 +51,7 @@ public class JwtExceptionHandlerFilter extends OncePerRequestFilter {
                 setErrorResponse(response, INVALID_ACCESS_TOKEN);
                 log.error("ClassCastException: {}", e.getCause().getMessage());
             } else {
-                setErrorResponse(response, INTERNAL_SERVER_ERROR);
+                setErrorResponse(response, AUTHENTICATION_PROCESSING_ERROR);
                 log.error("Exception: {}", e.getMessage());
             }
         } finally {
