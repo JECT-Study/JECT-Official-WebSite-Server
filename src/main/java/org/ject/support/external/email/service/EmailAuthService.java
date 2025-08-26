@@ -21,7 +21,7 @@ public class EmailAuthService {
     private final RedisTemplate<String, String> redisTemplate;
 
     public void sendAuthCode(String sendGroupCode, String toAddress) {
-        String authCode = CodeGeneratorUtil.generateAuthCode(AUTH_CODE_LENGTH);
+        String authCode = CodeGeneratorUtil.generateDigitCode(AUTH_CODE_LENGTH);
         sendAuthCodeEmail(sendGroupCode, toAddress, authCode);
         storeAuthCode(toAddress, authCode);
     }
