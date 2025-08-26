@@ -1,0 +1,23 @@
+name: Notify Slack on Issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  notify-slack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send issue info to Slack
+        run: |
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+          ISSUE_URL="${{ github.event.issue.html_url }}"
+          ISSUE_USER="${{ github.event.issue.user.login }}"
+
+          payload="{
+            \"text\": \":memo: 새로운 이슈가 생성되었습니다!\n*제목*: $ISSUE_TITLE\n*작성자*: $ISSUE_USER\n*링크*: $ISSUE_URL\"
+          }"
+
+          curl -X POST -H 'Content-type: application/json' \
+            --data "$payload" \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
