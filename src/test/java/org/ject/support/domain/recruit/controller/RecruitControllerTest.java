@@ -73,7 +73,7 @@ class RecruitControllerTest {
         String reqJson = objectMapper.writeValueAsString(requests);
 
         // when
-        mockMvc.perform(post("/recruits")
+        mockMvc.perform(post("/admin/recruits")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
                 .andExpect(content().string(containsString("SUCCESS")));
@@ -102,7 +102,7 @@ class RecruitControllerTest {
         String reqJson = objectMapper.writeValueAsString(requests);
 
         // when, then
-        mockMvc.perform(post("/recruits")
+        mockMvc.perform(post("/admin/recruits")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
                 .andExpect(content().string(containsString("DUPLICATED_JOB_FAMILY")));
@@ -124,7 +124,7 @@ class RecruitControllerTest {
                 new RecruitUpdateRequest(FE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1)));
 
         // when
-        mockMvc.perform(put("/recruits/{recruitId}", savedRecruit.getId())
+        mockMvc.perform(put("/admin/recruits/{recruitId}", savedRecruit.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
                 .andExpect(content().string(containsString("SUCCESS")));
@@ -147,7 +147,7 @@ class RecruitControllerTest {
                 .build());
 
         // when
-        mockMvc.perform(delete("/recruits/{recruitId}", savedRecruit.getId()))
+        mockMvc.perform(delete("/admin/recruits/{recruitId}", savedRecruit.getId()))
                 .andExpect(content().string(containsString("SUCCESS")));
 
         // then
