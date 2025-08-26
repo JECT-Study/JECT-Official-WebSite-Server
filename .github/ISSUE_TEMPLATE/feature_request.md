@@ -2,7 +2,7 @@
 name: Feature request
 about: Suggest an idea for this project
 title: "[FEAT]"
-labels: ''
+labels: "\U0001F468\U0001F3FB‍\U0001F4BBbackend"
 assignees: ''
 
 ---

@@ -1,4 +1,4 @@
-name: continuous deployment (dev)
+name: continuous deployment (prod)
 
 on:
   push:
