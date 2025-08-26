@@ -13,7 +13,7 @@ env:
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  EC2_HOST: ${{ secrets.EC2_HOST_DEV }}
+  EC2_HOST: ${{ secrets.EC2_HOST }}
   EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
 
 jobs:
@@ -45,8 +45,8 @@ jobs:
 
       - name: Copy the configuration file in S3
         run: |
-          aws s3 cp s3://ject-bucket/properties/application-dev.yml \
-          ./src/main/resources/application-dev.yml
+          aws s3 cp s3://ject-bucket/properties/application-prod.yml \
+          ./src/main/resources/application-prod.yml
 
       - name: Build with Gradle
         run: ./gradlew clean build -x test
