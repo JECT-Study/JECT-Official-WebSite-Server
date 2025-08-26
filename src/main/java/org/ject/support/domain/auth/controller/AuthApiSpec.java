@@ -59,8 +59,7 @@ public interface AuthApiSpec {
     )
     @ApiErrorResponses(responses = {
             @ApiErrorResponse(value = AuthErrorCode.class, name = "INVALID_REFRESH_TOKEN"),
-            @ApiErrorResponse(value = AuthErrorCode.class, name = "EXPIRED_REFRESH_TOKEN"),
-            @ApiErrorResponse(value = AuthErrorCode.class, name = "INVALID_REFRESH_TOKEN")
+            @ApiErrorResponse(value = AuthErrorCode.class, name = "EXPIRED_REFRESH_TOKEN")
     })
     boolean refreshToken(HttpServletRequest request, HttpServletResponse response);
 
