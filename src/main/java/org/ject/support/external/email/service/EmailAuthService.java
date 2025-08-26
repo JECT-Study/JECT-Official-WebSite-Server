@@ -2,10 +2,10 @@ package org.ject.support.external.email.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ject.support.common.util.CodeGeneratorUtil;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Map;
 
@@ -21,18 +21,9 @@ public class EmailAuthService {
     private final RedisTemplate<String, String> redisTemplate;
 
     public void sendAuthCode(String sendGroupCode, String toAddress) {
-        String authCode = generateAuthCode();
+        String authCode = CodeGeneratorUtil.generateDigitCode(AUTH_CODE_LENGTH);
         sendAuthCodeEmail(sendGroupCode, toAddress, authCode);
         storeAuthCode(toAddress, authCode);
-    }
-
-    private String generateAuthCode() {
-        SecureRandom random = new SecureRandom();
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < AUTH_CODE_LENGTH; i++) {
-            builder.append(random.nextInt(10));
-        }
-        return builder.toString();
     }
 
     private void sendAuthCodeEmail(String sendGroupCode, String toAddress, String authCode) {

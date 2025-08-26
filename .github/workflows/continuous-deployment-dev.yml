@@ -1,0 +1,71 @@
+name: continuous deployment (dev)
+
+on:
+  push:
+    branches:
+      - dev
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  S3_BUCKET_NAME: ject-bucket
+  CODE_DEPLOY_APPLICATION_NAME: ject-apply-deployer
+  CODE_DEPLOY_DEPLOYMENT_GROUP_NAME: actions-deployer
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+
+      - name: AWS credential 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: S3에서 설정파일 복사
+        run: |
+          aws s3 cp s3://ject-bucket/properties/application-dev.yml \
+          ./src/main/resources/application-dev.yml
+
+      - name: gradle 실행 권한 부여
+        run: chmod +x ./gradlew
+
+      - name: gradle 빌드
+        run: ./gradlew clean build -x test --no-daemon
+
+      - name: Upload to AWS S3
+        run: |
+          aws deploy push \
+          --application-name ${{ env.CODE_DEPLOY_APPLICATION_NAME }} \
+          --ignore-hidden-files \
+          --s3-location s3://$S3_BUCKET_NAME/apps/$GITHUB_SHA.zip \
+          --source .
+
+      - name: Deploy to AWS EC2 from S3
+        run: |
+          aws deploy create-deployment \
+            --application-name ${{ env.CODE_DEPLOY_APPLICATION_NAME }} \
+            --deployment-config-name CodeDeployDefault.AllAtOnce \
+            --deployment-group-name ${{ env.CODE_DEPLOY_DEPLOYMENT_GROUP_NAME }} \
+            --s3-location bucket=$S3_BUCKET_NAME,key=apps/$GITHUB_SHA.zip,bundleType=zip
