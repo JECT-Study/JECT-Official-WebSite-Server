@@ -21,7 +21,7 @@ public class CodeGeneratorUtil {
     }
 
     // 숫자 + 대문자 랜덤 코드 생성
-    public static String generateAlphaNumCode(int length) {
+    public static String generateUpperAlphaNumCode(int length) {
         return SECURE_RANDOM.ints(length, 0, DIGITS_AND_UPPERCASE.length())
                 .mapToObj(i -> String.valueOf(DIGITS_AND_UPPERCASE.charAt(i)))
                 .collect(Collectors.joining());

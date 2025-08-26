@@ -28,7 +28,7 @@ class CodeGeneratorUtilTest {
         int length = 6;
 
         // when
-        String code = CodeGeneratorUtil.generateAlphaNumCode(length);
+        String code = CodeGeneratorUtil.generateUpperAlphaNumCode(length);
 
         // then
         assertNotNull(code);

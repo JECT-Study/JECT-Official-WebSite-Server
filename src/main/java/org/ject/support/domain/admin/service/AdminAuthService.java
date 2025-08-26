@@ -33,7 +33,7 @@ public class AdminAuthService {
         Member member = memberRepository.findByEmailAndRole(email, Role.ADMIN)
                 .orElseThrow(() -> new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
 
-        String authCode = CodeGeneratorUtil.generateAlphaNumCode(ADMIN_LOGIN_AUTH_CODE_LENGTH);
+        String authCode = CodeGeneratorUtil.generateUpperAlphaNumCode(ADMIN_LOGIN_AUTH_CODE_LENGTH);
         String key = ADMIN_LOGIN_AUTH_CODE_KEY_PREFIX + member.getId();
 
         if (slackRateLimiter.tryConsume(1)) {
