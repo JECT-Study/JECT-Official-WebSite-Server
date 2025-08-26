@@ -1,5 +1,6 @@
 package org.ject.support.domain.file.controller;
 
+import org.ject.support.domain.file.exception.FileErrorCode;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
@@ -167,7 +168,7 @@ class FileControllerTest extends ApplicationPeriodTest {
                                 """)
                 )
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("EXCEEDED_PORTFOLIO_SIZE")))
+                .andExpect(content().string(containsString(FileErrorCode.EXCEEDED_PORTFOLIO_MAX_SIZE.name())))
                 .andDo(print())
                 .andReturn();
     }
