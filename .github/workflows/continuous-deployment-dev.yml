@@ -1,4 +1,4 @@
-name: continuous deployment
+name: continuous deployment (dev)
 
 on:
   push:
@@ -45,8 +45,8 @@ jobs:
 
       - name: S3에서 설정파일 복사
         run: |
-          aws s3 cp s3://ject-bucket/properties/application-prod.yml \
-          ./src/main/resources/application-prod.yml
+          aws s3 cp s3://ject-bucket/properties/application-dev.yml \
+          ./src/main/resources/application-dev.yml
 
       - name: gradle 실행 권한 부여
         run: chmod +x ./gradlew
