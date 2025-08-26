@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/recruits")
+@RequestMapping("/admin/recruits")
 @RequiredArgsConstructor
 public class RecruitController implements RecruitApiSpec {
 

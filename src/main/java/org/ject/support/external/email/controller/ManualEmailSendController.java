@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/emails/send/manual")
+@RequestMapping("/admin/emails/send/manual")
 @RequiredArgsConstructor
 public class ManualEmailSendController implements ManualEmailSendApiSpec {
 
