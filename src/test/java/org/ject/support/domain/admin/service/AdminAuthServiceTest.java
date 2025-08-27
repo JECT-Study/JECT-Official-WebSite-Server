@@ -183,7 +183,6 @@ class AdminAuthServiceTest {
         String email = "test.com";
         String inputAuthCode = "ABC123";
         String storedCode = "ABC123";
-        String accessToken = "test.access.token";
         Member adminMember = Member.builder()
                 .id(1L)
                 .email(email)
@@ -194,7 +193,6 @@ class AdminAuthServiceTest {
                 .willReturn(Optional.of(adminMember));
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.get("admin-login:" + adminMember.getId())).willReturn(storedCode);
-        given(jwtTokenProvider.createAccessToken(authentication, adminMember.getId())).willReturn(accessToken);
 
         // when
         Authentication result = adminAuthService.verifySlackAdminAuthCode(email, inputAuthCode);
@@ -202,5 +200,6 @@ class AdminAuthServiceTest {
         // then
         verify(memberRepository).findByEmailAndRole(email, Role.ADMIN);
         verify(jwtTokenProvider).createAuthenticationByMember(adminMember);
+        verify(redisTemplate).delete("admin-login:" + adminMember.getId());
     }
 }
