@@ -55,8 +55,8 @@ public class AdminAuthService {
 
         String key = ADMIN_LOGIN_AUTH_CODE_KEY_PREFIX + member.getId();
         String storedCode = redisTemplate.opsForValue().get(key);
-
         verifyAuthCode(authCode, storedCode);
+        redisTemplate.delete(key);
 
         return jwtTokenProvider.createAuthenticationByMember(member);
     }
