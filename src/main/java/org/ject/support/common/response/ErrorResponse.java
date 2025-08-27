@@ -3,6 +3,7 @@ package org.ject.support.common.response;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import org.ject.support.common.exception.ErrorCode;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
@@ -17,6 +18,10 @@ public class ErrorResponse {
 
     public static ErrorResponse of(ErrorCode code, List<String> messages) {
         return new ErrorResponse(code, messages);
+    }
+
+    public HttpStatus getStatus() {
+        return code.getHttpStatus();
     }
 
     public String getCode() {
