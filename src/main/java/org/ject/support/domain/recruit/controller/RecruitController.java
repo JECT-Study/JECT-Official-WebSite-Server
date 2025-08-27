@@ -33,7 +33,7 @@ public class RecruitController implements RecruitApiSpec {
     @Override
     @PutMapping("/{recruitId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public void updateRecruit(@PathVariable Long recruitId, @RequestBody RecruitUpdateRequest request) {
+    public void updateRecruit(@PathVariable Long recruitId, @RequestBody @Valid RecruitUpdateRequest request) {
         recruitUsecase.updateRecruit(recruitId, request);
     }
 

@@ -21,7 +21,7 @@ public interface RecruitApiSpec {
     @Operation(
             summary = "모집 수정",
             description = "모집 정보를 수정합니다.")
-    void updateRecruit(@PathVariable Long recruitId, @RequestBody RecruitUpdateRequest request);
+    void updateRecruit(@PathVariable Long recruitId, @RequestBody @Valid RecruitUpdateRequest request);
 
     @Operation(
             summary = "모집 취소",
