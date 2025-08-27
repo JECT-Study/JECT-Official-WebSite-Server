@@ -2,6 +2,7 @@ package org.ject.support.domain.recruit.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,7 +16,7 @@ public interface RecruitApiSpec {
     @Operation(
             summary = "모집 등록",
             description = "모집 정보를 등록합니다.")
-    void registerRecruit(@RequestBody List<RecruitRegisterRequest> requests);
+    void registerRecruit(@RequestBody @Valid List<RecruitRegisterRequest> requests);
 
     @Operation(
             summary = "모집 수정",
