@@ -90,7 +90,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HandlerMethodValidationException.class)
-    public ErrorResponse handleMethodArgumentNotValidException(HandlerMethodValidationException e) {
+    public ErrorResponse handleHandlerMethodValidationException(HandlerMethodValidationException e) {
         GlobalErrorCode errorCode = GlobalErrorCode.METHOD_VALIDATION_FAILED;
         logException(e, errorCode);
 
