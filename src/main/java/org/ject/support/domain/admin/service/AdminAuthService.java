@@ -1,6 +1,7 @@
 package org.ject.support.domain.admin.service;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.common.util.CodeGeneratorUtil;
 import org.ject.support.domain.admin.exception.AdminErrorCode;
 import org.ject.support.domain.admin.exception.AdminException;
@@ -10,6 +11,7 @@ import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.external.infrastructure.SlackRateLimiter;
 import org.ject.support.external.slack.SlackComponent;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ public class AdminAuthService {
     private final MemberRepository memberRepository;
     private final SlackRateLimiter slackRateLimiter;
     private final SlackComponent slackComponent;
+    private final JwtTokenProvider jwtTokenProvider;
 
     private static final String ADMIN_LOGIN_AUTH_CODE_KEY_PREFIX = "admin-login:";
     private static final int ADMIN_LOGIN_AUTH_CODE_LENGTH = 6;
@@ -46,7 +49,29 @@ public class AdminAuthService {
         return member.getEmail();
     }
 
+    public Authentication verifySlackAdminAuthCode(String email, String authCode) {
+        Member member = memberRepository.findByEmailAndRole(email, Role.ADMIN)
+                .orElseThrow(() -> new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
+
+        String key = ADMIN_LOGIN_AUTH_CODE_KEY_PREFIX + member.getId();
+        String storedCode = redisTemplate.opsForValue().get(key);
+        verifyAuthCode(authCode, storedCode);
+        redisTemplate.delete(key);
+
+        return jwtTokenProvider.createAuthenticationByMember(member);
+    }
+
+    private void verifyAuthCode(String userInputCode, String storedCode) {
+        if (storedCode == null) {
+            throw new AdminException(AdminErrorCode.NOT_FOUND_AUTH_CODE);
+        }
+
+        if (!storedCode.isEmpty() && !storedCode.equals(userInputCode)) {
+            throw new AdminException(AdminErrorCode.INVALID_AUTH_CODE);
+        }
+    }
+
     private String makeAdminLoginMessage(String email, String code) {
-        return "관리자 로그인 : [" + email + "] 인증 코드를 입력해 주세요 [" + code + "]";
+        return "관리자 로그인 : { " + email + " } 인증 코드를 입력해 주세요 [" + code + "]";
     }
 }
