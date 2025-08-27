@@ -167,7 +167,7 @@ class FileControllerTest extends ApplicationPeriodTest {
                                 ]
                                 """)
                 )
-                .andExpect(status().isOk())
+                .andExpect(status().isPayloadTooLarge())
                 .andExpect(content().string(containsString(FileErrorCode.EXCEEDED_PORTFOLIO_MAX_SIZE.name())))
                 .andDo(print())
                 .andReturn();
