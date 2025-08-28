@@ -103,7 +103,7 @@ class SemesterControllerTest {
         mockMvc.perform(post("/admin/semesters")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
-                .andExpect(status().isOk())
+                .andExpect(status().isConflict())
                 .andDo(print())
                 .andExpect(
                         content().string(containsString("DUPLICATED_JOB_FAMILY"))

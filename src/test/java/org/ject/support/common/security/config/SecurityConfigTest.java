@@ -78,6 +78,6 @@ class SecurityConfigTest extends ApplicationPeriodTest {
     void permitAll_ShouldAllowAccessWithoutAuthentication() throws Exception {
         // 인증 없이 접근 가능한지 확인 (SecurityConfig에서 .anyRequest().permitAll() 설정)
         mockMvc.perform(get("/any-path"))
-                .andExpect(status().isOk()); // 404는 경로가 없어서이지, 인증 실패(401, 403)가 아님
+                .andExpect(status().isNotFound()); // 404는 경로가 없어서이지, 인증 실패(401, 403)가 아님
     }
 }
