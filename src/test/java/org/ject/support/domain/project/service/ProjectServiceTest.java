@@ -7,9 +7,9 @@ import static org.ject.support.domain.project.entity.ProjectIntro.builder;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Team;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -20,16 +20,12 @@ import org.ject.support.domain.project.entity.ProjectIntro;
 import org.ject.support.domain.project.exception.ProjectException;
 import org.ject.support.domain.project.repository.ProjectRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
-class ProjectServiceTest {
+class ProjectServiceTest extends UnitTestSupport {
 
     @InjectMocks
     private ProjectService projectService;
@@ -72,8 +68,7 @@ class ProjectServiceTest {
     }
 
     @Test
-    @DisplayName("프로젝트 상세 조회")
-    void find_project_details() {
+    void 프로젝트_상세_조회() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
         when(memberRepository.findMemberNamesByTeamId(1L)).thenReturn(
@@ -98,8 +93,7 @@ class ProjectServiceTest {
     }
 
     @Test
-    @DisplayName("프로젝트 상세 조회 시 서비스 소개서는 sequence 기준 오름차순 정렬되어야 함")
-    void find_project_details_sort_project_intro_by_sequence_ascending() {
+    void 프로젝트_상세_조회_시_서비스_소개서는_sequence_기준으로_오름차순_정렬() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
         when(memberRepository.findMemberNamesByTeamId(1L)).thenReturn(
@@ -115,8 +109,7 @@ class ProjectServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 프로젝트 상세 조회 시 예외 발생")
-    void find_project_details_fail_by_not_found() {
+    void 존재하지_않는_프로젝트_상세_조회_시_예외_발생() {
         // given
         when(projectRepository.findById(Mockito.any())).thenReturn(Optional.empty());
 
@@ -126,8 +119,7 @@ class ProjectServiceTest {
     }
 
     @Test
-    @DisplayName("프로젝트 상세 조회 시 기술 스택을 배열 형태로 반환")
-    void get_tech_stack_for_list() {
+    void 프로젝트_상세_조회_시_기술_스택을_배열_형태로_반환() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
         when(memberRepository.findMemberNamesByTeamId(1L)).thenReturn(
