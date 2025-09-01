@@ -1,5 +1,12 @@
 package org.ject.support.domain.admin.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+
+import java.util.Optional;
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.admin.exception.AdminErrorCode;
 import org.ject.support.domain.admin.exception.AdminException;
 import org.ject.support.domain.member.Role;
@@ -7,26 +14,13 @@ import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.external.infrastructure.SlackRateLimiter;
 import org.ject.support.external.slack.SlackComponent;
-import org.junit.jupiter.api.DisplayNameGeneration;
-import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-
-@ExtendWith(MockitoExtension.class)
-@DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
-class AdminAuthServiceTest {
+class AdminAuthServiceTest extends UnitTestSupport {
 
     @InjectMocks
     AdminAuthService adminAuthService;
