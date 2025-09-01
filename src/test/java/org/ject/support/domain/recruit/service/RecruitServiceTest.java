@@ -1,24 +1,5 @@
 package org.ject.support.domain.recruit.service;
 
-import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.member.service.OngoingSemesterProvider;
-import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
-import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
-import org.ject.support.domain.recruit.exception.RecruitException;
-import org.ject.support.domain.recruit.repository.RecruitRepository;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationEventPublisher;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.member.JobFamily.BE;
@@ -28,8 +9,24 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-class RecruitServiceTest {
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import org.ject.support.base.UnitTestSupport;
+import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.service.OngoingSemesterProvider;
+import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
+import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
+import org.ject.support.domain.recruit.exception.RecruitException;
+import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.springframework.context.ApplicationEventPublisher;
+
+class RecruitServiceTest extends UnitTestSupport {
 
     @InjectMocks
     RecruitService recruitService;
