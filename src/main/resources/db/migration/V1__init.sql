@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS project
     tech_stack    VARCHAR(255) NULL,
     category      VARCHAR(30)  NOT NULL,
     PRIMARY KEY (id),
+    CONSTRAINT fk_project_semester FOREIGN KEY (semester_id) REFERENCES semester (id) ON DELETE NO ACTION,
     CONSTRAINT fk_project_team FOREIGN KEY (team_id) REFERENCES team (id) ON DELETE NO ACTION
 ) ENGINE = InnoDB;
 
