@@ -106,7 +106,8 @@ CREATE TABLE IF NOT EXISTS project_intro
     image_url  VARCHAR(2083) NOT NULL,
     category   VARCHAR(30)   NOT NULL,
     PRIMARY KEY (id),
-    CONSTRAINT fk_project_intro_project FOREIGN KEY (project_id) REFERENCES project (id) ON DELETE NO ACTION
+    UNIQUE KEY uk_project_intro_project_seq (project_id, sequence),
+    CONSTRAINT fk_project_intro_project FOREIGN KEY (project_id) REFERENCES project (id) ON DELETE CASCADE
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS question
