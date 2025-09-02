@@ -1,6 +1,7 @@
 package org.ject.support.domain.member.repository;
 
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.testconfig.QueryDslTestConfig;
@@ -58,6 +59,7 @@ class MemberRepositoryTest {
                 .jobFamily(jobFamily)
                 .role(role)
                 .pin("123456")
+                .status(MemberStatus.ACTIVE)
                 .build();
     }
 }

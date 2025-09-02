@@ -2,6 +2,7 @@ package org.ject.support.domain.recruit.repository;
 
 import org.assertj.core.api.Assertions;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.ApplicationForm;
@@ -52,6 +53,7 @@ class ApplicationFormRepositoryTest {
                 .phoneNumber("01012345678")
                 .semesterId(1L)
                 .pin("123456") // PIN 필드 추가
+                .status(MemberStatus.ACTIVE)
                 .build());
 
         applicationFormRepository.save(ApplicationForm.builder().

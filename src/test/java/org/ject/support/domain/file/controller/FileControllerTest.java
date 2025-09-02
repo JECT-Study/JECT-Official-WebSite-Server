@@ -1,6 +1,7 @@
 package org.ject.support.domain.file.controller;
 
 import org.ject.support.domain.file.exception.FileErrorCode;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
@@ -58,6 +59,7 @@ class FileControllerTest extends ApplicationPeriodTest {
                 .phoneNumber("01012345678") // 010으로 시작하는 11자리 수정
                 .semesterId(1L)
                 .pin("123456") // PIN 추가
+                .status(MemberStatus.ACTIVE)
                 .build();
         memberRepository.save(member);
     }

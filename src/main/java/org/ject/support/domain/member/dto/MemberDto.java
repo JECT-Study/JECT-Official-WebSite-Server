@@ -2,6 +2,7 @@ package org.ject.support.domain.member.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 
@@ -16,6 +17,7 @@ public class MemberDto {
                     .email(email)
                     .semesterId(semesterId)
                     .pin(encodedPin)
+                    .status(MemberStatus.ACTIVE)
                     .role(Role.TEMP)
                     .build();
         }

@@ -1,6 +1,7 @@
 package org.ject.support.domain.member.repository;
 
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Member;
@@ -129,6 +130,7 @@ class MemberQueryRepositoryTest {
                 .jobFamily(jobFamily)
                 .role(Role.USER)
                 .pin("123456") // PIN 필드 추가
+                .status(MemberStatus.ACTIVE)
                 .build();
     }
 

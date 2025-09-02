@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Collection;
 
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.junit.jupiter.api.DisplayName;
@@ -24,6 +25,7 @@ class CustomUserDetailsTest {
                 .email(TEST_EMAIL)
                 .name("Test User")
                 .phoneNumber("01012345678")
+                .status(MemberStatus.ACTIVE)
                 .role(Role.TEMP)
                 .build();
 

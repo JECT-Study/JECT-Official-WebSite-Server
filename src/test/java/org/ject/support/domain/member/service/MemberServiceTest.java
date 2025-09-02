@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import java.util.Optional;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
@@ -61,6 +62,7 @@ class MemberServiceTest extends UnitTestSupport {
         Member member = Member.builder()
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
+                .status(MemberStatus.ACTIVE)
                 .build();
 
         given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.empty());
@@ -85,6 +87,7 @@ class MemberServiceTest extends UnitTestSupport {
         Member existingMember = Member.builder()
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
+                .status(MemberStatus.ACTIVE)
                 .build();
 
         given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(existingMember));
@@ -105,6 +108,7 @@ class MemberServiceTest extends UnitTestSupport {
                 .id(memberId)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
+                .status(MemberStatus.ACTIVE)
                 .build();
         
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
@@ -144,6 +148,7 @@ class MemberServiceTest extends UnitTestSupport {
                 .id(memberId)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
+                .status(MemberStatus.ACTIVE)
                 .build();
         
         String newEncodedPin = "new_encoded_pin";
