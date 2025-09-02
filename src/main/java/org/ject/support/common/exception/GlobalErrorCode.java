@@ -28,7 +28,8 @@ public enum GlobalErrorCode implements ErrorCode {
     MISS_REQUEST_BODY(BAD_REQUEST, 11, "Missing request body"),
     MISS_REQUIRED_JOB_FAMILY_PARAMETER(BAD_REQUEST, 12, "Missing required JobFamily parameter"),
     AUTHENTICATION_PROCESSING_ERROR(INTERNAL_SERVER_ERROR, 13, "인증 처리 중 오류가 발생했습니다."),
-    REQUEST_METHOD_NOT_ALLOWED(METHOD_NOT_ALLOWED, 14, "Method not allowed");
+    REQUEST_METHOD_NOT_ALLOWED(METHOD_NOT_ALLOWED, 14, "Method not allowed"),
+    METHOD_VALIDATION_FAILED(BAD_REQUEST, 15, "Method validation failed");
 
     private final HttpStatus httpStatus;
     private final String code;

@@ -40,6 +40,12 @@ class AdminAuthServiceTest extends UnitTestSupport {
     @Mock
     SlackComponent slackComponent;
 
+    @Mock
+    JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    private Authentication authentication;
+
     @Test
     void 입력받은_Email에_대한_관리자가_존재하지_않을_경우_NOT_FOUND_ADMIN_예외_발생() {
         // given
@@ -96,5 +102,93 @@ class AdminAuthServiceTest extends UnitTestSupport {
         verify(memberRepository).findByEmailAndRole(email, Role.ADMIN);
         verify(slackRateLimiter).tryConsume(1);
         assertEquals(email, result);
+    }
+
+    @Test
+    void 슬랙_인증_코드_검증_시_입력받은_Email에_대한_관리자가_존재하지_않을_경우_NOT_FOUND_ADMIN_예외_발생() {
+        // given
+        String email = "test.com";
+        String authCode = "ABC123";
+        given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
+                .willReturn(Optional.empty());
+
+        // when, then
+        assertThatThrownBy(() -> adminAuthService.verifySlackAdminAuthCode(email, authCode))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
+    }
+
+    @Test
+    void 슬랙_인증_코드_검증_시_인증_코드를_찾을_수_없는_경우_NOT_FOUND_AUTH_CODE_예외_발생() {
+        // given
+        String email = "test.com";
+        String authCode = "ABC123";
+        Member adminMember = Member.builder()
+                .id(1L)
+                .email(email)
+                .role(Role.ADMIN)
+                .build();
+
+        given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
+                .willReturn(Optional.of(adminMember));
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+        given(valueOperations.get("admin-login:" + adminMember.getId())).willReturn(null);
+
+        // when, then
+        assertThatThrownBy(() -> adminAuthService.verifySlackAdminAuthCode(email, authCode))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.NOT_FOUND_AUTH_CODE);
+    }
+
+    @Test
+    void 슬랙_인증_코드_검증_시_인증_코드가_일치하지_않는_경우_INVALID_AUTH_CODE_예외_발생() {
+        // given
+        String email = "test.com";
+        String inputAuthCode = "ABC123";
+        String storedCode = "XYZ789";
+        Member adminMember = Member.builder()
+                .id(1L)
+                .email(email)
+                .role(Role.ADMIN)
+                .build();
+
+        given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
+                .willReturn(Optional.of(adminMember));
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+        given(valueOperations.get("admin-login:" + adminMember.getId())).willReturn(storedCode);
+
+        // when, then
+        assertThatThrownBy(() -> adminAuthService.verifySlackAdminAuthCode(email, inputAuthCode))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.INVALID_AUTH_CODE);
+    }
+
+    @Test
+    void 슬랙_인증_코드_검증에_성공한_경우_Authentication_객체_반환() {
+        // given
+        String email = "test.com";
+        String inputAuthCode = "ABC123";
+        String storedCode = "ABC123";
+        Member adminMember = Member.builder()
+                .id(1L)
+                .email(email)
+                .role(Role.ADMIN)
+                .build();
+
+        given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
+                .willReturn(Optional.of(adminMember));
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+        given(valueOperations.get("admin-login:" + adminMember.getId())).willReturn(storedCode);
+
+        // when
+        Authentication result = adminAuthService.verifySlackAdminAuthCode(email, inputAuthCode);
+
+        // then
+        verify(memberRepository).findByEmailAndRole(email, Role.ADMIN);
+        verify(jwtTokenProvider).createAuthenticationByMember(adminMember);
+        verify(redisTemplate).delete("admin-login:" + adminMember.getId());
     }
 }

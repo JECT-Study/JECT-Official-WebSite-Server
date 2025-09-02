@@ -1,5 +1,6 @@
 package org.ject.support.domain.recruit.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
@@ -25,14 +26,14 @@ public class RecruitController implements RecruitApiSpec {
     @Override
     @PostMapping
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public void registerRecruit(@RequestBody List<RecruitRegisterRequest> requests) {
+    public void registerRecruit(@RequestBody @Valid List<RecruitRegisterRequest> requests) {
         recruitUsecase.registerRecruits(requests);
     }
 
     @Override
     @PutMapping("/{recruitId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public void updateRecruit(@PathVariable Long recruitId, @RequestBody RecruitUpdateRequest request) {
+    public void updateRecruit(@PathVariable Long recruitId, @RequestBody @Valid RecruitUpdateRequest request) {
         recruitUsecase.updateRecruit(recruitId, request);
     }
 

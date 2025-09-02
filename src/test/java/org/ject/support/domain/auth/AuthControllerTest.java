@@ -213,8 +213,8 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
     @DisplayName("@PreAuthorize(\"hasRole('ROLE_TEMP')\") 설정으로 인증이 필요한지 확인")
     void refreshToken_WithRoleTemp_ShouldRequireAuthentication() throws Exception {
         // given
-        TokenRefreshRequest request = new TokenRefreshRequest(TEST_REFRESH_TOKEN);
-        
+        PinLoginRequest request = new PinLoginRequest("test@email.com", "123456");
+
         // when & then
         mockMvc.perform(post("/auth/login/pin")
                         .contentType(MediaType.APPLICATION_JSON)
