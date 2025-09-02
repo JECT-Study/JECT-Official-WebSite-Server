@@ -19,6 +19,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.security.core.Authentication;
+import org.ject.support.common.security.jwt.JwtTokenProvider;
 
 class AdminAuthServiceTest extends UnitTestSupport {
 
