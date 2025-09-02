@@ -5,8 +5,7 @@ CREATE TABLE IF NOT EXISTS semester
     updated_at    datetime NULL,
     semester_name VARCHAR(20) NOT NULL,
     is_recruiting TINYINT(1) NOT NULL,
-    CONSTRAINT pk_semester PRIMARY KEY (id),
-    UNIQUE KEY uk_semester_semester_name (semester_name)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS member
@@ -21,9 +20,8 @@ CREATE TABLE IF NOT EXISTS member
     job_family   VARCHAR(45) NULL,
     `role`       VARCHAR(10) NOT NULL,
     pin          VARCHAR(255) NOT NULL,
-    CONSTRAINT pk_member PRIMARY KEY (id),
-    UNIQUE KEY uk_member_email (email),
-    CONSTRAINT fk_member_semester FOREIGN KEY (semester_id) REFERENCES semester(id)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id),
+    UNIQUE KEY UKmbmcqelty0fbrvxp1q58dn57t (email)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS team
@@ -32,7 +30,7 @@ CREATE TABLE IF NOT EXISTS team
     created_at datetime NULL,
     updated_at datetime NULL,
     name       VARCHAR(30) NOT NULL,
-    CONSTRAINT pk_team PRIMARY KEY (id)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS recruit
@@ -44,9 +42,8 @@ CREATE TABLE IF NOT EXISTS recruit
     start_date  datetime    NOT NULL,
     end_date    datetime    NOT NULL,
     job_family  VARCHAR(45) NOT NULL,
-    CONSTRAINT pk_recruit PRIMARY KEY (id),
-    UNIQUE KEY uk_recruit_semester_job_family (semester_id, job_family),
-    CONSTRAINT fk_recruit_semester FOREIGN KEY (semester_id) REFERENCES semester (id)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id),
+    CONSTRAINT uq_recruit_semester_job_family UNIQUE (semester_id, job_family)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS application_form
@@ -57,9 +54,9 @@ CREATE TABLE IF NOT EXISTS application_form
     content    MEDIUMTEXT NULL,
     member_id  BIGINT NOT NULL,
     recruit_id BIGINT NOT NULL,
-    CONSTRAINT pk_application_form PRIMARY KEY (id),
-    CONSTRAINT fk_application_form_member FOREIGN KEY (member_id) REFERENCES member(id),
-    CONSTRAINT fk_application_form_recruit FOREIGN KEY (recruit_id) REFERENCES recruit(id)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id),
+    CONSTRAINT FK7jm1xris1t3nyf2dc224preli FOREIGN KEY (member_id) REFERENCES member (id) ON DELETE NO ACTION,
+    CONSTRAINT FKclurj75mp69f2y3m05bhs1ad6 FOREIGN KEY (recruit_id) REFERENCES recruit (id) ON DELETE NO ACTION
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS portfolio
@@ -72,8 +69,8 @@ CREATE TABLE IF NOT EXISTS portfolio
     file_size           BIGINT NOT NULL,
     sequence            INT NOT NULL,
     application_form_id BIGINT NOT NULL,
-    CONSTRAINT pk_portfolio PRIMARY KEY (id),
-    CONSTRAINT fk_portfolio_application FOREIGN KEY (application_form_id) REFERENCES application_form (id)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id),
+    CONSTRAINT FKq0c0ebwomte7kc4pu3n2wuh9y FOREIGN KEY (application_form_id) REFERENCES application_form (id) ON DELETE NO ACTION
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS project
@@ -92,9 +89,8 @@ CREATE TABLE IF NOT EXISTS project
     thumbnail_url VARCHAR(2083) NULL,
     service_url   VARCHAR(2083) NULL,
     team_id       BIGINT       NOT NULL,
-    CONSTRAINT pk_project PRIMARY KEY (id),
-    CONSTRAINT fk_project_semester FOREIGN KEY (semester_id) REFERENCES semester (id) ON DELETE NO ACTION,
-    CONSTRAINT fk_project_team FOREIGN KEY (team_id) REFERENCES team (id) ON DELETE NO ACTION
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id),
+    CONSTRAINT FK99hcloicqmg95ty11qht49n8x FOREIGN KEY (team_id) REFERENCES team (id) ON DELETE NO ACTION
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS project_intro
@@ -106,9 +102,8 @@ CREATE TABLE IF NOT EXISTS project_intro
     category   VARCHAR(30)   NOT NULL,
     sequence   INT NULL,
     project_id BIGINT        NOT NULL,
-    CONSTRAINT pk_project_intro PRIMARY KEY (id),
-    UNIQUE KEY uk_project_intro_project_seq (project_id, sequence),
-    CONSTRAINT fk_project_intro_project FOREIGN KEY (project_id) REFERENCES project (id)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id),
+    CONSTRAINT FKb7th9y61sopfua61igph7so8l FOREIGN KEY (project_id) REFERENCES project (id) ON DELETE NO ACTION
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS question
@@ -120,14 +115,14 @@ CREATE TABLE IF NOT EXISTS question
     input_type      VARCHAR(10)  NOT NULL,
     is_required     TINYINT(1)            NOT NULL,
     title           VARCHAR(100) NOT NULL,
-    label           VARCHAR(30) NULL,
+    label           VARCHAR(255) NULL,
     select_options  VARCHAR(255) NULL,
     input_hint      VARCHAR(255) NULL,
     max_text_length INT NULL,
     max_file_size   INT NULL,
     recruit_id      BIGINT       NOT NULL,
-    CONSTRAINT pk_question PRIMARY KEY (id),
-    CONSTRAINT fk_question_recruit FOREIGN KEY (recruit_id) REFERENCES recruit (id) ON DELETE NO ACTION
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id),
+    CONSTRAINT FK3nnqj75r50htvoq9ykb421uo1 FOREIGN KEY (recruit_id) REFERENCES recruit (id) ON DELETE NO ACTION
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS team_member
@@ -137,9 +132,9 @@ CREATE TABLE IF NOT EXISTS team_member
     updated_at datetime NULL,
     member_id  BIGINT NOT NULL,
     team_id    BIGINT NOT NULL,
-    CONSTRAINT pk_team_member PRIMARY KEY (id),
-    CONSTRAINT fk_team_member_member FOREIGN KEY (member_id) REFERENCES member(id) ON DELETE NO ACTION,
-    CONSTRAINT fk_team_member_team FOREIGN KEY (team_id) REFERENCES team(id) ON DELETE NO ACTION
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id),
+    CONSTRAINT FKt5k957ydx0vngjtsljbelmu75 FOREIGN KEY (member_id) REFERENCES member (id) ON DELETE NO ACTION,
+    CONSTRAINT FK9ubp79ei4tv4crd0r9n7u5i6e FOREIGN KEY (team_id) REFERENCES team (id) ON DELETE NO ACTION
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS email_send_group
@@ -150,8 +145,8 @@ CREATE TABLE IF NOT EXISTS email_send_group
     code          VARCHAR(30)  NOT NULL,
     `description` VARCHAR(100) NOT NULL,
     template_name VARCHAR(100) NULL,
-    CONSTRAINT pk_email_send_group PRIMARY KEY (id),
-    UNIQUE KEY uk_email_send_group_code (code)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id),
+    CONSTRAINT code_UNIQUE UNIQUE (code)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS jectalk
@@ -163,7 +158,7 @@ CREATE TABLE IF NOT EXISTS jectalk
     summary     VARCHAR(255) NOT NULL,
     youtube_url VARCHAR(2083) NULL,
     image_url   VARCHAR(2083) NULL,
-    CONSTRAINT pk_jectalk PRIMARY KEY (id)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id)
 ) ENGINE = InnoDB;
 
 
@@ -176,7 +171,7 @@ CREATE TABLE IF NOT EXISTS mini_study
     summary    VARCHAR(255) NOT NULL,
     link_url   VARCHAR(2083) NULL,
     image_url  VARCHAR(2083) NULL,
-    CONSTRAINT pk_mini_study PRIMARY KEY (id)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id)
 ) ENGINE = InnoDB;
 
 CREATE TABLE IF NOT EXISTS review
@@ -188,5 +183,5 @@ CREATE TABLE IF NOT EXISTS review
     title         VARCHAR(255) NOT NULL,
     `description` VARCHAR(255) NOT NULL,
     summary       VARCHAR(255) NOT NULL,
-    CONSTRAINT pk_review PRIMARY KEY (id)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id)
 ) ENGINE = InnoDB;
