@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS semester
 (
     id            BIGINT AUTO_INCREMENT NOT NULL,
-    created_at    datetime NULL,
-    updated_at    datetime NULL,
+    created_at    datetime(6) NULL,
+    updated_at    datetime(6) NULL,
     semester_name VARCHAR(20) NOT NULL,
     is_recruiting TINYINT(1) NOT NULL,
     CONSTRAINT `PRIMARY` PRIMARY KEY (id)
@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS semester
 CREATE TABLE IF NOT EXISTS member
 (
     id           BIGINT AUTO_INCREMENT NOT NULL,
-    created_at   datetime NULL,
-    updated_at   datetime NULL,
+    created_at   datetime(6) NULL,
+    updated_at   datetime(6) NULL,
     name         VARCHAR(20) NULL,
     phone_number VARCHAR(12) NULL,
     email        VARCHAR(30) NOT NULL,
@@ -27,8 +27,8 @@ CREATE TABLE IF NOT EXISTS member
 CREATE TABLE IF NOT EXISTS team
 (
     id         BIGINT AUTO_INCREMENT NOT NULL,
-    created_at datetime NULL,
-    updated_at datetime NULL,
+    created_at datetime(6) NULL,
+    updated_at datetime(6) NULL,
     name       VARCHAR(30) NOT NULL,
     CONSTRAINT `PRIMARY` PRIMARY KEY (id)
 ) ENGINE = InnoDB;
@@ -36,11 +36,11 @@ CREATE TABLE IF NOT EXISTS team
 CREATE TABLE IF NOT EXISTS recruit
 (
     id          BIGINT AUTO_INCREMENT NOT NULL,
-    created_at  datetime NULL,
-    updated_at  datetime NULL,
+    created_at  datetime(6) NULL,
+    updated_at  datetime(6) NULL,
     semester_id BIGINT      NOT NULL,
-    start_date  datetime    NOT NULL,
-    end_date    datetime    NOT NULL,
+    start_date  datetime(6)    NOT NULL,
+    end_date    datetime(6)    NOT NULL,
     job_family  VARCHAR(45) NOT NULL,
     CONSTRAINT `PRIMARY` PRIMARY KEY (id),
     CONSTRAINT uq_recruit_semester_job_family UNIQUE (semester_id, job_family)
@@ -49,8 +49,8 @@ CREATE TABLE IF NOT EXISTS recruit
 CREATE TABLE IF NOT EXISTS application_form
 (
     id         BIGINT AUTO_INCREMENT NOT NULL,
-    created_at datetime NULL,
-    updated_at datetime NULL,
+    created_at datetime(6) NULL,
+    updated_at datetime(6) NULL,
     content    MEDIUMTEXT NULL,
     member_id  BIGINT NOT NULL,
     recruit_id BIGINT NOT NULL,
@@ -62,8 +62,8 @@ CREATE TABLE IF NOT EXISTS application_form
 CREATE TABLE IF NOT EXISTS portfolio
 (
     id                  BIGINT AUTO_INCREMENT NOT NULL,
-    created_at          datetime NULL,
-    updated_at          datetime NULL,
+    created_at          datetime(6) NULL,
+    updated_at          datetime(6) NULL,
     file_url            VARCHAR(2083) NOT NULL,
     file_name           VARCHAR(255)  NOT NULL,
     file_size           BIGINT NOT NULL,
@@ -76,8 +76,8 @@ CREATE TABLE IF NOT EXISTS portfolio
 CREATE TABLE IF NOT EXISTS project
 (
     id            BIGINT AUTO_INCREMENT NOT NULL,
-    created_at    datetime NULL,
-    updated_at    datetime NULL,
+    created_at    datetime(6) NULL,
+    updated_at    datetime(6) NULL,
     name          VARCHAR(100) NULL,
     category      VARCHAR(30)  NOT NULL,
     semester_id   BIGINT       NOT NULL,
@@ -96,8 +96,8 @@ CREATE TABLE IF NOT EXISTS project
 CREATE TABLE IF NOT EXISTS project_intro
 (
     id         BIGINT AUTO_INCREMENT NOT NULL,
-    created_at datetime NULL,
-    updated_at datetime NULL,
+    created_at datetime(6) NULL,
+    updated_at datetime(6) NULL,
     image_url  VARCHAR(2083) NOT NULL,
     category   VARCHAR(30)   NOT NULL,
     sequence   INT NULL,
@@ -109,8 +109,8 @@ CREATE TABLE IF NOT EXISTS project_intro
 CREATE TABLE IF NOT EXISTS question
 (
     id              BIGINT AUTO_INCREMENT NOT NULL,
-    created_at      datetime NULL,
-    updated_at      datetime NULL,
+    created_at      datetime(6) NULL,
+    updated_at      datetime(6) NULL,
     sequence        INT          NOT NULL,
     input_type      VARCHAR(10)  NOT NULL,
     is_required     TINYINT(1)            NOT NULL,
@@ -128,8 +128,8 @@ CREATE TABLE IF NOT EXISTS question
 CREATE TABLE IF NOT EXISTS team_member
 (
     id         BIGINT AUTO_INCREMENT NOT NULL,
-    created_at datetime NULL,
-    updated_at datetime NULL,
+    created_at datetime(6) NULL,
+    updated_at datetime(6) NULL,
     member_id  BIGINT NOT NULL,
     team_id    BIGINT NOT NULL,
     CONSTRAINT `PRIMARY` PRIMARY KEY (id),
@@ -140,11 +140,11 @@ CREATE TABLE IF NOT EXISTS team_member
 CREATE TABLE IF NOT EXISTS email_send_group
 (
     id            BIGINT AUTO_INCREMENT NOT NULL,
-    created_at    datetime NULL,
-    updated_at    datetime NULL,
+    created_at    datetime(6) NULL,
+    updated_at    datetime(6) NULL,
     code          VARCHAR(30)  NOT NULL,
     `description` VARCHAR(100) NOT NULL,
-    template_name VARCHAR(100) NULL,
+    template_name VARCHAR(100) NOT NULL,
     CONSTRAINT `PRIMARY` PRIMARY KEY (id),
     CONSTRAINT code_UNIQUE UNIQUE (code)
 ) ENGINE = InnoDB;
@@ -152,8 +152,8 @@ CREATE TABLE IF NOT EXISTS email_send_group
 CREATE TABLE IF NOT EXISTS jectalk
 (
     id          BIGINT AUTO_INCREMENT NOT NULL,
-    created_at  datetime NULL,
-    updated_at  datetime NULL,
+    created_at  datetime(6) NULL,
+    updated_at  datetime(6) NULL,
     name        VARCHAR(50)  NOT NULL,
     summary     VARCHAR(255) NOT NULL,
     youtube_url VARCHAR(2083) NULL,
@@ -165,8 +165,8 @@ CREATE TABLE IF NOT EXISTS jectalk
 CREATE TABLE IF NOT EXISTS mini_study
 (
     id         BIGINT AUTO_INCREMENT NOT NULL,
-    created_at datetime NULL,
-    updated_at datetime NULL,
+    created_at datetime(6) NULL,
+    updated_at datetime(6) NULL,
     name       VARCHAR(50)  NOT NULL,
     summary    VARCHAR(255) NOT NULL,
     link_url   VARCHAR(2083) NULL,
@@ -177,8 +177,8 @@ CREATE TABLE IF NOT EXISTS mini_study
 CREATE TABLE IF NOT EXISTS review
 (
     id            BIGINT AUTO_INCREMENT NOT NULL,
-    created_at    datetime NULL,
-    updated_at    datetime NULL,
+    created_at    datetime(6) NULL,
+    updated_at    datetime(6) NULL,
     link_url      VARCHAR(2083) NULL,
     title         VARCHAR(255) NOT NULL,
     `description` VARCHAR(255) NOT NULL,
