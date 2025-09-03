@@ -65,7 +65,8 @@ public class Member extends BaseTimeEntity {
     @Setter
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(45)", nullable = false)
-    private MemberStatus status;
+    @Builder.Default
+    private MemberStatus status = MemberStatus.ACTIVE;
 
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
     @Builder.Default
