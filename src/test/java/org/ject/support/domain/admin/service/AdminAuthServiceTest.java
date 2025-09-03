@@ -173,7 +173,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .role(Role.ADMIN)
                 .build();
         String authCodeKey = "admin-login:" + adminMember.getId();
-        String failCountKey = "admin-login-fail:" + adminMember.getId();
+        String failCountKey = "admin-login-fail-count:" + adminMember.getId();
         String failCountStr = "1";
 
         given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
