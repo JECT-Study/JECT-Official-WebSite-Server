@@ -25,6 +25,9 @@ public class AdminMemberComponent {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void changeMemberStatus(Member member, MemberStatus status) {
+        if (member.getStatus() == status)  {
+            return;
+        }
         member.setStatus(status);
         memberRepository.save(member);
     }
