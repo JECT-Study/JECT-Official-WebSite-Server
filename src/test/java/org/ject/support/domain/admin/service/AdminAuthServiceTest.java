@@ -131,7 +131,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn((adminMember));
 
         // when, then
-        assertThatThrownBy(() -> adminAuthService.sendSlackAdminAuthCode(email))
+        assertThatThrownBy(() -> adminAuthService.verifySlackAdminAuthCode(email, "ABC123"))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.LOCKED_ADMIN);
