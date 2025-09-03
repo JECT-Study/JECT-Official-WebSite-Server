@@ -1,5 +1,12 @@
 package org.ject.support.domain.recruit.service;
 
+import static org.mockito.Mockito.atMostOnce;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.dto.RecruitSavedEvent;
@@ -7,20 +14,10 @@ import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
-
-import static org.mockito.Mockito.atMostOnce;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-@ExtendWith(MockitoExtension.class)
-class RecruitSavedEventHandlerTest {
+class RecruitSavedEventHandlerTest extends UnitTestSupport {
 
     @InjectMocks
     RecruitSavedEventHandler recruitSavedEventHandler;

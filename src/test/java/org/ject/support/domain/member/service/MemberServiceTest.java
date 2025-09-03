@@ -7,6 +7,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import java.util.Optional;
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
@@ -16,17 +17,13 @@ import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-@ExtendWith(MockitoExtension.class)
-class MemberServiceTest {
+class MemberServiceTest extends UnitTestSupport {
 
     @InjectMocks
     private MemberService memberService;
@@ -58,8 +55,7 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("임시 회원 등록 성공")
-    void registerTempMember_Success() {
+    void 임시_회원_등록_성공() {
         // given
         RegisterRequest request = new RegisterRequest(TEST_PIN);
         Member member = Member.builder()
@@ -83,8 +79,7 @@ class MemberServiceTest {
     }
 
     @Test
-    @DisplayName("이미 존재하는 회원인 경우 예외 발생")
-    void registerTempMember_AlreadyExistMember_ThrowsException() {
+    void 이미_존재하는_회원인_경우_예외_발생() {
         // given
         RegisterRequest request = new RegisterRequest(TEST_PIN);
         Member existingMember = Member.builder()
@@ -102,8 +97,7 @@ class MemberServiceTest {
     }
     
     @Test
-    @DisplayName("회원 정보 업데이트 성공")
-    void updateMember_Success() {
+    void 회원_정보_업데이트_성공() {
         // given
         Long memberId = 1L;
         InitialProfileRequest request = new InitialProfileRequest(TEST_NAME, TEST_PHONE_NUMBER);
@@ -125,8 +119,7 @@ class MemberServiceTest {
     }
     
     @Test
-    @DisplayName("존재하지 않는 회원 정보 업데이트 시 예외 발생")
-    void updateMember_NotFoundMember_ThrowsException() {
+    void 존재하지_않는_회원_정보_업데이트_시_예외_발생() {
         // given
         Long memberId = 1L;
         InitialProfileRequest request = new InitialProfileRequest(TEST_NAME, TEST_PHONE_NUMBER);
@@ -141,8 +134,7 @@ class MemberServiceTest {
     }
     
     @Test
-    @DisplayName("핀번호 재설정 성공")
-    void updatePin_Success() {
+    void 핀번호_재설정_성공() {
         // given
         Long memberId = 1L;
         String newPin = "654321";
@@ -169,8 +161,7 @@ class MemberServiceTest {
     }
     
     @Test
-    @DisplayName("핀번호 재설정 실패 - 존재하지 않는 회원")
-    void updatePin_NotFoundMember_ThrowsException() {
+    void 핀번호_재설정_실패_존재하지_않는_회원() {
         // given
         Long memberId = 1L;
         UpdatePinRequest request = new UpdatePinRequest("654321");
@@ -183,29 +174,4 @@ class MemberServiceTest {
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
     }
-
-    /*
-    @Test
-    @DisplayName("핀번호 재설정 실패 - 기존과 동일한 PIN 번호")
-    void updatePin_SamePin_ThrowsException() {
-        // given
-        Long memberId = 1L;
-        UpdatePinRequest request = new UpdatePinRequest(TEST_PIN);
-        
-        Member member = Member.builder()
-                .id(memberId)
-                .email(TEST_EMAIL)
-                .pin(TEST_ENCODED_PIN)
-                .build();
-        
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(true); // 기존과 같은 PIN
-        
-        // when & then
-        assertThatThrownBy(() -> memberService.updatePin(request, memberId))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.SAME_PIN);
-    }
-     */
 }

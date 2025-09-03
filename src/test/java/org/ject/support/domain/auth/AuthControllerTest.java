@@ -1,27 +1,36 @@
 package org.ject.support.domain.auth;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.BDDMockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.doAnswer;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.mock;
+import static org.mockito.BDDMockito.verify;
+import static org.mockito.BDDMockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.security.CustomSuccessHandler;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.auth.controller.AuthController;
 import org.ject.support.domain.auth.dto.AuthDto.PinLoginRequest;
 import org.ject.support.domain.auth.dto.AuthDto.TokenRefreshRequest;
 import org.ject.support.domain.auth.dto.AuthDto.VerifyAuthCodeRequest;
-import org.ject.support.domain.auth.controller.AuthController;
 import org.ject.support.domain.auth.dto.AuthVerificationResult;
 import org.ject.support.domain.auth.service.AuthService;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,14 +42,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
-@ExtendWith(MockitoExtension.class)
-class AuthControllerTest {
+class AuthControllerTest extends UnitTestSupport {
     @InjectMocks
     private AuthController authController;
 
@@ -59,8 +61,7 @@ class AuthControllerTest {
     private final Long TEST_MEMBER_ID = 1L;
 
     @Test
-    @DisplayName("인증 코드 검증 - AUTH_CODE 템플릿 - 이메일만 반환 성공")
-    void verifyAuthCode_WithCertificateTemplate_Success() {
+    void 인증_코드_검증_AUTH_CODE_템플릿_이메일만_반환_성공() {
         // given
         VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
         EmailTemplate template = EmailTemplate.AUTH_CODE;
@@ -79,8 +80,7 @@ class AuthControllerTest {
     }
     
     @Test
-    @DisplayName("인증 코드 검증 - PIN_RESET 템플릿 - 인증 토큰 발급 성공")
-    void verifyAuthCode_WithPinResetTemplate_Success() {
+    void 인증_코드_검증_PIN_RESET_템플릿_인증_토큰_발급_성공() {
         // given
         VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
         EmailTemplate template = EmailTemplate.PIN_RESET;
@@ -100,8 +100,7 @@ class AuthControllerTest {
     }
     
     @Test
-    @DisplayName("리프레시 토큰을 사용한 액세스 토큰 재발급 성공")
-    void refreshToken_Success() {
+    void 리프레시_토큰을_사용한_액세스_토큰_재발급_성공() {
         // given
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
@@ -118,8 +117,7 @@ class AuthControllerTest {
     }
     
     @Test
-    @DisplayName("PIN 로그인 성공")
-    void loginWithPin_Success() {
+    void PIN_로그인_성공() {
         // given
         PinLoginRequest request = new PinLoginRequest(TEST_EMAIL, TEST_AUTH_CODE);
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
@@ -138,8 +136,7 @@ class AuthControllerTest {
     }
     
     @Test
-    @DisplayName("회원 존재 여부 확인 성공")
-    void isExistMember_Success() {
+    void 회원_존재_여부_확인_성공() {
         // given
         given(authService.isExistMember(TEST_EMAIL))
             .willReturn(true);
