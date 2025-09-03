@@ -1,15 +1,15 @@
 package org.ject.support.common.security;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.Collection;
-
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
+
+import java.util.Collection;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class CustomUserDetailsTest {
 

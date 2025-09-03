@@ -1,14 +1,11 @@
 package org.ject.support.domain.admin.service;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-
-import java.util.Optional;
 import org.ject.support.base.UnitTestSupport;
+import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.admin.component.AdminMemberComponent;
 import org.ject.support.domain.admin.exception.AdminErrorCode;
 import org.ject.support.domain.admin.exception.AdminException;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -17,15 +14,25 @@ import org.ject.support.external.slack.SlackComponent;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.core.Authentication;
-import org.ject.support.common.security.jwt.JwtTokenProvider;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+
+@MockitoSettings(strictness = Strictness.LENIENT)
 class AdminAuthServiceTest extends UnitTestSupport {
 
     @InjectMocks
     AdminAuthService adminAuthService;
+
+    @Mock
+    AdminMemberComponent adminMemberComponent;
 
     @Mock
     RedisTemplate<String, String> redisTemplate;
@@ -49,17 +56,22 @@ class AdminAuthServiceTest extends UnitTestSupport {
     private Authentication authentication;
 
     @Test
-    void 입력받은_Email에_대한_관리자가_존재하지_않을_경우_NOT_FOUND_ADMIN_예외_발생() {
+    void 관리자로그인_1차인증시_LOCKED_상태의_상태의_계정일_경우_LOCKED_ADMIN_예외_발생() {
         // given
-        String email = "test.com";
-        given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
-                .willReturn(Optional.empty());
+        String email = "locked_admin@test.com";
+        Member adminMember = Member.builder()
+                .id(1L)
+                .email(email)
+                .status(MemberStatus.LOCKED)
+                .role(Role.ADMIN)
+                .build();
+        given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
 
         // when, then
         assertThatThrownBy(() -> adminAuthService.sendSlackAdminAuthCode(email))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
-                .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
+                .isEqualTo(AdminErrorCode.LOCKED_ADMIN);
     }
 
     @Test
@@ -69,10 +81,10 @@ class AdminAuthServiceTest extends UnitTestSupport {
         Member adminMember = Member.builder()
                 .id(1L)
                 .email(email)
+                .status(MemberStatus.ACTIVE)
                 .role(Role.ADMIN)
                 .build();
-        given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
-                .willReturn(Optional.of(adminMember));
+        given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
         given(slackRateLimiter.tryConsume(1)).willReturn(false);
 
         // when, then
@@ -90,10 +102,10 @@ class AdminAuthServiceTest extends UnitTestSupport {
         Member adminMember = Member.builder()
                 .id(memberId)
                 .email(email)
+                .status(MemberStatus.ACTIVE)
                 .role(Role.ADMIN)
                 .build();
-        given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
-                .willReturn(Optional.of(adminMember));
+        given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(slackRateLimiter.tryConsume(1)).willReturn(true);
 
@@ -101,24 +113,28 @@ class AdminAuthServiceTest extends UnitTestSupport {
         String result = adminAuthService.sendSlackAdminAuthCode(email);
 
         // then
-        verify(memberRepository).findByEmailAndRole(email, Role.ADMIN);
+        verify(adminMemberComponent).getMemberAdminByEmail(email);
         verify(slackRateLimiter).tryConsume(1);
         assertEquals(email, result);
     }
 
     @Test
-    void 슬랙_인증_코드_검증_시_입력받은_Email에_대한_관리자가_존재하지_않을_경우_NOT_FOUND_ADMIN_예외_발생() {
+    void 관리자로그인_2차인증시_LOCKED_상태의__관리자_계정일_경우_LOCKED_ADMIN_예외_발생() {
         // given
-        String email = "test.com";
-        String authCode = "ABC123";
-        given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
-                .willReturn(Optional.empty());
+        String email = "locked_admin@test.com";
+        Member adminMember = Member.builder()
+                .id(1L)
+                .email(email)
+                .status(MemberStatus.LOCKED)
+                .role(Role.ADMIN)
+                .build();
+        given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn((adminMember));
 
         // when, then
-        assertThatThrownBy(() -> adminAuthService.verifySlackAdminAuthCode(email, authCode))
+        assertThatThrownBy(() -> adminAuthService.sendSlackAdminAuthCode(email))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
-                .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
+                .isEqualTo(AdminErrorCode.LOCKED_ADMIN);
     }
 
     @Test
@@ -129,11 +145,11 @@ class AdminAuthServiceTest extends UnitTestSupport {
         Member adminMember = Member.builder()
                 .id(1L)
                 .email(email)
+                .status(MemberStatus.ACTIVE)
                 .role(Role.ADMIN)
                 .build();
 
-        given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
-                .willReturn(Optional.of(adminMember));
+        given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.get("admin-login:" + adminMember.getId())).willReturn(null);
 
@@ -153,13 +169,17 @@ class AdminAuthServiceTest extends UnitTestSupport {
         Member adminMember = Member.builder()
                 .id(1L)
                 .email(email)
+                .status(MemberStatus.ACTIVE)
                 .role(Role.ADMIN)
                 .build();
+        String authCodeKey = "admin-login:" + adminMember.getId();
+        String failCountKey = "admin-login-fail:" + adminMember.getId();
+        String failCountStr = "1";
 
-        given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
-                .willReturn(Optional.of(adminMember));
+        given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get("admin-login:" + adminMember.getId())).willReturn(storedCode);
+        given(valueOperations.get(authCodeKey)).willReturn(storedCode);
+        given(valueOperations.get(failCountKey)).willReturn(failCountStr);
 
         // when, then
         assertThatThrownBy(() -> adminAuthService.verifySlackAdminAuthCode(email, inputAuthCode))
@@ -177,20 +197,22 @@ class AdminAuthServiceTest extends UnitTestSupport {
         Member adminMember = Member.builder()
                 .id(1L)
                 .email(email)
+                .status(MemberStatus.ACTIVE)
                 .role(Role.ADMIN)
                 .build();
+        String authCodeKey = "admin-login:" + adminMember.getId();
 
-        given(memberRepository.findByEmailAndRole(email, Role.ADMIN))
-                .willReturn(Optional.of(adminMember));
+        given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(valueOperations.get("admin-login:" + adminMember.getId())).willReturn(storedCode);
+        given(valueOperations.get(authCodeKey)).willReturn(storedCode);
+        given(redisTemplate.delete(authCodeKey)).willReturn(true);
 
         // when
-        Authentication result = adminAuthService.verifySlackAdminAuthCode(email, inputAuthCode);
+        adminAuthService.verifySlackAdminAuthCode(email, inputAuthCode);
 
         // then
-        verify(memberRepository).findByEmailAndRole(email, Role.ADMIN);
+        verify(adminMemberComponent).getMemberAdminByEmail(email);
         verify(jwtTokenProvider).createAuthenticationByMember(adminMember);
-        verify(redisTemplate).delete("admin-login:" + adminMember.getId());
+        verify(redisTemplate).delete(authCodeKey);
     }
 }
