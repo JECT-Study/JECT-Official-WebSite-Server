@@ -18,7 +18,7 @@ public class MemberDto {
                     .semesterId(semesterId)
                     .pin(encodedPin)
                     .status(MemberStatus.ACTIVE)
-                    .role(Role.RECRUIT)
+                    .role(Role.APPLY)
                     .build();
         }
     }

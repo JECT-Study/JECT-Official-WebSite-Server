@@ -33,8 +33,8 @@ class SecurityConfigTest extends ApplicationPeriodTest {
     @DisplayName("RoleHierarchy가 올바르게 설정되었는지 확인")
     void roleHierarchy_ShouldBeConfiguredCorrectly() {
         // given
-        SimpleGrantedAuthority tempAuthority = new SimpleGrantedAuthority("ROLE_RECRUIT");
-        SimpleGrantedAuthority userAuthority = new SimpleGrantedAuthority("ROLE_CORE");
+        SimpleGrantedAuthority tempAuthority = new SimpleGrantedAuthority("ROLE_APPLY");
+        SimpleGrantedAuthority userAuthority = new SimpleGrantedAuthority("ROLE_SEMESTER");
         SimpleGrantedAuthority adminAuthority = new SimpleGrantedAuthority("ROLE_ADMIN");
         SimpleGrantedAuthority verificationAuthority = new SimpleGrantedAuthority("ROLE_VERIFICATION");
 

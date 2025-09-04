@@ -210,7 +210,7 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
     }
     
     @Test
-    @DisplayName("@PreAuthorize(\"hasRole('ROLE_RECRUIT')\") 설정으로 인증이 필요한지 확인")
+    @DisplayName("@PreAuthorize(\"hasRole('ROLE_APPLY')\") 설정으로 인증이 필요한지 확인")
     void refreshToken_WithRoleTemp_ShouldRequireAuthentication() throws Exception {
         // given
         PinLoginRequest request = new PinLoginRequest("test@email.com", "123456");

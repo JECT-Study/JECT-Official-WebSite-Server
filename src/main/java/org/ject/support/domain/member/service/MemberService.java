@@ -63,7 +63,7 @@ public class MemberService {
 
     /**
      * 임시회원의 최초 프로필 정보(이름, 전화번호) 등록
-     * 임시회원(ROLE_RECRUIT)이 최초로 이름과 전화번호를 등록할 때 호출됩니다.
+     * 임시회원(ROLE_APPLY)이 최초로 이름과 전화번호를 등록할 때 호출됩니다.
      */
     @Transactional
     public void registerInitialProfile(MemberDto.InitialProfileRequest request, Long memberId) {

@@ -39,7 +39,7 @@ class CustomUserDetailServiceTest {
                 .email("test@example.com")
                 .name("Test User")
                 .phoneNumber("01012345678")
-                .role(Role.CORE)
+                .role(Role.SEMESTER)
                 .status(MemberStatus.ACTIVE)
                 .jobFamily(JobFamily.BE)
                 .build();

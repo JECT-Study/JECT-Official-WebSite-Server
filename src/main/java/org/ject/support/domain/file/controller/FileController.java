@@ -21,7 +21,7 @@ public class FileController implements FileApiSpec {
     private final S3Service s3Service;
 
     @Override
-    @PreAuthorize("hasRole('ROLE_CORE')")
+    @PreAuthorize("hasRole('ROLE_SEMESTER')")
     @PostMapping("/contents")
     public List<UploadFileResponse> uploadContents(@AuthPrincipal final Long memberId,
                                                    @RequestBody final List<UploadFileRequest> requests) {
@@ -29,7 +29,7 @@ public class FileController implements FileApiSpec {
     }
 
     @Override
-    @PreAuthorize("hasRole('ROLE_RECRUIT')")
+    @PreAuthorize("hasRole('ROLE_APPLY')")
     @PostMapping("/portfolios")
     public List<UploadFileResponse> uploadPortfolios(@AuthPrincipal final Long memberId,
                                                      @RequestBody final List<UploadFileRequest> requests) {

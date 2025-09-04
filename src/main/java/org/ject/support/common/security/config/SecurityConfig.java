@@ -48,9 +48,9 @@ public class SecurityConfig {
     @Bean
     public static RoleHierarchy roleHierarchy() {
         return RoleHierarchyImpl.fromHierarchy("""
-                ROLE_ADMIN > ROLE_CORE
-                ROLE_CORE > ROLE_RECRUIT
-                ROLE_RECRUIT > ROLE_VERIFICATION
+                ROLE_ADMIN > ROLE_SEMESTER
+                ROLE_SEMESTER > ROLE_APPLY
+                ROLE_APPLY > ROLE_VERIFICATION
                 """);
     }
 

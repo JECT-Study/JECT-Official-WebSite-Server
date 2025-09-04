@@ -77,7 +77,7 @@ class MemberControllerTest {
         // given
         RegisterRequest request = new RegisterRequest(TEST_PIN);
         Authentication mockAuthentication = new UsernamePasswordAuthenticationToken(
-                new CustomUserDetails(TEST_EMAIL, 1L, Role.RECRUIT), "", null);
+                new CustomUserDetails(TEST_EMAIL, 1L, Role.APPLY), "", null);
 
         given(jwtTokenProvider.resolveVerificationToken(any())).willReturn(TEST_VERIFICATION_TOKEN);
         given(jwtTokenProvider.extractEmailFromVerificationToken(TEST_VERIFICATION_TOKEN)).willReturn(TEST_EMAIL);
@@ -110,8 +110,8 @@ class MemberControllerTest {
         // lenient 설정을 사용하여 엄격한 스텔빙 검사를 해제
         lenient().doNothing().when(memberService).registerInitialProfile(any(), eq(memberId));
 
-        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_RECRUIT 권한)
-        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.RECRUIT);
+        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_APPLY 권한)
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.APPLY);
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -135,8 +135,8 @@ class MemberControllerTest {
         // lenient 설정을 사용하여 엄격한 스텔빙 검사를 해제
         lenient().doNothing().when(memberService).updatePin(any(UpdatePinRequest.class), eq(memberId));
 
-        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_RECRUIT 권한)
-        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.RECRUIT);
+        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_APPLY 권한)
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.APPLY);
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -159,8 +159,8 @@ class MemberControllerTest {
         UpdatePinRequest request = new UpdatePinRequest(invalidPin);
         Long memberId = 1L;
 
-        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_RECRUIT 권한)
-        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.RECRUIT);
+        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_APPLY 권한)
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.APPLY);
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -182,8 +182,8 @@ class MemberControllerTest {
         // 모킹 설정을 lenient로 변경하여 엄격한 스텁 검사를 비활성화
         lenient().when(memberService.checkIsInitialed(any())).thenReturn(true);
 
-        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_RECRUIT 권한)
-        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.RECRUIT);
+        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_APPLY 권한)
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.APPLY);
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 
@@ -207,8 +207,8 @@ class MemberControllerTest {
         // 모킹 설정을 lenient로 변경하여 엄격한 스텁 검사를 비활성화
         lenient().when(memberService.checkIsInitialed(any())).thenReturn(false);
 
-        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_RECRUIT 권한)
-        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.RECRUIT);
+        // CustomUserDetails를 사용하여 인증 정보 설정 (ROLE_APPLY 권한)
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, memberId, Role.APPLY);
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(auth);
 

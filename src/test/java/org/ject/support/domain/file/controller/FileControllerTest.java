@@ -52,7 +52,7 @@ class FileControllerTest extends ApplicationPeriodTest {
                 .email("test32@gmail.com")
                 .jobFamily(JobFamily.BE)
                 .name("홍길동") // 한글 1~5글자로 수정
-                .role(Role.CORE)
+                .role(Role.SEMESTER)
                 .phoneNumber("01012345678") // 010으로 시작하는 11자리 수정
                 .semesterId(1L)
                 .pin("123456") // PIN 추가

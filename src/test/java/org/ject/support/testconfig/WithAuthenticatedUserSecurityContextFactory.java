@@ -16,7 +16,7 @@ public class WithAuthenticatedUserSecurityContextFactory implements WithSecurity
         boolean isAdmin = annotation.isAdmin();
         long memberId = annotation.memberId();
 
-        Role role = isAdmin ? Role.ADMIN : Role.CORE;
+        Role role = isAdmin ? Role.ADMIN : Role.SEMESTER;
         CustomUserDetails userDetails = new CustomUserDetails(email, memberId, role);
         Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
 

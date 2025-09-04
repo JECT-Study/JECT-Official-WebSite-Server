@@ -91,7 +91,7 @@ class ApplyControllerTest extends ApplicationPeriodTest {
                 .email("test32@gmail.com")
                 .jobFamily(JobFamily.BE)
                 .name("김젝트")
-                .role(Role.CORE)
+                .role(Role.SEMESTER)
                 .phoneNumber("01012345678")
                 .semesterId(1L)
                 .pin("123456") // PIN 필드 추가
