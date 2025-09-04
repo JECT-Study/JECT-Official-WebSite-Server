@@ -82,7 +82,7 @@ class AuthenticatedMemberIdResolverTest {
     @DisplayName("인증된 사용자의 memberId를 반환한다")
     void resolveArgumentWithAuthenticatedUser() {
         // given
-        CustomUserDetails userDetails = new CustomUserDetails(EMAIL, MEMBER_ID, Role.USER);
+        CustomUserDetails userDetails = new CustomUserDetails(EMAIL, MEMBER_ID, Role.SEMESTER);
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
         when(securityContext.getAuthentication()).thenReturn(authentication);
 

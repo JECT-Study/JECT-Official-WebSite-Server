@@ -1,6 +1,5 @@
 package org.ject.support.common.response;
 
-import org.ject.support.common.exception.ErrorCode;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;

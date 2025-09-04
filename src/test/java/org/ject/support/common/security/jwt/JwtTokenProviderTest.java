@@ -51,7 +51,7 @@ class JwtTokenProviderTest extends UnitTestSupport {
                 .name("Test User")
                 .phoneNumber("01012345678")
                 .status(MemberStatus.ACTIVE)
-                .role(Role.USER)
+                .role(Role.SEMESTER)
                 .jobFamily(JobFamily.BE)
                 .build();
 
@@ -168,7 +168,7 @@ class JwtTokenProviderTest extends UnitTestSupport {
         // then
         Authentication resultAuth = jwtTokenProvider.getAuthenticationByToken(token);
         assertThat(resultAuth.getAuthorities()).isNotEmpty();
-        assertThat(resultAuth.getAuthorities().iterator().next().getAuthority()).isEqualTo("ROLE_USER");
+        assertThat(resultAuth.getAuthorities().iterator().next().getAuthority()).isEqualTo("ROLE_SEMESTER");
     }
 
     @Test

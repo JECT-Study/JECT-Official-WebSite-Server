@@ -2,6 +2,7 @@ package org.ject.support.domain.recruit.controller;
 
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
+import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
@@ -32,7 +33,6 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.ject.support.domain.member.Role.USER;
 import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -91,7 +91,7 @@ class ApplyControllerTest extends ApplicationPeriodTest {
                 .email("test32@gmail.com")
                 .jobFamily(JobFamily.BE)
                 .name("김젝트")
-                .role(USER)
+                .role(Role.SEMESTER)
                 .phoneNumber("01012345678")
                 .semesterId(1L)
                 .pin("123456") // PIN 필드 추가

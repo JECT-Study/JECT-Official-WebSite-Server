@@ -128,7 +128,7 @@ class MemberQueryRepositoryTest {
                 .email(email)
                 .semesterId(1L)
                 .jobFamily(jobFamily)
-                .role(Role.USER)
+                .role(Role.SEMESTER)
                 .pin("123456") // PIN 필드 추가
                 .status(MemberStatus.ACTIVE)
                 .build();

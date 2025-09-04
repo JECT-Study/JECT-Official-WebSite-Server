@@ -17,7 +17,7 @@ class MemberTest {
         String email = "john@example.com";
         Long semesterId = 1L;
         JobFamily jobFamily = JobFamily.BE;
-        Role role = Role.USER;
+        Role role = Role.SEMESTER;
 
         // when
         Member member = Member.builder()
@@ -46,7 +46,7 @@ class MemberTest {
         String name = "John Doe";
         String phoneNumber = "01012345678";
         String email = "john@example.com";
-        Role role = Role.USER;
+        Role role = Role.SEMESTER;
 
         // when
         Member member = Member.builder()
