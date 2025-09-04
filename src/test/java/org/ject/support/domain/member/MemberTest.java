@@ -27,6 +27,7 @@ class MemberTest {
                 .semesterId(1L)
                 .jobFamily(jobFamily)
                 .role(role)
+                .status(MemberStatus.ACTIVE)
                 .build();
 
         // then
@@ -53,6 +54,7 @@ class MemberTest {
                 .phoneNumber(phoneNumber)
                 .email(email)
                 .role(role)
+                .status(MemberStatus.ACTIVE)
                 .build();
 
         // then

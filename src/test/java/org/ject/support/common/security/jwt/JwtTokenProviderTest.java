@@ -11,6 +11,7 @@ import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,6 +50,7 @@ class JwtTokenProviderTest extends UnitTestSupport {
                 .email("test@example.com")
                 .name("Test User")
                 .phoneNumber("01012345678")
+                .status(MemberStatus.ACTIVE)
                 .role(Role.USER)
                 .jobFamily(JobFamily.BE)
                 .build();
@@ -178,6 +180,7 @@ class JwtTokenProviderTest extends UnitTestSupport {
                 .email("admin@example.com")
                 .name("Admin User")
                 .phoneNumber("01098765432")
+                .status(MemberStatus.ACTIVE)
                 .role(Role.ADMIN)
                 .build();
         

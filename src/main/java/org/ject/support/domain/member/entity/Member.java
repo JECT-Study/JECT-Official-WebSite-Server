@@ -11,16 +11,19 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -58,6 +61,12 @@ public class Member extends BaseTimeEntity {
     @Column(length = 255)
     @NotNull
     private String pin;
+
+    @Setter
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(45)", nullable = false)
+    @Builder.Default
+    private MemberStatus status = MemberStatus.ACTIVE;
 
     @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
     @Builder.Default
