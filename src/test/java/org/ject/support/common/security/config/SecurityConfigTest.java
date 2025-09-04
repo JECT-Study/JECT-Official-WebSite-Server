@@ -39,7 +39,7 @@ class SecurityConfigTest extends ApplicationPeriodTest {
         SimpleGrantedAuthority verificationAuthority = new SimpleGrantedAuthority("ROLE_VERIFICATION");
 
         // when & then
-        // ADMIN > CORE > RECRUIT 계층 구조 확인
+        // ADMIN > SEMESTER > APPLY 계층 구조 확인
         List<String> adminAuthorities = roleHierarchy.getReachableGrantedAuthorities(
                 java.util.Collections.singleton(adminAuthority))
                 .stream()
@@ -51,7 +51,7 @@ class SecurityConfigTest extends ApplicationPeriodTest {
                 userAuthority.getAuthority(), 
                 tempAuthority.getAuthority());
 
-        // CORE > RECRUIT 계층 구조 확인
+        // SEMESTER > APPLY 계층 구조 확인
         List<String> userAuthorities = roleHierarchy.getReachableGrantedAuthorities(
                 java.util.Collections.singleton(userAuthority))
                 .stream()
@@ -62,7 +62,7 @@ class SecurityConfigTest extends ApplicationPeriodTest {
                 .contains(userAuthority.getAuthority(), tempAuthority.getAuthority())
                 .doesNotContain(adminAuthority.getAuthority());
 
-        // RECRUIT > VERIFICATION 계층 구조 확인
+        // APPLY > VERIFICATION 계층 구조 확인
         List<String> tempAuthorities = roleHierarchy.getReachableGrantedAuthorities(
                 java.util.Collections.singleton(tempAuthority))
                 .stream()
