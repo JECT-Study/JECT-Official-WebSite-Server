@@ -90,7 +90,7 @@ class AuthServiceTest {
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
-                .role(Role.USER)
+                .role(Role.CORE)
                 .build();
         
         given(valueOperations.get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
@@ -170,7 +170,7 @@ class AuthServiceTest {
                 .id(TEST_MEMBER_ID)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
-                .role(Role.USER)
+                .role(Role.CORE)
                 .status(MemberStatus.ACTIVE)
                 .build();
         
@@ -208,7 +208,7 @@ class AuthServiceTest {
                 .id(TEST_MEMBER_ID)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
-                .role(Role.USER)
+                .role(Role.CORE)
                 .status(MemberStatus.ACTIVE)
                 .build();
         

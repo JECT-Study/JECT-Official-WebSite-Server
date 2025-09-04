@@ -24,14 +24,14 @@ public class ApplyController implements ApplyApiSpec {
 
     @Override
     @GetMapping("/temp")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_RECRUIT')")
     public ApplyTemporaryResponse getTemporaryApplication(@AuthPrincipal Long memberId) {
         return applyUsecase.getTemporaryApplication(memberId);
     }
 
     @Override
     @PostMapping("/temp")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_RECRUIT')")
     public void applyTemporary(@AuthPrincipal Long memberId,
                                @RequestParam JobFamily jobFamily,
                                @RequestBody ApplyTemporaryRequest request) {
@@ -40,14 +40,14 @@ public class ApplyController implements ApplyApiSpec {
 
     @Override
     @DeleteMapping("/temp")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_RECRUIT')")
     public void deleteTemporaryApplications(@AuthPrincipal Long memberId) {
         applyUsecase.deleteTemporaryApplications(memberId);
     }
 
     @Override
     @PostMapping("/submit")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_RECRUIT')")
     public void submitApplication(@AuthPrincipal Long memberId,
                                   @RequestParam JobFamily jobFamily,
                                   @RequestBody SubmitApplicationRequest request) {
@@ -56,7 +56,7 @@ public class ApplyController implements ApplyApiSpec {
 
     @Override
     @GetMapping("/status")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_RECRUIT')")
     public boolean checkApplyStatus(@AuthPrincipal Long memberId) {
         return applyUsecase.checkApplySubmit(memberId);
     }

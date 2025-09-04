@@ -20,7 +20,7 @@ public interface MemberApiSpec {
 
     @Operation(
             summary = "임시회원의 최초 정보 등록",
-            description = "임시회원(ROLE_TEMP)이 이름과 전화번호를 처음 등록할 때 사용합니다.")
+            description = "임시회원(ROLE_RECRUIT)이 이름과 전화번호를 처음 등록할 때 사용합니다.")
     void registerInitialProfile(@AuthPrincipal Long memberId,
                                 @Valid @RequestBody MemberDto.InitialProfileRequest request);
 

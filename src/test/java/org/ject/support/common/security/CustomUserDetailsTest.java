@@ -26,7 +26,7 @@ class CustomUserDetailsTest {
                 .name("Test User")
                 .phoneNumber("01012345678")
                 .status(MemberStatus.ACTIVE)
-                .role(Role.TEMP)
+                .role(Role.RECRUIT)
                 .build();
 
         // when
@@ -36,14 +36,14 @@ class CustomUserDetailsTest {
         // then
         assertThat(authorities).isNotEmpty();
         assertThat(authorities).hasSize(1);
-        assertThat(authorities.iterator().next().getAuthority()).isEqualTo("ROLE_TEMP");
+        assertThat(authorities.iterator().next().getAuthority()).isEqualTo("ROLE_RECRUIT");
     }
 
     @Test
     @DisplayName("파라미터로 CustomUserDetails 생성 시 권한에 ROLE_ 접두사가 추가되는지 확인")
     void getAuthorities_FromParameters_ShouldAddRolePrefix() {
         // given
-        Role role = Role.USER;
+        Role role = Role.CORE;
 
         // when
         CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, TEST_MEMBER_ID, role);
@@ -52,7 +52,7 @@ class CustomUserDetailsTest {
         // then
         assertThat(authorities).isNotEmpty();
         assertThat(authorities).hasSize(1);
-        assertThat(authorities.iterator().next().getAuthority()).isEqualTo("ROLE_USER");
+        assertThat(authorities.iterator().next().getAuthority()).isEqualTo("ROLE_CORE");
     }
 
     @Test

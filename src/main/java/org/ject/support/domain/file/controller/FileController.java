@@ -1,6 +1,5 @@
 package org.ject.support.domain.file.controller;
 
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.domain.file.dto.UploadFileRequest;
@@ -12,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/upload")
 @RequiredArgsConstructor
@@ -20,7 +21,7 @@ public class FileController implements FileApiSpec {
     private final S3Service s3Service;
 
     @Override
-    @PreAuthorize("hasRole('ROLE_USER')")
+    @PreAuthorize("hasRole('ROLE_CORE')")
     @PostMapping("/contents")
     public List<UploadFileResponse> uploadContents(@AuthPrincipal final Long memberId,
                                                    @RequestBody final List<UploadFileRequest> requests) {
@@ -28,7 +29,7 @@ public class FileController implements FileApiSpec {
     }
 
     @Override
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_RECRUIT')")
     @PostMapping("/portfolios")
     public List<UploadFileResponse> uploadPortfolios(@AuthPrincipal final Long memberId,
                                                      @RequestBody final List<UploadFileRequest> requests) {

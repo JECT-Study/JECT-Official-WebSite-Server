@@ -46,7 +46,7 @@ public class S3Service {
     }
 
     /**
-     * USER 이상의 권한을 가진 사용자가 첨부한 파일 이름과 해당 사용자의 식별자를 토대로 Pre-signed URL 생성
+     * CORE 이상의 권한을 가진 사용자가 첨부한 파일 이름과 해당 사용자의 식별자를 토대로 Pre-signed URL 생성
      */
     public List<UploadFileResponse> uploadContents(Long memberId, List<UploadFileRequest> requests) {
         return createPresignedUrls(memberId, requests);

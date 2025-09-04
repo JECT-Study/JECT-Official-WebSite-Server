@@ -54,11 +54,11 @@ public class MemberController implements MemberApiSpec {
 
     /**
      * 임시회원의 최초 정보 등록 API
-     * 임시회원(ROLE_TEMP)이 이름과 전화번호를 처음 등록할 때 사용합니다.
+     * 임시회원(ROLE_RECRUIT)이 이름과 전화번호를 처음 등록할 때 사용합니다.
      */
     @Override
     @PutMapping("/profile/initial")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_RECRUIT')")
     public void registerInitialProfile(@AuthPrincipal Long memberId,
                              @Valid @RequestBody MemberDto.InitialProfileRequest request) {
 
@@ -68,7 +68,7 @@ public class MemberController implements MemberApiSpec {
 
     @Override
     @PutMapping("/pin")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_RECRUIT')")
     public void resetPin(@AuthPrincipal Long memberId,
                          @Valid @RequestBody MemberDto.UpdatePinRequest request) {
 
@@ -78,7 +78,7 @@ public class MemberController implements MemberApiSpec {
 
     @Override
     @GetMapping("/profile/initial/status")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_RECRUIT')")
     public boolean isInitialMember(@AuthPrincipal Long memberId) {
         // 임시회원의 최초 프로필 정보 등록 여부 확인
         return memberService.checkIsInitialed(memberId);

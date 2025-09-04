@@ -3,13 +3,12 @@ package org.ject.support.domain.recruit.repository;
 import org.assertj.core.api.Assertions;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
+import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.ApplicationForm;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.testconfig.QueryDslTestConfig;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,8 +17,6 @@ import org.springframework.context.annotation.Import;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
-import static org.ject.support.domain.member.Role.USER;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
@@ -49,7 +46,7 @@ class ApplicationFormRepositoryTest {
                 .email("test32@gmail.com")
                 .jobFamily(JobFamily.BE)
                 .name("김젝트")
-                .role(USER)
+                .role(Role.CORE)
                 .phoneNumber("01012345678")
                 .semesterId(1L)
                 .pin("123456") // PIN 필드 추가
