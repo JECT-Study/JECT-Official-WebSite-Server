@@ -1,5 +1,5 @@
 -- team 테이블에 semester_id 컬럼 추가
-ALTER TABLE team ADD COLUMN semester_id BIGINT NOT NULL;
+ALTER TABLE team ADD COLUMN semester_id BIGINT NOT NULL DEFAULT 1;
 
 -- team 테이블의 semester_id 컬럼을 project 테이블의 semester_id 값으로 초기화
 UPDATE team
