@@ -32,9 +32,6 @@ public class Project extends BaseTimeEntity {
     @Column(columnDefinition = "varchar(30)", nullable = false)
     private Project.Category category;
 
-    @Column(nullable = false)
-    private Long semesterId;
-
     @Column(length = 100, nullable = false)
     private String summary;
 
