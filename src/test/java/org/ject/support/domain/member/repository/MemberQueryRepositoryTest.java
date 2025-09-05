@@ -118,6 +118,7 @@ class MemberQueryRepositoryTest {
     private Team createTeam(String name) {
         return Team.builder()
                 .name(name)
+                .semesterId(1L)
                 .build();
     }
 

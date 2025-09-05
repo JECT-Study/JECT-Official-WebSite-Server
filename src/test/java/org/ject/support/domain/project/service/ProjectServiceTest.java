@@ -1,14 +1,5 @@
 package org.ject.support.domain.project.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.domain.project.entity.ProjectIntro.Category;
-import static org.ject.support.domain.project.entity.ProjectIntro.builder;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Team;
@@ -24,6 +15,16 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ject.support.domain.project.entity.ProjectIntro.Category;
+import static org.ject.support.domain.project.entity.ProjectIntro.builder;
+import static org.mockito.Mockito.when;
 
 class ProjectServiceTest extends UnitTestSupport {
 
@@ -54,7 +55,6 @@ class ProjectServiceTest extends UnitTestSupport {
         ProjectIntro devIntro1 = createProjectIntro(4L, "devImage1.png", Category.DEV, 1);
         project = Project.builder()
                 .id(1L)
-                .semesterId(1L)
                 .summary("summary")
                 .techStack(List.of("java", "Spring", "JPA", "QueryDSL", "MySQL", "AWS"))
                 .startDate(LocalDate.of(2025, 3, 2))
@@ -62,7 +62,7 @@ class ProjectServiceTest extends UnitTestSupport {
                 .description("description")
                 .thumbnailUrl("thumbnail.png")
                 .serviceUrl("service.com")
-                .team(Team.builder().id(1L).name("team").build())
+                .team(Team.builder().id(1L).name("team").semesterId(1L).build())
                 .projectIntros(List.of(serviceIntro1, serviceIntro2, serviceIntro3, devIntro1))
                 .build();
     }
