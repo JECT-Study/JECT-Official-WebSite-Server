@@ -1,17 +1,11 @@
 package org.ject.support.domain.member.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.security.AuthPrincipal;
-import org.ject.support.common.security.CustomSuccessHandler;
-import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberBulkDeleteRequest;
 import org.ject.support.domain.member.dto.MemberDetailResponse;
-import org.ject.support.domain.member.dto.MemberDto;
 import org.ject.support.domain.member.dto.MemberRegisterRequest;
 import org.ject.support.domain.member.dto.MemberResponse;
 import org.ject.support.domain.member.dto.MemberUpdateRequest;
@@ -19,7 +13,6 @@ import org.ject.support.domain.member.service.MemberService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
