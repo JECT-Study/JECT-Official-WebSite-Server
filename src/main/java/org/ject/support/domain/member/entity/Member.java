@@ -17,6 +17,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
@@ -24,7 +26,10 @@ import org.ject.support.domain.member.Role;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.ject.support.domain.member.dto.MemberUpdateRequest;
 
+@SQLDelete(sql = "UPDATE member SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 @Entity
 @Getter
 @Builder
@@ -62,6 +67,10 @@ public class Member extends BaseTimeEntity {
     @NotNull
     private String pin;
 
+    @Column(name = "is_deleted")
+    @Builder.Default
+    private Boolean isDeleted = false;
+
     @Setter
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(45)", nullable = false)
@@ -83,5 +92,14 @@ public class Member extends BaseTimeEntity {
 
     public boolean isInitialed() {
         return this.name != null && this.phoneNumber != null;
+    }
+
+    public void update(MemberUpdateRequest request) {
+        this.name = request.name();
+        this.phoneNumber = request.phoneNumber();
+        this.email = request.email();
+        this.semesterId = request.semesterId();
+        this.jobFamily = request.jobFamily();
+        this.role = request.role();
     }
 }
