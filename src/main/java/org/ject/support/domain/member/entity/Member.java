@@ -67,7 +67,7 @@ public class Member extends BaseTimeEntity {
     @NotNull
     private String pin;
 
-    @Column(name = "is_deleted")
+    @Column(name = "is_deleted", nullable = false)
     @Builder.Default
     private Boolean isDeleted = false;
 
