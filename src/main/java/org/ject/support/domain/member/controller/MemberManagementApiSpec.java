@@ -36,7 +36,7 @@ public interface MemberManagementApiSpec {
     @Operation(
             summary = "구성원 정보 수정",
             description = "기입한 정보로 선택된 구성원을 수정합니다.")
-    void updateMember(@PathVariable final Long recruitId,
+    void updateMember(@PathVariable final Long memberId,
                       @RequestBody @Valid final MemberUpdateRequest request);
 
     @Operation(
