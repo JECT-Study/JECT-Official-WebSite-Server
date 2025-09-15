@@ -1,2 +1,2 @@
 ALTER TABLE member
-    ADD is_deleted BIT(1) NULL;
+    ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT false;
