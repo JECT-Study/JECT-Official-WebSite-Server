@@ -47,7 +47,7 @@ public interface MemberManagementApiSpec {
     @Operation(
             summary = "구성원 삭제",
             description = "선택한 구성원을 삭제합니다.")
-    void deleteMember(@PathVariable final Long memberIds);
+    void deleteMember(@PathVariable final Long memberId);
 
     @Operation(
         summary = "구성원 다수 삭제",
