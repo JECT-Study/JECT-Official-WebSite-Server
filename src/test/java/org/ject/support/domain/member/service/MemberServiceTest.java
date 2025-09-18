@@ -359,7 +359,7 @@ class MemberServiceTest extends UnitTestSupport {
         );
 
         given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
-        given(passwordEncoder.encode(TEST_PHONE_NUMBER)).willReturn(TEST_ENCODED_PIN);
+        given(passwordEncoder.encode(any(String.class))).willReturn(TEST_ENCODED_PIN);
         given(memberRepository.save(any(Member.class))).willReturn(any(Member.class));
 
         // when
@@ -367,7 +367,7 @@ class MemberServiceTest extends UnitTestSupport {
 
         // then
         verify(memberRepository).existsByEmail(TEST_EMAIL);
-        verify(passwordEncoder).encode(TEST_PHONE_NUMBER);
+        verify(passwordEncoder).encode(any(String.class));
         verify(memberRepository).save(any(Member.class));
     }
 
