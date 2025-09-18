@@ -1,10 +1,12 @@
 package org.ject.support.domain.member.service;
 
+import static org.ject.support.common.util.CodeGeneratorUtil.*;
 import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.common.util.CodeGeneratorUtil;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberDetailResponse;
@@ -122,11 +124,11 @@ public class MemberService {
 
     @Transactional
     public void registerMember(final MemberRegisterRequest request) {
-        // 중복 회원 체크 항목이 뭐가 있는거지?
         if (memberRepository.existsByEmail(request.email())) {
             throw new MemberException(ALREADY_EXIST_MEMBER);
         }
-        var encodedPin = passwordEncoder.encode(request.phoneNumber());
+        var generatedPin = generateUpperAlphaNumCode(6);
+        var encodedPin = passwordEncoder.encode(generatedPin); // 왜 Member에서 PIN이 NOT NULL? 우선 NOT NULL 검증을 때문에 유지.
         var member = request.toEntity(encodedPin);
         memberRepository.save(member);
     }
