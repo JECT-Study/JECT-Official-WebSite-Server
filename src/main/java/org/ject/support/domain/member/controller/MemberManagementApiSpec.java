@@ -9,7 +9,7 @@ import org.ject.support.domain.member.dto.MemberBulkDeleteRequest;
 import org.ject.support.domain.member.dto.MemberDetailResponse;
 import org.ject.support.domain.member.dto.MemberRegisterRequest;
 import org.ject.support.domain.member.dto.MemberResponse;
-import org.ject.support.domain.member.dto.MemberUpdateRequest;
+import org.ject.support.domain.member.dto.MemberEditRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,8 +36,8 @@ public interface MemberManagementApiSpec {
     @Operation(
             summary = "구성원 정보 수정",
             description = "기입한 정보로 선택된 구성원을 수정합니다.")
-    void updateMember(@PathVariable final Long memberId,
-                      @RequestBody @Valid final MemberUpdateRequest request);
+    void editMember(@PathVariable final Long memberId,
+                      @RequestBody @Valid final MemberEditRequest request);
 
     @Operation(
             summary = "구성원 추가",

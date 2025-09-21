@@ -1,21 +1,19 @@
 package org.ject.support.domain.member.service;
 
-import static org.ject.support.common.util.CodeGeneratorUtil.*;
 import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
-import org.ject.support.common.util.CodeGeneratorUtil;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberDetailResponse;
 import org.ject.support.domain.member.dto.MemberDto;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
+import org.ject.support.domain.member.dto.MemberEditRequest;
 import org.ject.support.domain.member.dto.MemberRegisterRequest;
 import org.ject.support.domain.member.dto.MemberResponse;
-import org.ject.support.domain.member.dto.MemberUpdateRequest;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -133,11 +131,23 @@ public class MemberService {
     }
 
     @Transactional
-    public void updateMember(final Long memberId,
-                             final MemberUpdateRequest request) {
+    public void editMember(final Long memberId,
+                             final MemberEditRequest request) {
         var member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-        member.update(request);
+
+        var editorBuilder = member.toEditor();
+
+        var editor = editorBuilder
+                .name(request.name())
+                .phoneNumber(request.phoneNumber())
+                .email(request.email())
+                .semesterId(request.semesterId())
+                .jobFamily(request.jobFamily())
+                .role(request.role())
+                .build();
+
+        member.edit(editor);
     }
 
     @Transactional

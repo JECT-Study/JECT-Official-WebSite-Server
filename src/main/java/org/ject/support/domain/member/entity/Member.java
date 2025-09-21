@@ -25,7 +25,6 @@ import org.ject.support.domain.member.Role;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.ject.support.domain.member.dto.MemberUpdateRequest;
 
 @SQLDelete(sql = "UPDATE member SET is_deleted = true WHERE id = ?")
 @SQLRestriction("is_deleted = false")
@@ -92,12 +91,22 @@ public class Member extends BaseTimeEntity {
         return this.name != null && this.phoneNumber != null;
     }
 
-    public void update(MemberUpdateRequest request) {
-        this.name = request.name();
-        this.phoneNumber = request.phoneNumber();
-        this.email = request.email();
-        this.semesterId = request.semesterId();
-        this.jobFamily = request.jobFamily();
-        this.role = request.role();
+    public MemberEditor.MemberEditorBuilder toEditor() {
+        return MemberEditor.builder()
+                .name(this.name)
+                .phoneNumber(this.phoneNumber)
+                .email(this.email)
+                .semesterId(this.semesterId)
+                .jobFamily(this.jobFamily)
+                .role(this.role);
+    }
+
+    public void edit(MemberEditor editor) {
+        this.name = editor.name();
+        this.phoneNumber = editor.phoneNumber();
+        this.email = editor.email();
+        this.semesterId = editor.semesterId();
+        this.jobFamily = editor.jobFamily();
+        this.role = editor.role();
     }
 }
