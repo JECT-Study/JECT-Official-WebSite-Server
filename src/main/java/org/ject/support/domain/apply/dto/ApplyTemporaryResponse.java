@@ -1,4 +1,4 @@
-package org.ject.support.domain.recruit.dto;
+package org.ject.support.domain.apply.dto;
 
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 

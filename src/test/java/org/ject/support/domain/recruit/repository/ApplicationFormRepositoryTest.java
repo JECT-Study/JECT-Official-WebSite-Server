@@ -1,12 +1,13 @@
 package org.ject.support.domain.recruit.repository;
 
 import org.assertj.core.api.Assertions;
+import org.ject.support.domain.apply.domain.ApplicationForm;
+import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
-import org.ject.support.domain.recruit.domain.ApplicationForm;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;

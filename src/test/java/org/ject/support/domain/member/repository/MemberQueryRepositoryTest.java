@@ -1,5 +1,7 @@
 package org.ject.support.domain.member.repository;
 
+import org.ject.support.domain.apply.domain.ApplicationForm;
+import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
@@ -7,9 +9,7 @@ import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.Team;
 import org.ject.support.domain.member.entity.TeamMember;
-import org.ject.support.domain.recruit.domain.ApplicationForm;
 import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.recruit.repository.ApplicationFormRepository;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.BeforeEach;

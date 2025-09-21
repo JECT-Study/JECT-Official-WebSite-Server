@@ -1,4 +1,4 @@
-package org.ject.support.domain.recruit.domain;
+package org.ject.support.domain.apply.domain;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -18,6 +18,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.recruit.domain.Recruit;
 
 import java.util.ArrayList;
 import java.util.List;

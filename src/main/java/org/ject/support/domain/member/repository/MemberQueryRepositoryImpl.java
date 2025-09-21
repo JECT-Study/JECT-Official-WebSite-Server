@@ -11,13 +11,13 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import static org.ject.support.domain.apply.domain.QApplicationForm.applicationForm;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PD;
 import static org.ject.support.domain.member.JobFamily.PM;
 import static org.ject.support.domain.member.entity.QMember.member;
 import static org.ject.support.domain.member.entity.QTeamMember.teamMember;
-import static org.ject.support.domain.recruit.domain.QApplicationForm.applicationForm;
 
 @Repository
 @RequiredArgsConstructor

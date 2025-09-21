@@ -1,4 +1,4 @@
-package org.ject.support.domain.recruit.domain;
+package org.ject.support.domain.apply.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

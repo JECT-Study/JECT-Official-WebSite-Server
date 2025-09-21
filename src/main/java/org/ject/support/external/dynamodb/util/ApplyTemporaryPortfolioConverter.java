@@ -1,6 +1,6 @@
 package org.ject.support.external.dynamodb.util;
 
-import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;

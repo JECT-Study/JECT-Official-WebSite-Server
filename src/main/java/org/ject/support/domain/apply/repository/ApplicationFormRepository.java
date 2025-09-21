@@ -1,6 +1,6 @@
-package org.ject.support.domain.recruit.repository;
+package org.ject.support.domain.apply.repository;
 
-import org.ject.support.domain.recruit.domain.ApplicationForm;
+import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

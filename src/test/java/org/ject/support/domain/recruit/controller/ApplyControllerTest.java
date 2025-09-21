@@ -1,5 +1,7 @@
 package org.ject.support.domain.recruit.controller;
 
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
+import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
@@ -7,8 +9,6 @@ import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
-import org.ject.support.domain.recruit.repository.ApplicationFormRepository;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;

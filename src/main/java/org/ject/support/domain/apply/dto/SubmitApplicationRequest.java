@@ -1,4 +1,6 @@
-package org.ject.support.domain.recruit.dto;
+package org.ject.support.domain.apply.dto;
+
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 
 import java.util.List;
 import java.util.Map;
