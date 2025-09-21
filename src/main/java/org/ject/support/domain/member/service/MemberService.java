@@ -127,9 +127,8 @@ public class MemberService {
         if (memberRepository.existsByEmail(request.email())) {
             throw new MemberException(ALREADY_EXIST_MEMBER);
         }
-        var generatedPin = generateUpperAlphaNumCode(6);
-        var encodedPin = passwordEncoder.encode(generatedPin); // 왜 Member에서 PIN이 NOT NULL? 우선 NOT NULL 검증을 때문에 유지.
-        var member = request.toEntity(encodedPin);
+
+        var member = request.toEntity();
         memberRepository.save(member);
     }
 

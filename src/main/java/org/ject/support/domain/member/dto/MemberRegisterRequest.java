@@ -22,7 +22,7 @@ public record MemberRegisterRequest(
         @NotNull(message = "기수는 필수입니다.")
         Long semesterId
 ) {
-    public Member toEntity(String encodedPin) {
+    public Member toEntity() {
         return Member.builder()
                 .role(this.role)
                 .name(this.name)
@@ -30,7 +30,6 @@ public record MemberRegisterRequest(
                 .email(this.email)
                 .jobFamily(this.jobFamily)
                 .semesterId(this.semesterId)
-                .pin(encodedPin)
                 .build();
     }
 }

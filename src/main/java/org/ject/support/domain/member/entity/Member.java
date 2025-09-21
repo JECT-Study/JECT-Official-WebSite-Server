@@ -9,7 +9,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -64,7 +63,6 @@ public class Member extends BaseTimeEntity {
     private Role role;
 
     @Column(length = 255)
-    @NotNull
     private String pin;
 
     @Column(name = "is_deleted", nullable = false)
