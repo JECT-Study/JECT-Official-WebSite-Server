@@ -8,5 +8,5 @@ public interface MemberQueryRepository {
 
     TeamMemberNames findMemberNamesByTeamId(Long teamId);
 
-    List<String> findEmailsByIdsAndNotApply(List<Long> applicantIds);
+    List<String> findEmailsByIdsAndNotSubmitted(List<Long> applicantIds);
 }

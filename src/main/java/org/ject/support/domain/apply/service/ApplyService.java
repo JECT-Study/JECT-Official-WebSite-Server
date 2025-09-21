@@ -5,9 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.PeriodAccessible;
 import org.ject.support.domain.apply.domain.ApplicationForm;
+import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.dto.ApplyTemporaryResponse;
+import org.ject.support.domain.apply.exception.ApplyErrorCode;
+import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
+import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
@@ -33,6 +37,7 @@ import java.util.Map;
 public class ApplyService implements ApplyUsecase {
     private final TemporaryApplyService temporaryApplyService;
     private final RecruitRepository recruitRepository;
+    private final ApplyRepository applyRepository;
     private final MemberRepository memberRepository;
     private final ApplicationFormRepository applicationFormRepository;
     private final Map2JsonSerializer map2JsonSerializer;
@@ -80,14 +85,18 @@ public class ApplyService implements ApplyUsecase {
         Member applicant = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
-        // 2. jobFamily를 통해 현재 기수 지원양식 id를 가져옴
+        // 2. jobFamily를 통해 현재 기수 지원양식 id 조회
         Recruit recruit = getPeriodRecruit(jobFamily);
 
         // 3. 지원양식과 answers의 key를 비교해 올바른 질문 양식인지 점검
         validateQuestions(answers, recruit);
 
-        // 4. Portfolio와 ApplicationForm 영속화
-        ApplicationForm applicationForm = createApplicationForm(answers, applicant, recruit);
+        // 4. 지원 정보 조회
+        Apply apply = applyRepository.findByMember(applicant)
+                .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
+
+        // 5. Portfolio와 ApplicationForm 영속화
+        ApplicationForm applicationForm = createApplicationForm(answers, apply, recruit);
         portfolios.stream()
                 .map(ApplyPortfolioDto::toEntity)
                 .forEach(applicationForm::addPortfolio);
@@ -117,10 +126,10 @@ public class ApplyService implements ApplyUsecase {
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
 
-    private ApplicationForm createApplicationForm(Map<String, String> answers, Member applicant, Recruit recruit) {
+    private ApplicationForm createApplicationForm(Map<String, String> answers, Apply apply, Recruit recruit) {
         return ApplicationForm.builder()
                 .content(map2JsonSerializer.serializeAsString(answers))
-                .member(applicant)
+                .apply(apply)
                 .recruit(recruit)
                 .build();
     }

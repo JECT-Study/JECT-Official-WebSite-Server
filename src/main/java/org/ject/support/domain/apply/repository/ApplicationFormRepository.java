@@ -11,7 +11,7 @@ public interface ApplicationFormRepository extends JpaRepository<ApplicationForm
 
     @Query("SELECT EXISTS(SELECT 1 FROM ApplicationForm a " +
             "LEFT JOIN a.recruit r " +
-            "WHERE r.startDate <= :now and r.endDate >= :now and a.member.id = :memberId)")
+            "WHERE r.startDate <= :now and r.endDate >= :now and a.apply.member.id = :memberId)")
     boolean existsByMemberId(@Param("memberId") Long memberId,
                              @Param("now") LocalDateTime now);
 }

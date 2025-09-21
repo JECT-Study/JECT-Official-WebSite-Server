@@ -1,7 +1,9 @@
 package org.ject.support.domain.member.repository;
 
 import org.ject.support.domain.apply.domain.ApplicationForm;
+import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
+import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
@@ -24,6 +26,9 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
+import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PD;
@@ -41,6 +46,9 @@ class MemberQueryRepositoryTest {
 
     @Autowired
     private TeamMemberRepository teamMemberRepository;
+
+    @Autowired
+    private ApplyRepository applyRepository;
 
     @Autowired
     private ApplicationFormRepository applicationFormRepository;
@@ -87,12 +95,12 @@ class MemberQueryRepositoryTest {
     @DisplayName("전달 받은 ID 중 지원서를 제출하지 않은 사용자의 이메일 목록 조회")
     void find_emails_by_ids_and_not_apply() {
         // given
-        Member be5 = createMember("이젝트", "01011112231", "be1@test.kr", BE); // 5
-        Member be6 = createMember("박젝트", "01011112232", "be2@test.kr", BE); // 6
-        Member pm7 = createMember("서젝트", "01011112233", "pm1@test.kr", PM); // 7
-        Member fe8 = createMember("양젝트", "01011112234", "fe1@test.kr", FE); // 8
-        Member be9 = createMember("조젝트", "01011112235", "be3@test.kr", BE); // 9
-        Member pd10 = createMember("표젝트", "01011112236", "pd1@test.kr", PD); // 10
+        Member be5 = createMember("이젝트", "01011112231", "be5@test.kr", BE); // 5
+        Member be6 = createMember("박젝트", "01011112232", "be6@test.kr", BE); // 6
+        Member pm7 = createMember("서젝트", "01011112233", "pm7@test.kr", PM); // 7
+        Member fe8 = createMember("양젝트", "01011112234", "fe8@test.kr", FE); // 8
+        Member be9 = createMember("조젝트", "01011112235", "be9@test.kr", BE); // 9
+        Member pd10 = createMember("표젝트", "01011112236", "pd10@test.kr", PD); // 10
         memberRepository.saveAll(List.of(be5, be6, pm7, fe8, be9, pd10));
 
         Recruit pmRecruit = createRecruit(PM);
@@ -101,18 +109,25 @@ class MemberQueryRepositoryTest {
         Recruit beRecruit = createRecruit(BE);
         recruitRepository.saveAll(List.of(pmRecruit, pdRecruit, feRecruit, beRecruit));
 
+        Apply be5Apply = applyRepository.save(createApply(beRecruit, be5, SUBMITTED));
+        applyRepository.save(createApply(beRecruit, be6, JOINED));
+        Apply pm7Apply = applyRepository.save(createApply(pmRecruit, pm7, SUBMITTED));
+        Apply fe8Apply = applyRepository.save(createApply(feRecruit, fe8, SUBMITTED));
+        applyRepository.save(createApply(beRecruit, be9, JOINED));
+        applyRepository.save(createApply(pdRecruit, pd10, TEMP_SAVED));
+
         applicationFormRepository.saveAll(List.of(
-                createApplicationForm(be5, beRecruit),
-                createApplicationForm(pm7, pmRecruit),
-                createApplicationForm(fe8, feRecruit)));
+                createApplicationForm(be5Apply, beRecruit),
+                createApplicationForm(pm7Apply, pmRecruit),
+                createApplicationForm(fe8Apply, feRecruit)));
 
         List<Long> applicantIds = Stream.iterate(1L, id -> id + 1L).limit(10).toList();
 
         // when
-        List<String> result = memberRepository.findEmailsByIdsAndNotApply(applicantIds);
+        List<String> result = memberRepository.findEmailsByIdsAndNotSubmitted(applicantIds);
 
         // then
-        assertThat(result).hasSize(7);
+        assertThat(result).hasSize(3);
     }
 
     private Team createTeam(String name) {
@@ -151,10 +166,18 @@ class MemberQueryRepositoryTest {
                 .build();
     }
 
-    private ApplicationForm createApplicationForm(Member member, Recruit recruit) {
+    private Apply createApply(Recruit recruit, Member member, Apply.Status status) {
+        return applyRepository.save(Apply.builder()
+                .member(member)
+                .recruit(recruit)
+                .status(status)
+                .build());
+    }
+
+    private ApplicationForm createApplicationForm(Apply apply, Recruit recruit) {
         return ApplicationForm.builder()
                 .content("content")
-                .member(member)
+                .apply(apply)
                 .recruit(recruit)
                 .build();
     }
