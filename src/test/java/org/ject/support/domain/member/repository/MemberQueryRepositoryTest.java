@@ -117,9 +117,9 @@ class MemberQueryRepositoryTest {
         applyRepository.save(createApply(pdRecruit, pd10, TEMP_SAVED));
 
         applicationFormRepository.saveAll(List.of(
-                createApplicationForm(be5Apply, beRecruit),
-                createApplicationForm(pm7Apply, pmRecruit),
-                createApplicationForm(fe8Apply, feRecruit)));
+                createApplicationForm(be5Apply),
+                createApplicationForm(pm7Apply),
+                createApplicationForm(fe8Apply)));
 
         List<Long> applicantIds = Stream.iterate(1L, id -> id + 1L).limit(10).toList();
 
@@ -174,11 +174,10 @@ class MemberQueryRepositoryTest {
                 .build());
     }
 
-    private ApplicationForm createApplicationForm(Apply apply, Recruit recruit) {
+    private ApplicationForm createApplicationForm(Apply apply) {
         return ApplicationForm.builder()
                 .content("content")
                 .apply(apply)
-                .recruit(recruit)
                 .build();
     }
 }

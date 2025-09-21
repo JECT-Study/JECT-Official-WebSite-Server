@@ -96,7 +96,7 @@ public class ApplyService implements ApplyUsecase {
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
 
         // 5. Portfolio와 ApplicationForm 영속화
-        ApplicationForm applicationForm = createApplicationForm(answers, apply, recruit);
+        ApplicationForm applicationForm = createApplicationForm(answers, apply);
         portfolios.stream()
                 .map(ApplyPortfolioDto::toEntity)
                 .forEach(applicationForm::addPortfolio);
@@ -126,11 +126,10 @@ public class ApplyService implements ApplyUsecase {
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
 
-    private ApplicationForm createApplicationForm(Map<String, String> answers, Apply apply, Recruit recruit) {
+    private ApplicationForm createApplicationForm(Map<String, String> answers, Apply apply) {
         return ApplicationForm.builder()
                 .content(map2JsonSerializer.serializeAsString(answers))
                 .apply(apply)
-                .recruit(recruit)
                 .build();
     }
 }

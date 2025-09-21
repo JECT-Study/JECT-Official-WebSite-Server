@@ -68,7 +68,6 @@ class ApplicationFormRepositoryTest {
         applicationFormRepository.save(ApplicationForm.builder().
                 content("content")
                 .apply(apply)
-                .recruit(recruit)
                 .portfolios(List.of())
                 .build());
 

@@ -17,7 +17,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.ject.support.domain.base.BaseTimeEntity;
-import org.ject.support.domain.recruit.domain.Recruit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,10 +38,6 @@ public class ApplicationForm extends BaseTimeEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "apply_id", nullable = false)
     private Apply apply;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recruit_id", nullable = false)
-    private Recruit recruit;
 
     @OneToMany(mappedBy = "applicationForm", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sequence asc")
