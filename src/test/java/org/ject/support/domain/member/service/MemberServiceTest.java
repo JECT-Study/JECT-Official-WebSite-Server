@@ -19,7 +19,7 @@ import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
 import org.ject.support.domain.member.dto.MemberRegisterRequest;
 import org.ject.support.domain.member.dto.MemberResponse;
-import org.ject.support.domain.member.dto.MemberUpdateRequest;
+import org.ject.support.domain.member.dto.MemberEditRequest;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -299,7 +299,7 @@ class MemberServiceTest extends UnitTestSupport {
         assertThat(result.phoneNumber()).isEqualTo(TEST_PHONE_NUMBER);
         assertThat(result.jobFamily()).isEqualTo(JobFamily.BE);
         assertThat(result.role()).isEqualTo(Role.SEMESTER);
-        assertThat(result.semesterName()).isEqualTo("1기");
+        assertThat(result.semesterId()).isEqualTo(1L);
         
         verify(memberRepository).findById(memberId);
         verify(semesterRepository).findById(semesterId);
@@ -359,7 +359,6 @@ class MemberServiceTest extends UnitTestSupport {
         );
 
         given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
-        given(passwordEncoder.encode(any(String.class))).willReturn(TEST_ENCODED_PIN);
         given(memberRepository.save(any(Member.class))).willReturn(any(Member.class));
 
         // when
@@ -367,7 +366,6 @@ class MemberServiceTest extends UnitTestSupport {
 
         // then
         verify(memberRepository).existsByEmail(TEST_EMAIL);
-        verify(passwordEncoder).encode(any(String.class));
         verify(memberRepository).save(any(Member.class));
     }
 
@@ -398,7 +396,7 @@ class MemberServiceTest extends UnitTestSupport {
     void 회원_정보_수정_성공() {
         // given
         var memberId = 1L;
-        var request = MemberUpdateRequest.builder()
+        var request = MemberEditRequest.builder()
                 .role(Role.SEMESTER)
                 .name("수정된이름")
                 .phoneNumber("01087654321")
@@ -420,7 +418,7 @@ class MemberServiceTest extends UnitTestSupport {
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
 
         // when
-        memberService.updateMember(memberId, request);
+        memberService.editMember(memberId, request);
 
         // then
         verify(memberRepository).findById(memberId);
@@ -435,7 +433,7 @@ class MemberServiceTest extends UnitTestSupport {
     void 회원_정보_수정_실패_존재하지_않는_회원() {
         // given
         var memberId = 999L;
-        var request = MemberUpdateRequest.builder()
+        var request = MemberEditRequest.builder()
                 .role(Role.SEMESTER)
                 .name("수정된이름")
                 .phoneNumber("01087654321")
@@ -447,7 +445,7 @@ class MemberServiceTest extends UnitTestSupport {
         given(memberRepository.findById(memberId)).willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> memberService.updateMember(memberId, request))
+        assertThatThrownBy(() -> memberService.editMember(memberId, request))
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
