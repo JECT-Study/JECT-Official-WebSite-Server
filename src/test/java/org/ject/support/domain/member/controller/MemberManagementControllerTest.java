@@ -23,7 +23,7 @@ import org.ject.support.domain.member.dto.MemberBulkDeleteRequest;
 import org.ject.support.domain.member.dto.MemberDetailResponse;
 import org.ject.support.domain.member.dto.MemberRegisterRequest;
 import org.ject.support.domain.member.dto.MemberResponse;
-import org.ject.support.domain.member.dto.MemberUpdateRequest;
+import org.ject.support.domain.member.dto.MemberEditRequest;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.service.MemberService;
@@ -177,7 +177,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber(TEST_PHONE_NUMBER)
                 .email(TEST_EMAIL)
                 .jobFamily(JobFamily.BE)
-                .semesterName("1기")
+                .semesterId(1L)
                 .build();
 
         given(memberService.findMemberDetail(memberId)).willReturn(response);
@@ -336,7 +336,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
     void 회원_정보_수정_성공() throws Exception {
         // given
         var memberId = 1L;
-        var request = MemberUpdateRequest.builder()
+        var request = MemberEditRequest.builder()
                 .role(Role.SEMESTER)
                 .name("수정된이름")
                 .phoneNumber("01087654321")
@@ -345,7 +345,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .semesterId(2L)
                 .build();
 
-        doNothing().when(memberService).updateMember(eq(memberId), any(MemberUpdateRequest.class));
+        doNothing().when(memberService).editMember(eq(memberId), any(MemberEditRequest.class));
 
         // expected
         mockMvc.perform(put("/admin/members/{memberId}", memberId)
@@ -354,14 +354,14 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .andExpect(status().isOk())
                 .andDo(print());
 
-        verify(memberService).updateMember(eq(memberId), any(MemberUpdateRequest.class));
+        verify(memberService).editMember(eq(memberId), any(MemberEditRequest.class));
     }
 
     @Test
     void 회원_정보_수정_실패_존재하지_않는_회원() throws Exception {
         // given
         var nonExistentMemberId = 999L;
-        var request = MemberUpdateRequest.builder()
+        var request = MemberEditRequest.builder()
                 .role(Role.SEMESTER)
                 .name("수정된이름")
                 .phoneNumber("01087654321")
@@ -371,7 +371,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .build();
 
         doThrow(new MemberException(MemberErrorCode.NOT_FOUND_MEMBER))
-                .when(memberService).updateMember(eq(nonExistentMemberId), any(MemberUpdateRequest.class));
+                .when(memberService).editMember(eq(nonExistentMemberId), any(MemberEditRequest.class));
 
         // expected
         mockMvc.perform(put("/admin/members/{memberId}", nonExistentMemberId)
@@ -385,14 +385,14 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 )
                 .andDo(print());
 
-        verify(memberService).updateMember(eq(nonExistentMemberId), any(MemberUpdateRequest.class));
+        verify(memberService).editMember(eq(nonExistentMemberId), any(MemberEditRequest.class));
     }
 
     @Test
     void 회원_정보_수정_실패_유효하지_않은_데이터() throws Exception {
         // given
         var memberId = 1L;
-        var request = MemberUpdateRequest.builder()
+        var request = MemberEditRequest.builder()
                 .role(Role.SEMESTER)
                 .name("") // 빈 이름
                 .phoneNumber("invalid-phone") // 유효하지 않은 전화번호
