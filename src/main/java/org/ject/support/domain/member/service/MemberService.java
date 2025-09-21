@@ -149,9 +149,7 @@ public class MemberService {
 
     @Transactional
     public void deleteMembers(final List<Long> memberIds) {
-        var members = memberRepository.findAllById(memberIds)
-                .stream()
-                .toList();
+        var members = memberRepository.findAllById(memberIds);
 
         if (members.size() != memberIds.size()) {
             throw new MemberException(MemberErrorCode.NOT_FOUND_MEMBER);
