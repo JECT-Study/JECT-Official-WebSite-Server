@@ -135,8 +135,13 @@ public class MemberService {
                              final MemberEditRequest request) {
         var member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-
         var editorBuilder = member.toEditor();
+
+        if (request.semesterId() != null) {
+            var semester = semesterRepository.findById(request.semesterId())
+                    .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
+            editorBuilder.semesterId(semester.getId());
+        }
 
         var editor = editorBuilder
                 .name(request.name())

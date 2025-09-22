@@ -415,7 +415,13 @@ class MemberServiceTest extends UnitTestSupport {
                 .semesterId(1L)
                 .build();
 
+        var semester = Semester.builder()
+                .id(2L)
+                .name("2기")
+                .build();
+
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(semesterRepository.findById(2L)).willReturn(Optional.of(semester)); // 누락된 Mock 설정 추가
 
         // when
         memberService.editMember(memberId, request);

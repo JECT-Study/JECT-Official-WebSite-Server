@@ -20,7 +20,6 @@ public record MemberEditRequest(
         String email,
         @NotNull(message = "포지션은 필수입니다.")
         JobFamily jobFamily,
-        @NotNull(message = "기수는 필수입니다.")
         Long semesterId
 ) {
 }
