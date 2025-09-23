@@ -9,7 +9,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -17,6 +16,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
@@ -25,6 +26,8 @@ import org.ject.support.domain.member.Role;
 import java.util.ArrayList;
 import java.util.List;
 
+@SQLDelete(sql = "UPDATE member SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 @Entity
 @Getter
 @Builder
@@ -59,8 +62,11 @@ public class Member extends BaseTimeEntity {
     private Role role;
 
     @Column(length = 255)
-    @NotNull
     private String pin;
+
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
 
     @Setter
     @Enumerated(EnumType.STRING)
@@ -83,5 +89,24 @@ public class Member extends BaseTimeEntity {
 
     public boolean isInitialed() {
         return this.name != null && this.phoneNumber != null;
+    }
+
+    public MemberEditor.MemberEditorBuilder toEditor() {
+        return MemberEditor.builder()
+                .name(this.name)
+                .phoneNumber(this.phoneNumber)
+                .email(this.email)
+                .semesterId(this.semesterId)
+                .jobFamily(this.jobFamily)
+                .role(this.role);
+    }
+
+    public void edit(MemberEditor editor) {
+        this.name = editor.name();
+        this.phoneNumber = editor.phoneNumber();
+        this.email = editor.email();
+        this.semesterId = editor.semesterId();
+        this.jobFamily = editor.jobFamily();
+        this.role = editor.role();
     }
 }

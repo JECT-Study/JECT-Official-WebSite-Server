@@ -1,0 +1,2 @@
+ALTER TABLE member
+    MODIFY pin VARCHAR(255) NULL;
