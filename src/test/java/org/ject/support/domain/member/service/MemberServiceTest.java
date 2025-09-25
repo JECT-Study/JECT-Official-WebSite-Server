@@ -299,7 +299,7 @@ class MemberServiceTest extends UnitTestSupport {
         assertThat(result.phoneNumber()).isEqualTo(TEST_PHONE_NUMBER);
         assertThat(result.jobFamily()).isEqualTo(JobFamily.BE);
         assertThat(result.role()).isEqualTo(Role.SEMESTER);
-        assertThat(result.semesterId()).isEqualTo(1L);
+        assertThat(result.semesterName()).isEqualTo("1");
         
         verify(memberRepository).findById(memberId);
         verify(semesterRepository).findById(semesterId);
@@ -355,10 +355,16 @@ class MemberServiceTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
-                1L
+                "1"
         );
 
+        var semester = Semester.builder()
+                .id(1L)
+                .name("1기")
+                .build();
+
         given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
+        given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
         given(memberRepository.save(any(Member.class))).willReturn(any(Member.class));
 
         // when
@@ -366,6 +372,7 @@ class MemberServiceTest extends UnitTestSupport {
 
         // then
         verify(memberRepository).existsByEmail(TEST_EMAIL);
+        verify(semesterRepository).findByName("1기");
         verify(memberRepository).save(any(Member.class));
     }
 
@@ -378,7 +385,7 @@ class MemberServiceTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
-                1L
+                "1"
         );
 
         given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(true);
@@ -402,7 +409,7 @@ class MemberServiceTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@test.com")
                 .jobFamily(JobFamily.FE)
-                .semesterId(2L)
+                .semesterName("1")
                 .build();
 
         var member = Member.builder()
@@ -416,12 +423,12 @@ class MemberServiceTest extends UnitTestSupport {
                 .build();
 
         var semester = Semester.builder()
-                .id(2L)
-                .name("2기")
+                .id(1L)
+                .name("1기")
                 .build();
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(semesterRepository.findById(2L)).willReturn(Optional.of(semester)); // 누락된 Mock 설정 추가
+        given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
 
         // when
         memberService.editMember(memberId, request);
@@ -432,7 +439,7 @@ class MemberServiceTest extends UnitTestSupport {
         assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
         assertThat(member.getEmail()).isEqualTo(request.email());
         assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
-        assertThat(member.getSemesterId()).isEqualTo(request.semesterId());
+        assertThat(member.getSemesterId()).isEqualTo(semester.getId());
     }
 
     @Test
@@ -445,7 +452,7 @@ class MemberServiceTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@test.com")
                 .jobFamily(JobFamily.FE)
-                .semesterId(2L)
+                .semesterName("2")
                 .build();
 
         given(memberRepository.findById(memberId)).willReturn(Optional.empty());

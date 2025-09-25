@@ -14,7 +14,7 @@ public record MemberDetailResponse(
         String phoneNumber,
         String email,
         JobFamily jobFamily,
-        Long semesterId
+        String semesterName
 ) {
     public static MemberDetailResponse toResponse(
             Member member,
@@ -27,7 +27,7 @@ public record MemberDetailResponse(
                 .phoneNumber(member.getPhoneNumber())
                 .email(member.getEmail())
                 .jobFamily(member.getJobFamily())
-                .semesterId(semester.getId())
+                .semesterName(semester.getName().replaceAll("\\D", ""))
                 .build();
     }
 }
