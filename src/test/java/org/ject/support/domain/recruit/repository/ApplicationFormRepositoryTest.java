@@ -11,6 +11,7 @@ import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,14 +38,22 @@ class ApplicationFormRepositoryTest {
     @Autowired
     ApplicationFormRepository applicationFormRepository;
 
+    @Autowired
+    SemesterRepository semesterRepository;
+
     @Test
     @DisplayName("지원서 제출 여부 확인")
     void check_apply_submit() {
         // given
+        Semester savedSemester = semesterRepository.save(Semester.builder()
+                .name("1기")
+                .isRecruiting(true)
+                .build());
+
         Recruit recruit = recruitRepository.save(Recruit.builder()
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
-                .semesterId(1L)
+                .semester(savedSemester)
                 .jobFamily(JobFamily.BE)
                 .build());
 

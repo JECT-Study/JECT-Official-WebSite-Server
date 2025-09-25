@@ -2,6 +2,7 @@ package org.ject.support.domain.recruit.service;
 
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.testconfig.IntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ class RecruitFlagServiceTest {
     void set_recruit_flag() {
         // given
         Recruit recruit = Recruit.builder()
-                .semesterId(1L)
+                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))

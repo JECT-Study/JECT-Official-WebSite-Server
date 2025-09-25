@@ -12,7 +12,9 @@ import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.Team;
 import org.ject.support.domain.member.entity.TeamMember;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,6 +57,9 @@ class MemberQueryRepositoryTest {
 
     @Autowired
     private RecruitRepository recruitRepository;
+
+    @Autowired
+    private SemesterRepository semesterRepository;
 
     private Team teamA;
     private Member pd1, fe1, be1, be2;
@@ -103,10 +108,14 @@ class MemberQueryRepositoryTest {
         Member pd10 = createMember("표젝트", "01011112236", "pd10@test.kr", PD); // 10
         memberRepository.saveAll(List.of(be5, be6, pm7, fe8, be9, pd10));
 
-        Recruit pmRecruit = createRecruit(PM);
-        Recruit pdRecruit = createRecruit(PD);
-        Recruit feRecruit = createRecruit(FE);
-        Recruit beRecruit = createRecruit(BE);
+        Semester savedSemester = semesterRepository.save(Semester.builder()
+                .name("1기")
+                .isRecruiting(true)
+                .build());
+        Recruit pmRecruit = createRecruit(savedSemester, PM);
+        Recruit pdRecruit = createRecruit(savedSemester, PD);
+        Recruit feRecruit = createRecruit(savedSemester, FE);
+        Recruit beRecruit = createRecruit(savedSemester, BE);
         recruitRepository.saveAll(List.of(pmRecruit, pdRecruit, feRecruit, beRecruit));
 
         Apply be5Apply = applyRepository.save(createApply(beRecruit, be5, SUBMITTED));
@@ -157,9 +166,9 @@ class MemberQueryRepositoryTest {
                 .build();
     }
 
-    private Recruit createRecruit(JobFamily jobFamily) {
+    private Recruit createRecruit(Semester semester, JobFamily jobFamily) {
         return Recruit.builder()
-                .semesterId(1L)
+                .semester(semester)
                 .jobFamily(jobFamily)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))

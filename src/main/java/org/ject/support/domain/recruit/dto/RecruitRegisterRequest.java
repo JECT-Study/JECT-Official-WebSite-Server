@@ -1,11 +1,12 @@
 package org.ject.support.domain.recruit.dto;
 
-import java.time.LocalDateTime;
-
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
+
+import java.time.LocalDateTime;
 
 public record RecruitRegisterRequest(
         @NotNull(message = "직군은 필수입니다.")
@@ -18,9 +19,9 @@ public record RecruitRegisterRequest(
         @Future(message = "모집 종료일은 현재 시각보다 이후여야 합니다.")
         LocalDateTime endDate
 ) {
-    public Recruit toEntity(Long ongoingSemesterId) {
+    public Recruit toEntity(Semester semester) {
         return Recruit.builder()
-                .semesterId(ongoingSemesterId)
+                .semester(semester)
                 .jobFamily(this.jobFamily)
                 .startDate(this.startDate)
                 .endDate(this.endDate)

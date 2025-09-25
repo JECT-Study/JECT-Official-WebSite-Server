@@ -3,6 +3,7 @@ package org.ject.support.domain.recruit.repository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.QuestionResponse;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;
@@ -30,13 +31,21 @@ class QuestionQueryRepositoryTest {
     @Autowired
     private RecruitRepository recruitRepository;
 
+    @Autowired
+    private SemesterRepository semesterRepository;
+
     @Test
     @DisplayName("현재 모집중인 직군의 지원서 문항 조회")
     void find_by_job_family() {
         // given
+        Semester savedSemester = semesterRepository.save(Semester.builder()
+                .name("1기")
+                .isRecruiting(true)
+                .build());
+
         LocalDateTime now = LocalDateTime.now();
-        Recruit feRecruit = createRecruit(now, FE);
-        Recruit beRecruit = createRecruit(now, BE);
+        Recruit feRecruit = createRecruit(savedSemester, now, FE);
+        Recruit beRecruit = createRecruit(savedSemester, now, BE);
         recruitRepository.saveAll(List.of(feRecruit, beRecruit));
 
         Question feQuestion1 = createQuestion(1, TEXT, feRecruit);
@@ -61,8 +70,13 @@ class QuestionQueryRepositoryTest {
         // given
         List<String> selectOptions = List.of("재직", "재학", "졸업", "휴학");
 
+        Semester savedSemester = semesterRepository.save(Semester.builder()
+                .name("1기")
+                .isRecruiting(true)
+                .build());
+
         LocalDateTime now = LocalDateTime.now();
-        Recruit recruit = createRecruit(now, FE);
+        Recruit recruit = createRecruit(savedSemester, now, FE);
         recruitRepository.save(recruit);
 
         Question question = Question.builder()
@@ -84,9 +98,9 @@ class QuestionQueryRepositoryTest {
         assertThat(found.getSelectOptions()).containsExactly("재직", "재학", "졸업", "휴학");
     }
 
-    private Recruit createRecruit(LocalDateTime now, JobFamily be) {
+    private Recruit createRecruit(Semester semester, LocalDateTime now, JobFamily be) {
         return Recruit.builder()
-                .semesterId(1L)
+                .semester(semester)
                 .startDate(now.minusDays(1))
                 .endDate(now.plusDays(1))
                 .jobFamily(be)

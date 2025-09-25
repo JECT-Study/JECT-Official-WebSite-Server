@@ -9,7 +9,9 @@ import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
 import org.ject.support.external.dynamodb.domain.CompositeKey;
@@ -62,6 +64,9 @@ class ApplyControllerTest extends ApplicationPeriodTest {
     @Autowired
     ApplicationFormRepository applicationFormRepository;
 
+    @Autowired
+    SemesterRepository semesterRepository;
+
     Member member;
 
     @BeforeEach
@@ -74,10 +79,15 @@ class ApplyControllerTest extends ApplicationPeriodTest {
                 Question.builder().sequence(5).inputType(TEXT).isRequired(true).title("title5").label("label5").build()
         );
 
+        Semester savedSemester = semesterRepository.save(Semester.builder()
+                .name("1기")
+                .isRecruiting(true)
+                .build());
+
         Recruit recruit = Recruit.builder()
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
-                .semesterId(1L)
+                .semester(savedSemester)
                 .jobFamily(JobFamily.BE)
                 .build();
 
