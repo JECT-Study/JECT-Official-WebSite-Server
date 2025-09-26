@@ -63,7 +63,6 @@ class ApplicationFormRepositoryTest {
                 .name("김젝트")
                 .role(Role.SEMESTER)
                 .phoneNumber("01012345678")
-                .semesterId(1L)
                 .pin("123456") // PIN 필드 추가
                 .status(MemberStatus.ACTIVE)
                 .build());

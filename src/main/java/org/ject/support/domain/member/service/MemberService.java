@@ -1,9 +1,6 @@
 package org.ject.support.domain.member.service;
 
-import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
-
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
@@ -16,6 +13,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
 
 @Service
 @RequiredArgsConstructor
@@ -55,8 +54,10 @@ public class MemberService {
      */
     private Member createTempMemberWithPin(RegisterRequest registerRequest, String email) {
         String encodedPin = passwordEncoder.encode(registerRequest.pin());
-        Long ongoingSemesterId = ongoingSemesterProvider.getOngoingSemesterId();
-        Member member = registerRequest.toEntity(email, encodedPin, ongoingSemesterId);
+
+        // Apply 생성
+
+        Member member = registerRequest.toEntity(email, encodedPin);
 
         return memberRepository.save(member);
     }

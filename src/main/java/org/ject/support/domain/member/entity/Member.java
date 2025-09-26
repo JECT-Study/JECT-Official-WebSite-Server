@@ -47,9 +47,6 @@ public class Member extends BaseTimeEntity {
     @Column(length = 30, nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
-    private Long semesterId;
-
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(45)")
     private JobFamily jobFamily;
