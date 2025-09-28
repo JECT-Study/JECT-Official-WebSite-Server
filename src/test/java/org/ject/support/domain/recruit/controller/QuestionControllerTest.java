@@ -88,6 +88,7 @@ class QuestionControllerTest {
 
         member = Member.builder()
                 .email("test32@gmail.com")
+                .semesterId(1L)
                 .jobFamily(JobFamily.BE)
                 .name("김젝트")
                 .role(Role.SEMESTER)

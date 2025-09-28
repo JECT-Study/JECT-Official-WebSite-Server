@@ -55,6 +55,7 @@ class FileControllerTest extends ApplicationPeriodTest {
     void setUp() {
         member = Member.builder()
                 .email("test32@gmail.com")
+                .semesterId(1L)
                 .jobFamily(JobFamily.BE)
                 .name("홍길동") // 한글 1~5글자로 수정
                 .role(Role.SEMESTER)

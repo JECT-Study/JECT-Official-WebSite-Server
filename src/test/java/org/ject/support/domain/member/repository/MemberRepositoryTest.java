@@ -56,6 +56,7 @@ class MemberRepositoryTest {
                 .name(name)
                 .phoneNumber(phoneNumber)
                 .email(email)
+                .semesterId(1L)
                 .jobFamily(jobFamily)
                 .role(role)
                 .pin("123456")

@@ -1,0 +1,2 @@
+ALTER TABLE member
+    ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT false;

@@ -2,17 +2,28 @@ package org.ject.support.domain.member.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.Role;
+import org.ject.support.domain.member.dto.MemberDetailResponse;
 import org.ject.support.domain.member.dto.MemberDto;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
+import org.ject.support.domain.member.dto.MemberEditRequest;
+import org.ject.support.domain.member.dto.MemberRegisterRequest;
+import org.ject.support.domain.member.dto.MemberResponse;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.recruit.repository.SemesterRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
 
@@ -21,6 +32,7 @@ import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_E
 public class MemberService {
 
     private final MemberRepository memberRepository;
+    private final SemesterRepository semesterRepository;
     private final OngoingSemesterProvider ongoingSemesterProvider;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
@@ -89,5 +101,77 @@ public class MemberService {
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
         return member.isInitialed();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<MemberResponse> findMembers(
+            final Role role,
+            final JobFamily jobFamily,
+            final Long semesterId,
+            final Pageable pageable
+    ) {
+        return memberRepository.findMembers(role, jobFamily, semesterId, pageable);
+    }
+
+    @Transactional(readOnly = true)
+    public MemberDetailResponse findMemberDetail(final Long memberId) {
+        var member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
+        var semesterId = member.getSemesterId();
+        var semester = semesterRepository.findById(semesterId)
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
+        return MemberDetailResponse.toResponse(member, semester);
+    }
+
+    @Transactional
+    public void registerMember(final MemberRegisterRequest request) {
+        if (memberRepository.existsByEmail(request.email())) {
+            throw new MemberException(ALREADY_EXIST_MEMBER);
+        }
+
+        var member = request.toEntity();
+        memberRepository.save(member);
+    }
+
+    @Transactional
+    public void editMember(final Long memberId,
+                           final MemberEditRequest request) {
+        var member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
+        var editorBuilder = member.toEditor();
+
+        if (request.semesterId() != null) {
+            var semester = semesterRepository.findById(request.semesterId())
+                    .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
+            editorBuilder.semesterId(semester.getId());
+        }
+
+        var editor = editorBuilder
+                .name(request.name())
+                .phoneNumber(request.phoneNumber())
+                .email(request.email())
+                .semesterId(request.semesterId())
+                .jobFamily(request.jobFamily())
+                .role(request.role())
+                .build();
+
+        member.edit(editor);
+    }
+
+    @Transactional
+    public void deleteMember(final Long memberId) {
+        var member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
+        memberRepository.delete(member);
+    }
+
+    @Transactional
+    public void deleteMembers(final List<Long> memberIds) {
+        var members = memberRepository.findAllById(memberIds);
+
+        if (members.size() != memberIds.size()) {
+            throw new MemberException(MemberErrorCode.NOT_FOUND_MEMBER);
+        }
+        memberRepository.deleteAll(members);
     }
 }
