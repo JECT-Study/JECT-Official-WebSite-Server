@@ -59,7 +59,7 @@ class ApplicationFormRepositoryTest {
 
         Member member = memberRepository.save(Member.builder()
                 .email("test32@gmail.com")
-                .semesterId(1L)
+                .semesterId(savedSemester.getId())
                 .jobFamily(JobFamily.BE)
                 .name("김젝트")
                 .role(Role.SEMESTER)
