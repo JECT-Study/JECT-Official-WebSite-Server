@@ -228,7 +228,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
-                "1"
+                "1기"
         );
 
         doNothing().when(memberService).registerMember(any(MemberRegisterRequest.class));
@@ -312,7 +312,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
-                "1"
+                "1기"
         );
 
         doThrow(new MemberException(MemberErrorCode.ALREADY_EXIST_MEMBER))
@@ -343,7 +343,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@example.com")
                 .jobFamily(JobFamily.FE)
-                .semesterName("1")
+                .semesterName("1기")
                 .build();
 
         doNothing().when(memberService).editMember(eq(memberId), any(MemberEditRequest.class));
@@ -368,7 +368,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@example.com")
                 .jobFamily(JobFamily.FE)
-                .semesterName("1")
+                .semesterName("1기")
                 .build();
 
         doThrow(new MemberException(MemberErrorCode.NOT_FOUND_MEMBER))
@@ -399,7 +399,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber("invalid-phone") // 유효하지 않은 전화번호
                 .email("invalid-email") // 유효하지 않은 이메일
                 .jobFamily(JobFamily.FE)
-                .semesterName("1")
+                .semesterName("1기")
                 .build();
 
         // expected

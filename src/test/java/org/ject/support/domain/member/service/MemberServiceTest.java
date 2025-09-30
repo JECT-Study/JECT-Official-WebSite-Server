@@ -355,7 +355,7 @@ class MemberServiceTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
-                "1"
+                "1기"
         );
 
         var semester = Semester.builder()
@@ -409,7 +409,7 @@ class MemberServiceTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@test.com")
                 .jobFamily(JobFamily.FE)
-                .semesterName("1")
+                .semesterName("1기")
                 .build();
 
         var member = Member.builder()

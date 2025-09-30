@@ -126,8 +126,7 @@ public class MemberService {
             throw new MemberException(ALREADY_EXIST_MEMBER);
         }
 
-        var semesterName = resolveSemesterName(request.semesterName());
-        var semester = semesterRepository.findByName(semesterName)
+        var semester = semesterRepository.findByName(request.semesterName())
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
 
         var member = request.toEntity(semester);
@@ -145,8 +144,7 @@ public class MemberService {
         var editorBuilder = member.toEditor();
 
         if (request.semesterName() != null) {
-            var semesterName = resolveSemesterName(request.semesterName());
-            var semester = semesterRepository.findByName(semesterName)
+            var semester = semesterRepository.findByName(request.semesterName())
                     .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
             editorBuilder.semesterId(semester.getId());
         }
@@ -187,9 +185,5 @@ public class MemberService {
         if (memberRepository.existsByEmail(newEmail)) {
             throw new MemberException(MemberErrorCode.DUPLICATE_EMAIL);
         }
-    }
-
-    private String resolveSemesterName(String semesterName) {
-        return semesterName + "기";
     }
 }
