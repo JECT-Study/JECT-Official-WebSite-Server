@@ -33,7 +33,6 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final SemesterRepository semesterRepository;
-    private final OngoingSemesterProvider ongoingSemesterProvider;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
 

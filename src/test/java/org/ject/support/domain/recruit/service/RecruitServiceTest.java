@@ -2,7 +2,6 @@ package org.ject.support.domain.recruit.service;
 
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.member.service.OngoingSemesterProvider;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
@@ -39,9 +38,6 @@ class RecruitServiceTest extends UnitTestSupport {
 
     @Mock
     SemesterRepository semesterRepository;
-
-    @Mock
-    OngoingSemesterProvider ongoingSemesterProvider;
 
     @Mock
     ApplicationEventPublisher eventPublisher;
