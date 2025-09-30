@@ -1,11 +1,3 @@
--- application_form 테이블에서 member, recruit 테이블에 대한 외래키 제약조건 제거
-ALTER TABLE application_form DROP FOREIGN KEY FK7jm1xris1t3nyf2dc224preli;
-ALTER TABLE application_form DROP FOREIGN KEY FKclurj75mp69f2y3m05bhs1ad6;
-
--- application_form 테이블에서 member_id, recruit_id 컬럼 제거
-ALTER TABLE application_form DROP COLUMN member_id;
-ALTER TABLE application_form DROP COLUMN recruit_id;
-
 -- apply 테이블 생성
 CREATE TABLE IF NOT EXISTS apply
 (
@@ -20,10 +12,29 @@ CREATE TABLE IF NOT EXISTS apply
     CONSTRAINT fk_apply_recruit FOREIGN KEY (recruit_id) REFERENCES recruit (id) ON DELETE NO ACTION
     ) ENGINE = InnoDB;
 
--- application_form 테이블에 apply_id 컬럼 추가 및 외래키 설정
+-- application_form 테이블에 apply_id 컬럼 추가
+ALTER TABLE application_form ADD COLUMN apply_id BIGINT,
+
+-- 기존 member_id/recruit_id 기반으로 apply 레코드 생성 및 매핑
+INSERT INTO apply (member_id, recruit_id, status, created_at, updated_at)
+    SELECT member_id, recruit_id, 'SUBMITTED', created_at, updated_at FROM application_form;
+
+UPDATE application_form af JOIN apply a ON a.member_id = af.member_id AND a.recruit_id = af.recruit_id
+    SET af.apply_id = a.id;
+
+-- application_form 테이블의 apply_id 컬럼에 NOT NULL 제약 조건 명시, 외래키 설정
 ALTER TABLE application_form
-    ADD COLUMN apply_id BIGINT NOT NULL,
+    MODIFY apply_id BIGINT NOT NULL,
     ADD CONSTRAINT fk_application_form_apply FOREIGN KEY (apply_id) REFERENCES apply (id) ON DELETE NO ACTION;
 
+-- application_form 테이블에서 member, recruit 테이블에 대한 외래키 제약조건 제거
+ALTER TABLE application_form DROP FOREIGN KEY FK7jm1xris1t3nyf2dc224preli;
+ALTER TABLE application_form DROP FOREIGN KEY FKclurj75mp69f2y3m05bhs1ad6;
+
+-- application_form 테이블에서 member_id, recruit_id 컬럼 제거
+ALTER TABLE application_form DROP COLUMN member_id;
+ALTER TABLE application_form DROP COLUMN recruit_id;
+
 -- recruit 테이블에 semester_id 컬럼 추가 및 외래키 설정
-ALTER TABLE recruit ADD CONSTRAINT fk_recruit_semester FOREIGN KEY (semester_id) REFERENCES semester (id) ON DELETE NO ACTION;
+ALTER TABLE recruit
+    ADD CONSTRAINT fk_recruit_semester FOREIGN KEY (semester_id) REFERENCES semester (id) ON DELETE NO ACTION;
