@@ -10,10 +10,10 @@ CREATE TABLE IF NOT EXISTS apply
     CONSTRAINT pk_apply PRIMARY KEY (id),
     CONSTRAINT fk_apply_member FOREIGN KEY (member_id) REFERENCES member (id) ON DELETE NO ACTION,
     CONSTRAINT fk_apply_recruit FOREIGN KEY (recruit_id) REFERENCES recruit (id) ON DELETE NO ACTION
-    ) ENGINE = InnoDB;
+) ENGINE = InnoDB;
 
 -- application_form 테이블에 apply_id 컬럼 추가
-ALTER TABLE application_form ADD COLUMN apply_id BIGINT,
+ALTER TABLE application_form ADD COLUMN apply_id BIGINT;
 
 -- 기존 member_id/recruit_id 기반으로 apply 레코드 생성 및 매핑
 INSERT INTO apply (member_id, recruit_id, status, created_at, updated_at)
