@@ -14,7 +14,23 @@ public record MemberResponse(
         String semesterName
 ) {
     @QueryProjection
-    public MemberResponse {
-        // 필요에 따라 추가 검증 로직 구현
+    public MemberResponse(
+            Long id,
+            String name,
+            String phoneNumber,
+            String email,
+            JobFamily jobFamily,
+            String semesterName
+    ) {
+        this.id = id;
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+        this.email = email;
+        this.jobFamily = jobFamily;
+        if (semesterName != null) {
+            this.semesterName = semesterName.replaceAll("\\D", "");
+        } else {
+            this.semesterName = "";
+        }
     }
 }
