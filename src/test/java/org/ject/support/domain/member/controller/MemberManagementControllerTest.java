@@ -143,7 +143,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                         .phoneNumber(TEST_PHONE_NUMBER)
                         .email(TEST_EMAIL)
                         .jobFamily(JobFamily.BE)
-                        .semesterName("1기")
+                        .semesterName("1")
                         .build()
         );
         var mockPage = new PageImpl<>(memberList, pageable, 1);
@@ -160,7 +160,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[0].semesterName").value("1기"))
+                .andExpect(jsonPath("$.content[0].semesterName").value("1"))
                 .andDo(print());
 
         verify(memberService).findMembers(eq(Role.SEMESTER), eq(null), eq(semesterId), any(Pageable.class));
@@ -177,7 +177,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber(TEST_PHONE_NUMBER)
                 .email(TEST_EMAIL)
                 .jobFamily(JobFamily.BE)
-                .semesterId(1L)
+                .semesterName("1")
                 .build();
 
         given(memberService.findMemberDetail(memberId)).willReturn(response);
@@ -189,8 +189,9 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.id").value(memberId))
                 .andExpect(jsonPath("$.name").value(TEST_NAME))
                 .andExpect(jsonPath("$.email").value(TEST_EMAIL))
-                .andExpect(jsonPath("$.role").value("SEMESTER"))
-                .andExpect(jsonPath("$.jobFamily").value("BE"))
+                .andExpect(jsonPath("$.role").value(Role.SEMESTER.name()))
+                .andExpect(jsonPath("$.jobFamily").value(JobFamily.BE.name()))
+                .andExpect(jsonPath("$.semesterName").value("1"))
                 .andDo(print());
 
         verify(memberService).findMemberDetail(memberId);
@@ -227,7 +228,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
-                1L
+                "1기"
         );
 
         doNothing().when(memberService).registerMember(any(MemberRegisterRequest.class));
@@ -251,7 +252,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 "123456789", // 유효하지 않은 전화번호
                 TEST_EMAIL,
                 JobFamily.BE,
-                1L
+                "1"
         );
 
         // expected
@@ -271,7 +272,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 "invalid-email", // 유효하지 않은 이메일
                 JobFamily.BE,
-                1L
+                "1"
         );
 
         // expected
@@ -291,7 +292,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
-                1L
+                "1"
         );
 
         // expected
@@ -311,7 +312,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
-                1L
+                "1기"
         );
 
         doThrow(new MemberException(MemberErrorCode.ALREADY_EXIST_MEMBER))
@@ -342,7 +343,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@example.com")
                 .jobFamily(JobFamily.FE)
-                .semesterId(2L)
+                .semesterName("1기")
                 .build();
 
         doNothing().when(memberService).editMember(eq(memberId), any(MemberEditRequest.class));
@@ -367,7 +368,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@example.com")
                 .jobFamily(JobFamily.FE)
-                .semesterId(2L)
+                .semesterName("1기")
                 .build();
 
         doThrow(new MemberException(MemberErrorCode.NOT_FOUND_MEMBER))
@@ -398,7 +399,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber("invalid-phone") // 유효하지 않은 전화번호
                 .email("invalid-email") // 유효하지 않은 이메일
                 .jobFamily(JobFamily.FE)
-                .semesterId(2L)
+                .semesterName("1기")
                 .build();
 
         // expected

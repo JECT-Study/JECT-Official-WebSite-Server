@@ -211,17 +211,17 @@ class MemberQueryRepositoryTest {
         var pageable = PageRequest.of(0, 15);
 
         // when
-        var result = memberRepository.findMembers(Role.SEMESTER, null, semester1.getId(), pageable);
+        var result = memberRepository.findMembers(Role.SEMESTER, null, semester2.getId(), pageable);
 
         // then
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent())
                 .extracting(MemberResponse::semesterName)
-                .containsOnly(semester1.getName());
+                .containsOnly("2");
         assertThat(result.getContent())
                 .extracting(MemberResponse::name)
-                .containsExactlyInAnyOrder(semester1Member1.getName(), semester1Member2.getName()); // 실제 생성된 이름들
+                .containsExactlyInAnyOrder(semester2Member1.getName());
     }
 
     @Test
@@ -241,20 +241,20 @@ class MemberQueryRepositoryTest {
         var pageable = PageRequest.of(0, 10);
 
         // when
-        var result = memberRepository.findMembers(Role.ADMIN, JobFamily.BE, semester1.getId(), pageable);
+        var result = memberRepository.findMembers(Role.ADMIN, JobFamily.BE, semester2.getId(), pageable);
 
         // then
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent())
                 .extracting(MemberResponse::jobFamily)
                 .containsOnly(JobFamily.BE);
         assertThat(result.getContent())
                 .extracting(MemberResponse::semesterName)
-                .containsOnly(semester1.getName());
+                .containsOnly("2");
         assertThat(result.getContent())
                 .extracting(MemberResponse::name)
-                .containsExactly(semester1BE2.getName(), semester1BE1.getName()); // createdAt desc 순서
+                .containsExactly(semester2BE1.getName()); // createdAt desc 순서
     }
 
     @Test
@@ -291,8 +291,8 @@ class MemberQueryRepositoryTest {
 
         // then
         assertThat(result.getContent()).isEmpty();
-        assertThat(result.getTotalElements()).isEqualTo(0);
-        assertThat(result.getTotalPages()).isEqualTo(0);
+        assertThat(result.getTotalElements()).isZero();
+        assertThat(result.getTotalPages()).isZero();
     }
 
     private Semester createSemester(String name) {

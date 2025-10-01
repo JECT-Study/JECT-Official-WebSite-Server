@@ -128,7 +128,10 @@ public class MemberService {
             throw new MemberException(ALREADY_EXIST_MEMBER);
         }
 
-        var member = request.toEntity();
+        var semester = semesterRepository.findByName(request.semesterName())
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
+
+        var member = request.toEntity(semester);
         memberRepository.save(member);
     }
 
@@ -137,10 +140,13 @@ public class MemberService {
                            final MemberEditRequest request) {
         var member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
+
+        validateEmailUniqueness(request.email(), member);
+
         var editorBuilder = member.toEditor();
 
-        if (request.semesterId() != null) {
-            var semester = semesterRepository.findById(request.semesterId())
+        if (request.semesterName() != null) {
+            var semester = semesterRepository.findByName(request.semesterName())
                     .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
             editorBuilder.semesterId(semester.getId());
         }
@@ -149,7 +155,6 @@ public class MemberService {
                 .name(request.name())
                 .phoneNumber(request.phoneNumber())
                 .email(request.email())
-                .semesterId(request.semesterId())
                 .jobFamily(request.jobFamily())
                 .role(request.role())
                 .build();
@@ -172,5 +177,15 @@ public class MemberService {
             throw new MemberException(MemberErrorCode.NOT_FOUND_MEMBER);
         }
         memberRepository.deleteAll(members);
+    }
+
+    private void validateEmailUniqueness(String newEmail, Member currentMember) {
+        if (newEmail.equals(currentMember.getEmail())) {
+            return;
+        }
+
+        if (memberRepository.existsByEmail(newEmail)) {
+            throw new MemberException(MemberErrorCode.DUPLICATE_EMAIL);
+        }
     }
 }
