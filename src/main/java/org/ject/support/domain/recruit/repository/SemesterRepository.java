@@ -1,6 +1,5 @@
 package org.ject.support.domain.recruit.repository;
 
-import java.util.Optional;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
