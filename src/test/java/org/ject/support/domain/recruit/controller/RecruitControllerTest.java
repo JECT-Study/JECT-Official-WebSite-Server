@@ -86,9 +86,10 @@ class RecruitControllerTest {
     @DisplayName("이미 모집중인 직군에 대한 모집 등록 시 실패")
     void register_recruit_fail_by_duplicated_job_family() throws Exception {
         // given
-        Long semesterId = semesterRepository.findOngoingSemesterId().orElse(1L);
+        Semester recruitingSemester = semesterRepository.findRecruitingSemester()
+                .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
         recruitRepository.save(Recruit.builder()
-                .semesterId(semesterId)
+                .semester(recruitingSemester)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
@@ -112,9 +113,10 @@ class RecruitControllerTest {
     @DisplayName("모집 정보 수정")
     void update_recruit() throws Exception {
         // given
-        Long semesterId = semesterRepository.findOngoingSemesterId().orElse(1L);
+        Semester recruitingSemester = semesterRepository.findRecruitingSemester()
+                .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
         Recruit savedRecruit = recruitRepository.save(Recruit.builder()
-                .semesterId(semesterId)
+                .semester(recruitingSemester)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
@@ -138,9 +140,10 @@ class RecruitControllerTest {
     @DisplayName("모집 취소")
     void cancel_recruit() throws Exception {
         // given
-        Long semesterId = semesterRepository.findOngoingSemesterId().orElse(1L);
+        Semester recruitingSemester = semesterRepository.findRecruitingSemester()
+                .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
         Recruit savedRecruit = recruitRepository.save(Recruit.builder()
-                .semesterId(semesterId)
+                .semester(recruitingSemester)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)

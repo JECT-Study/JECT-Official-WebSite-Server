@@ -1,21 +1,9 @@
 package org.ject.support.domain.member.repository;
 
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.PD;
-import static org.ject.support.domain.member.JobFamily.PM;
-import static org.ject.support.domain.member.entity.QMember.member;
-import static org.ject.support.domain.member.entity.QTeamMember.teamMember;
-import static org.ject.support.domain.recruit.domain.QApplicationForm.applicationForm;
-import static org.ject.support.domain.recruit.domain.QSemester.semester;
-
 import com.querydsl.core.group.GroupBy;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.CaseBuilder;
-import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.JPQLQueryFactory;
-import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.member.JobFamily;
@@ -27,6 +15,19 @@ import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.QApply.apply;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.FE;
+import static org.ject.support.domain.member.JobFamily.PD;
+import static org.ject.support.domain.member.JobFamily.PM;
+import static org.ject.support.domain.member.entity.QMember.member;
+import static org.ject.support.domain.member.entity.QTeamMember.teamMember;
+import static org.ject.support.domain.recruit.domain.QSemester.semester;
 
 @Repository
 @RequiredArgsConstructor
@@ -61,14 +62,14 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
     }
 
     @Override
-    public List<String> findEmailsByIdsAndNotApply(List<Long> applicantIds) {
+    public List<String> findEmailsByIdsAndNotSubmitted(List<Long> applicantIds) {
         return queryFactory.select(member.email)
                 .from(member)
+                .join(apply)
+                .on(member.id.eq(apply.member.id))
                 .where(member.id.in(applicantIds),
                         member.isDeleted.eq(false),
-                        member.id.notIn(JPAExpressions
-                                .select(applicationForm.member.id)
-                                .from(applicationForm)))
+                        apply.status.eq(SUBMITTED).not())
                 .fetch();
     }
 
@@ -90,7 +91,7 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                 ))
                 .from(member)
                 .leftJoin(semester)
-                    .on(semester.id.eq(member.semesterId))
+                .on(semester.id.eq(member.semesterId))
                 .where(
                         member.role.eq(role),
                         eqJobFamily(jobFamily),
@@ -106,7 +107,7 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                 .select(member.count())
                 .from(member)
                 .leftJoin(semester)
-                    .on(semester.id.eq(member.semesterId))
+                .on(semester.id.eq(member.semesterId))
                 .where(
                         member.role.eq(role),
                         eqJobFamily(jobFamily),
@@ -120,8 +121,8 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
 
     private BooleanExpression eqJobFamily(JobFamily jobFamily) {
         return Optional.ofNullable(jobFamily)
-                        .map(member.jobFamily::eq)
-                        .orElse(null);
+                .map(member.jobFamily::eq)
+                .orElse(null);
     }
 
     private BooleanExpression eqSemesterId(Long semesterId) {

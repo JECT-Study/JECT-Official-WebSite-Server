@@ -1,16 +1,16 @@
-package org.ject.support.domain.recruit.exception;
+package org.ject.support.domain.apply.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.ject.support.common.exception.ErrorCode;
 import org.springframework.http.HttpStatus;
 
-import static org.springframework.http.HttpStatus.CONFLICT;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Getter
 @AllArgsConstructor
 public enum ApplyErrorCode implements ErrorCode {
-    DUPLICATE_JOB_FAMILY(CONFLICT, "DUPLICATE_JOB_FAMILY", "변경하려는 직군이 기존 직군과 동일합니다.");
+    NOT_FOUND_APPLY(NOT_FOUND, "APPLY_NOT_FOUND", "지원 정보를 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

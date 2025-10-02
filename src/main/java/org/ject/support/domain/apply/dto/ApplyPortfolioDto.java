@@ -1,6 +1,6 @@
-package org.ject.support.domain.recruit.dto;
+package org.ject.support.domain.apply.dto;
 
-import org.ject.support.domain.recruit.domain.Portfolio;
+import org.ject.support.domain.apply.domain.Portfolio;
 
 public record ApplyPortfolioDto(String fileUrl,
                                 String fileName,

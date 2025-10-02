@@ -32,7 +32,7 @@ public class RemindApplyService implements RemindApplyUsecase {
         List<Long> applicantIds = temporaryApplyService.findMemberIdsByRecruit(recruit);
 
         // 지원서 최종 제출하지 않은 지원자 필터링
-        List<String> targetEmails = memberRepository.findEmailsByIdsAndNotApply(applicantIds);
+        List<String> targetEmails = memberRepository.findEmailsByIdsAndNotSubmitted(applicantIds);
 
         // 필터링한 지원자들에게 리마인드
         emailSendService.sendBulkTemplatedEmail(

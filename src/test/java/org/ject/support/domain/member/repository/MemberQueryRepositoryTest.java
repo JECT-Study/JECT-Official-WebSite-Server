@@ -1,13 +1,9 @@
 package org.ject.support.domain.member.repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.PD;
-import static org.ject.support.domain.member.JobFamily.PM;
-
-import java.time.LocalDateTime;
-import java.util.List;
+import org.ject.support.domain.apply.domain.ApplicationForm;
+import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.repository.ApplicationFormRepository;
+import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
@@ -16,10 +12,8 @@ import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.Team;
 import org.ject.support.domain.member.entity.TeamMember;
-import org.ject.support.domain.recruit.domain.ApplicationForm;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
-import org.ject.support.domain.recruit.repository.ApplicationFormRepository;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.QueryDslTestConfig;
@@ -29,6 +23,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
+import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.FE;
+import static org.ject.support.domain.member.JobFamily.PD;
+import static org.ject.support.domain.member.JobFamily.PM;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
@@ -42,6 +48,9 @@ class MemberQueryRepositoryTest {
 
     @Autowired
     private TeamMemberRepository teamMemberRepository;
+
+    @Autowired
+    private ApplyRepository applyRepository;
 
     @Autowired
     private ApplicationFormRepository applicationFormRepository;
@@ -89,32 +98,44 @@ class MemberQueryRepositoryTest {
     @Test
     void 전달_받은_ID_중_지원서를_제출하지_않은_사용자의_이메일_목록_조회() {
         // given
-        Member be5 = createMember("이젝트", "01011112231", "be1@test.kr", BE);
-        Member be6 = createMember("박젝트", "01011112232", "be2@test.kr", BE);
-        Member pm7 = createMember("서젝트", "01011112233", "pm1@test.kr", PM);
-        Member fe8 = createMember("양젝트", "01011112234", "fe1@test.kr", FE);
-        Member be9 = createMember("조젝트", "01011112235", "be3@test.kr", BE);
-        Member pd10 = createMember("표젝트", "01011112236", "pd1@test.kr", PD);
+        Member be5 = createMember("이젝트", "01011112231", "be5@test.kr", BE); // 5
+        Member be6 = createMember("박젝트", "01011112232", "be6@test.kr", BE); // 6
+        Member pm7 = createMember("서젝트", "01011112233", "pm7@test.kr", PM); // 7
+        Member fe8 = createMember("양젝트", "01011112234", "fe8@test.kr", FE); // 8
+        Member be9 = createMember("조젝트", "01011112235", "be9@test.kr", BE); // 9
+        Member pd10 = createMember("표젝트", "01011112236", "pd10@test.kr", PD); // 10
         List<Member> testMembers = memberRepository.saveAll(List.of(be5, be6, pm7, fe8, be9, pd10));
 
-        Recruit pmRecruit = createRecruit(PM);
-        Recruit pdRecruit = createRecruit(PD);
-        Recruit feRecruit = createRecruit(FE);
-        Recruit beRecruit = createRecruit(BE);
+        Semester savedSemester = semesterRepository.save(Semester.builder()
+                .name("1기")
+                .isRecruiting(true)
+                .build());
+        Recruit pmRecruit = createRecruit(savedSemester, PM);
+        Recruit pdRecruit = createRecruit(savedSemester, PD);
+        Recruit feRecruit = createRecruit(savedSemester, FE);
+        Recruit beRecruit = createRecruit(savedSemester, BE);
         recruitRepository.saveAll(List.of(pmRecruit, pdRecruit, feRecruit, beRecruit));
 
         // 일부 회원만 지원서 제출
+        Apply be5Apply = applyRepository.save(createApply(beRecruit, be5, SUBMITTED));
+        applyRepository.save(createApply(beRecruit, be6, JOINED));
+        Apply pm7Apply = applyRepository.save(createApply(pmRecruit, pm7, SUBMITTED));
+        Apply fe8Apply = applyRepository.save(createApply(feRecruit, fe8, SUBMITTED));
+        applyRepository.save(createApply(beRecruit, be9, JOINED));
+        applyRepository.save(createApply(pdRecruit, pd10, TEMP_SAVED));
+
         applicationFormRepository.saveAll(List.of(
-                createApplicationForm(testMembers.get(0), beRecruit), // be5
-                createApplicationForm(testMembers.get(2), pmRecruit), // pm7
-                createApplicationForm(testMembers.get(3), feRecruit))); // fe8
+                createApplicationForm(be5Apply),
+                createApplicationForm(pm7Apply),
+                createApplicationForm(fe8Apply)));
 
         List<Long> applicantIds = testMembers.stream().map(Member::getId).toList();
 
         // when
-        List<String> result = memberRepository.findEmailsByIdsAndNotApply(applicantIds);
+        List<String> result = memberRepository.findEmailsByIdsAndNotSubmitted(applicantIds);
 
         // then
+        assertThat(result).hasSize(3);
         assertThat(result).hasSize(3);
         assertThat(result).containsExactlyInAnyOrder(be6.getEmail(), be9.getEmail(), pd10.getEmail());
     }
@@ -130,7 +151,7 @@ class MemberQueryRepositoryTest {
         var admin2 = createMemberWithSemester("나젝트", "01011111112", "admin2@test.com", FE, Role.ADMIN, semester1.getId());
         var semester1Member = createMemberWithSemester("다젝트", "01011111113", "semester1@test.com", BE, Role.SEMESTER, semester1.getId());
         var apply1 = createMemberWithSemester("라젝트", "01011111114", "apply1@test.com", PD, Role.APPLY, semester2.getId());
-        
+
         memberRepository.saveAll(List.of(admin1, admin2, semester1Member, apply1));
 
         var pageable = PageRequest.of(0, 15);
@@ -155,7 +176,7 @@ class MemberQueryRepositoryTest {
         var admin1 = createMemberWithSemester("가젝트", "01011111111", "admin1@test.com", BE, Role.ADMIN, semester1.getId());
         var admin2 = createMemberWithSemester("나젝트", "01011111112", "admin2@test.com", FE, Role.ADMIN, semester1.getId());
         var admin3 = createMemberWithSemester("다젝트", "01011111113", "admin3@test.com", BE, Role.ADMIN, semester1.getId());
-        
+
         memberRepository.saveAll(List.of(admin1, admin2, admin3));
 
         var pageable = PageRequest.of(0, 15);
@@ -184,7 +205,7 @@ class MemberQueryRepositoryTest {
         var semester1Member1 = createMemberWithSemester("가젝트", "01011111111", "semester1@test.com", BE, Role.SEMESTER, semester1.getId());
         var semester1Member2 = createMemberWithSemester("나젝트", "01011111112", "semester2@test.com", FE, Role.SEMESTER, semester1.getId());
         var semester2Member1 = createMemberWithSemester("다젝트", "01011111113", "semester3@test.com", BE, Role.SEMESTER, semester2.getId());
-        
+
         memberRepository.saveAll(List.of(semester1Member1, semester1Member2, semester2Member1));
 
         var pageable = PageRequest.of(0, 15);
@@ -214,7 +235,7 @@ class MemberQueryRepositoryTest {
         var semester1BE2 = createMemberWithSemester("나젝트", "01011111112", "semester1be2@test.com", BE, Role.ADMIN, semester1.getId());
         var semester1FE1 = createMemberWithSemester("다젝트", "01011111113", "semester1fe1@test.com", FE, Role.ADMIN, semester1.getId());
         var semester2BE1 = createMemberWithSemester("라젝트", "01011111114", "semester2be1@test.com", BE, Role.ADMIN, semester2.getId());
-        
+
         memberRepository.saveAll(List.of(semester1BE1, semester1BE2, semester1FE1, semester2BE1));
 
         var pageable = PageRequest.of(0, 10);
@@ -322,20 +343,27 @@ class MemberQueryRepositoryTest {
                 .build();
     }
 
-    private Recruit createRecruit(JobFamily jobFamily) {
+    private Recruit createRecruit(Semester semester, JobFamily jobFamily) {
         return Recruit.builder()
-                .semesterId(1L)
+                .semester(semester)
                 .jobFamily(jobFamily)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .build();
     }
 
-    private ApplicationForm createApplicationForm(Member member, Recruit recruit) {
-        return ApplicationForm.builder()
-                .content("content")
+    private Apply createApply(Recruit recruit, Member member, Apply.Status status) {
+        return applyRepository.save(Apply.builder()
                 .member(member)
                 .recruit(recruit)
+                .status(status)
+                .build());
+    }
+
+    private ApplicationForm createApplicationForm(Apply apply) {
+        return ApplicationForm.builder()
+                .content("content")
+                .apply(apply)
                 .build();
     }
 }

@@ -1,11 +1,12 @@
 package org.ject.support.domain.tempapply.service;
 
-import java.util.List;
-import java.util.Map;
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
+import org.ject.support.domain.apply.dto.ApplyTemporaryResponse;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
-import org.ject.support.domain.recruit.dto.ApplyTemporaryResponse;
+
+import java.util.List;
+import java.util.Map;
 
 public interface TemporaryApplyService {
     /**

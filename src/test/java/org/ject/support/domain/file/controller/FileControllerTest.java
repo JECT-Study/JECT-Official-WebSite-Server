@@ -7,8 +7,10 @@ import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.Constants;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.ject.support.testconfig.AuthenticatedUser;
 import org.ject.support.testconfig.IntegrationTest;
@@ -46,15 +48,18 @@ class FileControllerTest extends ApplicationPeriodTest {
     @Autowired
     private RecruitRepository recruitRepository;
 
+    @Autowired
+    private SemesterRepository semesterRepository;
+
     @BeforeEach
     void setUp() {
         member = Member.builder()
                 .email("test32@gmail.com")
+                .semesterId(1L)
                 .jobFamily(JobFamily.BE)
                 .name("홍길동") // 한글 1~5글자로 수정
                 .role(Role.SEMESTER)
                 .phoneNumber("01012345678") // 010으로 시작하는 11자리 수정
-                .semesterId(1L)
                 .pin("123456") // PIN 추가
                 .status(MemberStatus.ACTIVE)
                 .build();
@@ -66,9 +71,10 @@ class FileControllerTest extends ApplicationPeriodTest {
     @AuthenticatedUser
     @Transactional
     void test_access_period() throws Exception {
+        Semester savedSemester = semesterRepository.save(getSemester(true));
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
-                .semesterId(1L)
+                .semester(savedSemester)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .build());
@@ -87,9 +93,10 @@ class FileControllerTest extends ApplicationPeriodTest {
     @Transactional
     void not_in_period() throws Exception {
         // given
+        Semester savedSemester = semesterRepository.save(getSemester(true));
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
-                .semesterId(1L)
+                .semester(savedSemester)
                 .startDate(LocalDateTime.now().plusDays(3))
                 .endDate(LocalDateTime.now().plusDays(5))
                 .build());
@@ -140,9 +147,10 @@ class FileControllerTest extends ApplicationPeriodTest {
     @Transactional
     void exceeded_portfolio_max_size() throws Exception {
         // given
+        Semester savedSemester = semesterRepository.save(getSemester(true));
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
-                .semesterId(1L)
+                .semester(savedSemester)
                 .startDate(LocalDateTime.now().plusDays(3))
                 .endDate(LocalDateTime.now().plusDays(5))
                 .build());
@@ -170,6 +178,13 @@ class FileControllerTest extends ApplicationPeriodTest {
                 .andExpect(content().string(containsString(FileErrorCode.EXCEEDED_PORTFOLIO_MAX_SIZE.name())))
                 .andDo(print())
                 .andReturn();
+    }
+
+    private Semester getSemester(boolean isRecruiting) {
+        return Semester.builder()
+                .name("1기")
+                .isRecruiting(isRecruiting)
+                .build();
     }
 
     private String getContent() {

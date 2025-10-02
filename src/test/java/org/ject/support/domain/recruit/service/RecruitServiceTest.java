@@ -1,5 +1,24 @@
 package org.ject.support.domain.recruit.service;
 
+import org.ject.support.base.UnitTestSupport;
+import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
+import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
+import org.ject.support.domain.recruit.exception.RecruitException;
+import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.ject.support.domain.recruit.repository.SemesterRepository;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.springframework.context.ApplicationEventPublisher;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.member.JobFamily.BE;
@@ -8,23 +27,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import org.ject.support.base.UnitTestSupport;
-import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.member.service.OngoingSemesterProvider;
-import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
-import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
-import org.ject.support.domain.recruit.exception.RecruitException;
-import org.ject.support.domain.recruit.repository.RecruitRepository;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.springframework.context.ApplicationEventPublisher;
 
 class RecruitServiceTest extends UnitTestSupport {
 
@@ -35,7 +37,7 @@ class RecruitServiceTest extends UnitTestSupport {
     RecruitRepository recruitRepository;
 
     @Mock
-    OngoingSemesterProvider ongoingSemesterProvider;
+    SemesterRepository semesterRepository;
 
     @Mock
     ApplicationEventPublisher eventPublisher;
@@ -43,9 +45,9 @@ class RecruitServiceTest extends UnitTestSupport {
     @Test
     void 모집_등록_성공() {
         // given
-        Long ongoingSemesterId = 1L;
-        when(ongoingSemesterProvider.getOngoingSemesterId()).thenReturn(ongoingSemesterId);
-        when(recruitRepository.existsByJobFamilyAndIsNotClosed(eq(ongoingSemesterId), any())).thenReturn(false);
+        Semester semester = getSemester(false);
+        when(semesterRepository.findRecruitingSemester()).thenReturn(Optional.ofNullable(semester));
+        when(recruitRepository.existsByJobFamilyAndIsNotClosed(eq(semester.getId()), any())).thenReturn(false);
 
         List<RecruitRegisterRequest> requests = List.of(
                 new RecruitRegisterRequest(BE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1)),
@@ -57,7 +59,7 @@ class RecruitServiceTest extends UnitTestSupport {
 
         // then
         ArgumentCaptor<List<JobFamily>> jobFamiliesCaptor = ArgumentCaptor.forClass(List.class);
-        verify(recruitRepository).existsByJobFamilyAndIsNotClosed(eq(ongoingSemesterId), jobFamiliesCaptor.capture());
+        verify(recruitRepository).existsByJobFamilyAndIsNotClosed(eq(semester.getId()), jobFamiliesCaptor.capture());
         assertThat(jobFamiliesCaptor.getValue()).containsExactly(BE, FE);
 
         ArgumentCaptor<List<Recruit>> recruitsCaptor = ArgumentCaptor.forClass(List.class);
@@ -65,12 +67,22 @@ class RecruitServiceTest extends UnitTestSupport {
         assertThat(recruitsCaptor.getValue()).hasSize(2);
     }
 
+    private Semester getSemester() {
+        Semester semester = Semester.builder()
+                .id(1L)
+                .name("1기")
+                .isRecruiting(false)
+                .build();
+        return semester;
+    }
+
     @Test
     void 모집_등록_시_이미_모집중인_직군이면_실패() {
         // given
+        Semester semester = getSemester();
         RecruitRegisterRequest request =
                 new RecruitRegisterRequest(BE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
-        when(ongoingSemesterProvider.getOngoingSemesterId()).thenReturn(1L);
+        when(semesterRepository.findRecruitingSemester()).thenReturn(Optional.ofNullable(semester));
         when(recruitRepository.existsByJobFamilyAndIsNotClosed(any(), any())).thenReturn(true);
 
         // when, then
@@ -83,7 +95,7 @@ class RecruitServiceTest extends UnitTestSupport {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semesterId(1L)
+                .semester(getSemester(true))
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
@@ -106,7 +118,7 @@ class RecruitServiceTest extends UnitTestSupport {
     void 마감된_모집_정보는_수정_불가() {
         // given
         Recruit recruit = Recruit.builder()
-                .semesterId(1L)
+                .semester(getSemester(false))
                 .startDate(LocalDateTime.now().minusDays(3))
                 .endDate(LocalDateTime.now().minusDays(1))
                 .jobFamily(BE)
@@ -138,7 +150,7 @@ class RecruitServiceTest extends UnitTestSupport {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semesterId(1L)
+                .semester(getSemester(false))
                 .startDate(LocalDateTime.now().minusDays(3))
                 .endDate(LocalDateTime.now().minusDays(1))
                 .jobFamily(BE)
@@ -159,7 +171,7 @@ class RecruitServiceTest extends UnitTestSupport {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semesterId(1L)
+                .semester(getSemester(true))
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
@@ -174,6 +186,10 @@ class RecruitServiceTest extends UnitTestSupport {
         ArgumentCaptor<Recruit> recruitCaptor = ArgumentCaptor.forClass(Recruit.class);
         verify(recruitRepository).delete(recruitCaptor.capture());
         assertThat(recruitCaptor.getValue()).isSameAs(recruit);
+    }
+
+    private Semester getSemester(boolean isRecruiting) {
+        return Semester.builder().id(1L).name("1기").isRecruiting(isRecruiting).build();
     }
 
     @Test

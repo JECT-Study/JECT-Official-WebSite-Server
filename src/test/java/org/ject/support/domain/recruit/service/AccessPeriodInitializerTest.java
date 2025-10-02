@@ -2,8 +2,10 @@ package org.ject.support.domain.recruit.service;
 
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.Constants;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.IntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,9 @@ class AccessPeriodInitializerTest {
     RecruitRepository recruitRepository;
 
     @Autowired
+    SemesterRepository semesterRepository;
+
+    @Autowired
     RedisTemplate<String, String> redisTemplate;
 
     @Test
@@ -41,21 +46,26 @@ class AccessPeriodInitializerTest {
         // given
         redisTemplate.delete(List.of("RECRUIT_FLAG:PM", "RECRUIT_FLAG:PD", "RECRUIT_FLAG:FE", "RECRUIT_FLAG:BE"));
 
+        Semester savedSemester = semesterRepository.save(Semester.builder()
+                .name("1기")
+                .isRecruiting(true)
+                .build());
+
         recruitRepository.saveAll(List.of(
                 Recruit.builder()
-                        .semesterId(1L)
+                        .semester(savedSemester)
                         .startDate(LocalDateTime.now().minusDays(1))
                         .endDate(LocalDateTime.now().plusDays(1))
                         .jobFamily(PM)
                         .build(),
                 Recruit.builder()
-                        .semesterId(1L)
+                        .semester(savedSemester)
                         .startDate(LocalDateTime.now().minusDays(1))
                         .endDate(LocalDateTime.now().plusDays(1))
                         .jobFamily(PD)
                         .build(),
                 Recruit.builder()
-                        .semesterId(1L)
+                        .semester(savedSemester)
                         .startDate(LocalDateTime.now().plusDays(3))
                         .endDate(LocalDateTime.now().plusDays(5))
                         .jobFamily(FE)

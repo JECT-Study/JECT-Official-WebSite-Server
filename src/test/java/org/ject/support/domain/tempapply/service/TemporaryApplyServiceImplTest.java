@@ -2,6 +2,7 @@ package org.ject.support.domain.tempapply.service;
 
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
@@ -17,7 +18,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.ject.support.domain.member.JobFamily.*;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.FE;
+import static org.ject.support.domain.member.JobFamily.PD;
+import static org.ject.support.domain.member.JobFamily.PM;
 
 @IntegrationTest
 @Transactional
@@ -65,7 +69,7 @@ class TemporaryApplyServiceImplTest {
 
     private Recruit getRecruit(JobFamily jobFamily) {
         return Recruit.builder()
-                .semesterId(1L)
+                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
                 .jobFamily(jobFamily)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))

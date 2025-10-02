@@ -31,18 +31,18 @@ class RecruitRepositoryTest {
     @DisplayName("특정 직군의 마감되지 않은 모집 정보가 존재하면 true 반환")
     void exists_by_job_family_and_is_not_closed() {
         // given
-        semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
 
         recruitRepository.saveAll(
                 List.of(
                         Recruit.builder()
-                                .semesterId(1L)
+                                .semester(savedSemester)
                                 .startDate(LocalDateTime.now().minusDays(1))
                                 .endDate(LocalDateTime.now().plusDays(1))
                                 .jobFamily(PM)
                                 .build(),
                         Recruit.builder()
-                                .semesterId(1L)
+                                .semester(savedSemester)
                                 .startDate(LocalDateTime.now().minusDays(1))
                                 .endDate(LocalDateTime.now().plusDays(1))
                                 .jobFamily(BE)
@@ -51,10 +51,9 @@ class RecruitRepositoryTest {
         );
 
         // when
-        boolean result = recruitRepository.existsByJobFamilyAndIsNotClosed(1L, List.of(FE, BE));
+        boolean result = recruitRepository.existsByJobFamilyAndIsNotClosed(savedSemester.getId(), List.of(FE, BE));
 
         // then
         assertThat(result).isTrue();
     }
-
 }

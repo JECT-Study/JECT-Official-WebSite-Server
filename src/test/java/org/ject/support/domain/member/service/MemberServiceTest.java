@@ -53,9 +53,6 @@ class MemberServiceTest extends UnitTestSupport {
     private Authentication authentication;
 
     @Mock
-    private OngoingSemesterProvider ongoingSemesterProvider;
-
-    @Mock
     private SemesterRepository semesterRepository;
 
     private final String TEST_NAME = "홍길동";
@@ -83,7 +80,7 @@ class MemberServiceTest extends UnitTestSupport {
         given(passwordEncoder.encode(TEST_PIN)).willReturn(TEST_ENCODED_PIN);
         given(memberRepository.save(any(Member.class))).willReturn(member);
         given(jwtTokenProvider.createAuthenticationByMember(any(Member.class))).willReturn(authentication);
-        given(ongoingSemesterProvider.getOngoingSemesterId()).willReturn(1L);
+
         // when
         Authentication result = memberService.registerTempMember(request, TEST_EMAIL);
 
@@ -106,13 +103,13 @@ class MemberServiceTest extends UnitTestSupport {
 
         given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(existingMember));
 
-        // expected
+        // when & then
         assertThatThrownBy(() -> memberService.registerTempMember(request, TEST_EMAIL))
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.ALREADY_EXIST_MEMBER);
     }
-    
+
     @Test
     void 회원_정보_업데이트_성공() {
         // given
@@ -124,70 +121,70 @@ class MemberServiceTest extends UnitTestSupport {
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
                 .build();
-        
+
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        
+
         // when
         memberService.registerInitialProfile(request, memberId);
-        
+
         // then
         assertThat(member.getName()).isEqualTo(TEST_NAME);
         assertThat(member.getPhoneNumber()).isEqualTo(TEST_PHONE_NUMBER);
         verify(memberRepository).findById(memberId);
     }
-    
+
     @Test
     void 존재하지_않는_회원_정보_업데이트_시_예외_발생() {
         // given
         Long memberId = 1L;
         InitialProfileRequest request = new InitialProfileRequest(TEST_NAME, TEST_PHONE_NUMBER);
-        
+
         given(memberRepository.findById(memberId)).willReturn(Optional.empty());
-        
-        // expected
+
+        // when & then
         assertThatThrownBy(() -> memberService.registerInitialProfile(request, memberId))
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
     }
-    
+
     @Test
     void 핀번호_재설정_성공() {
         // given
         Long memberId = 1L;
         String newPin = "654321";
         UpdatePinRequest request = new UpdatePinRequest(newPin);
-        
+
         Member member = Member.builder()
                 .id(memberId)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
                 .build();
-        
+
         String newEncodedPin = "new_encoded_pin";
-        
+
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
         given(passwordEncoder.encode(newPin)).willReturn(newEncodedPin);
-        
+
         // when
         memberService.updatePin(request, memberId);
-        
+
         // then
         assertThat(member.getPin()).isEqualTo(newEncodedPin);
         verify(memberRepository).findById(memberId);
         verify(passwordEncoder).encode(newPin);
     }
-    
+
     @Test
     void 핀번호_재설정_실패_존재하지_않는_회원() {
         // given
         Long memberId = 1L;
         UpdatePinRequest request = new UpdatePinRequest("654321");
-        
+
         given(memberRepository.findById(memberId)).willReturn(Optional.empty());
-        
-        // expected
+
+        // when & then
         assertThatThrownBy(() -> memberService.updatePin(request, memberId))
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
@@ -270,7 +267,7 @@ class MemberServiceTest extends UnitTestSupport {
         // given
         var memberId = 1L;
         var semesterId = 1L;
-        
+
         var member = Member.builder()
                 .id(memberId)
                 .name(TEST_NAME)
@@ -300,7 +297,7 @@ class MemberServiceTest extends UnitTestSupport {
         assertThat(result.jobFamily()).isEqualTo(JobFamily.BE);
         assertThat(result.role()).isEqualTo(Role.SEMESTER);
         assertThat(result.semesterName()).isEqualTo("1");
-        
+
         verify(memberRepository).findById(memberId);
         verify(semesterRepository).findById(semesterId);
     }
@@ -309,7 +306,7 @@ class MemberServiceTest extends UnitTestSupport {
     void 회원_상세_조회_실패_존재하지_않는_회원() {
         // given
         var memberId = 999L;
-        
+
         given(memberRepository.findById(memberId)).willReturn(Optional.empty());
 
         // expected
@@ -317,7 +314,7 @@ class MemberServiceTest extends UnitTestSupport {
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
-        
+
         verify(memberRepository).findById(memberId);
     }
 
@@ -326,7 +323,7 @@ class MemberServiceTest extends UnitTestSupport {
         // given
         var memberId = 1L;
         var semesterId = 999L;
-        
+
         var member = Member.builder()
                 .id(memberId)
                 .name(TEST_NAME)
@@ -341,7 +338,7 @@ class MemberServiceTest extends UnitTestSupport {
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER);
-        
+
         verify(memberRepository).findById(memberId);
         verify(semesterRepository).findById(semesterId);
     }
@@ -395,7 +392,7 @@ class MemberServiceTest extends UnitTestSupport {
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.ALREADY_EXIST_MEMBER);
-        
+
         verify(memberRepository).existsByEmail(TEST_EMAIL);
     }
 
@@ -462,7 +459,7 @@ class MemberServiceTest extends UnitTestSupport {
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
-        
+
         verify(memberRepository).findById(memberId);
     }
 
@@ -499,7 +496,7 @@ class MemberServiceTest extends UnitTestSupport {
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
-        
+
         verify(memberRepository).findById(memberId);
     }
 
@@ -541,7 +538,7 @@ class MemberServiceTest extends UnitTestSupport {
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
-        
+
         verify(memberRepository).findAllById(memberIds);
     }
 

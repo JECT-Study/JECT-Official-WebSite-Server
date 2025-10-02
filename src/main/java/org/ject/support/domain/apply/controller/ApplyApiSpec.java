@@ -1,12 +1,12 @@
-package org.ject.support.domain.recruit.controller;
+package org.ject.support.domain.apply.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.ject.support.common.security.AuthPrincipal;
+import org.ject.support.domain.apply.dto.ApplyTemporaryRequest;
+import org.ject.support.domain.apply.dto.ApplyTemporaryResponse;
+import org.ject.support.domain.apply.dto.SubmitApplicationRequest;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.recruit.dto.ApplyTemporaryRequest;
-import org.ject.support.domain.recruit.dto.ApplyTemporaryResponse;
-import org.ject.support.domain.recruit.dto.SubmitApplicationRequest;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 

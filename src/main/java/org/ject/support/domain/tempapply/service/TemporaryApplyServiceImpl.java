@@ -1,10 +1,10 @@
 package org.ject.support.domain.tempapply.service;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
+import org.ject.support.domain.apply.dto.ApplyTemporaryResponse;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
-import org.ject.support.domain.recruit.dto.ApplyTemporaryResponse;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.exception.TemporaryApplicationException;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
