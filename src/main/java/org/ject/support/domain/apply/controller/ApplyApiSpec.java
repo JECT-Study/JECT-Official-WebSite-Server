@@ -21,9 +21,8 @@ public interface ApplyApiSpec {
     @Operation(
             summary = "지원서 임시 저장",
             description = "지원서를 임시 저장합니다.")
-    void applyTemporary(@AuthPrincipal Long memberId,
-                        @RequestParam JobFamily jobFamily,
-                        @RequestBody ApplyTemporaryRequest request);
+    void saveApplicationTemporarily(@AuthPrincipal Long memberId,
+                                    @RequestBody ApplyTemporaryRequest request);
 
     @Operation(
             summary = "모든 임시 지원서 제거",

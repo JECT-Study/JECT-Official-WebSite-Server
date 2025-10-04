@@ -10,10 +10,9 @@ import java.util.Map;
 public interface ApplyUsecase {
     ApplyTemporaryResponse getTemporaryApplication(Long memberId);
 
-    void applyTemporary(JobFamily jobFamily,
-                        Long memberId,
-                        Map<String, String> answers,
-                        List<ApplyPortfolioDto> portfolios);
+    void saveApplicationTemporarily(Long memberId,
+                                    Map<String, String> answers,
+                                    List<ApplyPortfolioDto> portfolios);
 
 
     void deleteTemporaryApplications(Long memberId);

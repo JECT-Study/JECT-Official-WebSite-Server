@@ -44,8 +44,10 @@ public class ApplicationForm extends BaseTimeEntity {
     @Builder.Default
     private List<Portfolio> portfolios = new ArrayList<>();
 
-    public void addPortfolio(Portfolio portfolio) {
-        this.portfolios.add(portfolio);
-        portfolio.setApplicationForm(this);
+    public void updateContentAndPortfolios(String newContent, List<Portfolio> newPortfolios) {
+        this.content = newContent;
+        this.portfolios.clear();
+        this.portfolios.addAll(newPortfolios);
+        newPortfolios.forEach(portfolio -> portfolio.setApplicationForm(this));
     }
 }

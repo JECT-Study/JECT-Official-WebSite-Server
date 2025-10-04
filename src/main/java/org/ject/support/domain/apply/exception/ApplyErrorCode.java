@@ -5,14 +5,22 @@ import lombok.Getter;
 import org.ject.support.common.exception.ErrorCode;
 import org.springframework.http.HttpStatus;
 
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Getter
 @AllArgsConstructor
 public enum ApplyErrorCode implements ErrorCode {
-    NOT_FOUND_APPLY(NOT_FOUND, "APPLY_NOT_FOUND", "지원 정보를 찾을 수 없습니다.");
+    NOT_FOUND_APPLY(NOT_FOUND, 1, "지원 정보를 찾을 수 없습니다."),
+    ALREADY_SUBMITTED(CONFLICT, 2, "이미 지원서를 제출한 상태입니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
     private final String message;
+
+    ApplyErrorCode(HttpStatus httpStatus, int code, String message) {
+        this.httpStatus = httpStatus;
+        this.code = String.format("APPLY-%d", code); // TODO 별도 유틸 메서드로 분리 (this.getClass().getSimpleName().replace("ErrorCode", "").toUpperCase())
+        this.message = message;
+    }
 }

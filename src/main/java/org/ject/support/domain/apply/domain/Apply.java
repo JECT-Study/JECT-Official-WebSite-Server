@@ -10,6 +10,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,9 +39,20 @@ public class Apply extends BaseTimeEntity {
     @JoinColumn(name = "recruit_id", nullable = false)
     private Recruit recruit;
 
+    @OneToOne(mappedBy = "apply")
+    private ApplicationForm applicationForm;
+
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(50)", nullable = false)
     private Status status;
+
+    public void updateApplicationForm(ApplicationForm newApplicationForm) {
+        this.applicationForm = newApplicationForm;
+    }
+
+    public void updateStatus(Status status) {
+        this.status = status;
+    }
 
     public enum Status {
         JOINED, TEMP_SAVED, SUBMITTED

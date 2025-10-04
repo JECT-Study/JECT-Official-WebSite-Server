@@ -32,10 +32,9 @@ public class ApplyController implements ApplyApiSpec {
     @Override
     @PostMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void applyTemporary(@AuthPrincipal Long memberId,
-                               @RequestParam JobFamily jobFamily,
+    public void saveApplicationTemporarily(@AuthPrincipal Long memberId,
                                @RequestBody ApplyTemporaryRequest request) {
-        applyUsecase.applyTemporary(jobFamily, memberId, request.answers(), request.portfolios());
+        applyUsecase.saveApplicationTemporarily(memberId, request.answers(), request.portfolios());
     }
 
     @Override
