@@ -1,6 +1,7 @@
 package org.ject.support.domain.member.entity;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -18,7 +19,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.ject.support.common.util.StringListConverter;
 import org.ject.support.domain.base.BaseTimeEntity;
+import org.ject.support.domain.member.CareerDetails;
+import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
@@ -39,6 +43,9 @@ public class Member extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(length = 30, nullable = false, unique = true)
+    private String email;
+
     @Column(length = 20)
     @Pattern(regexp = "^[가-힣]{1,5}$", message = "한글 1~5글자만 입력 가능합니다.")
     private String name;
@@ -47,15 +54,25 @@ public class Member extends BaseTimeEntity {
     @Pattern(regexp = "^010\\d{8}$", message = "010으로 시작하는 11자리 숫자를 입력하세요.")
     private String phoneNumber;
 
-    @Column(length = 30, nullable = false, unique = true)
-    private String email;
-
-    @Column(nullable = false)
-    private Long semesterId;
-
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(45)")
     private JobFamily jobFamily;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private CareerDetails careerDetails;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private ExperiencePeriod experiencePeriod;
+
+    @Column(name = "domain_name", length = 50)
+    @Convert(converter = StringListConverter.class)
+    @Builder.Default
+    private List<String> interestedDomains = new ArrayList<>();
+
+    @Column(nullable = false)
+    private Long semesterId;
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(10)", nullable = false)
@@ -108,5 +125,14 @@ public class Member extends BaseTimeEntity {
         this.semesterId = editor.semesterId();
         this.jobFamily = editor.jobFamily();
         this.role = editor.role();
+    }
+
+    public void deleteProfile() {
+        this.name = null;
+        this.phoneNumber = null;
+        this.jobFamily = null;
+        this.careerDetails = null;
+        this.experiencePeriod = null;
+        this.interestedDomains.clear();
     }
 }

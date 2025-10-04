@@ -40,8 +40,8 @@ public class ApplyController implements ApplyApiSpec {
     @Override
     @DeleteMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void deleteTemporaryApplications(@AuthPrincipal Long memberId) {
-        applyUsecase.deleteTemporaryApplications(memberId);
+    public void deleteProfileAndTempApplicationForm(@AuthPrincipal Long memberId) {
+        applyUsecase.deleteProfileAndTempApplicationForm(memberId);
     }
 
     @Override

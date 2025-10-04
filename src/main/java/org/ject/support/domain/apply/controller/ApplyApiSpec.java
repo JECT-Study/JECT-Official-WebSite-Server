@@ -25,9 +25,9 @@ public interface ApplyApiSpec {
                                     @RequestBody ApplyTemporaryRequest request);
 
     @Operation(
-            summary = "모든 임시 지원서 제거",
-            description = "해당 지원자의 모든 임시 지원서를 제거합니다.")
-    void deleteTemporaryApplications(@AuthPrincipal Long memberId);
+            summary = "지원서 초기화",
+            description = "해당 지원자의 프로필과 임시 지원서를 제거합니다.")
+    void deleteProfileAndTempApplicationForm(@AuthPrincipal Long memberId);
 
     @Operation(
             summary = "지원서 제출",

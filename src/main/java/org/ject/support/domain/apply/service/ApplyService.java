@@ -16,16 +16,12 @@ import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.exception.MemberErrorCode;
-import org.ject.support.domain.member.exception.MemberException;
-import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.exception.QuestionErrorCode;
 import org.ject.support.domain.recruit.exception.QuestionException;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
-import org.ject.support.domain.tempapply.service.TemporaryApplyService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,10 +40,8 @@ import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_FOUND_A
 @Service
 @RequiredArgsConstructor
 public class ApplyService implements ApplyUsecase {
-    private final TemporaryApplyService temporaryApplyService;
     private final RecruitRepository recruitRepository;
     private final ApplyRepository applyRepository;
-    private final MemberRepository memberRepository;
     private final ApplicationFormRepository applicationFormRepository;
     private final Map2JsonSerializer map2JsonSerializer;
     private final String2MapSerializer string2MapSerializer;
@@ -114,9 +108,23 @@ public class ApplyService implements ApplyUsecase {
     @Override
     @PeriodAccessible(permitAllJob = true)
     @Transactional
-    public void deleteTemporaryApplications(Long memberId) {
-        // memberId를 통해 기존 임시 지원서 모두 제거
-        temporaryApplyService.deleteTemporaryApplicationsByMemberId(memberId);
+    public void deleteProfileAndTempApplicationForm(Long memberId) {
+        // 지원 정보 조회
+        Apply apply = applyRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
+
+        // 지원서를 임시 저장하지 않은 경우 실패
+        if (apply.isNotTempSaved()) {
+            throw new ApplyException(ApplyErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM);
+        }
+
+        // 임시 저장한 지원서 제거 및 상태 변경
+        apply.deleteApplicationForm();
+        apply.updateStatus(JOINED);
+
+        // 프로필 제거
+        Member applicant = apply.getMember();
+        applicant.deleteProfile();
     }
 
     @Override

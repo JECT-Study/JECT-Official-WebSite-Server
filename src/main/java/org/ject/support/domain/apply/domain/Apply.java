@@ -1,5 +1,6 @@
 package org.ject.support.domain.apply.domain;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -39,7 +40,7 @@ public class Apply extends BaseTimeEntity {
     @JoinColumn(name = "recruit_id", nullable = false)
     private Recruit recruit;
 
-    @OneToOne(mappedBy = "apply")
+    @OneToOne(mappedBy = "apply", cascade = CascadeType.ALL, orphanRemoval = true)
     private ApplicationForm applicationForm;
 
     @Enumerated(EnumType.STRING)
@@ -58,6 +59,12 @@ public class Apply extends BaseTimeEntity {
         return status.equals(Status.JOINED)
                 || status.equals(Status.SUBMITTED)
                 || (status.equals(Status.TEMP_SAVED) && applicationForm == null);
+    }
+
+    public void deleteApplicationForm() {
+        if (applicationForm != null) {
+            applicationForm = null;
+        }
     }
 
     public enum Status {

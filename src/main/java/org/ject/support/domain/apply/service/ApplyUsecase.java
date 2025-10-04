@@ -15,7 +15,7 @@ public interface ApplyUsecase {
                                     List<ApplyPortfolioDto> portfolios);
 
 
-    void deleteTemporaryApplications(Long memberId);
+    void deleteProfileAndTempApplicationForm(Long memberId);
 
     void submitApplication(Long memberId,
                            JobFamily jobFamily,

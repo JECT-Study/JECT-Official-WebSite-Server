@@ -68,7 +68,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Recruit recruit = getActiveRecruit(BE, questions);
 
-        Member applicant = getApplicant();
+        Member applicant = getApplicant(1L, "email@test.com");
 
         Map<String, String> answers = Map.of(
                 "1", "답변 1",
@@ -150,7 +150,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 "3", "답변 3",
                 "4", "답변 4");
 
-        Member applicant = getApplicant();
+        Member applicant = getApplicant(1L, "email@test.com");
 
         Apply apply = getApply(recruit, applicant, JOINED);
 
@@ -191,7 +191,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 "3", "답변 3",
                 "4", "답변 4");
 
-        Member applicant = getApplicant();
+        Member applicant = getApplicant(1L, "email@test.com");
 
         Apply apply = getApply(recruit, applicant, SUBMITTED);
 
@@ -219,7 +219,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 "3", "답변 3",
                 "4", "답변 4");
 
-        Member applicant = getApplicant();
+        Member applicant = getApplicant(1L, "email@test.com");
 
         ApplicationForm oldApplicationForm = ApplicationForm.builder()
                 .id(1L)
@@ -248,6 +248,92 @@ class ApplyServiceTest extends UnitTestSupport {
         assertThat(apply.getStatus()).isEqualTo(TEMP_SAVED);
     }
 
+    @Test
+    void 프로필과_임시저장한_지원서_제거_성공() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"),
+                getQuestion(2L, 2, "문항 2", "설명 2"),
+                getQuestion(3L, 3, "문항 3", "설명 3"),
+                getQuestion(4L, 4, "문항 4", "설명 4"));
+
+        Recruit recruit = getActiveRecruit(BE, questions);
+
+        ApplicationForm applicationForm = ApplicationForm.builder()
+                .id(1L)
+                .content("content")
+                .build();
+
+        Apply apply = Apply.builder()
+                .id(1L)
+                .recruit(recruit)
+                .member(getApplicant(1L, "email@test.com"))
+                .applicationForm(applicationForm)
+                .status(TEMP_SAVED)
+                .build();
+
+        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+
+        // when
+        applyService.deleteProfileAndTempApplicationForm(1L);
+
+        // then
+        assertThat(apply.getApplicationForm()).isNull();
+        assertThat(apply.getStatus()).isEqualTo(JOINED);
+
+        Member applicant = apply.getMember();
+        assertThat(applicant.getName()).isNull();
+        assertThat(applicant.getPhoneNumber()).isNull();
+        assertThat(applicant.getJobFamily()).isNull();
+        assertThat(applicant.getCareerDetails()).isNull();
+        assertThat(applicant.getExperiencePeriod()).isNull();
+        assertThat(applicant.getInterestedDomains()).isEmpty();
+    }
+
+    @Test
+    void 임시저장한_지원서가_없거나_이미_제출한_상태에서_프로필과_임시저장한_지원서_제거_시_실패() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"),
+                getQuestion(2L, 2, "문항 2", "설명 2"),
+                getQuestion(3L, 3, "문항 3", "설명 3"),
+                getQuestion(4L, 4, "문항 4", "설명 4"));
+
+        Recruit recruit = getActiveRecruit(BE, questions);
+
+        Apply apply1 = Apply.builder()
+                .id(1L)
+                .recruit(recruit)
+                .member(getApplicant(1L, "email1@test.com"))
+                .applicationForm(ApplicationForm.builder()
+                        .id(1L)
+                        .content("content")
+                        .build())
+                .status(JOINED)
+                .build();
+
+        Apply apply2 = Apply.builder()
+                .id(2L)
+                .recruit(recruit)
+                .member(getApplicant(2L, "email2@test.com"))
+                .applicationForm(ApplicationForm.builder()
+                        .id(2L)
+                        .content("content")
+                        .build())
+                .status(SUBMITTED)
+                .build();
+
+        when(applyRepository.findByMemberId(1L)).thenReturn(Optional.of(apply1));
+        when(applyRepository.findByMemberId(2L)).thenReturn(Optional.of(apply2));
+
+        // when, then
+        assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(1L))
+                .isInstanceOf(ApplyException.class);
+        assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(2L))
+                .isInstanceOf(ApplyException.class);
+
+    }
+
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {
         return Recruit.builder()
                 .id(1L)
@@ -270,10 +356,10 @@ class ApplyServiceTest extends UnitTestSupport {
                 .build();
     }
 
-    private Member getApplicant() {
+    private Member getApplicant(Long id, String email) {
         return Member.builder()
-                .id(1L)
-                .email("email@test.com")
+                .id(id)
+                .email(email)
                 .pin("111111")
                 .role(Role.APPLY)
                 .status(MemberStatus.ACTIVE)
