@@ -126,21 +126,17 @@ public class ApplyService implements ApplyUsecase {
                                   JobFamily jobFamily,
                                   Map<String, String> answers,
                                   List<ApplyPortfolioDto> portfolios) {
-        // 1. 지원자 조회
-        Member applicant = memberRepository.findById(memberId)
-                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-
-        // 2. jobFamily를 통해 현재 기수 지원양식 id 조회
+        // 1. jobFamily를 통해 현재 기수 지원양식 id 조회
         Recruit recruit = getPeriodRecruit(jobFamily);
 
-        // 3. 지원양식과 answers의 key를 비교해 올바른 질문 양식인지 점검
+        // 2. 지원양식과 answers의 key를 비교해 올바른 질문 양식인지 점검
         validateQuestions(answers, recruit);
 
-        // 4. 지원 정보 조회
-        Apply apply = applyRepository.findByMember(applicant)
+        // 3. 지원 정보 조회
+        Apply apply = applyRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
-        // 5. Portfolio와 ApplicationForm 영속화
+        // 4. Portfolio와 ApplicationForm 영속화
         // TODO 임시 저장한 지원서가 있을 경우 업데이트
         String content = map2JsonSerializer.serializeAsString(answers);
         ApplicationForm applicationForm = createApplicationForm(apply, content, getNewPortfolios(portfolios));

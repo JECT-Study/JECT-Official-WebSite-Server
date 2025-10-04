@@ -80,9 +80,8 @@ class ApplyServiceTest extends UnitTestSupport {
 
         String content = "answerToJson";
 
-        when(memberRepository.findById(1L)).thenReturn(Optional.of(applicant));
         when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
-        when(applyRepository.findByMember(applicant)).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberId(applicant.getId())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(content);
 
         // when
@@ -109,15 +108,12 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Recruit recruit = getActiveRecruit(BE, questions);
 
-        Member applicant = getApplicant();
-
         Map<String, String> answers = Map.of(
                 "1", "답변 1",
                 "2", "답변 2",
                 "3", "답변 3",
                 "4", "답변 4");
 
-        when(memberRepository.findById(1L)).thenReturn(Optional.of(applicant));
         when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
 
         // when, then

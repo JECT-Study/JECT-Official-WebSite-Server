@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.Optional;
 
 public interface ApplyRepository extends JpaRepository<Apply, Long> {
-    Optional<Apply> findByMember(Member member);
 
     @Query("select a from Apply a where a.member.id = :memberId")
     Optional<Apply> findByMemberId(Long memberId);
