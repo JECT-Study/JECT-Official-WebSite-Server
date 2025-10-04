@@ -54,6 +54,12 @@ public class Apply extends BaseTimeEntity {
         this.status = status;
     }
 
+    public boolean isNotTempSaved() {
+        return status.equals(Status.JOINED)
+                || status.equals(Status.SUBMITTED)
+                || (status.equals(Status.TEMP_SAVED) && applicationForm == null);
+    }
+
     public enum Status {
         JOINED, TEMP_SAVED, SUBMITTED
     }

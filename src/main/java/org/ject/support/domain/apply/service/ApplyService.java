@@ -4,11 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.PeriodAccessible;
+import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
-import org.ject.support.domain.apply.dto.ApplyTemporaryResponse;
+import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
+import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
@@ -24,7 +26,6 @@ import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.tempapply.service.TemporaryApplyService;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,12 +50,26 @@ public class ApplyService implements ApplyUsecase {
     private final MemberRepository memberRepository;
     private final ApplicationFormRepository applicationFormRepository;
     private final Map2JsonSerializer map2JsonSerializer;
+    private final String2MapSerializer string2MapSerializer;
 
     @Override
     @PeriodAccessible(permitAllJob = true)
     @Transactional(readOnly = true)
-    public ApplyTemporaryResponse getTemporaryApplication(final Long memberId) {
-        return temporaryApplyService.findMembersRecentTemporaryApplication(memberId);
+    public TempApplicationFormResponse findTempApplicationForm(final Long memberId) {
+        Apply apply = applyRepository.findByMemberId(memberId)
+                .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
+
+        if (apply.isNotTempSaved()) {
+            throw new ApplyException(ApplyErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM);
+        }
+
+        ApplicationForm tempApplicationForm = apply.getApplicationForm();
+        return TempApplicationFormResponse.from(
+                string2MapSerializer.serializeAsMap(tempApplicationForm.getContent()),
+                tempApplicationForm.getPortfolios()
+                        .stream()
+                        .map(ApplyPortfolioDto::from)
+                        .toList());
     }
 
     @Override
@@ -155,6 +170,7 @@ public class ApplyService implements ApplyUsecase {
                 .findAny()
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
+
     private List<Portfolio> getNewPortfolios(List<ApplyPortfolioDto> portfolios) {
         return portfolios.stream()
                 .map(ApplyPortfolioDto::toEntity)

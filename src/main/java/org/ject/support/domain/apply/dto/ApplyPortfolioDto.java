@@ -15,4 +15,13 @@ public record ApplyPortfolioDto(String fileUrl,
                 .sequence(Integer.parseInt(sequence))
                 .build();
     }
+
+    public static ApplyPortfolioDto from(Portfolio portfolio) {
+        return new ApplyPortfolioDto(
+                portfolio.getFileUrl(),
+                portfolio.getFileName(),
+                String.valueOf(portfolio.getFileSize()),
+                String.valueOf(portfolio.getSequence())
+        );
+    }
 }

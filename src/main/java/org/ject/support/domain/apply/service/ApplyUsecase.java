@@ -1,14 +1,14 @@
 package org.ject.support.domain.apply.service;
 
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
-import org.ject.support.domain.apply.dto.ApplyTemporaryResponse;
+import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.member.JobFamily;
 
 import java.util.List;
 import java.util.Map;
 
 public interface ApplyUsecase {
-    ApplyTemporaryResponse getTemporaryApplication(Long memberId);
+    TempApplicationFormResponse findTempApplicationForm(Long memberId);
 
     void saveApplicationTemporarily(Long memberId,
                                     Map<String, String> answers,

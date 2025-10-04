@@ -4,8 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.domain.apply.dto.ApplyTemporaryRequest;
-import org.ject.support.domain.apply.dto.ApplyTemporaryResponse;
 import org.ject.support.domain.apply.dto.SubmitApplicationRequest;
+import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.member.JobFamily;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -16,7 +16,7 @@ public interface ApplyApiSpec {
     @Operation(
             summary = "가장 최근에 저장된 임시 지원서 조회",
             description = "가장 최근에 저장된 임시 지원서를 조회합니다.")
-    ApplyTemporaryResponse getTemporaryApplication(@AuthPrincipal Long memberId);
+    TempApplicationFormResponse findTempApplicationForm(@AuthPrincipal Long memberId);
 
     @Operation(
             summary = "지원서 임시 저장",

@@ -12,7 +12,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @AllArgsConstructor
 public enum ApplyErrorCode implements ErrorCode {
     NOT_FOUND_APPLY(NOT_FOUND, 1, "지원 정보를 찾을 수 없습니다."),
-    ALREADY_SUBMITTED(CONFLICT, 2, "이미 지원서를 제출한 상태입니다.");
+    ALREADY_SUBMITTED(CONFLICT, 2, "이미 지원서를 제출한 상태입니다."),
+    NOT_FOUND_TEMP_APPLICATION_FORM(NOT_FOUND, 3, "임시 저장한 지원서가 존재하지 않습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
