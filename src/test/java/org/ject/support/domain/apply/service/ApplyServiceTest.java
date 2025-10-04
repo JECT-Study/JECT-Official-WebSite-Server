@@ -11,7 +11,6 @@ import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
@@ -41,9 +40,6 @@ class ApplyServiceTest extends UnitTestSupport {
 
     @InjectMocks
     ApplyService applyService;
-
-    @Mock
-    MemberRepository memberRepository;
 
     @Mock
     RecruitRepository recruitRepository;
