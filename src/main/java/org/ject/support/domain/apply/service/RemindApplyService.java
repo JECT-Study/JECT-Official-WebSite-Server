@@ -1,6 +1,8 @@
-package org.ject.support.domain.tempapply.service;
+package org.ject.support.domain.apply.service;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
@@ -20,7 +22,7 @@ public class RemindApplyService implements RemindApplyUsecase {
 
     private final RecruitRepository recruitRepository;
     private final MemberRepository memberRepository;
-    private final TemporaryApplyService temporaryApplyService;
+    private final ApplyRepository applyRepository;
     private final SesEmailSendService emailSendService;
 
     @Override
@@ -29,7 +31,10 @@ public class RemindApplyService implements RemindApplyUsecase {
         Recruit recruit = recruitRepository.findActiveRecruitById(recruitId, LocalDateTime.now());
 
         // 모집 기간 중 지원서 임시 저장한 지원자 ID 모두 조회
-        List<Long> applicantIds = temporaryApplyService.findMemberIdsByRecruit(recruit);
+        List<Long> applicantIds = applyRepository.findByRecruitAndStatus(recruit, Apply.Status.TEMP_SAVED)
+                .stream()
+                .map(apply -> apply.getMember().getId())
+                .toList();
 
         // 지원서 최종 제출하지 않은 지원자 필터링
         List<String> targetEmails = memberRepository.findEmailsByIdsAndNotSubmitted(applicantIds);
