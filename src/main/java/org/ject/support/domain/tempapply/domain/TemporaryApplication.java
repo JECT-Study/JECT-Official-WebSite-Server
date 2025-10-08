@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+@Deprecated
 @DynamoDBTable(tableName = "temporary_application")
 @DynamoDbBean
 @NoArgsConstructor

@@ -21,6 +21,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 
 import java.net.URI;
 
+@Deprecated
 @Configuration
 @DependsOn(value = {"awsConfig"})
 @EnableDynamoDBRepositories(basePackageClasses = DynamoDbRepository.class)

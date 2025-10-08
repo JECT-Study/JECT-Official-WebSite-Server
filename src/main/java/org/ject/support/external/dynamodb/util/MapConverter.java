@@ -7,6 +7,7 @@ import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+@Deprecated
 public class MapConverter implements AttributeConverter<Map<String, String>> {
     @Override
     public AttributeValue transformFrom(final Map<String, String> map) {

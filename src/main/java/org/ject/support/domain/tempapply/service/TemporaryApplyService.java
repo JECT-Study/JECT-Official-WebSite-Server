@@ -8,6 +8,7 @@ import org.ject.support.domain.recruit.domain.Recruit;
 import java.util.List;
 import java.util.Map;
 
+@Deprecated
 public interface TemporaryApplyService {
     /**
      * 사용자의 임시 지원서를 조회<br/>
