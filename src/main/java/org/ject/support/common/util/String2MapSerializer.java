@@ -18,7 +18,10 @@ public class String2MapSerializer {
 
     public Map<String,String> serializeAsMap(final String string) {
         try {
-            return objectMapper.readValue(string, new TypeReference<>() {
+            if (string == null || string.isBlank()) {
+                return Map.of();
+            }
+            return objectMapper.readValue(string, new TypeReference<Map<String, String>>() {
             });
         } catch (JsonProcessingException e) {
             throw new GlobalException(GlobalErrorCode.JSON_MARSHALLING_FAILURE);
