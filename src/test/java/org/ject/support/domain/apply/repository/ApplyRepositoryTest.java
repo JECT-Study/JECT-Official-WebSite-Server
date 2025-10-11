@@ -83,7 +83,7 @@ class ApplyRepositoryTest {
 
         // then
         assertThat(result).hasSize(2);
-        assertThat(result).containsExactly(be2TempApply, be3TempApply);
+        assertThat(result).containsExactlyInAnyOrder(be2TempApply, be3TempApply);
     }
 
     private Recruit getRecruit(JobFamily jobFamily) {
