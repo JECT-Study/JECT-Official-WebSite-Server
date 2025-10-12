@@ -42,10 +42,10 @@ class ApplyRepositoryTest {
     RecruitRepository recruitRepository;
 
     Semester semester;
-    Recruit pmRecruit = getRecruit(PM);
-    Recruit pdRecruit = getRecruit(PD);
-    Recruit feRecruit = getRecruit(FE);
-    Recruit beRecruit = getRecruit(BE);
+    Recruit pmRecruit;
+    Recruit pdRecruit;
+    Recruit feRecruit;
+    Recruit beRecruit;
 
     @Autowired
     private MemberRepository memberRepository;
