@@ -2,8 +2,10 @@ package org.ject.support.domain.apply.service;
 
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
@@ -52,6 +54,9 @@ class ApplyServiceTest extends UnitTestSupport {
 
     @Mock
     ApplicationFormRepository applicationFormRepository;
+
+    @Mock
+    String2MapSerializer string2MapSerializer;
 
     @Test
     void 지원서_제출_성공() {
@@ -301,10 +306,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 .id(1L)
                 .recruit(recruit)
                 .member(getApplicant(1L, "email1@test.com"))
-                .applicationForm(ApplicationForm.builder()
-                        .id(1L)
-                        .content("content")
-                        .build())
+                .applicationForm(null)
                 .status(JOINED)
                 .build();
 
@@ -327,7 +329,42 @@ class ApplyServiceTest extends UnitTestSupport {
                 .isInstanceOf(ApplyException.class);
         assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(2L))
                 .isInstanceOf(ApplyException.class);
+    }
 
+    @Test
+    void 가장_최근에_임시저장한_지원서_조회_성공() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"),
+                getQuestion(2L, 2, "문항 2", "설명 2"),
+                getQuestion(3L, 3, "문항 3", "설명 3"),
+                getQuestion(4L, 4, "문항 4", "설명 4"));
+
+        Recruit recruit = getActiveRecruit(BE, questions);
+
+        Map<String, String> answers = Map.of("1", "answer1", "2", "answer2");
+        ApplicationForm tempApplicationForm = ApplicationForm.builder()
+                .id(1L)
+                .content(answers.toString())
+                .build();
+
+        Apply apply = Apply.builder()
+                .id(1L)
+                .recruit(recruit)
+                .member(getApplicant(1L, "email@test.com"))
+                .applicationForm(tempApplicationForm)
+                .status(TEMP_SAVED)
+                .build();
+
+        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+        when(string2MapSerializer.serializeAsMap(tempApplicationForm.getContent())).thenReturn(answers);
+
+        // when
+        TempApplicationFormResponse result = applyService.findTempApplicationForm(1L);
+
+        // then
+        assertThat(result.answers()).isEqualTo(answers);
+        assertThat(result.portfolios()).isEmpty();
     }
 
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {
