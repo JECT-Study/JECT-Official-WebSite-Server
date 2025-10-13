@@ -75,11 +75,17 @@ class MemberServiceTest extends UnitTestSupport {
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
                 .build();
+        Semester semester = Semester.builder()
+                .id(1L)
+                .name("1기")
+                .isRecruiting(true)
+                .build();
 
         given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.empty());
         given(passwordEncoder.encode(TEST_PIN)).willReturn(TEST_ENCODED_PIN);
         given(memberRepository.save(any(Member.class))).willReturn(member);
         given(jwtTokenProvider.createAuthenticationByMember(any(Member.class))).willReturn(authentication);
+        given(semesterRepository.findRecruitingSemester()).willReturn(Optional.of(semester));
 
         // when
         Authentication result = memberService.registerTempMember(request, TEST_EMAIL);

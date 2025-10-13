@@ -2,15 +2,17 @@ package org.ject.support.domain.apply.service;
 
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
+import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
@@ -28,6 +30,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
+import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
@@ -37,9 +42,6 @@ class ApplyServiceTest extends UnitTestSupport {
 
     @InjectMocks
     ApplyService applyService;
-
-    @Mock
-    MemberRepository memberRepository;
 
     @Mock
     RecruitRepository recruitRepository;
@@ -53,6 +55,9 @@ class ApplyServiceTest extends UnitTestSupport {
     @Mock
     ApplicationFormRepository applicationFormRepository;
 
+    @Mock
+    String2MapSerializer string2MapSerializer;
+
     @Test
     void 지원서_제출_성공() {
         // given
@@ -64,7 +69,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Recruit recruit = getActiveRecruit(BE, questions);
 
-        Member applicant = getApplicant();
+        Member applicant = getApplicant(1L, "email@test.com");
 
         Map<String, String> answers = Map.of(
                 "1", "답변 1",
@@ -72,14 +77,13 @@ class ApplyServiceTest extends UnitTestSupport {
                 "3", "답변 3",
                 "4", "답변 4");
 
-        Apply apply = getApply(recruit, applicant);
+        ApplicationForm applicationForm = getApplicationForm(answers.toString());
 
-        String content = "answerToJson";
+        Apply apply = getApply(1L, recruit, applicant, applicationForm, TEMP_SAVED);
 
-        when(memberRepository.findById(1L)).thenReturn(Optional.of(applicant));
         when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
-        when(applyRepository.findByMember(applicant)).thenReturn(Optional.of(apply));
-        when(map2JsonSerializer.serializeAsString(answers)).thenReturn(content);
+        when(applyRepository.findByMemberId(applicant.getId())).thenReturn(Optional.of(apply));
+        when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
         // when
         applyService.submitApplication(1L, BE, answers, List.of());
@@ -90,7 +94,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         ApplicationForm saved = captor.getValue();
         assertThat(saved.getApply()).isEqualTo(apply);
-        assertThat(saved.getContent()).isEqualTo(content);
+        assertThat(saved.getContent()).isEqualTo(answers.toString());
         assertThat(saved.getPortfolios()).isEmpty();
     }
 
@@ -105,15 +109,12 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Recruit recruit = getActiveRecruit(BE, questions);
 
-        Member applicant = getApplicant();
-
         Map<String, String> answers = Map.of(
                 "1", "답변 1",
                 "2", "답변 2",
                 "3", "답변 3",
                 "4", "답변 4");
 
-        when(memberRepository.findById(1L)).thenReturn(Optional.of(applicant));
         when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
 
         // when, then
@@ -131,6 +132,227 @@ class ApplyServiceTest extends UnitTestSupport {
 
         // then
         assertThat(result).isTrue();
+    }
+
+    @Test
+    void 지원서_최초_임시저장_성공() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"),
+                getQuestion(2L, 2, "문항 2", "설명 2"),
+                getQuestion(3L, 3, "문항 3", "설명 3"),
+                getQuestion(4L, 4, "문항 4", "설명 4"));
+
+        Recruit recruit = getActiveRecruit(BE, questions);
+
+        Map<String, String> answers = Map.of(
+                "1", "답변 1",
+                "2", "답변 2",
+                "3", "답변 3",
+                "4", "답변 4");
+
+        Member applicant = getApplicant(1L, "email@test.com");
+
+        ApplicationForm applicationForm = getApplicationForm(answers.toString());
+
+        Apply apply = getApply(1L, recruit, applicant, applicationForm, JOINED);
+
+        String content = "newContent";
+
+        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+        when(map2JsonSerializer.serializeAsString(answers)).thenReturn(content);
+
+        // when
+        applyService.saveApplicationTemporarily(1L, answers, List.of());
+
+        // then
+        ArgumentCaptor<ApplicationForm> captor = ArgumentCaptor.forClass(ApplicationForm.class);
+        verify(applicationFormRepository).save(captor.capture());
+
+        ApplicationForm saved = captor.getValue();
+        assertThat(saved.getApply()).isEqualTo(apply);
+        assertThat(saved.getContent()).isEqualTo(content);
+        assertThat(saved.getPortfolios()).isEmpty();
+        assertThat(apply.getApplicationForm()).isEqualTo(saved);
+        assertThat(apply.getStatus()).isEqualTo(TEMP_SAVED);
+    }
+
+    @Test
+    void 지원서를_이미_제출한_상태에서_임시저장_실패() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"),
+                getQuestion(2L, 2, "문항 2", "설명 2"),
+                getQuestion(3L, 3, "문항 3", "설명 3"),
+                getQuestion(4L, 4, "문항 4", "설명 4"));
+
+        Recruit recruit = getActiveRecruit(BE, questions);
+
+        Map<String, String> answers = Map.of(
+                "1", "답변 1",
+                "2", "답변 2",
+                "3", "답변 3",
+                "4", "답변 4");
+
+        Member applicant = getApplicant(1L, "email@test.com");
+
+        ApplicationForm applicationForm = getApplicationForm(answers.toString());
+
+        Apply apply = getApply(1L, recruit, applicant, applicationForm, SUBMITTED);
+
+        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+
+        // when, then
+        assertThatThrownBy(() -> applyService.saveApplicationTemporarily(1L, answers, List.of()))
+                .isInstanceOf(ApplyException.class);
+    }
+
+    @Test
+    void 지원서를_임시저장한_상태에서_임시저장_성공() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"),
+                getQuestion(2L, 2, "문항 2", "설명 2"),
+                getQuestion(3L, 3, "문항 3", "설명 3"),
+                getQuestion(4L, 4, "문항 4", "설명 4"));
+
+        Recruit recruit = getActiveRecruit(BE, questions);
+
+        Map<String, String> answers = Map.of(
+                "1", "답변 1",
+                "2", "답변 2",
+                "3", "답변 3",
+                "4", "답변 4");
+
+        Member applicant = getApplicant(1L, "email@test.com");
+
+        ApplicationForm oldApplicationForm = ApplicationForm.builder()
+                .id(1L)
+                .content("oldContent")
+                .build();
+
+        Apply apply = getApply(1L, recruit, applicant, oldApplicationForm, TEMP_SAVED);
+
+        String newContent = "newContent";
+
+        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+        when(map2JsonSerializer.serializeAsString(answers)).thenReturn(newContent);
+
+        // when
+        applyService.saveApplicationTemporarily(1L, answers, List.of());
+
+        // then
+        ApplicationForm newApplicationForm = apply.getApplicationForm();
+        assertThat(newApplicationForm.getContent()).isEqualTo(newContent);
+        assertThat(apply.getStatus()).isEqualTo(TEMP_SAVED);
+    }
+
+    @Test
+    void 프로필과_임시저장한_지원서_제거_성공() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"),
+                getQuestion(2L, 2, "문항 2", "설명 2"),
+                getQuestion(3L, 3, "문항 3", "설명 3"),
+                getQuestion(4L, 4, "문항 4", "설명 4"));
+
+        Recruit recruit = getActiveRecruit(BE, questions);
+
+        ApplicationForm applicationForm = ApplicationForm.builder()
+                .id(1L)
+                .content("content")
+                .build();
+
+        Apply apply = getApply(1L, recruit, getApplicant(1L, "email@test.com"), applicationForm, TEMP_SAVED);
+
+        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+
+        // when
+        applyService.deleteProfileAndTempApplicationForm(1L);
+
+        // then
+        assertThat(apply.getApplicationForm()).isNull();
+        assertThat(apply.getStatus()).isEqualTo(JOINED);
+
+        Member applicant = apply.getMember();
+        assertThat(applicant.getName()).isNull();
+        assertThat(applicant.getPhoneNumber()).isNull();
+        assertThat(applicant.getJobFamily()).isNull();
+        assertThat(applicant.getCareerDetails()).isNull();
+        assertThat(applicant.getExperiencePeriod()).isNull();
+        assertThat(applicant.getInterestedDomains()).isEmpty();
+    }
+
+    @Test
+    void 임시저장한_지원서가_없거나_이미_제출한_상태에서_프로필과_임시저장한_지원서_제거_시_실패() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"),
+                getQuestion(2L, 2, "문항 2", "설명 2"),
+                getQuestion(3L, 3, "문항 3", "설명 3"),
+                getQuestion(4L, 4, "문항 4", "설명 4"));
+
+        Recruit recruit = getActiveRecruit(BE, questions);
+
+        Apply apply1 = getApply(1L, recruit, getApplicant(1L, "email1@test.com"), null, JOINED);
+        Apply apply2 = getApply(2L, recruit, getApplicant(2L, "email2@test.com"), ApplicationForm.builder()
+                .id(2L)
+                .content("content")
+                .build(), SUBMITTED);
+
+        when(applyRepository.findByMemberId(1L)).thenReturn(Optional.of(apply1));
+        when(applyRepository.findByMemberId(2L)).thenReturn(Optional.of(apply2));
+
+        // when, then
+        assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(1L))
+                .isInstanceOf(ApplyException.class);
+        assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(2L))
+                .isInstanceOf(ApplyException.class);
+    }
+
+    @Test
+    void 가장_최근에_임시저장한_지원서_조회_성공() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"),
+                getQuestion(2L, 2, "문항 2", "설명 2"),
+                getQuestion(3L, 3, "문항 3", "설명 3"),
+                getQuestion(4L, 4, "문항 4", "설명 4"));
+
+        Recruit recruit = getActiveRecruit(BE, questions);
+
+        Map<String, String> answers = Map.of("1", "answer1", "2", "answer2");
+        ApplicationForm tempApplicationForm = getApplicationForm(answers.toString());
+
+        Apply apply = getApply(1L, recruit, getApplicant(1L, "email@test.com"), tempApplicationForm, TEMP_SAVED);
+
+        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+        when(string2MapSerializer.serializeAsMap(tempApplicationForm.getContent())).thenReturn(answers);
+
+        // when
+        TempApplicationFormResponse result = applyService.findTempApplicationForm(1L);
+
+        // then
+        assertThat(result.answers()).isEqualTo(answers);
+        assertThat(result.portfolios()).isEmpty();
+    }
+
+    @Test
+    void 임시저장한_지원서가_없는_상태에서_조회_시_실패() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"),
+                getQuestion(2L, 2, "문항 2", "설명 2"),
+                getQuestion(3L, 3, "문항 3", "설명 3"),
+                getQuestion(4L, 4, "문항 4", "설명 4"));
+
+        Apply apply = getApply(1L, getActiveRecruit(BE, questions), getApplicant(1L, "email@test.com"), null, JOINED);
+
+        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+
+        // when, then
+        assertThatThrownBy(() -> applyService.findTempApplicationForm(1L))
+                .isInstanceOf(ApplyException.class);
     }
 
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {
@@ -155,22 +377,30 @@ class ApplyServiceTest extends UnitTestSupport {
                 .build();
     }
 
-    private Member getApplicant() {
+    private Member getApplicant(Long id, String email) {
         return Member.builder()
-                .id(1L)
-                .email("email@test.com")
+                .id(id)
+                .email(email)
                 .pin("111111")
                 .role(Role.APPLY)
                 .status(MemberStatus.ACTIVE)
                 .build();
     }
 
-    private Apply getApply(Recruit recruit, Member applicant) {
+    private Apply getApply(Long id, Recruit recruit, Member applicant, ApplicationForm applicationForm, Apply.Status status) {
         return Apply.builder()
-                .id(1L)
+                .id(id)
                 .recruit(recruit)
                 .member(applicant)
-                .status(Apply.Status.TEMP_SAVED)
+                .applicationForm(applicationForm)
+                .status(status)
+                .build();
+    }
+
+    private ApplicationForm getApplicationForm(String content) {
+        return ApplicationForm.builder()
+                .id(1L)
+                .content(content)
                 .build();
     }
 }

@@ -15,6 +15,9 @@ import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.exception.SemesterErrorCode;
+import org.ject.support.domain.recruit.exception.SemesterException;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -66,9 +69,12 @@ public class MemberService {
     private Member createTempMemberWithPin(RegisterRequest registerRequest, String email) {
         String encodedPin = passwordEncoder.encode(registerRequest.pin());
 
-        // Apply 생성
+        Semester semester = semesterRepository.findRecruitingSemester()
+                .orElseThrow(() -> new SemesterException(SemesterErrorCode.NOT_FOUND_RECRUITING_SEMESTER));
 
-        Member member = registerRequest.toEntity(email, encodedPin);
+        Member member = registerRequest.toEntity(semester.getId(), email, encodedPin);
+
+        // TODO 이벤트 발행 후 apply 저장
 
         return memberRepository.save(member);
     }

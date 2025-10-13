@@ -2,31 +2,30 @@ package org.ject.support.domain.tempapply.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
-import org.ject.support.domain.apply.dto.ApplyTemporaryResponse;
+import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
-import org.ject.support.domain.tempapply.exception.TemporaryApplicationException;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
 
-import static org.ject.support.domain.tempapply.exception.TemporaryApplicationErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM;
-
+@Deprecated
 @Service
 @RequiredArgsConstructor
 public class TemporaryApplyServiceImpl implements TemporaryApplyService {
     private final TemporaryApplicationRepository temporaryApplicationRepository;
 
     @Override
-    public ApplyTemporaryResponse findMembersRecentTemporaryApplication(final Long memberId) {
-        TemporaryApplication latestApplication =
-                temporaryApplicationRepository.findLatestByMemberId(memberId.toString())
-                        .orElseThrow(() -> new TemporaryApplicationException(NOT_FOUND_TEMP_APPLICATION_FORM));
-
-        return ApplyTemporaryResponse.from(latestApplication);
+    public TempApplicationFormResponse findMembersRecentTemporaryApplication(final Long memberId) {
+//        TemporaryApplication latestApplication =
+//                temporaryApplicationRepository.findLatestByMemberId(memberId.toString())
+//                        .orElseThrow(() -> new TemporaryApplicationException(NOT_FOUND_TEMP_APPLICATION_FORM));
+//
+//        return ApplyTemporaryResponse.from(latestApplication);
+        return null;
     }
 
     @Override

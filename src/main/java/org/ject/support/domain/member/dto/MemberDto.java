@@ -12,8 +12,9 @@ public class MemberDto {
 
             @NotBlank @Pattern(regexp = "^\\d{6}$", message = "PIN 번호는 6자리 숫자여야 합니다.") String pin) {
 
-        public Member toEntity(String email, String encodedPin) {
+        public Member toEntity(Long semesterId, String email, String encodedPin) {
             return Member.builder()
+                    .semesterId(semesterId)
                     .email(email)
                     .pin(encodedPin)
                     .status(MemberStatus.ACTIVE)

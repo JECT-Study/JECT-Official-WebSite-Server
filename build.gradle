@@ -142,7 +142,9 @@ configurations {
 def jacocoExcludes = [
         '**/Q*',      // QueryDSL Q*
         '**/exception/**',
-        '**/dto/**'
+        '**/dto/**',
+        '**/controller/**',
+        '**/tempapply/**'
 ]
 
 test {

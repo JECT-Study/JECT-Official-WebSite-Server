@@ -1,4 +1,4 @@
-package org.ject.support.domain.tempapply.service;
+package org.ject.support.domain.apply.service;
 
 public interface RemindApplyUsecase {
 

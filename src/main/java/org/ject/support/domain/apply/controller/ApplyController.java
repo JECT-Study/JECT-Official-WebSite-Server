@@ -3,8 +3,8 @@ package org.ject.support.domain.apply.controller;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.domain.apply.dto.ApplyTemporaryRequest;
-import org.ject.support.domain.apply.dto.ApplyTemporaryResponse;
 import org.ject.support.domain.apply.dto.SubmitApplicationRequest;
+import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.apply.service.ApplyUsecase;
 import org.ject.support.domain.member.JobFamily;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,24 +25,23 @@ public class ApplyController implements ApplyApiSpec {
     @Override
     @GetMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public ApplyTemporaryResponse getTemporaryApplication(@AuthPrincipal Long memberId) {
-        return applyUsecase.getTemporaryApplication(memberId);
+    public TempApplicationFormResponse findTempApplicationForm(@AuthPrincipal Long memberId) {
+        return applyUsecase.findTempApplicationForm(memberId);
     }
 
     @Override
     @PostMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void applyTemporary(@AuthPrincipal Long memberId,
-                               @RequestParam JobFamily jobFamily,
-                               @RequestBody ApplyTemporaryRequest request) {
-        applyUsecase.applyTemporary(jobFamily, memberId, request.answers(), request.portfolios());
+    public void saveApplicationTemporarily(@AuthPrincipal Long memberId,
+                                           @RequestBody ApplyTemporaryRequest request) {
+        applyUsecase.saveApplicationTemporarily(memberId, request.answers(), request.portfolios());
     }
 
     @Override
     @DeleteMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void deleteTemporaryApplications(@AuthPrincipal Long memberId) {
-        applyUsecase.deleteTemporaryApplications(memberId);
+    public void deleteProfileAndTempApplicationForm(@AuthPrincipal Long memberId) {
+        applyUsecase.deleteProfileAndTempApplicationForm(memberId);
     }
 
     @Override

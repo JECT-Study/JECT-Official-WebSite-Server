@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Deprecated
 public class ApplyTemporaryPortfolioConverter implements AttributeConverter<List<ApplyPortfolioDto>> {
 
     private static final String FILE_URL = "fileUrl";

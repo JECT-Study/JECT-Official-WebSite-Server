@@ -23,6 +23,7 @@ import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PD;
 import static org.ject.support.domain.member.JobFamily.PM;
 
+@Deprecated
 @IntegrationTest
 @Transactional
 class TemporaryApplyServiceImplTest {
