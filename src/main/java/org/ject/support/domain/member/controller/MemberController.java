@@ -34,7 +34,7 @@ public class MemberController implements MemberApiSpec {
      * PIN 번호를 암호화하여 임시 회원을 생성합니다.
      */
     @Override
-    @PostMapping
+    @PostMapping("/apply")
     @PreAuthorize("hasRole('ROLE_VERIFICATION')")
     public boolean registerMember(HttpServletRequest request, HttpServletResponse response,
                                   @Valid @RequestBody MemberDto.RegisterRequest registerRequest) {
