@@ -1,6 +1,7 @@
 package org.ject.support.domain.apply.service;
 
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
+import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.member.JobFamily;
@@ -24,4 +25,6 @@ public interface ApplyUsecase {
                            List<ApplyPortfolioDto> portfolios);
 
     ApplyStatusResponse checkApplySubmit(Long memberId);
+
+    void saveProfile(Long memberId, ApplyProfileRequest request);
 }

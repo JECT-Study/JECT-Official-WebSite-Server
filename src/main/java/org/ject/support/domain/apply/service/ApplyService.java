@@ -9,6 +9,7 @@ import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
+import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
@@ -17,6 +18,7 @@ import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.exception.QuestionErrorCode;
 import org.ject.support.domain.recruit.exception.QuestionException;
@@ -44,6 +46,7 @@ public class ApplyService implements ApplyUsecase {
     private final RecruitRepository recruitRepository;
     private final ApplyRepository applyRepository;
     private final ApplicationFormRepository applicationFormRepository;
+    private final MemberRepository memberRepository;
     private final Map2JsonSerializer map2JsonSerializer;
     private final String2MapSerializer string2MapSerializer;
 
@@ -158,6 +161,27 @@ public class ApplyService implements ApplyUsecase {
         return applyRepository.findByMemberId(memberId)
                 .map(ApplyStatusResponse::of)
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
+    }
+
+    @Override
+    @PeriodAccessible
+    @Transactional
+    public void saveProfile(Long memberId, ApplyProfileRequest request) {
+        var member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
+
+        var memberEditorBuilder = member.toEditor();
+
+        var memberEditor = memberEditorBuilder
+                .name(request.name())
+                .phoneNumber(request.phoneNumber())
+                .jobFamily(request.jobFamily())
+                .careerDetails(request.careerDetails())
+                .experiencePeriod(request.experiencePeriod())
+                .interestedDomains(request.interestedDomains())
+                .build();
+
+        member.edit(memberEditor);
     }
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {

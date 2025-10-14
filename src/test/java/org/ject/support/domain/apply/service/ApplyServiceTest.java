@@ -1,19 +1,39 @@
 package org.ject.support.domain.apply.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
+import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
+import org.ject.support.domain.member.CareerDetails;
+import org.ject.support.domain.member.ExperiencePeriod;
+import org.ject.support.domain.member.InterestedDomain;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
@@ -23,21 +43,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class ApplyServiceTest extends UnitTestSupport {
 
@@ -55,6 +60,9 @@ class ApplyServiceTest extends UnitTestSupport {
 
     @Mock
     ApplicationFormRepository applicationFormRepository;
+
+    @Mock
+    MemberRepository memberRepository;
 
     @Mock
     String2MapSerializer string2MapSerializer;
@@ -380,6 +388,34 @@ class ApplyServiceTest extends UnitTestSupport {
                 .isInstanceOf(ApplyException.class);
     }
 
+    @Test
+    void 프로필_저장_성공() {
+        // given
+        long memberId = 1L;
+        Member member = getApplicant(memberId, "test@example.com");
+        ApplyProfileRequest request = new ApplyProfileRequest(
+            "New Name",
+            "010-1234-5678",
+            JobFamily.FE,
+            CareerDetails.STUDENT,
+            ExperiencePeriod.NONE,
+            List.of(InterestedDomain.GAME.getDescription(), InterestedDomain.EDUCATION.getDescription())
+        );
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+
+        // when
+        applyService.saveProfile(memberId, request);
+
+        // then
+        assertThat(member.getName()).isEqualTo(request.name());
+        assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
+        assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
+        assertThat(member.getCareerDetails()).isEqualTo(request.careerDetails());
+        assertThat(member.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
+        assertThat(member.getInterestedDomains()).isEqualTo(request.interestedDomains());
+    }
+
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {
         return Recruit.builder()
                 .id(1L)
@@ -428,4 +464,5 @@ class ApplyServiceTest extends UnitTestSupport {
                 .content(content)
                 .build();
     }
+
 }
