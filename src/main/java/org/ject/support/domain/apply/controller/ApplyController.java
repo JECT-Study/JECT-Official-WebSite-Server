@@ -2,6 +2,7 @@ package org.ject.support.domain.apply.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.AuthPrincipal;
+import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.ApplyTemporaryRequest;
 import org.ject.support.domain.apply.dto.SubmitApplicationRequest;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
@@ -56,7 +57,7 @@ public class ApplyController implements ApplyApiSpec {
     @Override
     @GetMapping("/status")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public boolean checkApplyStatus(@AuthPrincipal Long memberId) {
+    public ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long memberId) {
         return applyUsecase.checkApplySubmit(memberId);
     }
 }

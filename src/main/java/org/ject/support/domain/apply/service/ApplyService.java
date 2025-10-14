@@ -9,6 +9,7 @@ import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
+import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
@@ -153,8 +154,10 @@ public class ApplyService implements ApplyUsecase {
 
     @Override
     @PeriodAccessible(permitAllJob = true)
-    public boolean checkApplySubmit(Long memberId) {
-        return applicationFormRepository.existsByMemberId(memberId, LocalDateTime.now());
+    public ApplyStatusResponse checkApplySubmit(Long memberId) {
+        return applyRepository.findByMemberId(memberId)
+                .map(ApplyStatusResponse::of)
+                .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
     }
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {

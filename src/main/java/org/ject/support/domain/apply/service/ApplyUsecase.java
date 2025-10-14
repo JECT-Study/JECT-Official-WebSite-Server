@@ -1,6 +1,7 @@
 package org.ject.support.domain.apply.service;
 
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
+import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.member.JobFamily;
 
@@ -22,5 +23,5 @@ public interface ApplyUsecase {
                            Map<String, String> answers,
                            List<ApplyPortfolioDto> portfolios);
 
-    boolean checkApplySubmit(Long memberId);
+    ApplyStatusResponse checkApplySubmit(Long memberId);
 }

@@ -5,6 +5,7 @@ import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
@@ -123,15 +124,39 @@ class ApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 지원서를_제출한_지원자에_대한_제출_여부_확인_시_true_반환() {
+    void 작성_중인_지원서가_있는_경우_TEMP_SAVED_반환() {
         // given
-        when(applicationFormRepository.existsByMemberId(any(), any())).thenReturn(true);
+        when(applyRepository.findByMemberId(any()))
+                .thenReturn(Optional.of(
+                        Apply.builder()
+                                .id(1L)
+                                .status(TEMP_SAVED)
+                                .build()
+                ));
 
         // when
-        boolean result = applyService.checkApplySubmit(1L);
+        ApplyStatusResponse result = applyService.checkApplySubmit(1L);
 
         // then
-        assertThat(result).isTrue();
+        assertThat(result).isEqualTo(new ApplyStatusResponse(TEMP_SAVED));
+    }
+
+    @Test
+    void 지원서를_제출한_지원자에_대한_제출_상태_확인_시_SUBMITTED_반환() {
+        // given
+        when(applyRepository.findByMemberId(any()))
+                .thenReturn(Optional.of(
+                        Apply.builder()
+                                .id(1L)
+                                .status(SUBMITTED)
+                                .build()
+                ));
+
+        // when
+        ApplyStatusResponse result = applyService.checkApplySubmit(1L);
+
+        // then
+        assertThat(result).isEqualTo(new ApplyStatusResponse(SUBMITTED));
     }
 
     @Test
