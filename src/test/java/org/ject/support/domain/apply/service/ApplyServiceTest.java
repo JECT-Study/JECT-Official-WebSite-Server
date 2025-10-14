@@ -8,6 +8,7 @@ import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -98,13 +99,15 @@ class ApplyServiceTest extends UnitTestSupport {
         applyService.submitApplication(1L, BE, answers, List.of());
 
         // then
-        ArgumentCaptor<ApplicationForm> captor = ArgumentCaptor.forClass(ApplicationForm.class);
-        verify(applicationFormRepository).save(captor.capture());
+        // 1. TEMP_SAVED 상태에서는 update가 발생하므로 save가 호출되지 않아야 함
+        verify(applicationFormRepository, never()).save(any(ApplicationForm.class));
 
-        ApplicationForm saved = captor.getValue();
-        assertThat(saved.getApply()).isEqualTo(apply);
-        assertThat(saved.getContent()).isEqualTo(answers.toString());
-        assertThat(saved.getPortfolios()).isEmpty();
+        // 2. 기존 applicationForm의 내용이 새로운 내용으로 업데이트되었는지 확인
+        assertThat(applicationForm.getContent()).isEqualTo(answers.toString());
+        assertThat(applicationForm.getPortfolios()).isEmpty();
+
+        // 3. apply의 상태가 SUBMITTED로 변경되었는지 확인
+        assertThat(apply.getStatus()).isEqualTo(SUBMITTED);
     }
 
     @Test

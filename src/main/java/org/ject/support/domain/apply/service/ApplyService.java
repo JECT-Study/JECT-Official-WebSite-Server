@@ -1,5 +1,14 @@
 package org.ject.support.domain.apply.service;
 
+import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
+import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.apply.exception.ApplyErrorCode.ALREADY_SUBMITTED;
+import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_FOUND_APPLY;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.Map2JsonSerializer;
@@ -27,17 +36,6 @@ import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
-import static org.ject.support.domain.apply.exception.ApplyErrorCode.ALREADY_SUBMITTED;
-import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_FOUND_APPLY;
 
 @Slf4j
 @Service
@@ -126,6 +124,9 @@ public class ApplyService implements ApplyUsecase {
         apply.deleteApplicationForm();
         apply.updateStatus(JOINED);
 
+        // Apply update status to joined
+        // Apply update status joined
+
         // 프로필 제거
         Member applicant = apply.getMember();
         applicant.deleteProfile();
@@ -149,10 +150,23 @@ public class ApplyService implements ApplyUsecase {
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
         // 4. Portfolio와 ApplicationForm 영속화
-        // TODO 임시 저장한 지원서가 있을 경우 업데이트
+        if (apply.isSubmitted()) {
+            throw new ApplyException(ALREADY_SUBMITTED);
+        }
+
         String content = map2JsonSerializer.serializeAsString(answers);
-        ApplicationForm applicationForm = createApplicationForm(apply, content, getNewPortfolios(portfolios));
-        applicationFormRepository.save(applicationForm);
+        List<Portfolio> newPortfolios = getNewPortfolios(portfolios);
+
+        // 임시 저장한 지원서가 있을 경우 업데이트
+        if (apply.isTempSaved()) {
+            ApplicationForm applicationForm = apply.getApplicationForm();
+            applicationForm.updateContentAndPortfolios(content, newPortfolios);
+        } else {
+            ApplicationForm applicationForm = createApplicationForm(apply, content, newPortfolios);
+            applicationFormRepository.save(applicationForm);
+            apply.updateApplicationForm(applicationForm);
+        }
+        apply.updateStatus(SUBMITTED);
     }
 
     @Override
@@ -205,7 +219,7 @@ public class ApplyService implements ApplyUsecase {
     private List<Portfolio> getNewPortfolios(List<ApplyPortfolioDto> portfolios) {
         return portfolios.stream()
                 .map(ApplyPortfolioDto::toEntity)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private ApplicationForm createApplicationForm(Apply apply, String content, List<Portfolio> portfolios) {

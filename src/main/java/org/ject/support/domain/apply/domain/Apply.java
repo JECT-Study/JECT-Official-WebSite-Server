@@ -67,6 +67,14 @@ public class Apply extends BaseTimeEntity {
         }
     }
 
+    public boolean isTempSaved() {
+        return status.equals(Status.TEMP_SAVED);
+    }
+
+    public boolean isSubmitted() {
+        return status.equals(Status.SUBMITTED);
+    }
+
     public enum Status {
         JOINED, TEMP_SAVED, SUBMITTED
     }
