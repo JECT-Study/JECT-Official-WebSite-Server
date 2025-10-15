@@ -443,6 +443,39 @@ class ApplyServiceTest extends UnitTestSupport {
         assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
     }
 
+    @Test
+    void 프로필_저장_시_Apply가_존재하면_프로필만_업데이트() {
+        // given
+        long memberId = 1L;
+        Member member = getApplicant(memberId, "test@example.com");
+        Apply existingApply = getApply(1L, null, member, null, JOINED);
+        ApplyProfileRequest request = new ApplyProfileRequest(
+                "New Name",
+                "010-1234-5678",
+                JobFamily.FE,
+                CareerDetails.STUDENT,
+                ExperiencePeriod.NONE,
+                List.of(InterestedDomain.GAME.getDescription(), InterestedDomain.EDUCATION.getDescription())
+        );
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(applyRepository.findByMemberId(memberId)).willReturn(Optional.of(existingApply));
+
+        // when
+        applyService.saveProfile(memberId, request);
+
+        // then
+        // applyRepository.save()는 호출되지 않아야 함 (멱등성)
+        verify(applyRepository, never()).save(any(Apply.class));
+
+        // Member의 프로필 정보는 업데이트되어야 함
+        assertThat(member.getName()).isEqualTo(request.name());
+        assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
+        assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
+        assertThat(member.getCareerDetails()).isEqualTo(request.careerDetails());
+        assertThat(member.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
+    }
+
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {
         return Recruit.builder()
                 .id(1L)

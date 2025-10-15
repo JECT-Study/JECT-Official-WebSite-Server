@@ -182,8 +182,10 @@ public class ApplyService implements ApplyUsecase {
     public void saveProfile(Long memberId, ApplyProfileRequest request) {
         var member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-        var memberEditorBuilder = member.toEditor();
 
+        createApplyIfNotExists(member, request.jobFamily());
+
+        var memberEditorBuilder = member.toEditor();
         var memberEditor = memberEditorBuilder
                 .name(request.name())
                 .phoneNumber(request.phoneNumber())
@@ -193,14 +195,16 @@ public class ApplyService implements ApplyUsecase {
                 .interestedDomains(request.interestedDomains())
                 .build();
 
-        var recruit = getPeriodRecruit(request.jobFamily());
-        var apply = Apply.createApply(member, recruit);
-        applyRepository.save(apply);
-
         member.edit(memberEditor);
     }
 
-
+    private void createApplyIfNotExists(Member member, JobFamily jobFamily) {
+        applyRepository.findByMemberId(member.getId()).orElseGet(() -> {
+            var recruit = getPeriodRecruit(jobFamily);
+            var newApply = Apply.createApply(member, recruit);
+            return applyRepository.save(newApply);
+        });
+    }
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
         answers.keySet().stream()
