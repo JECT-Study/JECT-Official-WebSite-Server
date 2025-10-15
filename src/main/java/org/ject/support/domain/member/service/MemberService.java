@@ -1,5 +1,8 @@
 package org.ject.support.domain.member.service;
 
+import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
+
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.JobFamily;
@@ -12,7 +15,6 @@ import org.ject.support.domain.member.dto.MemberEditRequest;
 import org.ject.support.domain.member.dto.MemberRegisterRequest;
 import org.ject.support.domain.member.dto.MemberResponse;
 import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.event.TempMemberRegisteredEvent;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -20,17 +22,12 @@ import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.exception.SemesterErrorCode;
 import org.ject.support.domain.recruit.exception.SemesterException;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-
-import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +37,6 @@ public class MemberService {
     private final SemesterRepository semesterRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
-    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 인증된 사용자의 PIN 번호를 설정하고 임시 회원을 생성합니다.
@@ -61,9 +57,6 @@ public class MemberService {
             throw new MemberException(ALREADY_EXIST_MEMBER);
         }
 
-        // Apply 생성 이벤트 발행
-        eventPublisher.publishEvent(TempMemberRegisteredEvent.of(member));
-
         // 인증 및 토큰 발급
         return jwtTokenProvider.createAuthenticationByMember(member);
     }
@@ -79,8 +72,6 @@ public class MemberService {
                 .orElseThrow(() -> new SemesterException(SemesterErrorCode.NOT_FOUND_RECRUITING_SEMESTER));
 
         Member member = registerRequest.toEntity(semester.getId(), email, encodedPin);
-
-        // TODO 이벤트 발행 후 apply 저장
 
         return memberRepository.save(member);
     }
