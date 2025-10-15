@@ -14,7 +14,7 @@ public record ApplyProfileRequest(
         @Pattern(regexp = "^[^\\s]+$", message = "이름은 공백없이 입력해주세요")
         String name,
 
-        @NotBlank(message = "번대로 번호를 입력해주세요")
+        @NotBlank(message = "전화번호를 입력해주세요")
         String phoneNumber,
 
         @NotNull(message = "포지션을 선택해주세요")
