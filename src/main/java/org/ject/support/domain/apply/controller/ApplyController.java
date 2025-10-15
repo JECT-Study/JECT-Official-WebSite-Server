@@ -63,6 +63,7 @@ public class ApplyController implements ApplyApiSpec {
         return applyUsecase.checkApplySubmit(memberId);
     }
 
+    @Override
     @PostMapping("/profile")
     @PreAuthorize("hasRole('ROLE_APPLY')")
     public void saveProfile(@AuthPrincipal Long memberId,
