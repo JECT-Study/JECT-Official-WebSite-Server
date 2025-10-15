@@ -209,7 +209,10 @@ public class ApplyService implements ApplyUsecase {
 
         Member member = memberRepository.findById(event.memberId())
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-
+        if (applyRepository.findByMemberId(event.memberId()).isPresent()) {
+            log.info("이미 Apply 엔티티가 존재하여 생성을 건너뜀: memberId={}", member.getId());
+            return;
+        }
         Apply apply = Apply.createApply(member);
         applyRepository.save(apply);
         log.info("Apply 엔티티 생성 및 저장 완료: applyId={}", apply.getId());
