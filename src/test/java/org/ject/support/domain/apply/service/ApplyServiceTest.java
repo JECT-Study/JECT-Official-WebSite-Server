@@ -491,5 +491,4 @@ class ApplyServiceTest extends UnitTestSupport {
                 .content(content)
                 .build();
     }
-
 }
