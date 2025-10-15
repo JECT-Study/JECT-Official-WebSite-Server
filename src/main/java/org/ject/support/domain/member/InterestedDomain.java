@@ -8,7 +8,8 @@ import lombok.Getter;
 public enum InterestedDomain {
     GAME("게임"),
     EDUCATION("교육"),
-    MARKETING("모빌리티"),
+    MARKETING("마케팅"),
+    MOBILITY("모빌리티"),
     PRODUCTIVITY("생산성"),
     SOCIAL_NETWORK("소셜 네트워크"),
     UTILITY("유틸리티"),
