@@ -27,7 +27,6 @@ import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.event.TempMemberRegisteredEvent;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -39,8 +38,6 @@ import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @Service
@@ -187,8 +184,7 @@ public class ApplyService implements ApplyUsecase {
     @Transactional
     public void saveProfile(Long memberId, ApplyProfileRequest request) {
         var member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
-
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
         var memberEditorBuilder = member.toEditor();
 
         var memberEditor = memberEditorBuilder
@@ -200,23 +196,14 @@ public class ApplyService implements ApplyUsecase {
                 .interestedDomains(request.interestedDomains())
                 .build();
 
+        var recruit = getPeriodRecruit(request.jobFamily());
+        var apply = Apply.createApply(member, recruit);
+        applyRepository.save(apply);
+
         member.edit(memberEditor);
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleTempMemberRegisteredEvent(TempMemberRegisteredEvent event) {
-        log.info("임시 회원 가입 이벤트 수신: memberId={}", event.memberId());
 
-        Member member = memberRepository.findById(event.memberId())
-                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-        if (applyRepository.findByMemberId(event.memberId()).isPresent()) {
-            log.info("이미 Apply 엔티티가 존재하여 생성을 건너뜀: memberId={}", member.getId());
-            return;
-        }
-        Apply apply = Apply.createApply(member);
-        applyRepository.save(apply);
-        log.info("Apply 엔티티 생성 및 저장 완료: applyId={}", apply.getId());
-    }
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
         answers.keySet().stream()
