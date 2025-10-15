@@ -126,9 +126,6 @@ public class ApplyService implements ApplyUsecase {
         apply.deleteApplicationForm();
         apply.updateStatus(JOINED);
 
-        // Apply update status to joined
-        // Apply update status joined
-
         // 프로필 제거
         Member applicant = apply.getMember();
         applicant.deleteProfile();
