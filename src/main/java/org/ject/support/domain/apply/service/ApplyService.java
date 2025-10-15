@@ -27,6 +27,9 @@ import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.event.TempMemberRegisteredEvent;
+import org.ject.support.domain.member.exception.MemberErrorCode;
+import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.exception.QuestionErrorCode;
@@ -36,6 +39,8 @@ import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @Service
@@ -196,6 +201,18 @@ public class ApplyService implements ApplyUsecase {
                 .build();
 
         member.edit(memberEditor);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleTempMemberRegisteredEvent(TempMemberRegisteredEvent event) {
+        log.info("임시 회원 가입 이벤트 수신: memberId={}", event.memberId());
+
+        Member member = memberRepository.findById(event.memberId())
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
+
+        Apply apply = Apply.createApply(member);
+        applyRepository.save(apply);
+        log.info("Apply 엔티티 생성 및 저장 완료: applyId={}", apply.getId());
     }
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {

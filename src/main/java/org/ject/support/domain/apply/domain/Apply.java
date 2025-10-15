@@ -47,6 +47,12 @@ public class Apply extends BaseTimeEntity {
     @Column(columnDefinition = "varchar(50)", nullable = false)
     private Status status;
 
+    public static Apply createApply(Member member) {
+        return Apply.builder()
+                .member(member)
+                .build();
+    }
+
     public void updateApplicationForm(ApplicationForm newApplicationForm) {
         this.applicationForm = newApplicationForm;
     }

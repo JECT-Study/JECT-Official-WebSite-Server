@@ -17,10 +17,11 @@ import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
+import org.ject.support.domain.member.dto.MemberEditRequest;
 import org.ject.support.domain.member.dto.MemberRegisterRequest;
 import org.ject.support.domain.member.dto.MemberResponse;
-import org.ject.support.domain.member.dto.MemberEditRequest;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.event.TempMemberRegisteredEvent;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -28,8 +29,10 @@ import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
@@ -55,6 +58,9 @@ class MemberServiceTest extends UnitTestSupport {
     @Mock
     private SemesterRepository semesterRepository;
 
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
+
     private final String TEST_NAME = "홍길동";
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_PHONE_NUMBER = "01012345678";
@@ -71,6 +77,7 @@ class MemberServiceTest extends UnitTestSupport {
         // given
         RegisterRequest request = new RegisterRequest(TEST_PIN);
         Member member = Member.builder()
+                .id(1L) // ID 추가
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
@@ -91,7 +98,12 @@ class MemberServiceTest extends UnitTestSupport {
         Authentication result = memberService.registerTempMember(request, TEST_EMAIL);
 
         // then
+        ArgumentCaptor<TempMemberRegisteredEvent> eventCaptor = ArgumentCaptor.forClass(TempMemberRegisteredEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        TempMemberRegisteredEvent capturedEvent = eventCaptor.getValue();
+
         assertThat(result).isEqualTo(authentication);
+        assertThat(capturedEvent.memberId()).isEqualTo(member.getId()); // 발행된 이벤트의 memberId 검증
         verify(memberRepository).save(any(Member.class));
         verify(passwordEncoder).encode(TEST_PIN);
         verify(jwtTokenProvider).createAuthenticationByMember(any(Member.class));

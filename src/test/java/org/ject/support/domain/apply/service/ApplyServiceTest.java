@@ -25,6 +25,7 @@ import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.apply.exception.ApplyException;
+import org.ject.support.domain.member.event.TempMemberRegisteredEvent;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.CareerDetails;
@@ -108,6 +109,27 @@ class ApplyServiceTest extends UnitTestSupport {
 
         // 3. apply의 상태가 SUBMITTED로 변경되었는지 확인
         assertThat(apply.getStatus()).isEqualTo(SUBMITTED);
+    }
+
+    @Test
+    void 임시_회원_등록_이벤트_수신_시_Apply_생성_성공() {
+        // given
+        long memberId = 1L;
+        var event = new TempMemberRegisteredEvent(memberId);
+        var member = getApplicant(memberId, "test@email.com");
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+
+        // when
+        applyService.handleTempMemberRegisteredEvent(event);
+
+        // then
+        ArgumentCaptor<Apply> captor = ArgumentCaptor.forClass(Apply.class);
+        verify(applyRepository).save(captor.capture());
+        Apply savedApply = captor.getValue();
+
+        assertThat(savedApply.getMember()).isEqualTo(member);
+        assertThat(savedApply.getStatus()).isNull();
     }
 
     @Test
