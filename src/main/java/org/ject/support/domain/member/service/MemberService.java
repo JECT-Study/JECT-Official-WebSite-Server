@@ -1,5 +1,8 @@
 package org.ject.support.domain.member.service;
 
+import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
+
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.JobFamily;
@@ -25,10 +28,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-
-import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
 
 @Service
 @RequiredArgsConstructor
@@ -73,8 +72,6 @@ public class MemberService {
                 .orElseThrow(() -> new SemesterException(SemesterErrorCode.NOT_FOUND_RECRUITING_SEMESTER));
 
         Member member = registerRequest.toEntity(semester.getId(), email, encodedPin);
-
-        // TODO 이벤트 발행 후 apply 저장
 
         return memberRepository.save(member);
     }

@@ -1,7 +1,10 @@
 package org.ject.support.domain.apply.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.AuthPrincipal;
+import org.ject.support.domain.apply.dto.ApplyProfileRequest;
+import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.ApplyTemporaryRequest;
 import org.ject.support.domain.apply.dto.SubmitApplicationRequest;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
@@ -56,7 +59,16 @@ public class ApplyController implements ApplyApiSpec {
     @Override
     @GetMapping("/status")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public boolean checkApplyStatus(@AuthPrincipal Long memberId) {
+    public ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long memberId) {
         return applyUsecase.checkApplySubmit(memberId);
+    }
+
+    @Override
+    @PostMapping("/profile")
+    @PreAuthorize("hasRole('ROLE_APPLY')")
+    public void saveProfile(@AuthPrincipal Long memberId,
+                            @Valid @RequestBody ApplyProfileRequest request
+    ) {
+        applyUsecase.saveProfile(memberId, request);
     }
 }

@@ -115,6 +115,9 @@ public class Member extends BaseTimeEntity {
                 .email(this.email)
                 .semesterId(this.semesterId)
                 .jobFamily(this.jobFamily)
+                .experiencePeriod(this.experiencePeriod)
+                .careerDetails(this.careerDetails)
+                .interestedDomains(this.interestedDomains)
                 .role(this.role);
     }
 
@@ -124,6 +127,9 @@ public class Member extends BaseTimeEntity {
         this.email = editor.email();
         this.semesterId = editor.semesterId();
         this.jobFamily = editor.jobFamily();
+        this.experiencePeriod = editor.experiencePeriod();
+        this.careerDetails = editor.careerDetails();
+        this.interestedDomains = editor.interestedDomains();
         this.role = editor.role();
     }
 

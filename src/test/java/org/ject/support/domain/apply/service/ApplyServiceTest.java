@@ -1,18 +1,41 @@
 package org.ject.support.domain.apply.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
+import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.dto.ApplyProfileRequest;
+import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
+import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
+import org.ject.support.domain.member.CareerDetails;
+import org.ject.support.domain.member.ExperiencePeriod;
+import org.ject.support.domain.member.InterestedDomain;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
@@ -22,21 +45,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class ApplyServiceTest extends UnitTestSupport {
 
@@ -54,6 +62,9 @@ class ApplyServiceTest extends UnitTestSupport {
 
     @Mock
     ApplicationFormRepository applicationFormRepository;
+
+    @Mock
+    MemberRepository memberRepository;
 
     @Mock
     String2MapSerializer string2MapSerializer;
@@ -89,13 +100,15 @@ class ApplyServiceTest extends UnitTestSupport {
         applyService.submitApplication(1L, BE, answers, List.of());
 
         // then
-        ArgumentCaptor<ApplicationForm> captor = ArgumentCaptor.forClass(ApplicationForm.class);
-        verify(applicationFormRepository).save(captor.capture());
+        // 1. TEMP_SAVED 상태에서는 update가 발생하므로 save가 호출되지 않아야 함
+        verify(applicationFormRepository, never()).save(any(ApplicationForm.class));
 
-        ApplicationForm saved = captor.getValue();
-        assertThat(saved.getApply()).isEqualTo(apply);
-        assertThat(saved.getContent()).isEqualTo(answers.toString());
-        assertThat(saved.getPortfolios()).isEmpty();
+        // 2. 기존 applicationForm의 내용이 새로운 내용으로 업데이트되었는지 확인
+        assertThat(applicationForm.getContent()).isEqualTo(answers.toString());
+        assertThat(applicationForm.getPortfolios()).isEmpty();
+
+        // 3. apply의 상태가 SUBMITTED로 변경되었는지 확인
+        assertThat(apply.getStatus()).isEqualTo(SUBMITTED);
     }
 
     @Test
@@ -123,15 +136,39 @@ class ApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 지원서를_제출한_지원자에_대한_제출_여부_확인_시_true_반환() {
+    void 작성_중인_지원서가_있는_경우_TEMP_SAVED_반환() {
         // given
-        when(applicationFormRepository.existsByMemberId(any(), any())).thenReturn(true);
+        when(applyRepository.findByMemberId(any()))
+                .thenReturn(Optional.of(
+                        Apply.builder()
+                                .id(1L)
+                                .status(TEMP_SAVED)
+                                .build()
+                ));
 
         // when
-        boolean result = applyService.checkApplySubmit(1L);
+        ApplyStatusResponse result = applyService.checkApplySubmit(1L);
 
         // then
-        assertThat(result).isTrue();
+        assertThat(result).isEqualTo(new ApplyStatusResponse(TEMP_SAVED));
+    }
+
+    @Test
+    void 지원서를_제출한_지원자에_대한_제출_상태_확인_시_SUBMITTED_반환() {
+        // given
+        when(applyRepository.findByMemberId(any()))
+                .thenReturn(Optional.of(
+                        Apply.builder()
+                                .id(1L)
+                                .status(SUBMITTED)
+                                .build()
+                ));
+
+        // when
+        ApplyStatusResponse result = applyService.checkApplySubmit(1L);
+
+        // then
+        assertThat(result).isEqualTo(new ApplyStatusResponse(SUBMITTED));
     }
 
     @Test
@@ -205,6 +242,22 @@ class ApplyServiceTest extends UnitTestSupport {
         // when, then
         assertThatThrownBy(() -> applyService.saveApplicationTemporarily(1L, answers, List.of()))
                 .isInstanceOf(ApplyException.class);
+    }
+
+    @Test
+    void 프로필_저장_전에_임시저장_시도_시_실패() {
+        // given: Member는 있지만 Apply는 없는 상황
+        long memberId = 1L;
+        Map<String, String> answers = Map.of("1", "답변1");
+
+        // applyRepository.findByMemberId()가 Optional.empty()를 반환하도록 설정
+        given(applyRepository.findByMemberId(memberId)).willReturn(Optional.empty());
+
+        // when & then: saveApplicationTemporarily를 호출하면 NOT_FOUND_APPLY 에러가 발생해야 함
+        assertThatThrownBy(() -> applyService.saveApplicationTemporarily(memberId, answers, List.of()))
+                .isInstanceOf(ApplyException.class)
+                .extracting("errorCode")
+                .isEqualTo(ApplyErrorCode.NOT_FOUND_APPLY);
     }
 
     @Test
@@ -353,6 +406,74 @@ class ApplyServiceTest extends UnitTestSupport {
         // when, then
         assertThatThrownBy(() -> applyService.findTempApplicationForm(1L))
                 .isInstanceOf(ApplyException.class);
+    }
+
+    @Test
+    void 프로필_저장_성공() {
+        // given
+        long memberId = 1L;
+        Member member = getApplicant(memberId, "test@example.com");
+        ApplyProfileRequest request = new ApplyProfileRequest(
+            "New Name",
+            "010-1234-5678",
+            JobFamily.FE,
+            CareerDetails.STUDENT,
+            ExperiencePeriod.NONE,
+            List.of(InterestedDomain.GAME.getDescription(), InterestedDomain.EDUCATION.getDescription())
+        );
+        Recruit recruit = getActiveRecruit(request.jobFamily(), List.of());
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(recruitRepository.findActiveRecruits(any())).willReturn(List.of(recruit));
+
+        // when
+        applyService.saveProfile(memberId, request);
+
+        // then
+        ArgumentCaptor<Apply> applyCaptor = ArgumentCaptor.forClass(Apply.class);
+        verify(applyRepository).save(applyCaptor.capture());
+        Apply savedApply = applyCaptor.getValue();
+
+        assertThat(savedApply.getMember()).isEqualTo(member);
+        assertThat(savedApply.getRecruit()).isEqualTo(recruit);
+        assertThat(savedApply.getStatus()).isEqualTo(JOINED);
+
+        assertThat(member.getName()).isEqualTo(request.name());
+        assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
+        assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
+    }
+
+    @Test
+    void 프로필_저장_시_Apply가_존재하면_프로필만_업데이트() {
+        // given
+        long memberId = 1L;
+        Member member = getApplicant(memberId, "test@example.com");
+        Apply existingApply = getApply(1L, null, member, null, JOINED);
+        ApplyProfileRequest request = new ApplyProfileRequest(
+                "New Name",
+                "010-1234-5678",
+                JobFamily.FE,
+                CareerDetails.STUDENT,
+                ExperiencePeriod.NONE,
+                List.of(InterestedDomain.GAME.getDescription(), InterestedDomain.EDUCATION.getDescription())
+        );
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(applyRepository.findByMemberId(memberId)).willReturn(Optional.of(existingApply));
+
+        // when
+        applyService.saveProfile(memberId, request);
+
+        // then
+        // applyRepository.save()는 호출되지 않아야 함 (멱등성)
+        verify(applyRepository, never()).save(any(Apply.class));
+
+        // Member의 프로필 정보는 업데이트되어야 함
+        assertThat(member.getName()).isEqualTo(request.name());
+        assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
+        assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
+        assertThat(member.getCareerDetails()).isEqualTo(request.careerDetails());
+        assertThat(member.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
     }
 
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {

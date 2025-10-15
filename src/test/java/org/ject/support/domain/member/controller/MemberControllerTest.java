@@ -88,7 +88,7 @@ class MemberControllerTest {
                 HttpServletResponse.class), any(Authentication.class));
 
         // when & then
-        mockMvc.perform(post("/members")
+        mockMvc.perform(post("/members/apply")
                         .cookie(new jakarta.servlet.http.Cookie("verificationToken", TEST_VERIFICATION_TOKEN))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))

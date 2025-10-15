@@ -17,9 +17,9 @@ import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
+import org.ject.support.domain.member.dto.MemberEditRequest;
 import org.ject.support.domain.member.dto.MemberRegisterRequest;
 import org.ject.support.domain.member.dto.MemberResponse;
-import org.ject.support.domain.member.dto.MemberEditRequest;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -71,6 +71,7 @@ class MemberServiceTest extends UnitTestSupport {
         // given
         RegisterRequest request = new RegisterRequest(TEST_PIN);
         Member member = Member.builder()
+                .id(1L)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)

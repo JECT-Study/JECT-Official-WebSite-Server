@@ -47,6 +47,14 @@ public class Apply extends BaseTimeEntity {
     @Column(columnDefinition = "varchar(50)", nullable = false)
     private Status status;
 
+    public static Apply createApply(Member member, Recruit recruit) {
+        return Apply.builder()
+                .member(member)
+                .recruit(recruit)
+                .status(Status.JOINED)
+                .build();
+    }
+
     public void updateApplicationForm(ApplicationForm newApplicationForm) {
         this.applicationForm = newApplicationForm;
     }
@@ -65,6 +73,14 @@ public class Apply extends BaseTimeEntity {
         if (applicationForm != null) {
             applicationForm = null;
         }
+    }
+
+    public boolean isTempSaved() {
+        return status.equals(Status.TEMP_SAVED);
+    }
+
+    public boolean isSubmitted() {
+        return status.equals(Status.SUBMITTED);
     }
 
     public enum Status {
