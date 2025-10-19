@@ -36,8 +36,8 @@ public class MemberController implements MemberApiSpec {
     @Override
     @PostMapping("/apply")
     @PreAuthorize("hasRole('ROLE_VERIFICATION')")
-    public boolean registerMember(HttpServletRequest request, HttpServletResponse response,
-                                  @Valid @RequestBody MemberDto.RegisterRequest registerRequest) {
+    public boolean registerTempMember(HttpServletRequest request, HttpServletResponse response,
+                                      @Valid @RequestBody MemberDto.RegisterRequest registerRequest) {
 
         // 쿠키에서 verification 토큰 추출
         String token = jwtTokenProvider.resolveVerificationToken(request);
