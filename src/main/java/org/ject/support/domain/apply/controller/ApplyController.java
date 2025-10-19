@@ -60,7 +60,7 @@ public class ApplyController implements ApplyApiSpec {
     @GetMapping("/status")
     @PreAuthorize("hasRole('ROLE_APPLY')")
     public ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long memberId) {
-        return applyUsecase.checkApplySubmit(memberId);
+        return applyUsecase.checkApplyStatus(memberId);
     }
 
     @Override

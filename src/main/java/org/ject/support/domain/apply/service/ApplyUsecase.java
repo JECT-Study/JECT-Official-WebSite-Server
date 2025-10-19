@@ -24,7 +24,7 @@ public interface ApplyUsecase {
                            Map<String, String> answers,
                            List<ApplyPortfolioDto> portfolios);
 
-    ApplyStatusResponse checkApplySubmit(Long memberId);
+    ApplyStatusResponse checkApplyStatus(Long memberId);
 
     void saveProfile(Long memberId, ApplyProfileRequest request);
 }
