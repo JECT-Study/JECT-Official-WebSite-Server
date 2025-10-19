@@ -4,10 +4,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import java.util.List;
+import jakarta.validation.constraints.Size;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
+
+import java.util.List;
 
 public record ApplyProfileRequest(
         @NotBlank(message = "이름을 입력해주세요")
@@ -27,6 +29,7 @@ public record ApplyProfileRequest(
         ExperiencePeriod experiencePeriod,
 
         @NotEmpty(message = "관심 도메인을 최소 1개 이상 선택해주세요")
+        @Size(min = 1, max = 3, message = "관심 도메인은 최소 1개부터 최대 3개까지 선택 가능합니다.")
         List<String> interestedDomains
 ) {
 }

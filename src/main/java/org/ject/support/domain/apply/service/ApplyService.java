@@ -177,7 +177,7 @@ public class ApplyService implements ApplyUsecase {
     }
 
     @Override
-    @PeriodAccessible
+    @PeriodAccessible(permitAllJob = true)
     @Transactional
     public void saveProfile(Long memberId, ApplyProfileRequest request) {
         var member = memberRepository.findById(memberId)
