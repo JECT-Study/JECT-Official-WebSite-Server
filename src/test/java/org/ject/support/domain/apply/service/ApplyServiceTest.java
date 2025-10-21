@@ -147,7 +147,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 ));
 
         // when
-        ApplyStatusResponse result = applyService.checkApplySubmit(1L);
+        ApplyStatusResponse result = applyService.checkApplyStatus(1L);
 
         // then
         assertThat(result).isEqualTo(new ApplyStatusResponse(TEMP_SAVED));
@@ -165,7 +165,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 ));
 
         // when
-        ApplyStatusResponse result = applyService.checkApplySubmit(1L);
+        ApplyStatusResponse result = applyService.checkApplyStatus(1L);
 
         // then
         assertThat(result).isEqualTo(new ApplyStatusResponse(SUBMITTED));

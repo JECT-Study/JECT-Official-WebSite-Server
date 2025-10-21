@@ -3,10 +3,13 @@ package org.ject.support.common.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.response.ErrorResponse;
 import org.springframework.context.MessageSourceResolvable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -89,8 +92,27 @@ public class GlobalExceptionHandler {
         return ErrorResponse.of(errorCode);
     }
 
+    /**
+     * 요청 파라미터에 대한 유효성 검증 실패 시 발생
+     */
     @ExceptionHandler(HandlerMethodValidationException.class)
     public ErrorResponse handleHandlerMethodValidationException(HandlerMethodValidationException e) {
+        GlobalErrorCode errorCode = GlobalErrorCode.METHOD_VALIDATION_FAILED;
+        logException(e, errorCode);
+
+        List<String> errorMessages = e.getAllErrors().stream()
+                .map(MessageSourceResolvable::getDefaultMessage)
+                .toList();
+
+        return ErrorResponse.of(errorCode, errorMessages);
+    }
+
+    /**
+     * RequestBody에 대한 유효성 검증 실패 시 발생
+     */
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ErrorResponse handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         GlobalErrorCode errorCode = GlobalErrorCode.METHOD_VALIDATION_FAILED;
         logException(e, errorCode);
 

@@ -15,8 +15,8 @@ public interface MemberApiSpec {
     @Operation(
             summary = "회원 등록",
             description = "PIN 번호를 암호화하여 임시 회원을 생성합니다. 인증번호 검증 후 발급받은 토큰을 통해 인증된 사용자만 접근 가능합니다.")
-    boolean registerMember(HttpServletRequest request, HttpServletResponse response,
-                           @Valid @RequestBody MemberDto.RegisterRequest registerRequest);
+    boolean registerTempMember(HttpServletRequest request, HttpServletResponse response,
+                               @Valid @RequestBody MemberDto.RegisterRequest registerRequest);
 
     @Operation(
             summary = "임시회원의 최초 정보 등록",

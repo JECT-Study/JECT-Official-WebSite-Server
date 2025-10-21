@@ -170,14 +170,14 @@ public class ApplyService implements ApplyUsecase {
 
     @Override
     @PeriodAccessible(permitAllJob = true)
-    public ApplyStatusResponse checkApplySubmit(Long memberId) {
+    public ApplyStatusResponse checkApplyStatus(Long memberId) {
         return applyRepository.findByMemberId(memberId)
                 .map(ApplyStatusResponse::of)
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
     }
 
     @Override
-    @PeriodAccessible
+    @PeriodAccessible(permitAllJob = true)
     @Transactional
     public void saveProfile(Long memberId, ApplyProfileRequest request) {
         var member = memberRepository.findById(memberId)
