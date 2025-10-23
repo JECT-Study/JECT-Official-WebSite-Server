@@ -2,7 +2,6 @@ package org.ject.support.domain.admin.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -66,7 +65,8 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
 
         // then
         verify(applyRepository).findByIdAndStatusWithMember(applyId, Status.SUBMITTED);
-        assertThat(submittedApply.getStatus()).isEqualTo(JOINED);
+        assertThat(submittedApply.getApplicationForm()).isNull();
+        assertThat(submittedApply.getMember().getName()).isNull();
     }
 
     @Test
@@ -115,9 +115,10 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
 
         // then
         verify(applyRepository).findAllById(applyIds);
-        assertThat(submittedApply.getStatus()).isEqualTo(JOINED);
-        assertThat(apply2.getStatus()).isEqualTo(JOINED);
-        assertThat(apply3.getStatus()).isEqualTo(JOINED);
+        assertThat(submittedApply.getApplicationForm()).isNull();
+        assertThat(submittedApply.getMember().getName()).isNull();
+        assertThat(apply2.getApplicationForm()).isNull();
+        assertThat(apply3.getApplicationForm()).isNull();
     }
 
     @Test
@@ -147,21 +148,5 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         assertThatThrownBy(() -> submittedApplyService.deleteSubmittedApplies(applyIds))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
-    }
-
-    @Test
-    void 제출된_지원서_삭제시_프로필과_지원서가_삭제되고_상태가_JOINED로_변경() {
-        // given
-        var applyId = submittedApply.getId();
-        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
-                .willReturn(Optional.of(submittedApply));
-
-        // when
-        submittedApplyService.deleteSubmittedApply(applyId);
-
-        // then
-        assertThat(submittedApply.getApplicationForm()).isNull();
-        assertThat(submittedApply.getStatus()).isEqualTo(JOINED);
-        assertThat(submittedApply.getMember().getName()).isNull();
     }
 }

@@ -1,7 +1,5 @@
 package org.ject.support.domain.admin.service;
 
-import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
-
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.apply.domain.Apply;
@@ -54,7 +52,6 @@ public class SubmittedApplyService {
 
         // 임시 저장한 지원서 제거 및 상태 변경
         apply.deleteApplicationForm();
-        apply.updateStatus(JOINED);
 
         // 프로필 제거
         Member applicant = apply.getMember();
