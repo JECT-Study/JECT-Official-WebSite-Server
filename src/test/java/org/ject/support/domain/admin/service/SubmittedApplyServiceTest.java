@@ -107,14 +107,14 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
 
         var applies = List.of(submittedApply, apply2, apply3);
 
-        given(applyRepository.findAllById(applyIds))
+        given(applyRepository.findAllByIdAndStatusWithMember(applyIds, Status.SUBMITTED))
                 .willReturn(applies);
 
         // when
         submittedApplyService.deleteSubmittedApplies(applyIds);
 
         // then
-        verify(applyRepository).findAllById(applyIds);
+        verify(applyRepository).findAllByIdAndStatusWithMember(applyIds, Status.SUBMITTED);
         assertThat(submittedApply.getApplicationForm()).isNull();
         assertThat(submittedApply.getMember().getName()).isNull();
         assertThat(apply2.getApplicationForm()).isNull();
@@ -127,7 +127,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applyIds = List.of(1L, 2L, 3L);
         var applies = List.of(submittedApply); // 1개만 반환
 
-        given(applyRepository.findAllById(applyIds))
+        given(applyRepository.findAllByIdAndStatusWithMember(applyIds, Status.SUBMITTED))
                 .willReturn(applies);
 
         // expected
@@ -141,7 +141,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // given
         var applyIds = List.of(1L, 2L, 3L);
 
-        given(applyRepository.findAllById(applyIds))
+        given(applyRepository.findAllByIdAndStatusWithMember(applyIds, Status.SUBMITTED))
                 .willReturn(List.of());
 
         // expected
