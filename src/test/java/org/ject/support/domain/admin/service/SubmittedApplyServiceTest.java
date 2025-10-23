@@ -9,7 +9,6 @@ import static org.mockito.Mockito.verify;
 import java.util.List;
 import java.util.Optional;
 import org.ject.support.base.UnitTestSupport;
-import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.Apply.Status;
