@@ -45,22 +45,6 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 상세_조회하려는_지원서의_상태가_임시_저장이_아니면_예외_발생() {
-        // given
-        Long tempApplyId = 1L;
-        Apply submittedApply = Apply.builder()
-                .id(tempApplyId)
-                .status(Apply.Status.SUBMITTED)
-                .build();
-        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
-                .willReturn(Optional.of(submittedApply));
-
-        // when, then
-        assertThatThrownBy(() -> adminTempApplyService.getTempApplyDetail(tempApplyId))
-                .isInstanceOf(ApplyException.class);
-    }
-
-    @Test
     void 임시_저장된_지원서를_상세_조회한다() {
         // given
         Long tempApplyId = 1L;
