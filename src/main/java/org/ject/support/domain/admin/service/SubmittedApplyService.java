@@ -46,7 +46,7 @@ public class SubmittedApplyService {
         // 제출된 지원서인지 검증
         ensureSubmitted(apply);
 
-        // 임시 저장한 지원서 제거 및 상태 변경
+        //  제출된 지원서 제거
         apply.deleteApplicationForm();
 
         // 프로필 제거
