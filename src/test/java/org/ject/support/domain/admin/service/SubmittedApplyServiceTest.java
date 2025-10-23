@@ -164,5 +164,4 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         assertThat(submittedApply.getStatus()).isEqualTo(JOINED);
         assertThat(submittedApply.getMember().getName()).isNull();
     }
-
 }
