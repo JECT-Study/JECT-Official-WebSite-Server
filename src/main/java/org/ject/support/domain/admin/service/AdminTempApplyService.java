@@ -12,8 +12,6 @@ import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_FOUND_APPLY;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -23,12 +21,8 @@ public class AdminTempApplyService {
     private final String2MapSerializer string2MapSerializer;
 
     public TempApplyDetailResponse getTempApplyDetail(Long tempApplyId) {
-        Apply apply = applyRepository.findByIdWithMember(tempApplyId)
-                .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
-
-        if (apply.isNotTempSaved()) {
-            throw new ApplyException(ApplyErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM);
-        }
+        Apply apply = applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED)
+                .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM));
 
         ApplicationForm tempApplicationForm = apply.getApplicationForm();
 

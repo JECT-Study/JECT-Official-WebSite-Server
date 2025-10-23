@@ -10,7 +10,6 @@ import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -34,11 +33,10 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
     private String2MapSerializer string2MapSerializer;
 
     @Test
-    @DisplayName("존재하지 않는 임시 저장된 지원서를 조회하면, 예외 발생")
-    void getTempApplyDetail_fail() {
+    void 존재하지_않는_임시_저장된_지원서를_조회하면_예외_발생() {
         // given
         Long tempApplyId = 1L;
-        given(applyRepository.findByIdWithMember(tempApplyId))
+        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
                 .willReturn(Optional.empty());
 
         // when, then
@@ -47,15 +45,14 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    @DisplayName("상세 조회하려는 지원서의 상태가 임시저장 상태가 아닐 경우, 예외 발생")
-    void getTempApplyDetail_fail2() {
+    void 상세_조회하려는_지원서의_상태가_임시_저장이_아니면_예외_발생() {
         // given
         Long tempApplyId = 1L;
         Apply submittedApply = Apply.builder()
                 .id(tempApplyId)
                 .status(Apply.Status.SUBMITTED)
                 .build();
-        given(applyRepository.findByIdWithMember(tempApplyId))
+        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
                 .willReturn(Optional.of(submittedApply));
 
         // when, then
@@ -64,8 +61,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    @DisplayName("임시 저장된 지원서를 상세 조회한다")
-    void getTempApplyDetail() {
+    void 임시_저장된_지원서를_상세_조회한다() {
         // given
         Long tempApplyId = 1L;
         Member member = Member.builder()
@@ -84,14 +80,14 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
                 .status(Apply.Status.TEMP_SAVED)
                 .applicationForm(ApplicationForm.builder().build())
                 .build();
-        given(applyRepository.findByIdWithMember(tempApplyId))
+        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
                 .willReturn(Optional.of(submittedApply));
 
         // when
         TempApplyDetailResponse result = adminTempApplyService.getTempApplyDetail(tempApplyId);
 
         // then
-        verify(applyRepository).findByIdWithMember(tempApplyId);
+        verify(applyRepository).findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED);
         assertThat(result.applyId()).isEqualTo(tempApplyId);
     }
 }
