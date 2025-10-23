@@ -14,4 +14,7 @@ public interface ApplyRepository extends JpaRepository<Apply, Long> {
     Optional<Apply> findByMemberId(Long memberId);
 
     List<Apply> findByRecruitAndStatus(Recruit recruit, Apply.Status status);
+
+    @Query("select a from Apply a join fetch a.member m where a.id = :applyId and a.status = :status")
+    Optional<Apply> findByIdAndStatusWithMember(Long applyId, Apply.Status status);
 }
