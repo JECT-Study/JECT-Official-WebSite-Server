@@ -75,7 +75,7 @@ public final class DateTimeUtil {
         return Optional.ofNullable(dateTime)
                 .map(dt -> {
                     String dayOfWeek = DAY_OF_WEEK_NAMES[dt.getDayOfWeek().getValue() - 1];
-                    String datePart = dt.format(DateTimeFormatter.ofPattern("yyyy년 M월 d일"));
+                    String datePart = dt.format(DateTimeFormatter.ofPattern("yyyy년 MM월 dd일"));
                     String timePart = dt.format(DateTimeFormatter.ofPattern("HH:mm"));
                     return String.format("%s(%s) %s", datePart, dayOfWeek, timePart);
                 })
