@@ -32,9 +32,6 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
     @Mock
     private ApplyRepository applyRepository;
 
-    @Mock
-    private String2MapSerializer string2MapSerializer;
-
     private static Apply submittedApply;
 
     @BeforeEach
