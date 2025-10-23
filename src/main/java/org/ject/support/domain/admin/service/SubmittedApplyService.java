@@ -27,9 +27,10 @@ public class SubmittedApplyService {
 
     @Transactional
     public void deleteSubmittedApplies(final List<Long> applyIds) {
-        List<Apply>  applies = applyRepository.findAllByIdAndStatusWithMember(applyIds, Status.SUBMITTED);
+        final List<Long> distinctIds = applyIds.stream().distinct().toList();
+        final List<Apply> applies = applyRepository.findAllByIdAndStatusWithMember(distinctIds, Status.SUBMITTED);
 
-        if (applies.size() != applyIds.size()) {
+        if (applies.size() != distinctIds.size()) {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);
         }
 
