@@ -16,19 +16,19 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class SubmittedApplyController implements SubmittedApplyApiSpec {
 
-    private final SubmittedApplyService submittedApplicationService;
+    private final SubmittedApplyService submittedApplyService;
 
     @Override
     @DeleteMapping("/{applyId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteSubmittedApply(@PathVariable final Long applyId) {
-        submittedApplicationService.deleteSubmittedApply(applyId);
+        submittedApplyService.deleteSubmittedApply(applyId);
     }
 
     @Override
     @DeleteMapping
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteSubmittedApplies(@RequestBody @Valid final SubmittedApplyBulkDeleteRequest request) {
-        submittedApplicationService.deleteSubmittedApplies(request.applyIds());
+        submittedApplyService.deleteSubmittedApplies(request.applyIds());
     }
 }
