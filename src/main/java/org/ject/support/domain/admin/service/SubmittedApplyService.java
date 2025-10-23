@@ -22,10 +22,6 @@ public class SubmittedApplyService {
         Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
 
-        if (apply.isNotSubmitted()) {
-            throw new ApplyException(ApplyErrorCode.NOT_FOUND_SUBMITTED_APPLICATION_FORM);
-        }
-
         deleteProfileAndApplicationForm(apply);
     }
 
@@ -41,7 +37,7 @@ public class SubmittedApplyService {
     }
 
     private void ensureSubmitted(final Apply apply) {
-        if (!apply.isSubmitted()) {
+        if (apply.isNotSubmitted()) {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_SUBMITTED_APPLICATION_FORM);
         }
     }
