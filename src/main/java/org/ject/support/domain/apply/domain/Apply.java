@@ -69,6 +69,12 @@ public class Apply extends BaseTimeEntity {
                 || (status.equals(Status.TEMP_SAVED) && applicationForm == null);
     }
 
+    public boolean isNotSubmitted() {
+        return status.equals(Status.JOINED)
+                || status.equals(Status.TEMP_SAVED)
+                || (status.equals(Status.SUBMITTED) && applicationForm == null);
+    }
+
     public void deleteApplicationForm() {
         if (applicationForm != null) {
             applicationForm = null;
