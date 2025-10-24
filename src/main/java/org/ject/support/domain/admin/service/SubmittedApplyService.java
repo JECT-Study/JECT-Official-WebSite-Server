@@ -2,6 +2,7 @@ package org.ject.support.domain.admin.service;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.Apply.Status;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
@@ -16,6 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class SubmittedApplyService {
 
     private final ApplyRepository applyRepository;
+
+    public SubmittedApplyCountResponse countSubmittedApply() {
+        Long count = applyRepository.countByStatus(Status.SUBMITTED);
+        return new SubmittedApplyCountResponse(count);
+    }
 
     @Transactional
     public void deleteSubmittedApply(final Long applyId) {
