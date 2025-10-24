@@ -82,9 +82,47 @@ class ApplyRepositoryTest {
         List<Apply> result = applyRepository.findByRecruitAndStatus(beRecruit, TEMP_SAVED);
 
         // then
-        assertThat(result).hasSize(2);
-        assertThat(result).containsExactlyInAnyOrder(be2TempApply, be3TempApply);
+        assertThat(result)
+                .hasSize(2)
+                .containsExactlyInAnyOrder(be2TempApply, be3TempApply);
     }
+
+    @Test
+    void 상태별_지원서_수_조회_성공() {
+        // given
+        Member feApplicant = createMember("emailFE@test.com", Role.APPLY);
+        Member beApplicant = createMember("emailBE@test.com", Role.APPLY);
+        memberRepository.saveAll(List.of(feApplicant, beApplicant));
+
+        Apply feTempApply = getApply(feApplicant, feRecruit, TEMP_SAVED);
+        Apply beSubmitApply = getApply(beApplicant, beRecruit, SUBMITTED);
+        applyRepository.saveAll(List.of(feTempApply, beSubmitApply));
+
+        // when
+        Long count = applyRepository.countByStatus(SUBMITTED);
+
+        // then
+        assertThat(count).isEqualTo(1L);
+    }
+
+    @Test
+    void 해당_상태의_지원서가_없을_때_0_반환() {
+        // given
+        Member feApplicant = createMember("emailFE@test.com", Role.APPLY);
+        Member beApplicant = createMember("emailBE@test.com", Role.APPLY);
+        memberRepository.saveAll(List.of(feApplicant, beApplicant));
+
+        Apply feTempApply = getApply(feApplicant, feRecruit, TEMP_SAVED);
+        Apply beSubmitApply = getApply(beApplicant, beRecruit, TEMP_SAVED);
+        applyRepository.saveAll(List.of(feTempApply, beSubmitApply));
+
+        // when
+        Long count = applyRepository.countByStatus(SUBMITTED);
+
+        // then
+        assertThat(count).isZero();
+    }
+
 
     private Recruit getRecruit(JobFamily jobFamily) {
         return Recruit.builder()
