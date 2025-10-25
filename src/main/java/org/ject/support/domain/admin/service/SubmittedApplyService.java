@@ -2,6 +2,7 @@ package org.ject.support.domain.admin.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.util.String2MapSerializer;
@@ -41,9 +42,14 @@ public class SubmittedApplyService {
     }
 
     private SubmittedApplyResponse toSubmittedApplyResponse(final Apply apply) {
-        ApplicationForm submittedApplicationForm = apply.getApplicationForm();
-        Map<String, String> content = string2MapSerializer.serializeAsMap(submittedApplicationForm.getContent());
-        List<ApplyPortfolioDto> portfolios = submittedApplicationForm.getPortfolios()
+        ApplicationForm applicationForm = apply.getApplicationForm();
+        Map<String, String> content = Optional.ofNullable(applicationForm)
+                .map(ApplicationForm::getContent)
+                .map(string2MapSerializer::serializeAsMap)
+                .orElse(Map.of());
+        List<ApplyPortfolioDto> portfolios = Optional.ofNullable(applicationForm)
+                .map(ApplicationForm::getPortfolios)
+                .orElse(List.of())
                 .stream()
                 .map(ApplyPortfolioDto::from)
                 .toList();
