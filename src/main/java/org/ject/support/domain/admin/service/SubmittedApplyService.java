@@ -51,6 +51,7 @@ public class SubmittedApplyService {
         return SubmittedApplyResponse.from(apply, content, portfolios);
     }
 
+    @Transactional(readOnly = true)
     public SubmittedApplyCountResponse countSubmittedApply() {
         Long count = applyRepository.countByStatus(Status.SUBMITTED);
         return new SubmittedApplyCountResponse(count);
