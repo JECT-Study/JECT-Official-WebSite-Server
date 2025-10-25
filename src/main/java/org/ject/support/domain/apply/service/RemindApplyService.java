@@ -1,6 +1,7 @@
 package org.ject.support.domain.apply.service;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.util.DateTimeUtil;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -10,7 +11,6 @@ import org.ject.support.external.email.service.SesEmailSendService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -43,14 +43,6 @@ public class RemindApplyService implements RemindApplyUsecase {
         emailSendService.sendBulkTemplatedEmail(
                 EMAIL_SEND_GROUP,
                 targetEmails,
-                Map.of("deadline", formatDeadline(recruit.getEndDate())));
-    }
-
-    private String formatDeadline(LocalDateTime recruitEndDate) {
-        String[] dayOfWeekNames = {"월", "화", "수", "목", "금", "토", "일"};
-        String dayOfWeekName = dayOfWeekNames[recruitEndDate.getDayOfWeek().getValue() - 1];
-        String datePart = recruitEndDate.format(DateTimeFormatter.ofPattern("yyyy년 M월 d일"));
-        String timePart = recruitEndDate.format(DateTimeFormatter.ofPattern("HH:mm"));
-        return String.format("%s(%s) %s", datePart, dayOfWeekName, timePart);
+                Map.of("deadline", DateTimeUtil.formatWithDayOfWeek(recruit.getEndDate())));
     }
 }

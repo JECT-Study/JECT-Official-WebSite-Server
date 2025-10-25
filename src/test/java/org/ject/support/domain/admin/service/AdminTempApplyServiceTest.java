@@ -1,0 +1,77 @@
+package org.ject.support.domain.admin.service;
+
+import org.ject.support.base.UnitTestSupport;
+import org.ject.support.common.util.String2MapSerializer;
+import org.ject.support.domain.apply.domain.ApplicationForm;
+import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.dto.TempApplyDetailResponse;
+import org.ject.support.domain.apply.exception.ApplyException;
+import org.ject.support.domain.apply.repository.ApplyRepository;
+import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+
+class AdminTempApplyServiceTest extends UnitTestSupport {
+
+    @InjectMocks
+    private AdminTempApplyService adminTempApplyService;
+
+    @Mock
+    private ApplyRepository applyRepository;
+
+    @Mock
+    private String2MapSerializer string2MapSerializer;
+
+    @Test
+    void 존재하지_않는_임시_저장된_지원서를_조회하면_예외_발생() {
+        // given
+        Long tempApplyId = 1L;
+        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
+                .willReturn(Optional.empty());
+
+        // when, then
+        assertThatThrownBy(() -> adminTempApplyService.getTempApplyDetail(tempApplyId))
+                .isInstanceOf(ApplyException.class);
+    }
+
+    @Test
+    void 임시_저장된_지원서를_상세_조회한다() {
+        // given
+        Long tempApplyId = 1L;
+        Member member = Member.builder()
+                .name("김젝트")
+                .build();
+        Semester semester = Semester.builder()
+                .name("1")
+                .build();
+        Recruit recruit = Recruit.builder()
+                .semester(semester)
+                .build();
+        Apply submittedApply = Apply.builder()
+                .id(tempApplyId)
+                .member(member)
+                .recruit(recruit)
+                .status(Apply.Status.TEMP_SAVED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
+                .willReturn(Optional.of(submittedApply));
+
+        // when
+        TempApplyDetailResponse result = adminTempApplyService.getTempApplyDetail(tempApplyId);
+
+        // then
+        verify(applyRepository).findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED);
+        assertThat(result.applyId()).isEqualTo(tempApplyId);
+    }
+}

@@ -106,23 +106,26 @@ class ApplyRepositoryTest {
     }
 
     @Test
-    void 해당_상태의_지원서가_없을_때_0_반환() {
+    void 지원ID와_지원서의_상태로_지원서를_상세_조회한다() {
         // given
         Member feApplicant = createMember("emailFE@test.com", Role.APPLY);
-        Member beApplicant = createMember("emailBE@test.com", Role.APPLY);
-        memberRepository.saveAll(List.of(feApplicant, beApplicant));
+        Member be1Applicant = createMember("emailBE1@test.com", Role.APPLY);
+        memberRepository.saveAll(List.of(feApplicant, be1Applicant));
 
         Apply feTempApply = getApply(feApplicant, feRecruit, TEMP_SAVED);
-        Apply beSubmitApply = getApply(beApplicant, beRecruit, TEMP_SAVED);
-        applyRepository.saveAll(List.of(feTempApply, beSubmitApply));
+        Apply be1SubmitApply = getApply(be1Applicant, beRecruit, TEMP_SAVED);
+        applyRepository.saveAll(List.of(feTempApply, be1SubmitApply));
 
         // when
-        Long count = applyRepository.countByStatus(SUBMITTED);
+        Apply result = applyRepository.findByIdAndStatusWithMember(feTempApply.getId(), TEMP_SAVED)
+                .orElseThrow();
 
         // then
-        assertThat(count).isZero();
+        assertThat(result).isEqualTo(feTempApply);
+        assertThat(result.getMember()).isEqualTo(feApplicant);
+        assertThat(result.getRecruit()).isEqualTo(feRecruit);
+        assertThat(result.getStatus()).isEqualTo(TEMP_SAVED);
     }
-
 
     private Recruit getRecruit(JobFamily jobFamily) {
         return Recruit.builder()
