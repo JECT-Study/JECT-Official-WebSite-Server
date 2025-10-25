@@ -7,7 +7,7 @@ import static org.ject.support.domain.apply.domain.QPortfolio.portfolio;
 import static org.ject.support.domain.member.entity.QMember.member;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.jpa.JPQLQueryFactory;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -22,13 +22,14 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
 
-    private final JPQLQueryFactory queryFactory;
+    private final JPAQueryFactory queryFactory;
 
     @Override
     public Page<Apply> findSubmittedApplies(final JobFamily jobFamily,
                                             final Pageable pageable) {
         List<Apply> content = queryFactory
                 .selectFrom(apply)
+                .distinct()
                 .join(apply.member, member).fetchJoin()
                 .join(apply.applicationForm, applicationForm).fetchJoin()
                 .leftJoin(apply.applicationForm.portfolios, portfolio).fetchJoin()
