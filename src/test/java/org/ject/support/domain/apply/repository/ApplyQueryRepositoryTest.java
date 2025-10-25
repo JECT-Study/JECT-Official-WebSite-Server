@@ -132,7 +132,7 @@ class ApplyQueryRepositoryTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getStatus()).isEqualTo(SUBMITTED);
+        assertThat(result.getContent().getFirst().getStatus()).isEqualTo(SUBMITTED);
     }
 
     @Test
@@ -154,7 +154,7 @@ class ApplyQueryRepositoryTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getMember()).isEqualTo(activeMember);
+        assertThat(result.getContent().getFirst().getMember()).isEqualTo(activeMember);
     }
 
     @Test

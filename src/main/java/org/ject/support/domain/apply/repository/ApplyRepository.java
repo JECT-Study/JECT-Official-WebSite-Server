@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.query.Param;
 
-public interface ApplyRepository extends JpaRepository<Apply, Long> {
+public interface ApplyRepository extends JpaRepository<Apply, Long>, ApplyQueryRepository {
 
     @Query("select a from Apply a where a.member.id = :memberId")
     Optional<Apply> findByMemberId(Long memberId);
