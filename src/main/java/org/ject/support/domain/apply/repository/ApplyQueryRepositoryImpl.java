@@ -45,9 +45,10 @@ public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
         Long total = queryFactory
                 .select(apply.count())
                 .from(apply)
+                .join(apply.member, member)
                 .where(
-                        eqJobFamily(jobFamily),
                         apply.member.isDeleted.eq(false),
+                        eqJobFamily(jobFamily),
                         apply.status.eq(SUBMITTED)
                 ).fetchOne();
 
