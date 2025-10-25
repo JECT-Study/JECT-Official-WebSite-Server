@@ -2,6 +2,7 @@ package org.ject.support.domain.admin.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.util.String2MapSerializer;
+import org.ject.support.domain.admin.dto.TempSavedApplyCountResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
@@ -33,5 +34,10 @@ public class AdminTempApplyService {
                         .stream()
                         .map(ApplyPortfolioDto::from)
                         .toList());
+    }
+
+    public TempSavedApplyCountResponse getTempSavedApplyCount() {
+        Long count = applyRepository.countByStatus(Apply.Status.TEMP_SAVED);
+        return new TempSavedApplyCountResponse(count);
     }
 }
