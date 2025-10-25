@@ -1,14 +1,23 @@
 package org.ject.support.domain.admin.service;
 
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.data.PageResponse;
+import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
+import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
+import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.Apply.Status;
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
+import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +26,30 @@ import org.springframework.transaction.annotation.Transactional;
 public class SubmittedApplyService {
 
     private final ApplyRepository applyRepository;
+    private final String2MapSerializer string2MapSerializer;
+
+    @Transactional(readOnly = true)
+    public Page<SubmittedApplyResponse> findSubmittedApplies(final JobFamily jobFamily,
+                                                             final Pageable pageable) {
+        Page<Apply> applyPage = applyRepository.findSubmittedApplies(jobFamily, pageable);
+
+        List<SubmittedApplyResponse> content = applyPage.getContent().stream()
+                .map(this::toSubmittedApplyResponse)
+                .toList();
+
+        return PageResponse.from(content, pageable, applyPage.getTotalElements());
+    }
+
+    private SubmittedApplyResponse toSubmittedApplyResponse(final Apply apply) {
+        ApplicationForm submittedApplicationForm = apply.getApplicationForm();
+        Map<String, String> content = string2MapSerializer.serializeAsMap(submittedApplicationForm.getContent());
+        List<ApplyPortfolioDto> portfolios = submittedApplicationForm.getPortfolios()
+                .stream()
+                .map(ApplyPortfolioDto::from)
+                .toList();
+
+        return SubmittedApplyResponse.from(apply, content, portfolios);
+    }
 
     public SubmittedApplyCountResponse countSubmittedApply() {
         Long count = applyRepository.countByStatus(Status.SUBMITTED);
