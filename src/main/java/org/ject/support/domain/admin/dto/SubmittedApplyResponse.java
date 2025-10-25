@@ -2,6 +2,8 @@ package org.ject.support.domain.admin.dto;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.member.JobFamily;
@@ -24,7 +26,10 @@ public record SubmittedApplyResponse(
                 apply.getMember().getPhoneNumber(),
                 apply.getMember().getEmail(),
                 apply.getMember().getJobFamily(),
-                !apply.getApplicationForm().getPortfolios().isEmpty(),
+                Optional.ofNullable(apply.getApplicationForm())
+                        .map(ApplicationForm::getPortfolios)
+                        .map(portfolioList -> !portfolioList.isEmpty())
+                        .orElse(false),
                 ApplicationFormResponse.from(answers, portfolios)
         );
     }
