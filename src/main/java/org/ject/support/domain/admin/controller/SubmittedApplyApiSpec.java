@@ -31,7 +31,7 @@ public interface SubmittedApplyApiSpec {
 
     @Operation(
             summary = "제출된 지원서 상세 조회",
-            description = "전달한 ID에 해당하는 구성원의 상세 정보를 조회합니다.")
+            description = "전달한 ID에 해당하는 제출된 지원서의 상세 정보를 조회합니다.")
     SubmittedApplyDetailResponse findSubmittedApplyDetail(@PathVariable("applyId") final Long applyId);
 
     @Operation(
