@@ -1,6 +1,7 @@
 package org.ject.support.domain.admin.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.domain.admin.dto.TempSavedApplyCountResponse;
 import org.ject.support.domain.admin.service.AdminTempApplyService;
 import org.ject.support.domain.apply.dto.TempApplyDetailResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,5 +21,11 @@ public class AdminTempApplyController implements AdminTempApplyApiSpec {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public TempApplyDetailResponse getTempApplyDetail(@PathVariable("tempApplyId") Long tempApplyId) {
         return adminTempApplyService.getTempApplyDetail(tempApplyId);
+    }
+
+    @GetMapping("/count")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public TempSavedApplyCountResponse getTempSavedApplyCount() {
+        return adminTempApplyService.getTempSavedApplyCount();
     }
 }

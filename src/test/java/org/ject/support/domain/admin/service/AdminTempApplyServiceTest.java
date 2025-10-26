@@ -2,6 +2,7 @@ package org.ject.support.domain.admin.service;
 
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.String2MapSerializer;
+import org.ject.support.domain.admin.dto.TempSavedApplyCountResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.dto.TempApplyDetailResponse;
@@ -73,5 +74,37 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         // then
         verify(applyRepository).findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED);
         assertThat(result.applyId()).isEqualTo(tempApplyId);
+    }
+
+    @Test
+    void 임시_저장된_지원서의_총_개수를_조회한다() {
+        // given
+        Apply.Status targetStatus = Apply.Status.TEMP_SAVED;
+        Long tempSavedCount = 5L;
+        given(applyRepository.countByStatus(targetStatus))
+                .willReturn(tempSavedCount);
+
+        // when
+        TempSavedApplyCountResponse result = adminTempApplyService.getTempSavedApplyCount();
+
+        // then
+        verify(applyRepository).countByStatus(targetStatus);
+        assertThat(result).isEqualTo(new TempSavedApplyCountResponse(tempSavedCount));
+    }
+
+    @Test
+    void 임시_저장된_지원서의_총_개수가_0개일_경우_0을_조회한다() {
+        // given
+        Apply.Status targetStatus = Apply.Status.TEMP_SAVED;
+        Long tempSavedCount = 0L;
+        given(applyRepository.countByStatus(targetStatus))
+                .willReturn(tempSavedCount);
+
+        // when
+        TempSavedApplyCountResponse result = adminTempApplyService.getTempSavedApplyCount();
+
+        // then
+        verify(applyRepository).countByStatus(targetStatus);
+        assertThat(result).isEqualTo(new TempSavedApplyCountResponse(tempSavedCount));
     }
 }
