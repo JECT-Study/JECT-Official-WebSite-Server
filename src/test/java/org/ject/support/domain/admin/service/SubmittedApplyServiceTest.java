@@ -9,6 +9,13 @@ import static org.mockito.Mockito.verify;
 
 import java.util.List;
 import java.util.Optional;
+import org.ject.support.common.util.String2MapSerializer;
+import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
+import org.ject.support.domain.member.JobFamily;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
@@ -32,6 +39,9 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
 
     @Mock
     private ApplyRepository applyRepository;
+
+    @Mock
+    private String2MapSerializer string2MapSerializer;
 
     private static Apply submittedApply;
 
@@ -182,4 +192,96 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         assertThat(response.count()).isZero();
         then(applyRepository).should(times(1)).countByStatus(Status.SUBMITTED);
     }
+
+    @Test
+    void 제출된_지원서_목록_조회_성공() {
+        // given
+        var pageable = PageRequest.of(0, 15);
+        var jobFamily = JobFamily.BE;
+
+        var applies = List.of(submittedApply);
+        var page = new PageImpl<>(applies, pageable, 1L);
+
+        given(applyRepository.findSubmittedApplies(jobFamily, pageable))
+                .willReturn(page);
+
+        // when
+        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(applyRepository).findSubmittedApplies(jobFamily, pageable);
+    }
+
+    @Test
+    void 제출된_지원서_목록_조회시_JobFamily가_null이면_전체_조회() {
+        // given
+        var pageable = PageRequest.of(0, 15);
+        var applies = List.of(submittedApply);
+        var page = new PageImpl<>(applies, pageable, 1L);
+
+        given(applyRepository.findSubmittedApplies(null, pageable))
+                .willReturn(page);
+
+        // when
+        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(null, pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(applyRepository).findSubmittedApplies(null, pageable);
+    }
+
+    @Test
+    void 제출된_지원서_목록_조회시_결과가_없으면_빈_페이지_반환() {
+        // given
+        var pageable = PageRequest.of(0, 15);
+        var jobFamily = JobFamily.BE;
+        var page = new PageImpl<Apply>(List.of(), pageable, 0L);
+
+        given(applyRepository.findSubmittedApplies(jobFamily, pageable))
+                .willReturn(page);
+
+        // when
+        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, pageable);
+
+        // then
+        assertThat(result.getContent()).isEmpty();
+        assertThat(result.getTotalElements()).isZero();
+        verify(applyRepository).findSubmittedApplies(jobFamily, pageable);
+    }
+
+    @Test
+    void 제출된_지원서_목록_조회시_페이징_정보_정확히_전달() {
+        // given
+        var pageable = PageRequest.of(1, 10, Sort.by("createdAt").descending());
+        var jobFamily = JobFamily.BE;
+
+        var member2 = Member.builder().name("김젝트2").build();
+        var apply2 = Apply.builder()
+                .id(2L)
+                .member(member2)
+                .recruit(submittedApply.getRecruit())
+                .status(Status.SUBMITTED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        var applies = List.of(submittedApply, apply2);
+        var page = new PageImpl<>(applies, pageable, 25L);
+
+        given(applyRepository.findSubmittedApplies(jobFamily, pageable))
+                .willReturn(page);
+
+        // when
+        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getTotalElements()).isEqualTo(25L);
+        assertThat(result.getNumber()).isEqualTo(1);
+        assertThat(result.getSize()).isEqualTo(10);
+        verify(applyRepository).findSubmittedApplies(jobFamily, pageable);
+    }
+
 }

@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.query.Param;
 
-public interface ApplyRepository extends JpaRepository<Apply, Long> {
+public interface ApplyRepository extends JpaRepository<Apply, Long>, ApplyQueryRepository {
 
     @Query("select a from Apply a where a.member.id = :memberId")
     Optional<Apply> findByMemberId(Long memberId);
@@ -22,6 +22,6 @@ public interface ApplyRepository extends JpaRepository<Apply, Long> {
     @Query("select a from Apply a join fetch a.member m where a.id in :applyIds and a.status = :status")
     List<Apply> findAllByIdAndStatusWithMember(@Param("applyIds") List<Long> applyIds, @Param("status") Apply.Status status);
 
-    @Query("select COUNT(a) FROM Apply a WHERE a.status = :status")
+    @Query("select count(a) from Apply a where a.status = :status")
     Long countByStatus(@Param("status") Apply.Status status);
 }
