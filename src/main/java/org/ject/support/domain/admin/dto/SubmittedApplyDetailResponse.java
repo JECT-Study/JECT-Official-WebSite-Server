@@ -25,7 +25,7 @@ public record SubmittedApplyDetailResponse(
                 apply.getMember().getName(),
                 apply.getMember().getPhoneNumber(),
                 apply.getMember().getEmail(),
-                apply.getMember().getJobFamily(), // apply.getRecruit().getJobFamily(),
+                apply.getMember().getJobFamily(),
                 DateTimeUtil.formatWithDayOfWeek(apply.getCreatedAt()),
                 DateTimeUtil.formatWithDayOfWeek(apply.getUpdatedAt()),
                 ApplicationFormResponse.from(answers, portfolios)
