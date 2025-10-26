@@ -293,7 +293,8 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
 
         // expected
         assertThatThrownBy(() -> submittedApplyService.findSubmittedApplyDetail(applyId))
-                .isInstanceOf(ApplyException.class);
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
 
     @Test
