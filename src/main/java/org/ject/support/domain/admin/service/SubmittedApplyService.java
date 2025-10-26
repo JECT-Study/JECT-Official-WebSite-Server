@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
+import org.ject.support.domain.admin.dto.SubmittedApplyDetailResponse;
 import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
@@ -41,20 +42,11 @@ public class SubmittedApplyService {
         return PageResponse.from(content, pageable, applyPage.getTotalElements());
     }
 
-    private SubmittedApplyResponse toSubmittedApplyResponse(final Apply apply) {
-        ApplicationForm applicationForm = apply.getApplicationForm();
-        Map<String, String> content = Optional.ofNullable(applicationForm)
-                .map(ApplicationForm::getContent)
-                .map(string2MapSerializer::serializeAsMap)
-                .orElse(Map.of());
-        List<ApplyPortfolioDto> portfolios = Optional.ofNullable(applicationForm)
-                .map(ApplicationForm::getPortfolios)
-                .orElse(List.of())
-                .stream()
-                .map(ApplyPortfolioDto::from)
-                .toList();
-
-        return SubmittedApplyResponse.from(apply, content, portfolios);
+    @Transactional(readOnly = true)
+    public SubmittedApplyDetailResponse findSubmittedApplyDetail(final Long applyId) {
+        return applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
+                .map(this::toSubmittedApplyDetailResponse)
+                .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
     }
 
     @Transactional(readOnly = true)
@@ -81,6 +73,36 @@ public class SubmittedApplyService {
         }
 
         applies.forEach(this::deleteProfileAndApplicationForm);
+    }
+
+    private SubmittedApplyDetailResponse toSubmittedApplyDetailResponse(final Apply apply) {
+        ApplicationForm submittedApplicationForm = apply.getApplicationForm();
+        Map<String, String> content = extractContent(submittedApplicationForm);
+        List<ApplyPortfolioDto> portfolios = extractPortfolios(submittedApplicationForm);
+        return SubmittedApplyDetailResponse.from(apply, content, portfolios);
+    }
+
+    private SubmittedApplyResponse toSubmittedApplyResponse(final Apply apply) {
+        ApplicationForm applicationForm = apply.getApplicationForm();
+        Map<String, String> content = extractContent(applicationForm);
+        List<ApplyPortfolioDto> portfolios = extractPortfolios(applicationForm);
+        return SubmittedApplyResponse.from(apply, content, portfolios);
+    }
+
+    private Map<String, String> extractContent(final ApplicationForm applicationForm) {
+        return Optional.ofNullable(applicationForm)
+                .map(ApplicationForm::getContent)
+                .map(string2MapSerializer::serializeAsMap)
+                .orElse(Map.of());
+    }
+
+    private List<ApplyPortfolioDto> extractPortfolios(final ApplicationForm applicationForm) {
+        return Optional.ofNullable(applicationForm)
+                .map(ApplicationForm::getPortfolios)
+                .orElse(List.of())
+                .stream()
+                .map(ApplyPortfolioDto::from)
+                .toList();
     }
 
     private void ensureSubmitted(final Apply apply) {
