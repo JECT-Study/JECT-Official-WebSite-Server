@@ -18,7 +18,7 @@ public record TempApplyDetailResponse(
         String lastModifiedAt,
         JobFamily recruitJobFamily,
         TempApplicationFormResponse tempApplicationFormResponse
-                                      ) {
+) {
 
     public static TempApplyDetailResponse from(
             Apply apply,

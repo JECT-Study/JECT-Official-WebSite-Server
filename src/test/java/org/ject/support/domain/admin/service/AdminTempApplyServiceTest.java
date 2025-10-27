@@ -107,4 +107,50 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         verify(applyRepository).countByStatus(targetStatus);
         assertThat(result).isEqualTo(new TempSavedApplyCountResponse(tempSavedCount));
     }
+
+    @Test
+    void 존재하지_않는_임시_저장된_지원서를_삭제하면_예외_발생() {
+        // given
+        Long tempApplyId = 1L;
+        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
+                .willReturn(Optional.empty());
+
+        // when, then
+        assertThatThrownBy(() -> adminTempApplyService.deleteTempApply(tempApplyId))
+                .isInstanceOf(ApplyException.class);
+    }
+
+    @Test
+    void 임시_저장된_지원서를_삭제한다() {
+        // given
+        Long tempApplyId = 1L;
+        Member member = Member.builder()
+                .name("김젝트")
+                .build();
+        Semester semester = Semester.builder()
+                .name("1")
+                .build();
+        Recruit recruit = Recruit.builder()
+                .semester(semester)
+                .build();
+        ApplicationForm applicationForm = ApplicationForm.builder()
+                .content("{}")
+                .build();
+        Apply tempSavedApply = Apply.builder()
+                .id(tempApplyId)
+                .member(member)
+                .recruit(recruit)
+                .status(Apply.Status.TEMP_SAVED)
+                .applicationForm(applicationForm)
+                .build();
+        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
+                .willReturn(Optional.of(tempSavedApply));
+
+        // when
+        adminTempApplyService.deleteTempApply(tempApplyId);
+
+        // then
+        verify(applyRepository).findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED);
+        assertThat(tempSavedApply.getApplicationForm()).isNull();
+    }
 }

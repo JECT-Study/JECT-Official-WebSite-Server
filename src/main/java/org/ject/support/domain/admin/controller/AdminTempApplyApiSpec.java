@@ -19,4 +19,9 @@ public interface AdminTempApplyApiSpec {
             summary = "임시 저장한 지원서 수 조회",
             description = "임시 저장한 지원서 총 개수를 조회합니다.")
     TempSavedApplyCountResponse getTempSavedApplyCount();
+
+    @Operation(
+            summary = "임시 저장된 지원서 삭제",
+            description = "임시 저장된 지원서를 삭제합니다.")
+    void deleteTempApply(@PathVariable("tempApplyId") Long tempApplyId);
 }
