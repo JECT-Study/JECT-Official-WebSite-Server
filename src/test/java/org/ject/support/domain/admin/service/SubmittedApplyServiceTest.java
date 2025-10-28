@@ -414,7 +414,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applyId = 999L;
         var request = new SubmittedApplyEditRequest(
                 "이름",
-                "010-1234-5678",
+                "01012345678",
                 "test@example.com",
                 JobFamily.BE,
                 Map.of("1", "답변"),
