@@ -8,10 +8,17 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
+import org.ject.support.domain.admin.dto.SubmittedApplyEditRequest;
 import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.recruit.domain.Question;
+import org.ject.support.domain.recruit.exception.QuestionErrorCode;
+import org.ject.support.domain.recruit.exception.QuestionException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -43,6 +50,9 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
     @Mock
     private String2MapSerializer string2MapSerializer;
 
+    @Mock
+    private Map2JsonSerializer map2JsonSerializer;
+
     private static Apply submittedApply;
 
     @BeforeEach
@@ -54,9 +64,19 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var semester = Semester.builder()
                 .name("1")
                 .build();
+
+        var question1 = Question.builder()
+                .id(1L)
+                .build();
+        var question2 = Question.builder()
+                .id(2L)
+                .build();
+
         var recruit = Recruit.builder()
                 .semester(semester)
+                .questions(List.of(question1, question2))
                 .build();
+
         submittedApply = Apply.builder()
                 .id(applyId)
                 .member(member)
@@ -342,4 +362,125 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         assertThat(actual.applyId()).isEqualTo(submittedApply.getId());
     }
 
+    @Test
+    void 제출된_지원서_수정_성공() {
+        // given
+        var applyId = submittedApply.getId();
+        var newName = "수정된이름";
+        var newPhoneNumber = "010-1234-5678";
+        var newEmail = "updated@example.com";
+        var newJobFamily = JobFamily.FE;
+
+        var newAnswers = Map.of(
+                "1", "수정된 답변1",
+                "2", "수정된 답변2"
+        );
+
+        var newPortfolios = List.of(
+                new ApplyPortfolioDto("url1", "name1", "1", "1"),
+                new ApplyPortfolioDto("url2", "name2", "2", "2")
+        );
+
+        var request = new SubmittedApplyEditRequest(
+                newName,
+                newPhoneNumber,
+                newEmail,
+                newJobFamily,
+                newAnswers,
+                newPortfolios
+        );
+
+        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+                .willReturn(Optional.of(submittedApply));
+        given(map2JsonSerializer.serializeAsString(newAnswers))
+                .willReturn("{\"1\":\"수정된 답변1\",\"2\":\"수정된 답변2\"}");
+
+        // when
+        submittedApplyService.updateSubmittedApply(applyId, request);
+
+        // then
+        verify(applyRepository).findByIdAndStatusWithMember(applyId, Status.SUBMITTED);
+        verify(map2JsonSerializer).serializeAsString(newAnswers);
+
+        assertThat(submittedApply.getMember().getName()).isEqualTo(newName);
+        assertThat(submittedApply.getMember().getPhoneNumber()).isEqualTo(newPhoneNumber);
+        assertThat(submittedApply.getMember().getEmail()).isEqualTo(newEmail);
+        assertThat(submittedApply.getMember().getJobFamily()).isEqualTo(newJobFamily);
+    }
+
+    @Test
+    void 제출된_지원서_수정시_존재하지_않으면_예외_발생() {
+        // given
+        var applyId = 999L;
+        var request = new SubmittedApplyEditRequest(
+                "이름",
+                "010-1234-5678",
+                "test@example.com",
+                JobFamily.BE,
+                Map.of("1", "답변"),
+                List.of()
+        );
+
+        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+                .willReturn(Optional.empty());
+
+        // expected
+        assertThatThrownBy(() -> submittedApplyService.updateSubmittedApply(applyId, request))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
+    }
+
+    @Test
+    void 제출된_지원서_수정시_유효하지_않은_질문ID면_예외_발생() {
+        // given
+        var applyId = submittedApply.getId();
+        var invalidQuestionId = "999";
+
+        var request = new SubmittedApplyEditRequest(
+                "이름",
+                "010-1234-5678",
+                "test@example.com",
+                JobFamily.BE,
+                Map.of(invalidQuestionId, "답변"),
+                List.of()
+        );
+
+        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+                .willReturn(Optional.of(submittedApply));
+
+        // expected
+        assertThatThrownBy(() -> submittedApplyService.updateSubmittedApply(applyId, request))
+                .isInstanceOf(QuestionException.class)
+                .hasFieldOrPropertyWithValue("errorCode", QuestionErrorCode.NOT_FOUND_QUESTION);
+    }
+
+    @Test
+    void 제출되지_않은_지원서_수정시_예외_발생() {
+        // given
+        var applyId = submittedApply.getId();
+        var tempSavedApply = Apply.builder()
+                .id(applyId)
+                .member(submittedApply.getMember())
+                .recruit(submittedApply.getRecruit())
+                .status(Status.TEMP_SAVED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        var request = new SubmittedApplyEditRequest(
+                "이름",
+                "010-1234-5678",
+                "test@example.com",
+                JobFamily.BE,
+                Map.of("1", "답변"),
+                List.of()
+        );
+
+        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+                .willReturn(Optional.of(tempSavedApply));
+
+        // expected
+        assertThatThrownBy(() -> submittedApplyService.updateSubmittedApply(applyId, request))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_SUBMITTED_APPLICATION_FORM);
+    }
 }
