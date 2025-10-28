@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.admin.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
+import org.ject.support.domain.admin.dto.SubmittedApplyDetailResponse;
 import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
 import org.ject.support.domain.admin.service.SubmittedApplyService;
 import org.ject.support.domain.member.JobFamily;
@@ -42,9 +43,16 @@ public class SubmittedApplyController implements SubmittedApplyApiSpec {
     }
 
     @Override
+    @GetMapping("/{applyId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public SubmittedApplyDetailResponse findSubmittedApplyDetail(@PathVariable("applyId") final Long applyId) {
+        return submittedApplyService.findSubmittedApplyDetail(applyId);
+    }
+
+    @Override
     @DeleteMapping("/{applyId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public void deleteSubmittedApply(@PathVariable final Long applyId) {
+    public void deleteSubmittedApply(@PathVariable("applyId") final Long applyId) {
         submittedApplyService.deleteSubmittedApply(applyId);
     }
 

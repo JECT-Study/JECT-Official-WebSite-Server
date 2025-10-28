@@ -284,4 +284,62 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         verify(applyRepository).findSubmittedApplies(jobFamily, pageable);
     }
 
+    @Test
+    void 존재하지_않는_제출된_지원서를_상세조회할_경우_예외가_발생() {
+        // given
+        var applyId = submittedApply.getId() + 1L;
+        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+                .willReturn(Optional.empty());
+
+        // expected
+        assertThatThrownBy(() -> submittedApplyService.findSubmittedApplyDetail(applyId))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
+    }
+
+    @Test
+    void 상세조회하려는_제출된_지원서가_null인_경우_빈_응답을_반환() {
+        // given
+        var applyId = submittedApply.getId() + 1L;
+        var member2 = Member.builder()
+                .name("김젝트2")
+                .build();
+        var apply2 = Apply.builder()
+                .id(applyId)
+                .status(Status.SUBMITTED)
+                .applicationForm(null)
+                .member(member2)
+                .recruit(submittedApply.getRecruit())
+                .build();
+
+        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+                .willReturn(Optional.of(apply2));
+
+        // when
+        var actual = submittedApplyService.findSubmittedApplyDetail(applyId);
+        // expected
+        assertThat(actual.applyId()).isEqualTo(applyId);
+        assertThat(actual.applicationFormResponse().answers()).isEmpty();  // 빈 Map 확인
+        assertThat(actual.applicationFormResponse().portfolios()).isEmpty();
+    }
+
+    @Test
+    void 제출된_지원서를_상세조회() {
+        // given
+        given(applyRepository.findByIdAndStatusWithMember(
+                submittedApply.getId(),
+                Status.SUBMITTED
+        )).willReturn(Optional.of(submittedApply));
+
+        // when
+        var actual = submittedApplyService.findSubmittedApplyDetail(submittedApply.getId());
+
+        // then
+        verify(applyRepository).findByIdAndStatusWithMember(
+                submittedApply.getId(),
+                Status.SUBMITTED
+        );
+        assertThat(actual.applyId()).isEqualTo(submittedApply.getId());
+    }
+
 }
