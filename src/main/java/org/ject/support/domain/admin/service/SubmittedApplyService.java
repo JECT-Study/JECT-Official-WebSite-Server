@@ -5,19 +5,26 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
+import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
 import org.ject.support.domain.admin.dto.SubmittedApplyDetailResponse;
+import org.ject.support.domain.admin.dto.SubmittedApplyEditRequest;
 import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.Apply.Status;
+import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.entity.MemberEditor;
+import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.exception.QuestionErrorCode;
+import org.ject.support.domain.recruit.exception.QuestionException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,6 +36,7 @@ public class SubmittedApplyService {
 
     private final ApplyRepository applyRepository;
     private final String2MapSerializer string2MapSerializer;
+    private final Map2JsonSerializer map2JsonSerializer;
 
     @Transactional(readOnly = true)
     public Page<SubmittedApplyResponse> findSubmittedApplies(final JobFamily jobFamily,
@@ -53,6 +61,44 @@ public class SubmittedApplyService {
     public SubmittedApplyCountResponse countSubmittedApply() {
         Long count = applyRepository.countByStatus(Status.SUBMITTED);
         return new SubmittedApplyCountResponse(count);
+    }
+
+    @Transactional
+    public void updateSubmittedApply(final Long applyId,
+                                     final SubmittedApplyEditRequest request) {
+        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
+                .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
+        ensureSubmitted(apply);
+
+        Member member = apply.getMember();
+        MemberEditor memberEditor = member.toEditor()
+                .name(request.name())
+                .phoneNumber(request.phoneNumber())
+                .email(request.email())
+                .jobFamily(request.jobFamily())
+                .build();
+        member.edit(memberEditor);
+
+        Map<String, String> answers = request.answers();
+        validateQuestions(answers, apply.getRecruit());
+        String newContent = map2JsonSerializer.serializeAsString(answers);
+
+        List<Portfolio> newPortfolios = request.portfolios()
+                .stream()
+                .map(ApplyPortfolioDto::toEntity)
+                .toList();
+
+        apply.getApplicationForm()
+                .updateContentAndPortfolios(newContent, newPortfolios);
+    }
+
+    private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
+        answers.keySet().stream()
+                .map(Long::parseLong)
+                .filter(recruit::isInvalidQuestionId)
+                .forEach(key -> {
+                    throw new QuestionException(QuestionErrorCode.NOT_FOUND_QUESTION);
+                });
     }
 
     @Transactional
