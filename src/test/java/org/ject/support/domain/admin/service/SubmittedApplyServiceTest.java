@@ -285,7 +285,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
     }
 
     @Test
-    void 상세조회하려는_제출된_지원서가_존재하지_않으면_예외가_발생() {
+    void 존재하지_않는_제출된_지원서를_상세조회할_경우_예외가_발생() {
         // given
         var applyId = submittedApply.getId() + 1L;
         given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
@@ -298,7 +298,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
     }
 
     @Test
-    void 상세조회하려는_제출된_지원서가_지원서_null인_경우_빈_응답을_반환() {
+    void 상세조회하려는_제출된_지원서가_null인_경우_빈_응답을_반환() {
         // given
         var applyId = submittedApply.getId() + 1L;
         var member2 = Member.builder()
