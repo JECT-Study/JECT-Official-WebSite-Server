@@ -53,6 +53,7 @@ public class SubmittedApplyController implements SubmittedApplyApiSpec {
 
     @Override
     @PutMapping("{applyId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void editSubmittedApply(@PathVariable("applyId") final Long applyId,
                                    @RequestBody @Valid final SubmittedApplyEditRequest request) {
         submittedApplyService.updateSubmittedApply(applyId, request);
