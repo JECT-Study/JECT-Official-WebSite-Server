@@ -101,7 +101,7 @@ public class SubmittedApplyService {
     }
 
     @Transactional
-    public void deleteSubmittedApplies(final List<Long> applyIds) {
+    public int deleteSubmittedApplies(final List<Long> applyIds) {
         final List<Long> distinctIds = applyIds.stream().distinct().toList();
         final List<Apply> applies = applyRepository.findAllByIdAndStatusWithMember(distinctIds, Status.SUBMITTED);
 
@@ -110,6 +110,7 @@ public class SubmittedApplyService {
         }
 
         applies.forEach(this::deleteProfileAndApplicationForm);
+        return applies.size();
     }
 
     private SubmittedApplyDetailResponse toSubmittedApplyDetailResponse(final Apply apply) {

@@ -48,6 +48,6 @@ public interface SubmittedApplyApiSpec {
 
     @Operation(
             summary = "제출된 지원서 다수 삭제",
-            description = "선택한 다수의 제출된 지원서들을 삭제합니다.")
-    void deleteSubmittedApplies(@RequestBody @Valid final SubmittedApplyBulkDeleteRequest request);
+            description = "선택한 다수의 제출된 지원서들을 삭제합니다. 삭제한 수를 반환합니다.")
+    int deleteSubmittedApplies(@RequestBody @Valid final SubmittedApplyBulkDeleteRequest request);
 }

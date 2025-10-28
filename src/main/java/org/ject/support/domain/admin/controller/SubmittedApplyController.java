@@ -68,7 +68,7 @@ public class SubmittedApplyController implements SubmittedApplyApiSpec {
     @Override
     @DeleteMapping
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public void deleteSubmittedApplies(@RequestBody @Valid final SubmittedApplyBulkDeleteRequest request) {
-        submittedApplyService.deleteSubmittedApplies(request.applyIds());
+    public int deleteSubmittedApplies(@RequestBody @Valid final SubmittedApplyBulkDeleteRequest request) {
+        return submittedApplyService.deleteSubmittedApplies(request.applyIds());
     }
 }
