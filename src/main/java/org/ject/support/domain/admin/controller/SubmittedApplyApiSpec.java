@@ -6,6 +6,7 @@ import jakarta.validation.Valid;
 import org.ject.support.domain.admin.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
 import org.ject.support.domain.admin.dto.SubmittedApplyDetailResponse;
+import org.ject.support.domain.admin.dto.SubmittedApplyEditRequest;
 import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
 import org.ject.support.domain.member.JobFamily;
 import org.springframework.data.domain.Page;
@@ -33,6 +34,12 @@ public interface SubmittedApplyApiSpec {
             summary = "제출된 지원서 상세 조회",
             description = "전달한 ID에 해당하는 제출된 지원서의 상세 정보를 조회합니다.")
     SubmittedApplyDetailResponse findSubmittedApplyDetail(@PathVariable("applyId") final Long applyId);
+
+    @Operation(
+            summary = "제출된 지원서 수정",
+            description = "전달한 ID에 해당하는 제출된 지원서의 정보를 수정 합니다.")
+    void editSubmittedApply(@PathVariable("applyId") final Long applyId,
+                            @RequestBody @Valid final SubmittedApplyEditRequest request);
 
     @Operation(
             summary = "제출된 지원서 삭제",
