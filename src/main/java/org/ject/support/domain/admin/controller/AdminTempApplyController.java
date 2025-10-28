@@ -30,9 +30,9 @@ public class AdminTempApplyController implements AdminTempApplyApiSpec {
         return adminTempApplyService.getTempSavedApplyCount();
     }
 
-    @DeleteMapping("/{applyId}")
+    @DeleteMapping("/{tempApplyId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public void deleteTempApply(@PathVariable final Long applyId) {
-        adminTempApplyService.deleteTempApply(applyId);
+    public void deleteTempApply(@PathVariable final Long tempApplyId) {
+        adminTempApplyService.deleteTempApply(tempApplyId);
     }
 }

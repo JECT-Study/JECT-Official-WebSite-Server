@@ -109,7 +109,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 존재하지_않는_임시_저장된_지원서를_삭제하면_예외_발생() {
+    void 존재하지_않는_임시_저장_상태의_지원서를_삭제_할_경우_예외_발생() {
         // given
         Long tempApplyId = 1L;
         given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
@@ -151,6 +151,6 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
 
         // then
         verify(applyRepository).findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED);
-        assertThat(tempSavedApply.getApplicationForm()).isNull();
+        verify(applyRepository).delete(tempSavedApply);
     }
 }
