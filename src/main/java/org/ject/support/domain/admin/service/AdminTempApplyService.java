@@ -48,6 +48,7 @@ public class AdminTempApplyService {
     public void deleteTempApply(Long applyId) {
         Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Apply.Status.TEMP_SAVED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
+        apply.getMember().deleteProfile();
         applyRepository.delete(apply);
     }
 }
