@@ -92,15 +92,6 @@ public class SubmittedApplyService {
                 .updateContentAndPortfolios(newContent, newPortfolios);
     }
 
-    private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
-        answers.keySet().stream()
-                .map(Long::parseLong)
-                .filter(recruit::isInvalidQuestionId)
-                .forEach(key -> {
-                    throw new QuestionException(QuestionErrorCode.NOT_FOUND_QUESTION);
-                });
-    }
-
     @Transactional
     public void deleteSubmittedApply(final Long applyId) {
         Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
@@ -155,6 +146,15 @@ public class SubmittedApplyService {
         if (apply.isNotSubmitted()) {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_SUBMITTED_APPLICATION_FORM);
         }
+    }
+
+    private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
+        answers.keySet().stream()
+                .map(Long::parseLong)
+                .filter(recruit::isInvalidQuestionId)
+                .forEach(key -> {
+                    throw new QuestionException(QuestionErrorCode.NOT_FOUND_QUESTION);
+                });
     }
 
     private void deleteProfileAndApplicationForm(final Apply apply) {
