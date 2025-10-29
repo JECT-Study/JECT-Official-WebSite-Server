@@ -222,7 +222,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(applyRepository.findSubmittedApplies(jobFamily, pageable))
+        given(applyRepository.findApplies(jobFamily, Status.SUBMITTED ,pageable))
                 .willReturn(page);
 
         // when
@@ -231,7 +231,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(applyRepository).findSubmittedApplies(jobFamily, pageable);
+        verify(applyRepository).findApplies(jobFamily, Status.SUBMITTED, pageable);
     }
 
     @Test
@@ -241,7 +241,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(applyRepository.findSubmittedApplies(null, pageable))
+        given(applyRepository.findApplies(null, Status.SUBMITTED, pageable))
                 .willReturn(page);
 
         // when
@@ -250,7 +250,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(applyRepository).findSubmittedApplies(null, pageable);
+        verify(applyRepository).findApplies(null, Status.SUBMITTED, pageable);
     }
 
     @Test
@@ -260,7 +260,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var jobFamily = JobFamily.BE;
         var page = new PageImpl<Apply>(List.of(), pageable, 0L);
 
-        given(applyRepository.findSubmittedApplies(jobFamily, pageable))
+        given(applyRepository.findApplies(jobFamily, Status.SUBMITTED, pageable))
                 .willReturn(page);
 
         // when
@@ -269,7 +269,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // then
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
-        verify(applyRepository).findSubmittedApplies(jobFamily, pageable);
+        verify(applyRepository).findApplies(jobFamily, Status.SUBMITTED, pageable);
     }
 
     @Test
@@ -290,7 +290,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applies = List.of(submittedApply, apply2);
         var page = new PageImpl<>(applies, pageable, 25L);
 
-        given(applyRepository.findSubmittedApplies(jobFamily, pageable))
+        given(applyRepository.findApplies(jobFamily, Status.SUBMITTED, pageable))
                 .willReturn(page);
 
         // when
@@ -301,7 +301,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         assertThat(result.getTotalElements()).isEqualTo(25L);
         assertThat(result.getNumber()).isEqualTo(1);
         assertThat(result.getSize()).isEqualTo(10);
-        verify(applyRepository).findSubmittedApplies(jobFamily, pageable);
+        verify(applyRepository).findApplies(jobFamily, Status.SUBMITTED, pageable);
     }
 
     @Test

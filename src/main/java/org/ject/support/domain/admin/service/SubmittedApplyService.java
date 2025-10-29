@@ -1,8 +1,5 @@
 package org.ject.support.domain.admin.service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
@@ -30,6 +27,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class SubmittedApplyService {
@@ -41,7 +42,7 @@ public class SubmittedApplyService {
     @Transactional(readOnly = true)
     public Page<SubmittedApplyResponse> findSubmittedApplies(final JobFamily jobFamily,
                                                              final Pageable pageable) {
-        Page<Apply> applyPage = applyRepository.findSubmittedApplies(jobFamily, pageable);
+        Page<Apply> applyPage = applyRepository.findApplies(jobFamily, Status.SUBMITTED, pageable);
 
         List<SubmittedApplyResponse> content = applyPage.getContent().stream()
                 .map(this::toSubmittedApplyResponse)
