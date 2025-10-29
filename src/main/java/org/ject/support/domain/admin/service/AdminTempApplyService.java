@@ -13,6 +13,9 @@ import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -29,8 +32,8 @@ public class AdminTempApplyService {
 
         return TempApplyDetailResponse.from(
                 apply,
-                string2MapSerializer.serializeAsMap(tempApplicationForm.getContent()),
-                tempApplicationForm.getPortfolios()
+                tempApplicationForm == null ? Map.of() : string2MapSerializer.serializeAsMap(tempApplicationForm.getContent()),
+                tempApplicationForm == null ? List.of() : tempApplicationForm.getPortfolios()
                         .stream()
                         .map(ApplyPortfolioDto::from)
                         .toList());
@@ -39,5 +42,13 @@ public class AdminTempApplyService {
     public TempSavedApplyCountResponse getTempSavedApplyCount() {
         Long count = applyRepository.countByStatus(Apply.Status.TEMP_SAVED);
         return new TempSavedApplyCountResponse(count);
+    }
+
+    @Transactional
+    public void deleteTempApply(Long applyId) {
+        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Apply.Status.TEMP_SAVED)
+                .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
+        apply.getMember().deleteProfile();
+        applyRepository.delete(apply);
     }
 }
