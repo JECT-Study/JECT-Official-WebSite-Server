@@ -111,8 +111,8 @@ class SemesterControllerTest {
                 );
 
         // then
-        assertThat(semesterRepository.findAll()).hasSize(0);
-        assertThat(recruitRepository.findAll()).hasSize(0);
+        assertThat(semesterRepository.findAll()).isEmpty();
+        assertThat(recruitRepository.findAll()).isEmpty();
     }
 
     @Test
