@@ -58,7 +58,7 @@ public class AdminTempApplyService {
 
     public Page<TempSavedApplyResponse> getTempApplies(JobFamily jobFamily, Pageable pageable) {
         Apply.Status tempSavedStatus = Apply.Status.TEMP_SAVED;
-        Page<Apply> applyPage = applyRepository.findApplies(jobFamily, tempSavedStatus, pageable);
+        Page<Apply> applyPage = applyRepository.findAppliesByStatus(jobFamily, tempSavedStatus, pageable);
 
         List<TempSavedApplyResponse> content = applyPage.getContent().stream()
                 .map(this::toTempSavedApplyResponse)

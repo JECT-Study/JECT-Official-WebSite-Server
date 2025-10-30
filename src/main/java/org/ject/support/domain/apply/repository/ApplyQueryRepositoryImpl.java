@@ -25,9 +25,9 @@ public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Apply> findApplies(final JobFamily jobFamily,
-                                   final Apply.Status status,
-                                   final Pageable pageable) {
+    public Page<Apply> findAppliesByStatus(final JobFamily jobFamily,
+                                           final Apply.Status status, final Pageable pageable) {
+
         List<Apply> content = queryFactory
                 .selectFrom(apply)
                 .distinct()

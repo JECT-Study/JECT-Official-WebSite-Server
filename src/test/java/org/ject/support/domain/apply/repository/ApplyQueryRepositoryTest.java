@@ -83,7 +83,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findApplies(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
@@ -110,7 +110,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findApplies(null, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(null, status, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(3);
@@ -132,7 +132,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findApplies(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -155,7 +155,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findApplies(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -176,7 +176,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findApplies(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(10);
@@ -192,7 +192,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findApplies(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
 
 
         // then
@@ -221,7 +221,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findApplies(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(3);
