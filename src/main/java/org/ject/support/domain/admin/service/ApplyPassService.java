@@ -37,7 +37,7 @@ public class ApplyPassService {
 
             // 지원자 role 승격
             Member member = apply.getMember();
-            member.updateRole(Role.SEMESTER);
+            member.promoteToSemester();
         });
 
         // 승인한 구성원 수 반환

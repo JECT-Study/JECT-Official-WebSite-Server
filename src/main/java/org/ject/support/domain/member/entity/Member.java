@@ -142,7 +142,7 @@ public class Member extends BaseTimeEntity {
         this.interestedDomains.clear();
     }
 
-    public void updateRole(Role role) {
-        this.role = role;
+    public void promoteToSemester() {
+        this.role = Role.SEMESTER;
     }
 }
