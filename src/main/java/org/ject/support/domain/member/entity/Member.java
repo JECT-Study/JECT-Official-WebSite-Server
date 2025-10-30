@@ -141,4 +141,8 @@ public class Member extends BaseTimeEntity {
         this.experiencePeriod = null;
         this.interestedDomains.clear();
     }
+
+    public void promoteToSemester() {
+        this.role = Role.SEMESTER;
+    }
 }
