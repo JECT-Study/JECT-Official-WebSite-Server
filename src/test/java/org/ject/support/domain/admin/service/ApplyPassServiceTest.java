@@ -135,5 +135,4 @@ class ApplyPassServiceTest extends UnitTestSupport {
                 .content(content)
                 .build();
     }
-
 }
