@@ -1,20 +1,26 @@
 package org.ject.support.domain.admin.service;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.util.String2MapSerializer;
+import org.ject.support.domain.admin.dto.TempApplyDetailResponse;
 import org.ject.support.domain.admin.dto.TempSavedApplyCountResponse;
+import org.ject.support.domain.admin.dto.TempSavedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
-import org.ject.support.domain.apply.dto.TempApplyDetailResponse;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
+import org.ject.support.domain.member.JobFamily;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -32,11 +38,9 @@ public class AdminTempApplyService {
 
         return TempApplyDetailResponse.from(
                 apply,
-                tempApplicationForm == null ? Map.of() : string2MapSerializer.serializeAsMap(tempApplicationForm.getContent()),
-                tempApplicationForm == null ? List.of() : tempApplicationForm.getPortfolios()
-                        .stream()
-                        .map(ApplyPortfolioDto::from)
-                        .toList());
+                extractContent(tempApplicationForm),
+                extractPortfolios(tempApplicationForm)
+        );
     }
 
     public TempSavedApplyCountResponse getTempSavedApplyCount() {
@@ -50,5 +54,39 @@ public class AdminTempApplyService {
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
         apply.getMember().deleteProfile();
         applyRepository.delete(apply);
+    }
+
+    public Page<TempSavedApplyResponse> getTempApplies(JobFamily jobFamily, Pageable pageable) {
+        Apply.Status tempSavedStatus = Apply.Status.TEMP_SAVED;
+        Page<Apply> applyPage = applyRepository.findAppliesByStatus(jobFamily, tempSavedStatus, pageable);
+
+        List<TempSavedApplyResponse> content = applyPage.getContent().stream()
+                .map(this::toTempSavedApplyResponse)
+                .toList();
+
+        return PageResponse.from(content, pageable, applyPage.getTotalElements());
+    }
+
+    private TempSavedApplyResponse toTempSavedApplyResponse(final Apply apply) {
+        ApplicationForm applicationForm = apply.getApplicationForm();
+        Map<String, String> content = extractContent(applicationForm);
+        List<ApplyPortfolioDto> portfolios = extractPortfolios(applicationForm);
+        return TempSavedApplyResponse.from(apply, content, portfolios);
+    }
+
+    private Map<String, String> extractContent(final ApplicationForm applicationForm) {
+        return Optional.ofNullable(applicationForm)
+                .map(ApplicationForm::getContent)
+                .map(string2MapSerializer::serializeAsMap)
+                .orElse(Map.of());
+    }
+
+    private List<ApplyPortfolioDto> extractPortfolios(final ApplicationForm applicationForm) {
+        return Optional.ofNullable(applicationForm)
+                .map(ApplicationForm::getPortfolios)
+                .orElse(List.of())
+                .stream()
+                .map(ApplyPortfolioDto::from)
+                .toList();
     }
 }

@@ -1,43 +1,44 @@
 package org.ject.support.domain.admin.service;
 
+import org.ject.support.base.UnitTestSupport;
+import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.common.util.String2MapSerializer;
+import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
+import org.ject.support.domain.admin.dto.SubmittedApplyEditRequest;
+import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
+import org.ject.support.domain.apply.domain.ApplicationForm;
+import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.Apply.Status;
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
+import org.ject.support.domain.apply.exception.ApplyErrorCode;
+import org.ject.support.domain.apply.exception.ApplyException;
+import org.ject.support.domain.apply.repository.ApplyRepository;
+import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.recruit.domain.Question;
+import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.exception.QuestionErrorCode;
+import org.ject.support.domain.recruit.exception.QuestionException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.ject.support.common.util.Map2JsonSerializer;
-import org.ject.support.common.util.String2MapSerializer;
-import org.ject.support.domain.admin.dto.SubmittedApplyEditRequest;
-import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
-import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
-import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.recruit.domain.Question;
-import org.ject.support.domain.recruit.exception.QuestionErrorCode;
-import org.ject.support.domain.recruit.exception.QuestionException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
-import org.ject.support.base.UnitTestSupport;
-import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
-import org.ject.support.domain.apply.domain.ApplicationForm;
-import org.ject.support.domain.apply.domain.Apply;
-import org.ject.support.domain.apply.domain.Apply.Status;
-import org.ject.support.domain.apply.exception.ApplyErrorCode;
-import org.ject.support.domain.apply.exception.ApplyException;
-import org.ject.support.domain.apply.repository.ApplyRepository;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.recruit.domain.Semester;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
 class SubmittedApplyServiceTest  extends UnitTestSupport {
 
@@ -222,7 +223,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(applyRepository.findSubmittedApplies(jobFamily, pageable))
+        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED ,pageable))
                 .willReturn(page);
 
         // when
@@ -231,7 +232,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(applyRepository).findSubmittedApplies(jobFamily, pageable);
+        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, pageable);
     }
 
     @Test
@@ -241,7 +242,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(applyRepository.findSubmittedApplies(null, pageable))
+        given(applyRepository.findAppliesByStatus(null, Status.SUBMITTED, pageable))
                 .willReturn(page);
 
         // when
@@ -250,7 +251,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(applyRepository).findSubmittedApplies(null, pageable);
+        verify(applyRepository).findAppliesByStatus(null, Status.SUBMITTED, pageable);
     }
 
     @Test
@@ -260,7 +261,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var jobFamily = JobFamily.BE;
         var page = new PageImpl<Apply>(List.of(), pageable, 0L);
 
-        given(applyRepository.findSubmittedApplies(jobFamily, pageable))
+        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, pageable))
                 .willReturn(page);
 
         // when
@@ -269,7 +270,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // then
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
-        verify(applyRepository).findSubmittedApplies(jobFamily, pageable);
+        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, pageable);
     }
 
     @Test
@@ -290,7 +291,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applies = List.of(submittedApply, apply2);
         var page = new PageImpl<>(applies, pageable, 25L);
 
-        given(applyRepository.findSubmittedApplies(jobFamily, pageable))
+        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, pageable))
                 .willReturn(page);
 
         // when
@@ -301,7 +302,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         assertThat(result.getTotalElements()).isEqualTo(25L);
         assertThat(result.getNumber()).isEqualTo(1);
         assertThat(result.getSize()).isEqualTo(10);
-        verify(applyRepository).findSubmittedApplies(jobFamily, pageable);
+        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, pageable);
     }
 
     @Test

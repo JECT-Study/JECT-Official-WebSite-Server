@@ -1,15 +1,7 @@
 package org.ject.support.domain.apply.repository;
 
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.QApplicationForm.applicationForm;
-import static org.ject.support.domain.apply.domain.QApply.apply;
-import static org.ject.support.domain.apply.domain.QPortfolio.portfolio;
-import static org.ject.support.domain.member.entity.QMember.member;
-
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import java.util.List;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.apply.domain.Apply;
@@ -18,6 +10,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
+
+import static org.ject.support.domain.apply.domain.QApplicationForm.applicationForm;
+import static org.ject.support.domain.apply.domain.QApply.apply;
+import static org.ject.support.domain.apply.domain.QPortfolio.portfolio;
+import static org.ject.support.domain.member.entity.QMember.member;
+
 @Repository
 @RequiredArgsConstructor
 public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
@@ -25,8 +25,9 @@ public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Apply> findSubmittedApplies(final JobFamily jobFamily,
-                                            final Pageable pageable) {
+    public Page<Apply> findAppliesByStatus(final JobFamily jobFamily,
+                                           final Apply.Status status, final Pageable pageable) {
+
         List<Apply> content = queryFactory
                 .selectFrom(apply)
                 .distinct()
@@ -36,7 +37,7 @@ public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
                 .where(
                         apply.member.isDeleted.eq(false),
                         eqJobFamily(jobFamily),
-                        apply.status.eq(SUBMITTED)
+                        eqApplyStatus(status)
                 )
                 .orderBy(apply.createdAt.desc())
                 .offset(pageable.getOffset())
@@ -50,9 +51,8 @@ public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
                 .where(
                         apply.member.isDeleted.eq(false),
                         eqJobFamily(jobFamily),
-                        apply.status.eq(SUBMITTED)
+                        eqApplyStatus(status)
                 ).fetchOne();
-
 
         return PageResponse.from(content, pageable, total);
     }
@@ -60,6 +60,11 @@ public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
     private BooleanExpression eqJobFamily(final JobFamily jobFamily) {
         return Optional.ofNullable(jobFamily)
                 .map(apply.member.jobFamily::eq)
+                .orElse(null);
+    }
+    private BooleanExpression eqApplyStatus(final Apply.Status status) {
+        return Optional.ofNullable(status)
+                .map(apply.status::eq)
                 .orElse(null);
     }
 }
