@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
+import static org.ject.support.domain.recruit.exception.RecruitErrorCode.DUPLICATED_JOB_FAMILY;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -106,7 +107,7 @@ class RecruitControllerTest {
         mockMvc.perform(post("/admin/recruits")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(reqJson))
-                .andExpect(content().string(containsString("DUPLICATED_JOB_FAMILY")));
+                .andExpect(content().string(containsString(DUPLICATED_JOB_FAMILY.getCode())));
     }
 
     @Test

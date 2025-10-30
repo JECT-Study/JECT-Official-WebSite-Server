@@ -2,6 +2,7 @@ package org.ject.support.domain.recruit.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.ject.support.domain.recruit.exception.RecruitErrorCode.DUPLICATED_JOB_FAMILY;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -106,7 +107,7 @@ class SemesterControllerTest {
                 .andExpect(status().isConflict())
                 .andDo(print())
                 .andExpect(
-                        content().string(containsString("DUPLICATED_JOB_FAMILY"))
+                        content().string(containsString(DUPLICATED_JOB_FAMILY.getCode()))
                 );
 
         // then
