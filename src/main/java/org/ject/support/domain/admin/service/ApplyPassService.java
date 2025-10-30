@@ -4,14 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
-import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_FOUND_APPLY;
 import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_SUBMITTED;
 
 @Service
@@ -23,10 +21,7 @@ public class ApplyPassService {
     @Transactional
     public int passApply(List<Long> applyIds) {
         // 지원 정보 조회
-        List<Apply> applies = applyIds.stream()
-                .map(id -> applyRepository.findById(id)
-                        .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY)))
-                .toList();
+        List<Apply> applies = applyRepository.findAllByIdWithMember(applyIds);
 
         // 지원자 합격 처리
         applies.forEach(apply -> {
