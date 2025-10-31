@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.ject.support.domain.file.exception.FileErrorCode.INVALID_EXTENSION;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -137,7 +138,7 @@ class FileControllerTest extends ApplicationPeriodTest {
                                     }
                                 ]
                                 """))
-                .andExpect(content().string(containsString("INVALID_EXTENSION")))
+                .andExpect(content().string(containsString(INVALID_EXTENSION.getCode())))
                 .andDo(print());
     }
 
@@ -175,7 +176,7 @@ class FileControllerTest extends ApplicationPeriodTest {
                                 """)
                 )
                 .andExpect(status().isPayloadTooLarge())
-                .andExpect(content().string(containsString(FileErrorCode.EXCEEDED_PORTFOLIO_MAX_SIZE.name())))
+                .andExpect(content().string(containsString(FileErrorCode.EXCEEDED_PORTFOLIO_MAX_SIZE.getCode())))
                 .andDo(print())
                 .andReturn();
     }
