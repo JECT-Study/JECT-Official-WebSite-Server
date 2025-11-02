@@ -3,8 +3,8 @@ package org.ject.support.common.springdoc;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.servers.Server;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
@@ -21,21 +21,27 @@ public class SpringdocConfig {
 
     @Bean
     public OpenAPI openAPI() {
-        Info info = new Info()
-                .title("JECT Makers API Document")
-                .version("v0.0.1")
-                .description("JECT 메이커스 팀 API 명세서입니다.");
-
-        SecurityScheme securityScheme = new SecurityScheme()
-                .type(SecurityScheme.Type.HTTP)
-                .scheme("bearer")
-                .bearerFormat("JWT");
+        String securitySchemeName = "bearerAuth";
 
         return new OpenAPI()
+                // API 기본 정보
+                .info(new Info()
+                        .title("JECT Makers API Document")
+                        .version("v0.0.1")
+                        .description("JECT 메이커스 팀 API 명세서입니다."))
+
+                // Security 스키마 정의
                 .components(new Components()
-                        .addSecuritySchemes("Bearer Token", securityScheme))
-                .addServersItem(new Server().url("/"))
-                .info(info);
+                        .addSecuritySchemes(securitySchemeName, new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                                .in(SecurityScheme.In.HEADER)
+                                .description("JWT 토큰을 입력하세요 (Bearer prefix 제외)")))
+
+                // 전역으로 Security 적용
+                .addSecurityItem(new SecurityRequirement()
+                        .addList(securitySchemeName));
     }
 
     @Bean
