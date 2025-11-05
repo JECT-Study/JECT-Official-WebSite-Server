@@ -1,4 +1,4 @@
-package org.ject.support.domain.member.controller;
+package org.ject.support.domain.admin.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -17,16 +17,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import org.ject.support.base.UnitTestSupport;
+import org.ject.support.domain.admin.service.MemberManagementService;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.dto.MemberBulkDeleteRequest;
-import org.ject.support.domain.member.dto.MemberDetailResponse;
-import org.ject.support.domain.member.dto.MemberRegisterRequest;
-import org.ject.support.domain.member.dto.MemberResponse;
-import org.ject.support.domain.member.dto.MemberEditRequest;
+import org.ject.support.domain.admin.dto.MemberBulkDeleteRequest;
+import org.ject.support.domain.admin.dto.MemberDetailResponse;
+import org.ject.support.domain.admin.dto.MemberRegisterRequest;
+import org.ject.support.domain.admin.dto.MemberResponse;
+import org.ject.support.domain.admin.dto.MemberEditRequest;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
-import org.ject.support.domain.member.service.MemberService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -45,7 +45,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
     private MemberManagementController memberManagementController;
 
     @Mock
-    private MemberService memberService;
+    private MemberManagementService memberManagementService;
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
@@ -79,7 +79,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
         );
         var mockPage = new PageImpl<>(memberList, pageable, 1);
 
-        given(memberService.findMembers(any(Role.class), any(), any(), any(Pageable.class)))
+        given(memberManagementService.findMembers(any(Role.class), any(), any(), any(Pageable.class)))
                 .willReturn(mockPage);
 
         // expected
@@ -94,7 +94,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.content[0].email").value(TEST_EMAIL))
                 .andDo(print());
 
-        verify(memberService).findMembers(eq(Role.SEMESTER), eq(null), eq(null), any(Pageable.class));
+        verify(memberManagementService).findMembers(eq(Role.SEMESTER), eq(null), eq(null), any(Pageable.class));
     }
 
     @Test
@@ -113,7 +113,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
         );
         var mockPage = new PageImpl<>(memberList, pageable, 1);
 
-        given(memberService.findMembers(any(Role.class), any(JobFamily.class), any(), any(Pageable.class)))
+        given(memberManagementService.findMembers(any(Role.class), any(JobFamily.class), any(), any(Pageable.class)))
                 .willReturn(mockPage);
 
         // expected
@@ -128,7 +128,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.content[0].jobFamily").value("BE"))
                 .andDo(print());
 
-        verify(memberService).findMembers(eq(Role.SEMESTER), eq(JobFamily.BE), eq(null), any(Pageable.class));
+        verify(memberManagementService).findMembers(eq(Role.SEMESTER), eq(JobFamily.BE), eq(null), any(Pageable.class));
     }
 
     @Test
@@ -148,7 +148,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
         );
         var mockPage = new PageImpl<>(memberList, pageable, 1);
 
-        given(memberService.findMembers(any(Role.class), any(), eq(semesterId), any(Pageable.class)))
+        given(memberManagementService.findMembers(any(Role.class), any(), eq(semesterId), any(Pageable.class)))
                 .willReturn(mockPage);
 
         // expected
@@ -163,7 +163,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.content[0].semesterName").value("1"))
                 .andDo(print());
 
-        verify(memberService).findMembers(eq(Role.SEMESTER), eq(null), eq(semesterId), any(Pageable.class));
+        verify(memberManagementService).findMembers(eq(Role.SEMESTER), eq(null), eq(semesterId), any(Pageable.class));
     }
 
     @Test
@@ -180,7 +180,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .semesterName("1")
                 .build();
 
-        given(memberService.findMemberDetail(memberId)).willReturn(response);
+        given(memberManagementService.findMemberDetail(memberId)).willReturn(response);
 
         // expected
         mockMvc.perform(get("/admin/members/{memberId}", memberId)
@@ -194,7 +194,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.semesterName").value("1"))
                 .andDo(print());
 
-        verify(memberService).findMemberDetail(memberId);
+        verify(memberManagementService).findMemberDetail(memberId);
     }
 
     @Test
@@ -202,7 +202,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
         // given
         var nonExistentMemberId = 999L;
 
-        given(memberService.findMemberDetail(nonExistentMemberId))
+        given(memberManagementService.findMemberDetail(nonExistentMemberId))
                 .willThrow(new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
         // expected
@@ -216,7 +216,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 )
                 .andDo(print());
 
-        verify(memberService).findMemberDetail(nonExistentMemberId);
+        verify(memberManagementService).findMemberDetail(nonExistentMemberId);
     }
 
     @Test
@@ -231,7 +231,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 "1기"
         );
 
-        doNothing().when(memberService).registerMember(any(MemberRegisterRequest.class));
+        doNothing().when(memberManagementService).registerMember(any(MemberRegisterRequest.class));
 
         // expected
         mockMvc.perform(post("/admin/members")
@@ -240,7 +240,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .andExpect(status().isOk())
                 .andDo(print());
 
-        verify(memberService).registerMember(any(MemberRegisterRequest.class));
+        verify(memberManagementService).registerMember(any(MemberRegisterRequest.class));
     }
 
     @Test
@@ -316,7 +316,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
         );
 
         doThrow(new MemberException(MemberErrorCode.ALREADY_EXIST_MEMBER))
-                .when(memberService).registerMember(any(MemberRegisterRequest.class));
+                .when(memberManagementService).registerMember(any(MemberRegisterRequest.class));
 
         // expected
         mockMvc.perform(post("/admin/members")
@@ -330,7 +330,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 )
                 .andDo(print());
 
-        verify(memberService).registerMember(any(MemberRegisterRequest.class));
+        verify(memberManagementService).registerMember(any(MemberRegisterRequest.class));
     }
 
     @Test
@@ -346,7 +346,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .semesterName("1기")
                 .build();
 
-        doNothing().when(memberService).editMember(eq(memberId), any(MemberEditRequest.class));
+        doNothing().when(memberManagementService).editMember(eq(memberId), any(MemberEditRequest.class));
 
         // expected
         mockMvc.perform(put("/admin/members/{memberId}", memberId)
@@ -355,7 +355,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .andExpect(status().isOk())
                 .andDo(print());
 
-        verify(memberService).editMember(eq(memberId), any(MemberEditRequest.class));
+        verify(memberManagementService).editMember(eq(memberId), any(MemberEditRequest.class));
     }
 
     @Test
@@ -372,7 +372,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .build();
 
         doThrow(new MemberException(MemberErrorCode.NOT_FOUND_MEMBER))
-                .when(memberService).editMember(eq(nonExistentMemberId), any(MemberEditRequest.class));
+                .when(memberManagementService).editMember(eq(nonExistentMemberId), any(MemberEditRequest.class));
 
         // expected
         mockMvc.perform(put("/admin/members/{memberId}", nonExistentMemberId)
@@ -386,7 +386,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 )
                 .andDo(print());
 
-        verify(memberService).editMember(eq(nonExistentMemberId), any(MemberEditRequest.class));
+        verify(memberManagementService).editMember(eq(nonExistentMemberId), any(MemberEditRequest.class));
     }
 
     @Test
@@ -415,7 +415,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
         // given
         var memberId = 1L;
 
-        doNothing().when(memberService).deleteMember(memberId);
+        doNothing().when(memberManagementService).deleteMember(memberId);
 
         // expected
         mockMvc.perform(delete("/admin/members/{memberId}", memberId)
@@ -423,7 +423,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .andExpect(status().isOk())
                 .andDo(print());
 
-        verify(memberService).deleteMember(memberId);
+        verify(memberManagementService).deleteMember(memberId);
     }
 
     @Test
@@ -432,7 +432,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
         var nonExistentMemberId = 999L;
 
         doThrow(new MemberException(MemberErrorCode.NOT_FOUND_MEMBER))
-                .when(memberService).deleteMember(nonExistentMemberId);
+                .when(memberManagementService).deleteMember(nonExistentMemberId);
 
         // expected
         mockMvc.perform(delete("/admin/members/{memberId}", nonExistentMemberId)
@@ -445,7 +445,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 )
                 .andDo(print());
 
-        verify(memberService).deleteMember(nonExistentMemberId);
+        verify(memberManagementService).deleteMember(nonExistentMemberId);
     }
 
     @Test
@@ -454,7 +454,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
         List<Long> memberIds = List.of(1L, 2L, 3L);
         MemberBulkDeleteRequest request = new MemberBulkDeleteRequest(memberIds);
 
-        doNothing().when(memberService).deleteMembers(memberIds);
+        given(memberManagementService.deleteMembers(memberIds)).willReturn(3);
 
         // expected
         mockMvc.perform(delete("/admin/members")
@@ -463,7 +463,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .andExpect(status().isOk())
                 .andDo(print());
 
-        verify(memberService).deleteMembers(memberIds);
+        verify(memberManagementService).deleteMembers(memberIds);
     }
 
     @Test
@@ -498,7 +498,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
         var request = new MemberBulkDeleteRequest(memberIds);
 
         doThrow(new MemberException(MemberErrorCode.NOT_FOUND_MEMBER))
-                .when(memberService).deleteMembers(memberIds);
+                .when(memberManagementService).deleteMembers(memberIds);
 
         // expected
         mockMvc.perform(delete("/admin/members")
@@ -512,6 +512,6 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 )
                 .andDo(print());
 
-        verify(memberService).deleteMembers(memberIds);
+        verify(memberManagementService).deleteMembers(memberIds);
     }
 }
