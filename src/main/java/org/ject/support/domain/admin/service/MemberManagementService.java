@@ -99,9 +99,12 @@ public class MemberManagementService {
 
     @Transactional
     public int deleteMembers(final List<Long> memberIds) {
-        List<Member> members = memberRepository.findAllById(memberIds);
+        List<Long> distinctMemberIds = memberIds.stream()
+                .distinct()
+                .toList();
+        List<Member> members = memberRepository.findAllById(distinctMemberIds);
 
-        if (members.size() != memberIds.size()) {
+        if (members.size() != distinctMemberIds.size()) {
             throw new MemberException(MemberErrorCode.NOT_FOUND_MEMBER);
         }
         memberRepository.deleteAll(members);
