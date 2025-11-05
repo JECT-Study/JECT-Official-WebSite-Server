@@ -6,10 +6,10 @@ import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.JPQLQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
+import org.ject.support.domain.admin.dto.QMemberResponse;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.dto.MemberResponse;
-import org.ject.support.domain.member.dto.QMemberResponse;
+import org.ject.support.domain.admin.dto.MemberResponse;
 import org.ject.support.domain.member.dto.QTeamMemberNames;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.springframework.data.domain.Page;
@@ -80,15 +80,14 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
             final Long semesterId,
             final Pageable pageable
     ) {
-        List<MemberResponse> content = queryFactory
+        final List<MemberResponse> content = queryFactory
                 .select(new QMemberResponse(
                         member.id,
                         member.name,
                         member.phoneNumber,
                         member.email,
                         member.jobFamily,
-                        semester.name.as("semesterName")
-                ))
+                        semester.name.as("semesterName")))
                 .from(member)
                 .leftJoin(semester)
                 .on(semester.id.eq(member.semesterId))
@@ -96,14 +95,13 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                         member.role.eq(role),
                         eqJobFamily(jobFamily),
                         eqSemesterId(semesterId),
-                        member.isDeleted.eq(false)
-                )
+                        member.isDeleted.eq(false))
                 .orderBy(member.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        Long total = queryFactory
+        final Long total = queryFactory
                 .select(member.count())
                 .from(member)
                 .leftJoin(semester)
@@ -112,20 +110,20 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                         member.role.eq(role),
                         eqJobFamily(jobFamily),
                         eqSemesterId(semesterId),
-                        member.isDeleted.eq(false)
-                ).fetchOne();
+                        member.isDeleted.eq(false))
+                .fetchOne();
 
 
         return PageResponse.from(content, pageable, total);
     }
 
-    private BooleanExpression eqJobFamily(JobFamily jobFamily) {
+    private BooleanExpression eqJobFamily(final JobFamily jobFamily) {
         return Optional.ofNullable(jobFamily)
                 .map(member.jobFamily::eq)
                 .orElse(null);
     }
 
-    private BooleanExpression eqSemesterId(Long semesterId) {
+    private BooleanExpression eqSemesterId(final Long semesterId) {
         return Optional.ofNullable(semesterId)
                 .map(semester.id::eq)
                 .orElse(null);
