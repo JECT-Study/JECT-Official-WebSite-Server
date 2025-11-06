@@ -1,17 +1,18 @@
-package org.ject.support.domain.member.controller;
+package org.ject.support.domain.admin.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.dto.MemberBulkDeleteRequest;
-import org.ject.support.domain.member.dto.MemberDetailResponse;
-import org.ject.support.domain.member.dto.MemberRegisterRequest;
-import org.ject.support.domain.member.dto.MemberResponse;
-import org.ject.support.domain.member.dto.MemberEditRequest;
+import org.ject.support.domain.admin.dto.MemberBulkDeleteRequest;
+import org.ject.support.domain.admin.dto.MemberDetailResponse;
+import org.ject.support.domain.admin.dto.MemberRegisterRequest;
+import org.ject.support.domain.admin.dto.MemberResponse;
+import org.ject.support.domain.admin.dto.MemberEditRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,18 +26,18 @@ public interface MemberManagementApiSpec {
     Page<MemberResponse> findMembers(@RequestParam final Role role,
                                      @RequestParam(required = false) final JobFamily jobFamily,
                                      @RequestParam(required = false) final Long semesterId,
-                                     final Pageable pageable);
+                                     @PageableDefault(size = 15) final Pageable pageable);
 
     @Operation(
             summary = "승인된 구성원 상세 조회",
             description = "전달한 ID에 해당하는 구성원의 상세 정보를 조회합니다")
-    MemberDetailResponse findMemberDetail(@PathVariable final Long memberId);
+    MemberDetailResponse findMemberDetail(@PathVariable("memberId") final Long memberId);
 
 
     @Operation(
             summary = "구성원 정보 수정",
             description = "기입한 정보로 선택된 구성원을 수정합니다.")
-    void editMember(@PathVariable final Long memberId,
+    void editMember(@PathVariable("memberId") final Long memberId,
                       @RequestBody @Valid final MemberEditRequest request);
 
     @Operation(
@@ -47,10 +48,10 @@ public interface MemberManagementApiSpec {
     @Operation(
             summary = "구성원 삭제",
             description = "선택한 구성원을 삭제합니다.")
-    void deleteMember(@PathVariable final Long memberId);
+    void deleteMember(@PathVariable("memberId") final Long memberId);
 
     @Operation(
         summary = "구성원 다수 삭제",
         description = "선택한 다수의 구성원을 삭제합니다.")
-    void deleteMembers(@RequestBody @Valid final MemberBulkDeleteRequest request);
+    int deleteMembers(@RequestBody @Valid final MemberBulkDeleteRequest request);
 }

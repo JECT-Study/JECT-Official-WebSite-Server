@@ -1,4 +1,4 @@
-package org.ject.support.domain.member.dto;
+package org.ject.support.domain.admin.dto;
 
 import lombok.Builder;
 import org.ject.support.domain.member.JobFamily;

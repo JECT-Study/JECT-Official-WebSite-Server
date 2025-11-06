@@ -7,7 +7,7 @@ import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.dto.MemberResponse;
+import org.ject.support.domain.admin.dto.MemberResponse;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.Team;
@@ -89,7 +89,7 @@ class MemberQueryRepositoryTest {
         TeamMemberNames teamMemberNames = memberRepository.findMemberNamesByTeamId(teamA.getId());
 
         // then
-        assertThat(teamMemberNames.productManagers()).hasSize(0);
+        assertThat(teamMemberNames.productManagers()).isEmpty();
         assertThat(teamMemberNames.productDesigners()).hasSize(1);
         assertThat(teamMemberNames.frontendDevelopers()).hasSize(1);
         assertThat(teamMemberNames.backendDevelopers()).hasSize(2);
@@ -135,9 +135,8 @@ class MemberQueryRepositoryTest {
         List<String> result = memberRepository.findEmailsByIdsAndNotSubmitted(applicantIds);
 
         // then
-        assertThat(result).hasSize(3);
-        assertThat(result).hasSize(3);
-        assertThat(result).containsExactlyInAnyOrder(be6.getEmail(), be9.getEmail(), pd10.getEmail());
+        assertThat(result).hasSize(3)
+                .containsExactlyInAnyOrder(be6.getEmail(), be9.getEmail(), pd10.getEmail());
     }
 
     @Test
@@ -277,6 +276,7 @@ class MemberQueryRepositoryTest {
 
         // then
         assertThat(result.getContent())
+                .isNotEmpty()
                 .extracting(MemberResponse::name)
                 .doesNotContain(deletedMember.getName());
     }
