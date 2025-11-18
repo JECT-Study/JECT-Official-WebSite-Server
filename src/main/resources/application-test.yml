@@ -40,11 +40,11 @@ aws:
   secret-key: secretkey
   region: ap-northeast-2
   s3:
-    bucket: bucket
+    bucket: ject-content-dev
   dynamodb:
     endpoint: http://localhost:8000
   cloudfront:
-    domain: https://d2lmyznn5nj2bl.cloudfront.net/
+    domain: https://d1emvsnzj31pdh.cloudfront.net/
   ses:
     from-email-address: jectofficial@ject.kr
 
