@@ -45,9 +45,6 @@ public class SecurityConfig {
     @Value("${security.cors.allowed-origins-client-dev}")
     private String allowedOriginsClientDev;
 
-    @Value("${security.cors.allowed-origins-swagger-dev}")
-    private String allowedOriginsSwaggerDev;
-
     @Bean
     public static RoleHierarchy roleHierarchy() {
         return RoleHierarchyImpl.fromHierarchy("""
@@ -87,7 +84,6 @@ public class SecurityConfig {
         configuration.addAllowedOriginPattern(allowedOrigins);
         configuration.addAllowedOriginPattern(allowedOriginsClient);
         configuration.addAllowedOriginPattern(allowedOriginsClientDev);
-        configuration.addAllowedOriginPattern(allowedOriginsSwaggerDev);
         configuration.addAllowedHeader("*");
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE"));
         configuration.setAllowCredentials(true);
