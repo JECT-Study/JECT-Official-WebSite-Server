@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
@@ -38,7 +39,8 @@ public class SpringdocConfig {
                                 .bearerFormat("JWT")
                                 .in(SecurityScheme.In.HEADER)
                                 .description("JWT 토큰을 입력하세요 (Bearer prefix 제외)")))
-
+                // 서버 정보
+                .addServersItem(new Server().url("/"))
                 // 전역으로 Security 적용
                 .addSecurityItem(new SecurityRequirement()
                         .addList(securitySchemeName));
