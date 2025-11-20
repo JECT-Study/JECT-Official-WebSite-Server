@@ -1,15 +1,15 @@
-package org.ject.support.domain.admin.controller;
+package org.ject.support.admin.member.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.admin.service.MemberManagementService;
+import org.ject.support.admin.member.service.MemberManagementService;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.admin.dto.MemberBulkDeleteRequest;
-import org.ject.support.domain.admin.dto.MemberDetailResponse;
-import org.ject.support.domain.admin.dto.MemberEditRequest;
-import org.ject.support.domain.admin.dto.MemberRegisterRequest;
-import org.ject.support.domain.admin.dto.MemberResponse;
+import org.ject.support.admin.member.dto.MemberBulkDeleteRequest;
+import org.ject.support.admin.member.dto.MemberDetailResponse;
+import org.ject.support.admin.member.dto.MemberEditRequest;
+import org.ject.support.admin.member.dto.MemberRegisterRequest;
+import org.ject.support.admin.member.dto.MemberResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
