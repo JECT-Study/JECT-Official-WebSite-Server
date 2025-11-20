@@ -1,4 +1,4 @@
-package org.ject.support.domain.admin.exception;
+package org.ject.support.admin.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

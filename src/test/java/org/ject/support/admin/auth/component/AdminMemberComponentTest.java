@@ -1,9 +1,8 @@
 package org.ject.support.admin.auth.component;
 
-import org.ject.support.admin.auth.component.AdminMemberComponent;
 import org.ject.support.base.UnitTestSupport;
-import org.ject.support.domain.admin.exception.AdminErrorCode;
-import org.ject.support.domain.admin.exception.AdminException;
+import org.ject.support.admin.exception.AdminErrorCode;
+import org.ject.support.admin.exception.AdminException;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
