@@ -1,6 +1,5 @@
-package org.ject.support.domain.admin.service;
+package org.ject.support.admin.apply.service;
 
-import org.ject.support.admin.apply.service.TempApplyService;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.admin.apply.dto.TempApplyDetailResponse;
