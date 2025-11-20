@@ -1,4 +1,4 @@
-package org.ject.support.domain.admin.dto;
+package org.ject.support.admin.apply.dto;
 
 import org.ject.support.common.util.DateTimeUtil;
 import org.ject.support.domain.apply.domain.Apply;

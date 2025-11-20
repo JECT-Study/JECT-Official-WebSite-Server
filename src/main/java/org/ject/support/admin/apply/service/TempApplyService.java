@@ -1,11 +1,11 @@
-package org.ject.support.domain.admin.service;
+package org.ject.support.admin.apply.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.util.String2MapSerializer;
-import org.ject.support.domain.admin.dto.TempApplyDetailResponse;
-import org.ject.support.domain.admin.dto.TempSavedApplyCountResponse;
-import org.ject.support.domain.admin.dto.TempSavedApplyResponse;
+import org.ject.support.admin.apply.dto.TempApplyDetailResponse;
+import org.ject.support.admin.apply.dto.TempSavedApplyCountResponse;
+import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;

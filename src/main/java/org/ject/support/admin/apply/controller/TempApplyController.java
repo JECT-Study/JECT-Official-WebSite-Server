@@ -1,10 +1,10 @@
-package org.ject.support.domain.admin.controller;
+package org.ject.support.admin.apply.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.admin.dto.TempApplyDetailResponse;
-import org.ject.support.domain.admin.dto.TempSavedApplyCountResponse;
-import org.ject.support.domain.admin.dto.TempSavedApplyResponse;
-import org.ject.support.domain.admin.service.TempApplyService;
+import org.ject.support.admin.apply.dto.TempApplyDetailResponse;
+import org.ject.support.admin.apply.dto.TempSavedApplyCountResponse;
+import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
+import org.ject.support.admin.apply.service.TempApplyService;
 import org.ject.support.domain.member.JobFamily;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

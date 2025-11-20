@@ -1,5 +1,6 @@
-package org.ject.support.domain.admin.dto;
+package org.ject.support.admin.apply.dto;
 
+import org.ject.support.domain.admin.dto.ApplicationFormResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
