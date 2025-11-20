@@ -1,4 +1,4 @@
-package org.ject.support.domain.admin.component;
+package org.ject.support.admin.auth.component;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.admin.exception.AdminErrorCode;

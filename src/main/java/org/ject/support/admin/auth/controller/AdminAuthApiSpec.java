@@ -1,13 +1,13 @@
-package org.ject.support.domain.admin.controller;
+package org.ject.support.admin.auth.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.ject.support.domain.admin.dto.AdminAuthSendSlackRequest;
-import org.ject.support.domain.admin.dto.AdminAuthSendSlackResponse;
-import org.ject.support.domain.admin.dto.AdminVerifySlackRequest;
+import org.ject.support.admin.auth.dto.AdminAuthSendSlackRequest;
+import org.ject.support.admin.auth.dto.AdminAuthSendSlackResponse;
+import org.ject.support.admin.auth.dto.AdminVerifySlackRequest;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "Admin", description = "관리자 API")

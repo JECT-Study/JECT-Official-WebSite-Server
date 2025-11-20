@@ -1,13 +1,13 @@
-package org.ject.support.domain.admin.controller;
+package org.ject.support.admin.auth.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.assertj.core.api.Assertions;
 import org.ject.support.common.security.CustomSuccessHandler;
-import org.ject.support.domain.admin.dto.AdminAuthSendSlackRequest;
-import org.ject.support.domain.admin.dto.AdminAuthSendSlackResponse;
-import org.ject.support.domain.admin.dto.AdminVerifySlackRequest;
-import org.ject.support.domain.admin.service.AdminAuthService;
+import org.ject.support.admin.auth.dto.AdminAuthSendSlackRequest;
+import org.ject.support.admin.auth.dto.AdminAuthSendSlackResponse;
+import org.ject.support.admin.auth.dto.AdminVerifySlackRequest;
+import org.ject.support.admin.auth.service.AdminAuthService;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
 import org.junit.jupiter.api.Test;

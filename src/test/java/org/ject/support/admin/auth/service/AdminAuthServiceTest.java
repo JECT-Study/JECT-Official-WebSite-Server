@@ -1,8 +1,8 @@
-package org.ject.support.domain.admin.service;
+package org.ject.support.admin.auth.service;
 
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
-import org.ject.support.domain.admin.component.AdminMemberComponent;
+import org.ject.support.admin.auth.component.AdminMemberComponent;
 import org.ject.support.domain.admin.exception.AdminErrorCode;
 import org.ject.support.domain.admin.exception.AdminException;
 import org.ject.support.domain.member.MemberStatus;

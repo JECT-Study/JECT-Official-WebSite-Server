@@ -1,4 +1,4 @@
-package org.ject.support.domain.admin.dto;
+package org.ject.support.admin.auth.dto;
 
 import lombok.Builder;
 
