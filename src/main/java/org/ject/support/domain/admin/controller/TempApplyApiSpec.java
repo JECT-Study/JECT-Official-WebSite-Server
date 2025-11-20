@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Temporary Apply", description = "임시 저장된 지원서 관리")
-public interface AdminTempApplyApiSpec {
+public interface TempApplyApiSpec {
 
     @Operation(
             summary = "임시 저장된 지원서 상세 조회",

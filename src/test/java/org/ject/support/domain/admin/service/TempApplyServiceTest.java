@@ -28,10 +28,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
-class AdminTempApplyServiceTest extends UnitTestSupport {
+class TempApplyServiceTest extends UnitTestSupport {
 
     @InjectMocks
-    private AdminTempApplyService adminTempApplyService;
+    private TempApplyService adminTempApplyService;
 
     @Mock
     private ApplyRepository applyRepository;
@@ -174,7 +174,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
 
         // then
         verify(applyRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, pageable);
-        assertThat(result.getTotalElements()).isEqualTo(0);
+        assertThat(result.getTotalElements()).isZero();
         assertThat(result.getContent()).isEmpty();
     }
 

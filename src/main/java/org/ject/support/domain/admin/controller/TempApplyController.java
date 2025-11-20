@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.admin.dto.TempApplyDetailResponse;
 import org.ject.support.domain.admin.dto.TempSavedApplyCountResponse;
 import org.ject.support.domain.admin.dto.TempSavedApplyResponse;
-import org.ject.support.domain.admin.service.AdminTempApplyService;
+import org.ject.support.domain.admin.service.TempApplyService;
 import org.ject.support.domain.member.JobFamily;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/temp/apply")
-public class AdminTempApplyController implements AdminTempApplyApiSpec {
+public class TempApplyController implements TempApplyApiSpec {
 
-    private final AdminTempApplyService adminTempApplyService;
+    private final TempApplyService adminTempApplyService;
 
     @GetMapping("/{tempApplyId}")
     @PreAuthorize("hasRole('ROLE_ADMIN')")

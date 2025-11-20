@@ -25,7 +25,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class AdminTempApplyService {
+public class TempApplyService {
 
     private final ApplyRepository applyRepository;
     private final String2MapSerializer string2MapSerializer;
