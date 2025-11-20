@@ -1,4 +1,4 @@
-package org.ject.support.domain.admin.service;
+package org.ject.support.admin.apply.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.apply.domain.Apply;

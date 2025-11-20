@@ -1,4 +1,4 @@
-package org.ject.support.domain.admin.dto;
+package org.ject.support.admin.apply.dto;
 
 import java.util.List;
 import java.util.Map;

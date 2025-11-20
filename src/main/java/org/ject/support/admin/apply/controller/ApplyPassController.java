@@ -1,8 +1,8 @@
-package org.ject.support.domain.admin.controller;
+package org.ject.support.admin.apply.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.admin.dto.ApplyPassRequest;
-import org.ject.support.domain.admin.service.ApplyPassService;
+import org.ject.support.admin.apply.dto.ApplyPassRequest;
+import org.ject.support.admin.apply.service.ApplyPassService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
