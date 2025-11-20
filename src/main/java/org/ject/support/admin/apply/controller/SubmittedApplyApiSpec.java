@@ -1,13 +1,13 @@
-package org.ject.support.domain.admin.controller;
+package org.ject.support.admin.apply.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.ject.support.domain.admin.dto.SubmittedApplyBulkDeleteRequest;
-import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
-import org.ject.support.domain.admin.dto.SubmittedApplyDetailResponse;
-import org.ject.support.domain.admin.dto.SubmittedApplyEditRequest;
-import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.domain.member.JobFamily;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

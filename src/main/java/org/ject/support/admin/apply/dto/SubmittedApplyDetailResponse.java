@@ -1,8 +1,9 @@
-package org.ject.support.domain.admin.dto;
+package org.ject.support.admin.apply.dto;
 
 import java.util.List;
 import java.util.Map;
 import org.ject.support.common.util.DateTimeUtil;
+import org.ject.support.domain.admin.dto.ApplicationFormResponse;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.member.JobFamily;

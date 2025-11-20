@@ -1,13 +1,13 @@
-package org.ject.support.domain.admin.controller;
+package org.ject.support.admin.apply.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.admin.dto.SubmittedApplyBulkDeleteRequest;
-import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
-import org.ject.support.domain.admin.dto.SubmittedApplyDetailResponse;
-import org.ject.support.domain.admin.dto.SubmittedApplyEditRequest;
-import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
-import org.ject.support.domain.admin.service.SubmittedApplyService;
+import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
+import org.ject.support.admin.apply.service.SubmittedApplyService;
 import org.ject.support.domain.member.JobFamily;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

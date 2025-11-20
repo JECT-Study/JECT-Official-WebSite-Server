@@ -1,4 +1,4 @@
-package org.ject.support.domain.admin.dto;
+package org.ject.support.admin.apply.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;

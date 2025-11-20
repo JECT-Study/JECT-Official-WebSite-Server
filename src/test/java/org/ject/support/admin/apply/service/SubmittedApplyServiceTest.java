@@ -1,11 +1,11 @@
-package org.ject.support.domain.admin.service;
+package org.ject.support.admin.apply.service;
 
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
-import org.ject.support.domain.admin.dto.SubmittedApplyCountResponse;
-import org.ject.support.domain.admin.dto.SubmittedApplyEditRequest;
-import org.ject.support.domain.admin.dto.SubmittedApplyResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.Apply.Status;
