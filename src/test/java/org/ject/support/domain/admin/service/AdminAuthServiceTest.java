@@ -9,8 +9,8 @@ import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
-import org.ject.support.external.infrastructure.SlackRateLimiter;
-import org.ject.support.external.slack.SlackComponent;
+import org.ject.support.external.discord.DiscordComponent;
+import org.ject.support.external.infrastructure.DiscordRateLimiter;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -44,10 +44,10 @@ class AdminAuthServiceTest extends UnitTestSupport {
     MemberRepository memberRepository;
 
     @Mock
-    SlackRateLimiter slackRateLimiter;
+    DiscordRateLimiter discordRateLimiter;
 
     @Mock
-    SlackComponent slackComponent;
+    DiscordComponent discordComponent;
 
     @Mock
     JwtTokenProvider jwtTokenProvider;
@@ -68,7 +68,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
 
         // when, then
-        assertThatThrownBy(() -> adminAuthService.sendSlackAdminAuthCode(email))
+        assertThatThrownBy(() -> adminAuthService.sendAdminAuthCode(email))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.LOCKED_ADMIN);
@@ -85,10 +85,10 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .role(Role.ADMIN)
                 .build();
         given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
-        given(slackRateLimiter.tryConsume(1)).willReturn(false);
+        given(discordRateLimiter.tryConsume(1)).willReturn(false);
 
         // when, then
-        assertThatThrownBy(() -> adminAuthService.sendSlackAdminAuthCode(email))
+        assertThatThrownBy(() -> adminAuthService.sendAdminAuthCode(email))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.TOO_MANY_REQUESTS);
@@ -107,14 +107,14 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .build();
         given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
-        given(slackRateLimiter.tryConsume(1)).willReturn(true);
+        given(discordRateLimiter.tryConsume(1)).willReturn(true);
 
         // when
-        String result = adminAuthService.sendSlackAdminAuthCode(email);
+        String result = adminAuthService.sendAdminAuthCode(email);
 
         // then
         verify(adminMemberComponent).getMemberAdminByEmail(email);
-        verify(slackRateLimiter).tryConsume(1);
+        verify(discordRateLimiter).tryConsume(1);
         assertEquals(email, result);
     }
 
@@ -131,7 +131,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn((adminMember));
 
         // when, then
-        assertThatThrownBy(() -> adminAuthService.verifySlackAdminAuthCode(email, "ABC123"))
+        assertThatThrownBy(() -> adminAuthService.verifyAdminAuthCode(email, "ABC123"))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.LOCKED_ADMIN);
@@ -154,7 +154,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         given(valueOperations.get("admin-login:" + adminMember.getId())).willReturn(null);
 
         // when, then
-        assertThatThrownBy(() -> adminAuthService.verifySlackAdminAuthCode(email, authCode))
+        assertThatThrownBy(() -> adminAuthService.verifyAdminAuthCode(email, authCode))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.NOT_FOUND_AUTH_CODE);
@@ -182,7 +182,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         given(valueOperations.get(failCountKey)).willReturn(failCountStr);
 
         // when, then
-        assertThatThrownBy(() -> adminAuthService.verifySlackAdminAuthCode(email, inputAuthCode))
+        assertThatThrownBy(() -> adminAuthService.verifyAdminAuthCode(email, inputAuthCode))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.INVALID_AUTH_CODE);
@@ -208,7 +208,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         given(redisTemplate.delete(authCodeKey)).willReturn(true);
 
         // when
-        adminAuthService.verifySlackAdminAuthCode(email, inputAuthCode);
+        adminAuthService.verifyAdminAuthCode(email, inputAuthCode);
 
         // then
         verify(adminMemberComponent).getMemberAdminByEmail(email);

@@ -7,14 +7,14 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 
 @Component
-public class SlackRateLimiter {
+public class DiscordRateLimiter {
 
     private static final int MAX_TOKENS = 5;
     private static final int RATE_LIMIT_PER_SECOND = 5;
     private static final int REFILL_DURATION_SECONDS = 10;
     private final Bucket bucket;
 
-    public SlackRateLimiter() {
+    public DiscordRateLimiter() {
         Bandwidth limit = Bandwidth.builder()
                 .capacity(MAX_TOKENS)
                 .refillGreedy(RATE_LIMIT_PER_SECOND, Duration.ofSeconds(REFILL_DURATION_SECONDS))
