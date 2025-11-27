@@ -2,6 +2,7 @@ package org.ject.support.domain.auth.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import org.ject.support.common.security.CustomUserDetails;
@@ -27,8 +28,9 @@ public class DevAuthController {
             description = "개발 편의를 위한 access token 발급 API"
     )
     @PostMapping("/access-token")
-    public String getToken(@RequestBody EmailRequest request) {
-        Member member = memberRepository.findByEmail(request.email).orElseThrow();
+    public String getToken(@Valid @RequestBody EmailRequest request) {
+        Member member = memberRepository.findByEmail(request.email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다."));
         Authentication authentication = jwtTokenProvider.createAuthenticationByMember(member);
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         return jwtTokenProvider.createAccessToken(authentication, customUserDetails.getMemberId());
