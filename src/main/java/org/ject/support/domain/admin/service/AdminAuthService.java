@@ -1,6 +1,7 @@
 package org.ject.support.domain.admin.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.common.util.CodeGeneratorUtil;
 import org.ject.support.domain.admin.component.AdminMemberComponent;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -44,7 +46,9 @@ public class AdminAuthService {
 
         if (discordRateLimiter.tryConsume(1)) {
             redisTemplate.opsForValue().set(key, authCode, Duration.ofSeconds(ADMIN_LOGIN_AUTH_CODE_EXPIRATION));
-            discordComponent.sendAdminLoginMessage(makeAdminLoginMessage(member.getEmail(), authCode));
+            discordComponent.sendAdminLoginMessage(makeAdminLoginMessage(member.getEmail(), authCode))
+                    .doOnError(e -> log.error("Discord 전송 실패: {}", member.getEmail(), e))
+                    .subscribe();
         } else {
             throw new AdminException(AdminErrorCode.TOO_MANY_REQUESTS);
         }

@@ -19,9 +19,11 @@ import org.mockito.quality.Strictness;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.core.Authentication;
+import reactor.core.publisher.Mono;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -108,6 +110,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(discordRateLimiter.tryConsume(1)).willReturn(true);
+        given(discordComponent.sendAdminLoginMessage(anyString())).willReturn(Mono.empty());
 
         // when
         String result = adminAuthService.sendAdminAuthCode(email);
