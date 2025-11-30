@@ -138,7 +138,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 슬랙_인증_코드_검증_시_인증_코드를_찾을_수_없는_경우_NOT_FOUND_AUTH_CODE_예외_발생() {
+    void 인증_코드_검증_시_인증_코드를_찾을_수_없는_경우_NOT_FOUND_AUTH_CODE_예외_발생() {
         // given
         String email = "test.com";
         String authCode = "ABC123";
@@ -161,7 +161,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 슬랙_인증_코드_검증_시_인증_코드가_일치하지_않는_경우_INVALID_AUTH_CODE_예외_발생() {
+    void 인증_코드_검증_시_인증_코드가_일치하지_않는_경우_INVALID_AUTH_CODE_예외_발생() {
         // given
         String email = "test.com";
         String inputAuthCode = "ABC123";
@@ -189,7 +189,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 슬랙_인증_코드_검증에_성공한_경우_Authentication_객체_반환() {
+    void 인증_코드_검증에_성공한_경우_Authentication_객체_반환() {
         // given
         String email = "test.com";
         String inputAuthCode = "ABC123";
