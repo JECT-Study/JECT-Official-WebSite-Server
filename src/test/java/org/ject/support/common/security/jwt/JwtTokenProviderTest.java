@@ -1,11 +1,5 @@
 package org.ject.support.common.security.jwt;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.common.exception.GlobalErrorCode.AUTHENTICATION_REQUIRED;
-import static org.mockito.Mockito.when;
-
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.exception.GlobalException;
@@ -17,9 +11,16 @@ import org.ject.support.domain.member.entity.Member;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.springframework.core.env.Environment;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ject.support.common.exception.GlobalErrorCode.AUTHENTICATION_REQUIRED;
+import static org.mockito.Mockito.when;
 
 class JwtTokenProviderTest extends UnitTestSupport {
 
@@ -30,13 +31,17 @@ class JwtTokenProviderTest extends UnitTestSupport {
     @Mock
     private HttpServletRequest request;
 
+    @Mock
+    private Environment environment;
+
     private Member testMember;
     private Authentication authentication;
 
     @BeforeEach
     void setUp() {
         jwtTokenProvider = new JwtTokenProvider();
-        jwtCookieProvider = new JwtCookieProvider();
+        jwtCookieProvider = new JwtCookieProvider(environment);
+
         ReflectionTestUtils.setField(jwtTokenProvider, "accessExpirationTime", 3600000L); // 1시간
         ReflectionTestUtils.setField(jwtTokenProvider, "refreshExpirationTime", 1209600000L); // 2주
         
@@ -113,8 +118,8 @@ class JwtTokenProviderTest extends UnitTestSupport {
         String token = "test-token";
 
         // when
-        Cookie refreshCookie = jwtCookieProvider.createRefreshCookie(token);
-        Cookie accessCookie = jwtCookieProvider.createAccessCookie(token);
+        ResponseCookie refreshCookie = jwtCookieProvider.createRefreshCookie(token);
+        ResponseCookie accessCookie = jwtCookieProvider.createAccessCookie(token);
 
         // then
         assertThat(refreshCookie.getName()).isEqualTo("refreshToken");
