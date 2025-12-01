@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtCookieProvider;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
@@ -24,8 +25,8 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String accessToken = jwtTokenProvider.createAccessToken(authentication, customUserDetails.getMemberId());
         String refreshToken = jwtTokenProvider.createRefreshToken(authentication, customUserDetails.getMemberId());
 
-        response.addCookie(jwtCookieProvider.createRefreshCookie(refreshToken));
-        response.addCookie(jwtCookieProvider.createAccessCookie(accessToken));
+        response.addHeader(HttpHeaders.SET_COOKIE, jwtCookieProvider.createRefreshCookie(refreshToken).toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, jwtCookieProvider.createAccessCookie(accessToken).toString());
     }
 
     /**
@@ -36,7 +37,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     public void onAuthenticationSuccess(HttpServletResponse response, String email) {
         String verificationToken = jwtTokenProvider.createVerificationToken(email);
 
-        response.addCookie(jwtCookieProvider.createVerificationCookie(verificationToken));
+        response.addHeader(HttpHeaders.SET_COOKIE, jwtCookieProvider.createVerificationCookie(verificationToken).toString());
     }
 
     /**
@@ -48,6 +49,6 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     public void onAuthenticationSuccess(HttpServletResponse response, String refreshToken, Long memberId) {
         String newAccessToken = jwtTokenProvider.reissueAccessToken(refreshToken, memberId);
 
-        response.addCookie(jwtCookieProvider.createAccessCookie(newAccessToken));
+        response.addHeader(HttpHeaders.SET_COOKIE, jwtCookieProvider.createAccessCookie(newAccessToken).toString());
     }
 }
