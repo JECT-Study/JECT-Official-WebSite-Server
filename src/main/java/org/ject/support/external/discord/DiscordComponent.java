@@ -7,6 +7,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -34,8 +35,8 @@ public class DiscordComponent {
      * 기존 payload는 변경하지 않고 사본을 만들어 전송.
      */
     public Mono<Void> sendMessage(String webhookUrl, DiscordWebhookPayload payload) {
-        if (isBlank(webhookUrl)) {
-            log.warn("Discord webhook URL is empty, skipping sendMessage");
+        if (!StringUtils.hasText(webhookUrl)) {
+            log.warn("Discord webhook URL이 설정되지 않았습니다, 메시지 전송을 건너뜁니다.");
             return Mono.empty();
         }
 
@@ -70,9 +71,5 @@ public class DiscordComponent {
 
     private boolean isProduction() {
         return environment.acceptsProfiles(Profiles.of("prod", "production"));
-    }
-
-    private boolean isBlank(String s) {
-        return s == null || s.trim().isEmpty();
     }
 }
