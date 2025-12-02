@@ -48,8 +48,9 @@ public class DiscordComponent {
                 .retrieve()
                 .toBodilessEntity()
                 .doOnSuccess((ResponseEntity<Void> resp) ->
-                        log.debug("Discord message sent: {} status={}", webhookUrl, resp != null ? resp.getStatusCode() : "null"))
-                .doOnError(e -> log.error("Discord message send failed: {}", webhookUrl, e))
+                        log.info("Discord message sent successfully"))
+                .doOnError(e ->
+                        log.error("Discord message send failed: {}", e.getClass().getSimpleName()))
                 .then();
     }
 
