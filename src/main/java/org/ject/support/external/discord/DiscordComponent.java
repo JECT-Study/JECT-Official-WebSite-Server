@@ -1,6 +1,5 @@
 package org.ject.support.external.discord;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
@@ -13,14 +12,20 @@ import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class DiscordComponent {
 
     private final WebClient webClient;
     private final Environment environment;
+    private final String prefix;
 
     @Value("${notification.discord.webhook.admin-login}")
     private String adminLoginWebhook;
+
+    public DiscordComponent(WebClient webClient, Environment environment) {
+        this.webClient = webClient;
+        this.environment = environment;
+        this.prefix = resolvePrefix(environment);
+    }
 
     public Mono<Void> sendAdminLoginMessage(String description) {
         DiscordWebhookPayload.Embed content = new DiscordWebhookPayload.Embed("로그인 인증 요청", description);
@@ -40,7 +45,7 @@ public class DiscordComponent {
             return Mono.empty();
         }
 
-        DiscordWebhookPayload toSend = createPayloadCopyWithPrefix(payload, getPrefix());
+        DiscordWebhookPayload toSend = createPayloadCopyWithPrefix(payload, prefix);
 
         return webClient.post()
                 .uri(webhookUrl)
@@ -62,15 +67,14 @@ public class DiscordComponent {
         if (original != null && original.getEmbeds() != null) {
             copy.getEmbeds().addAll(original.getEmbeds());
         }
-        // 필요 시 username, avatar_url 등 다른 필드도 복사
         return copy;
     }
 
-    private String getPrefix() {
-        return isProduction() ? "" : "[개발] ";
-    }
-
-    private boolean isProduction() {
-        return environment.acceptsProfiles(Profiles.of("prod", "production"));
+    private String resolvePrefix(Environment environment) {
+        if (environment != null && environment.acceptsProfiles(Profiles.of("prod", "production"))) {
+            return "";
+        } else {
+            return "[개발] ";
+        }
     }
 }
