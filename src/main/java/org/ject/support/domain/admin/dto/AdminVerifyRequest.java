@@ -4,7 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record AdminVerifySlackRequest(
+public record AdminVerifyRequest(
         @NotBlank(message = "Email은 필수 입력 값입니다.")
         @Email(message = "유효하지 않은 이메일 형식입니다.")
         String email,

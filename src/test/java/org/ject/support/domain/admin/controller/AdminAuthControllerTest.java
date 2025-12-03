@@ -4,9 +4,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.assertj.core.api.Assertions;
 import org.ject.support.common.security.CustomSuccessHandler;
-import org.ject.support.domain.admin.dto.AdminAuthSendSlackRequest;
-import org.ject.support.domain.admin.dto.AdminAuthSendSlackResponse;
-import org.ject.support.domain.admin.dto.AdminVerifySlackRequest;
+import org.ject.support.domain.admin.dto.AdminAuthSendRequest;
+import org.ject.support.domain.admin.dto.AdminAuthSendResponse;
+import org.ject.support.domain.admin.dto.AdminVerifyRequest;
 import org.ject.support.domain.admin.service.AdminAuthService;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -48,15 +48,15 @@ class AdminAuthControllerTest {
     void 관리자_로그인1차_인증에_성공할_경우_이메일을_반환한다() {
         // given
         String adminLoginEmail = "id@email.com";
-        AdminAuthSendSlackRequest request = new AdminAuthSendSlackRequest(adminLoginEmail);
-        given(adminAuthService.sendSlackAdminAuthCode(request.email()))
+        AdminAuthSendRequest request = new AdminAuthSendRequest(adminLoginEmail);
+        given(adminAuthService.sendAdminAuthCode(request.email()))
                 .willReturn(adminLoginEmail);
 
         // when
-        AdminAuthSendSlackResponse result = adminAuthController.sendAdminAuthSlackCode(request);
+        AdminAuthSendResponse result = adminAuthController.sendAdminAuthCode(request);
 
         // then
-        verify(adminAuthService).sendSlackAdminAuthCode(request.email());
+        verify(adminAuthService).sendAdminAuthCode(request.email());
         Assertions.assertThat(result.email()).isEqualTo(adminLoginEmail);
     }
 
@@ -65,17 +65,17 @@ class AdminAuthControllerTest {
         // given
         String email = "test@ject.org";
         String code = "123456";
-        AdminVerifySlackRequest request = new AdminVerifySlackRequest(email, code);
-        when(adminAuthService.verifySlackAdminAuthCode(email, code)).thenReturn(authentication);
+        AdminVerifyRequest request = new AdminVerifyRequest(email, code);
+        when(adminAuthService.verifyAdminAuthCode(email, code)).thenReturn(authentication);
 
         // when
-        boolean result = adminAuthController.verifyAdminAuthSlackCode(
+        boolean result = adminAuthController.verifyAdminAuthCode(
                 request, httpServletRequest, httpServletResponse
         );
 
         // then
         assertTrue(result);
-        verify(adminAuthService).verifySlackAdminAuthCode(email, code);
+        verify(adminAuthService).verifyAdminAuthCode(email, code);
         verify(customSuccessHandler).onAuthenticationSuccess(
                 httpServletRequest, httpServletResponse, authentication
         );

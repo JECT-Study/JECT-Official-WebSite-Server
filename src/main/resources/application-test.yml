@@ -65,7 +65,6 @@ security:
       domain: localhost
 
 notification:
-  slack:
+  discord:
     webhook:
       admin-login: dummy-url-for-test
-

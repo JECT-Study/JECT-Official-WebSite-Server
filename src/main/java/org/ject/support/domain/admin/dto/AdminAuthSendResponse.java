@@ -3,5 +3,5 @@ package org.ject.support.domain.admin.dto;
 import lombok.Builder;
 
 @Builder
-public record AdminAuthSendSlackResponse(String email) {
+public record AdminAuthSendResponse(String email) {
 }

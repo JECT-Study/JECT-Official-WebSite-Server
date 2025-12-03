@@ -1,6 +1,7 @@
 package org.ject.support.domain.admin.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.common.util.CodeGeneratorUtil;
 import org.ject.support.domain.admin.component.AdminMemberComponent;
@@ -8,8 +9,8 @@ import org.ject.support.domain.admin.exception.AdminErrorCode;
 import org.ject.support.domain.admin.exception.AdminException;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.entity.Member;
-import org.ject.support.external.infrastructure.SlackRateLimiter;
-import org.ject.support.external.slack.SlackComponent;
+import org.ject.support.external.discord.DiscordComponent;
+import org.ject.support.external.infrastructure.DiscordRateLimiter;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -24,8 +26,8 @@ public class AdminAuthService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final AdminMemberComponent adminMemberComponent;
-    private final SlackRateLimiter slackRateLimiter;
-    private final SlackComponent slackComponent;
+    private final DiscordRateLimiter discordRateLimiter;
+    private final DiscordComponent discordComponent;
     private final JwtTokenProvider jwtTokenProvider;
 
     private static final String ADMIN_LOGIN_AUTH_CODE_KEY_PREFIX = "admin-login:";
@@ -35,16 +37,18 @@ public class AdminAuthService {
     private static final long ADMIN_LOGIN_AUTH_CODE_FAIL_LOCK_TIME = 10 * 60;
     private static final int ADMIN_LOGIN_MAX_FAILURE_COUNT = 3;
 
-    public String sendSlackAdminAuthCode(String email) {
+    public String sendAdminAuthCode(String email) {
         Member member = adminMemberComponent.getMemberAdminByEmail(email);
         checkMemberStatus(member);
 
         String authCode = CodeGeneratorUtil.generateUpperAlphaNumCode(ADMIN_LOGIN_AUTH_CODE_LENGTH);
         String key = ADMIN_LOGIN_AUTH_CODE_KEY_PREFIX + member.getId();
 
-        if (slackRateLimiter.tryConsume(1)) {
+        if (discordRateLimiter.tryConsume(1)) {
             redisTemplate.opsForValue().set(key, authCode, Duration.ofSeconds(ADMIN_LOGIN_AUTH_CODE_EXPIRATION));
-            slackComponent.sendAdminLoginMessage(makeAdminLoginMessage(member.getEmail(), authCode));
+            discordComponent.sendAdminLoginMessage(makeAdminLoginMessage(member.getEmail(), authCode))
+                    .doOnError(e -> log.error("Discord 전송 실패: {}", member.getEmail(), e))
+                    .subscribe();
         } else {
             throw new AdminException(AdminErrorCode.TOO_MANY_REQUESTS);
         }
@@ -53,7 +57,7 @@ public class AdminAuthService {
     }
 
     @Transactional
-    public Authentication verifySlackAdminAuthCode(String email, String authCode) {
+    public Authentication verifyAdminAuthCode(String email, String authCode) {
         Member member = adminMemberComponent.getMemberAdminByEmail(email);
 
         checkMemberStatus(member);
@@ -107,6 +111,10 @@ public class AdminAuthService {
     }
 
     private String makeAdminLoginMessage(String email, String code) {
-        return "관리자 로그인 : { " + email + " } 인증 코드를 입력해 주세요 [" + code + "]";
+        return """
+               관리자 로그인 인증 코드 요청
+               관리자 이메일: %s
+               인증 코드 : %s
+               """.formatted(email, code);
     }
 }
