@@ -55,7 +55,7 @@ public class DiscordComponent {
                 .doOnSuccess((ResponseEntity<Void> resp) ->
                         log.info("Discord message sent successfully"))
                 .doOnError(e ->
-                        log.error("Discord message send failed: {}", e.getClass().getSimpleName()))
+                        log.error("Discord message send failed: {} - {}", e.getClass().getSimpleName(), e.getMessage()))
                 .then();
     }
 
