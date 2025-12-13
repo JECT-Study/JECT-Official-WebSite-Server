@@ -3,6 +3,7 @@ package org.ject.support.external.email.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.CodeGeneratorUtil;
+import org.ject.support.external.email.domain.EmailTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -20,18 +21,18 @@ public class EmailAuthService {
     private final SesEmailSendService emailSendService;
     private final RedisTemplate<String, String> redisTemplate;
 
-    public void sendAuthCode(String sendGroupCode, String toAddress) {
+    public void sendAuthCode(EmailTemplate sendGroupCode, String toEmail) {
         String authCode = CodeGeneratorUtil.generateDigitCode(AUTH_CODE_LENGTH);
-        sendAuthCodeEmail(sendGroupCode, toAddress, authCode);
-        storeAuthCode(toAddress, authCode);
+        sendAuthCodeEmail(sendGroupCode, toEmail, authCode);
+        storeAuthCode(toEmail, authCode);
     }
 
-    private void sendAuthCodeEmail(String sendGroupCode, String toAddress, String authCode) {
-        emailSendService.sendTemplatedEmail(sendGroupCode, toAddress, Map.of("auth-code", authCode));
-        log.info("인증 번호 전송 - email: {}, code: {}", toAddress, authCode);
+    private void sendAuthCodeEmail(EmailTemplate sendGroupCode, String toEmail, String authCode) {
+        emailSendService.sendTemplatedEmail(sendGroupCode, toEmail, Map.of("auth-code", authCode));
+        log.info("인증 번호 전송 - toEmail: {}, code: {}", toEmail, authCode);
     }
 
-    private void storeAuthCode(String toAddress, String authCode) {
-        redisTemplate.opsForValue().set(toAddress, authCode, Duration.ofSeconds(EXPIRE_TIME));
+    private void storeAuthCode(String toEmail, String authCode) {
+        redisTemplate.opsForValue().set(toEmail, authCode, Duration.ofSeconds(EXPIRE_TIME));
     }
 }
