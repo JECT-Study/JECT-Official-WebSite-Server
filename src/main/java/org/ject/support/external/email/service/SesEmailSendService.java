@@ -41,7 +41,7 @@ public class SesEmailSendService implements EmailSendService {
     private String from;
 
     @Override
-    public void sendTemplatedEmail(EmailTemplate sendGroupCode, String to, Map<String, String> params) {
+    public void sendTemplatedEmail(EmailTemplate sendGroupCode, String toEmail, Map<String, String> params) {
         // 이메일 콘텐츠 구성
         EmailContent emailContent = EmailContent.builder()
                 .template(getTemplate(sendGroupCode.getTemplateName(), params))
@@ -52,7 +52,7 @@ public class SesEmailSendService implements EmailSendService {
 
         // 단건 이메일 요청 생성
         SendEmailRequest emailRequest = SendEmailRequest.builder()
-                .destination(getDestination(to))
+                .destination(getDestination(toEmail))
                 .content(emailContent)
                 .fromEmailAddress(from)
                 .emailTags(messageTag)
