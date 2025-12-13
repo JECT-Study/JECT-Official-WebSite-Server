@@ -7,6 +7,7 @@ import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.service.SesEmailSendService;
 import org.springframework.stereotype.Service;
 
@@ -41,7 +42,7 @@ public class RemindApplyService implements RemindApplyUsecase {
 
         // 필터링한 지원자들에게 리마인드
         emailSendService.sendBulkTemplatedEmail(
-                EMAIL_SEND_GROUP,
+                EmailTemplate.REMIND_APPLY,
                 targetEmails,
                 Map.of("deadline", DateTimeUtil.formatWithDayOfWeek(recruit.getEndDate())));
     }

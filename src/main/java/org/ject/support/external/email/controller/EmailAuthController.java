@@ -1,6 +1,7 @@
 package org.ject.support.external.email.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.service.EmailAuthService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,7 +19,7 @@ public class EmailAuthController implements EmailAuthApiSpec {
     @Override
     @PostMapping("/send/auth")
     @PreAuthorize("permitAll()")
-    public void sendAuthEmail(@RequestParam String sendGroupCode, @RequestParam String email) {
+    public void sendAuthEmail(@RequestParam EmailTemplate sendGroupCode, @RequestParam String email) {
         emailAuthService.sendAuthCode(sendGroupCode, email);
     }
 }
