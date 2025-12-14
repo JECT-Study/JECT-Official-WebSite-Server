@@ -61,7 +61,7 @@ public class SesEmailSendService implements EmailSendService {
         try {
             sesV2Client.sendEmail(emailRequest);
         } catch (Exception e) {
-            log.error("이메일 전송 실패 toEmail={}, sendGroupCode={}, params={}", toEmail, sendGroupCode.getTemplateName(), params, e);
+            log.error("이메일 전송 실패 sendGroupCode={}", sendGroupCode.getTemplateName(), e);
             throw new EmailException(EMAIL_SEND_FAILURE);
         }
     }
