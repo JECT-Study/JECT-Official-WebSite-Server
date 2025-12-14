@@ -3,11 +3,7 @@ package org.ject.support.external.email.service;
 import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.util.Map2JsonSerializer;
-import org.ject.support.external.email.domain.EmailSendGroup;
 import org.ject.support.external.email.domain.EmailTemplate;
-import org.ject.support.external.email.exception.EmailErrorCode;
-import org.ject.support.external.email.exception.EmailException;
-import org.ject.support.external.email.repository.EmailSendGroupRepository;
 import org.ject.support.external.infrastructure.SesRateLimiter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -33,7 +29,6 @@ public class SesEmailSendService implements EmailSendService {
     private static final String GROUP_CODE_TAG_NAME = "group_code";
 
     private final Map2JsonSerializer map2JsonSerializer;
-    private final EmailSendGroupRepository emailSendGroupRepository;
     private final SesV2Client sesV2Client;
     private final SesRateLimiter rateLimiter;
 
@@ -92,11 +87,6 @@ public class SesEmailSendService implements EmailSendService {
 
                     sesV2Client.sendBulkEmail(sendBulkEmailRequest);
                 });
-    }
-
-    private EmailSendGroup getSendGroup(String sendGroupCode) {
-        return emailSendGroupRepository.findByCode(sendGroupCode)
-                .orElseThrow(() -> new EmailException(EmailErrorCode.NOT_FOUND_SEND_GROUP));
     }
 
     private Template getTemplate(String templateName, Map<String, String> parameter) {
