@@ -2,8 +2,10 @@ package org.ject.support.external.email.service;
 
 import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.external.email.domain.EmailTemplate;
+import org.ject.support.external.email.exception.EmailException;
 import org.ject.support.external.infrastructure.SesRateLimiter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
+import static org.ject.support.external.email.exception.EmailErrorCode.EMAIL_SEND_FAILURE;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SesEmailSendService implements EmailSendService {
@@ -53,8 +58,12 @@ public class SesEmailSendService implements EmailSendService {
                 .emailTags(messageTag)
                 .build();
 
-        // 이메일 전송
-        sesV2Client.sendEmail(emailRequest);
+        try {
+            sesV2Client.sendEmail(emailRequest);
+        } catch (Exception e) {
+            log.error("이메일 전송 실패 toEmail={}, sendGroupCode={}, params={}", toEmail, sendGroupCode.getTemplateName(), params, e);
+            throw new EmailException(EMAIL_SEND_FAILURE);
+        }
     }
 
     @Override
