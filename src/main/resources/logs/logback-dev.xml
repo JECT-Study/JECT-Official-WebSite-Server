@@ -18,6 +18,8 @@
         <logRegion>${LOG_REGION}</logRegion>
         <accessKeyId>${ACCESS_KEY}</accessKeyId>
         <secretAccessKey>${SECRET_KEY}</secretAccessKey>
+        <maxFlushTimeMillis>5000</maxFlushTimeMillis>
+        <maxBatchLogEvents>50</maxBatchLogEvents>
     </appender>
 
     <logger name="org.ject.support" level="DEBUG" />
