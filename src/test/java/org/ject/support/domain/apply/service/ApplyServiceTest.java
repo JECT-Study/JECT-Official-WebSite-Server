@@ -425,6 +425,7 @@ class ApplyServiceTest extends UnitTestSupport {
         Recruit recruit = getActiveRecruit(request.jobFamily(), List.of());
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(applyRepository.existsByMemberId(memberId)).willReturn(false);
         given(recruitRepository.findActiveRecruits(any())).willReturn(List.of(recruit));
 
         // when
@@ -449,7 +450,6 @@ class ApplyServiceTest extends UnitTestSupport {
         // given
         long memberId = 1L;
         Member member = getApplicant(memberId, "test@example.com");
-        Apply existingApply = getApply(1L, null, member, null, JOINED);
         ApplyProfileRequest request = new ApplyProfileRequest(
                 "New Name",
                 "010-1234-5678",
@@ -461,7 +461,7 @@ class ApplyServiceTest extends UnitTestSupport {
         );
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(applyRepository.findByMemberId(memberId)).willReturn(Optional.of(existingApply));
+        given(applyRepository.existsByMemberId(memberId)).willReturn(true);
 
         // when
         applyService.saveProfile(memberId, request);
