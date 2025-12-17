@@ -1,0 +1,2 @@
+ALTER TABLE member
+    ADD COLUMN region VARCHAR(30);
