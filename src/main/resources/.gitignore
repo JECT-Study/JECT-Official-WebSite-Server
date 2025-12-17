@@ -1,2 +1,3 @@
 application-prod.yml
+application-dev.yml
 application-local.yml
