@@ -25,6 +25,7 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
+import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 
 import java.util.ArrayList;
@@ -57,6 +58,10 @@ public class Member extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(45)")
     private JobFamily jobFamily;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private Region region;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 30)
@@ -115,6 +120,7 @@ public class Member extends BaseTimeEntity {
                 .email(this.email)
                 .semesterId(this.semesterId)
                 .jobFamily(this.jobFamily)
+                .region(this.region)
                 .experiencePeriod(this.experiencePeriod)
                 .careerDetails(this.careerDetails)
                 .interestedDomains(this.interestedDomains)
@@ -127,6 +133,7 @@ public class Member extends BaseTimeEntity {
         this.email = editor.email();
         this.semesterId = editor.semesterId();
         this.jobFamily = editor.jobFamily();
+        this.region = editor.region();
         this.experiencePeriod = editor.experiencePeriod();
         this.careerDetails = editor.careerDetails();
         this.interestedDomains = editor.interestedDomains();
@@ -137,6 +144,7 @@ public class Member extends BaseTimeEntity {
         this.name = null;
         this.phoneNumber = null;
         this.jobFamily = null;
+        this.region = null;
         this.careerDetails = null;
         this.experiencePeriod = null;
         this.interestedDomains.clear();
