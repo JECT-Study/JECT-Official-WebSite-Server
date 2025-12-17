@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface ApplyRepository extends JpaRepository<Apply, Long>, ApplyQueryRepository {
 
+    boolean existsByMemberId(Long memberId);
+
     @Query("select a from Apply a where a.member.id = :memberId")
     Optional<Apply> findByMemberId(Long memberId);
 

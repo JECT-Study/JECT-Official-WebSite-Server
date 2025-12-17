@@ -84,6 +84,7 @@ public class MemberManagementService {
                 .phoneNumber(request.phoneNumber())
                 .email(request.email())
                 .jobFamily(request.jobFamily())
+                .region(request.region())
                 .role(request.role())
                 .build();
 

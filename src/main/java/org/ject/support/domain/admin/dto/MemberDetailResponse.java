@@ -2,6 +2,7 @@ package org.ject.support.domain.admin.dto;
 
 import lombok.Builder;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.recruit.domain.Semester;
@@ -14,6 +15,7 @@ public record MemberDetailResponse(
         String phoneNumber,
         String email,
         JobFamily jobFamily,
+        Region region,
         String semesterName
 ) {
     public static MemberDetailResponse toResponse(
@@ -27,6 +29,7 @@ public record MemberDetailResponse(
                 .phoneNumber(member.getPhoneNumber())
                 .email(member.getEmail())
                 .jobFamily(member.getJobFamily())
+                .region(member.getRegion())
                 .semesterName(semester.getName().replaceAll("\\D", ""))
                 .build();
     }

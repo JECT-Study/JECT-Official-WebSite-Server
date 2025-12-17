@@ -36,6 +36,7 @@ import org.ject.support.domain.recruit.exception.QuestionException;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -190,6 +191,7 @@ public class ApplyService implements ApplyUsecase {
                 .name(request.name())
                 .phoneNumber(request.phoneNumber())
                 .jobFamily(request.jobFamily())
+                .region(request.region())
                 .careerDetails(request.careerDetails())
                 .experiencePeriod(request.experiencePeriod())
                 .interestedDomains(request.interestedDomains())
@@ -199,11 +201,15 @@ public class ApplyService implements ApplyUsecase {
     }
 
     private void createApplyIfNotExists(Member member, JobFamily jobFamily) {
-        applyRepository.findByMemberId(member.getId()).orElseGet(() -> {
-            var recruit = getPeriodRecruit(jobFamily);
-            var newApply = Apply.createApply(member, recruit);
-            return applyRepository.save(newApply);
-        });
+        if (!applyRepository.existsByMemberId(member.getId())) {
+            try {
+                var recruit = getPeriodRecruit(jobFamily);
+                var newApply = Apply.createApply(member, recruit);
+                applyRepository.save(newApply);
+            } catch (DataIntegrityViolationException e) {
+                log.warn("지원서 생성 중 레이스 컨디션 발생. memberId: {}. 이미 지원서가 존재합니다.", member.getId());
+            }
+        }
     }
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {

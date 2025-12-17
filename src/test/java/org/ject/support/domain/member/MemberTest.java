@@ -17,6 +17,7 @@ class MemberTest {
         String email = "john@example.com";
         JobFamily jobFamily = JobFamily.BE;
         Role role = Role.SEMESTER;
+        Region region = Region.SEOUL;
 
         // when
         Member member = Member.builder()
@@ -25,6 +26,7 @@ class MemberTest {
                 .email(email)
                 .jobFamily(jobFamily)
                 .role(role)
+                .region(region)
                 .status(MemberStatus.ACTIVE)
                 .build();
 
@@ -34,6 +36,7 @@ class MemberTest {
         assertThat(member.getEmail()).isEqualTo(email);
         assertThat(member.getJobFamily()).isEqualTo(jobFamily);
         assertThat(member.getRole()).isEqualTo(role);
+        assertThat(member.getRegion()).isEqualTo(region);
     }
 
     @Test
@@ -44,6 +47,7 @@ class MemberTest {
         String phoneNumber = "01012345678";
         String email = "john@example.com";
         Role role = Role.SEMESTER;
+        Region region = Region.OVERSEAS;
 
         // when
         Member member = Member.builder()
@@ -51,6 +55,7 @@ class MemberTest {
                 .phoneNumber(phoneNumber)
                 .email(email)
                 .role(role)
+                .region(region)
                 .status(MemberStatus.ACTIVE)
                 .build();
 
@@ -59,6 +64,7 @@ class MemberTest {
         assertThat(member.getPhoneNumber()).isEqualTo(phoneNumber);
         assertThat(member.getEmail()).isEqualTo(email);
         assertThat(member.getRole()).isEqualTo(role);
+        assertThat(member.getRegion()).isEqualTo(region);
         assertThat(member.getJobFamily()).isNull();
     }
 }

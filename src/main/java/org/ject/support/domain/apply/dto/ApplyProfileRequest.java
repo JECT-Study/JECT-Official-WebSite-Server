@@ -10,6 +10,7 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 
 import java.util.List;
+import org.ject.support.domain.member.Region;
 
 public record ApplyProfileRequest(
         @NotBlank(message = "이름을 입력해주세요")
@@ -21,6 +22,9 @@ public record ApplyProfileRequest(
 
         @NotNull(message = "포지션을 선택해주세요")
         JobFamily jobFamily,
+
+        @NotNull(message = "거주 지역을 선택해주세요")
+        Region region,
 
         @NotNull(message = "지원자 신분을 선택해주세요")
         CareerDetails careerDetails,

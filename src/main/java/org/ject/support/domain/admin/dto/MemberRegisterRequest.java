@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Pattern.Flag;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.recruit.domain.Semester;
@@ -22,6 +23,9 @@ public record MemberRegisterRequest(
         String email,
         @NotNull(message = "포지션은 필수입니다.")
         JobFamily jobFamily,
+
+        @NotNull(message = "거주 지역을 선택해주세요")
+        Region region,
         @NotNull(message = "기수는 필수입니다.")
         @Schema(description = "기수 이름", example = "1기")
         @Pattern(regexp = "^\\d+기$", message = "숫자+'기' 형식으로 입력해주세요", flags = Flag.CANON_EQ)
@@ -34,6 +38,7 @@ public record MemberRegisterRequest(
                 .phoneNumber(this.phoneNumber)
                 .email(this.email)
                 .jobFamily(this.jobFamily)
+                .region(this.region)
                 .semesterId(semester.getId())
                 .build();
     }

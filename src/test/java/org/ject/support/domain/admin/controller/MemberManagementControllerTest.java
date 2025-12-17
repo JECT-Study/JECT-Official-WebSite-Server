@@ -19,6 +19,7 @@ import java.util.List;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.admin.service.MemberManagementService;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.admin.dto.MemberBulkDeleteRequest;
 import org.ject.support.domain.admin.dto.MemberDetailResponse;
@@ -228,6 +229,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
+                Region.SEOUL,
                 "1기"
         );
 
@@ -252,6 +254,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 "123456789", // 유효하지 않은 전화번호
                 TEST_EMAIL,
                 JobFamily.BE,
+                Region.SEOUL,
                 "1"
         );
 
@@ -272,6 +275,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 "invalid-email", // 유효하지 않은 이메일
                 JobFamily.BE,
+                Region.SEOUL,
                 "1"
         );
 
@@ -292,6 +296,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
+                Region.SEOUL,
                 "1"
         );
 
@@ -312,6 +317,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
+                Region.SEOUL,
                 "1기"
         );
 
@@ -343,6 +349,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@example.com")
                 .jobFamily(JobFamily.FE)
+                .region(Region.SEOUL)
                 .semesterName("1기")
                 .build();
 
@@ -368,6 +375,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@example.com")
                 .jobFamily(JobFamily.FE)
+                .region(Region.SEOUL)
                 .semesterName("1기")
                 .build();
 

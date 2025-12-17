@@ -14,6 +14,7 @@ import org.ject.support.domain.admin.dto.MemberEditRequest;
 import org.ject.support.domain.admin.dto.MemberRegisterRequest;
 import org.ject.support.domain.admin.dto.MemberResponse;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
@@ -203,6 +204,7 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
+                Region.SEOUL,
                 "1기"
         );
 
@@ -233,6 +235,7 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
                 JobFamily.BE,
+                Region.SEOUL,
                 "1"
         );
 
