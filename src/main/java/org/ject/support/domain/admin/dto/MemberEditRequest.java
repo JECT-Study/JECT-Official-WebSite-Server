@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Builder;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 
 @Builder
@@ -21,6 +22,8 @@ public record MemberEditRequest(
         String email,
         @NotNull(message = "포지션은 필수입니다.")
         JobFamily jobFamily,
+        @NotNull(message = "거주 지역을 선택해주세요")
+        Region region,
         @Schema(description = "기수 이름", example = "1기")
         @Pattern(regexp = "^\\d+기$", message = "숫자+'기' 형식으로 입력해주세요", flags = Pattern.Flag.CANON_EQ)
         String semesterName
