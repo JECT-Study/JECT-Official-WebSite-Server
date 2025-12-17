@@ -200,11 +200,11 @@ public class ApplyService implements ApplyUsecase {
     }
 
     private void createApplyIfNotExists(Member member, JobFamily jobFamily) {
-        if (!applyRepository.existsByMemberId(member.getId())) {
+        applyRepository.findByMemberId(member.getId()).orElseGet(() -> {
             var recruit = getPeriodRecruit(jobFamily);
             var newApply = Apply.createApply(member, recruit);
-            applyRepository.save(newApply);
-        }
+            return applyRepository.save(newApply);
+        });
     }
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
