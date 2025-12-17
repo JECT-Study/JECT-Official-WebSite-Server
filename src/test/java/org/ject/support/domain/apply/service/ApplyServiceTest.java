@@ -33,6 +33,7 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.InterestedDomain;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
+import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -246,14 +247,13 @@ class ApplyServiceTest extends UnitTestSupport {
 
     @Test
     void 프로필_저장_전에_임시저장_시도_시_실패() {
-        // given: Member는 있지만 Apply는 없는 상황
+        // given
         long memberId = 1L;
         Map<String, String> answers = Map.of("1", "답변1");
 
-        // applyRepository.findByMemberId()가 Optional.empty()를 반환하도록 설정
         given(applyRepository.findByMemberId(memberId)).willReturn(Optional.empty());
 
-        // when & then: saveApplicationTemporarily를 호출하면 NOT_FOUND_APPLY 에러가 발생해야 함
+        // expected
         assertThatThrownBy(() -> applyService.saveApplicationTemporarily(memberId, answers, List.of()))
                 .isInstanceOf(ApplyException.class)
                 .extracting("errorCode")
@@ -417,6 +417,7 @@ class ApplyServiceTest extends UnitTestSupport {
             "New Name",
             "010-1234-5678",
             JobFamily.FE,
+            Region.SEOUL,
             CareerDetails.STUDENT,
             ExperiencePeriod.NONE,
             List.of(InterestedDomain.GAME.getDescription(), InterestedDomain.EDUCATION.getDescription())
@@ -453,6 +454,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 "New Name",
                 "010-1234-5678",
                 JobFamily.FE,
+                Region.SEOUL,
                 CareerDetails.STUDENT,
                 ExperiencePeriod.NONE,
                 List.of(InterestedDomain.GAME.getDescription(), InterestedDomain.EDUCATION.getDescription())
@@ -465,10 +467,8 @@ class ApplyServiceTest extends UnitTestSupport {
         applyService.saveProfile(memberId, request);
 
         // then
-        // applyRepository.save()는 호출되지 않아야 함 (멱등성)
         verify(applyRepository, never()).save(any(Apply.class));
 
-        // Member의 프로필 정보는 업데이트되어야 함
         assertThat(member.getName()).isEqualTo(request.name());
         assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
         assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
