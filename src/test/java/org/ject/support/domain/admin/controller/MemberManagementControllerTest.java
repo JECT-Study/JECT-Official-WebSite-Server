@@ -349,6 +349,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@example.com")
                 .jobFamily(JobFamily.FE)
+                .region(Region.SEOUL)
                 .semesterName("1기")
                 .build();
 
@@ -374,6 +375,7 @@ class MemberManagementControllerTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@example.com")
                 .jobFamily(JobFamily.FE)
+                .region(Region.SEOUL)
                 .semesterName("1기")
                 .build();
 
