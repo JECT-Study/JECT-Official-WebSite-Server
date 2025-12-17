@@ -1,4 +1,8 @@
 <configuration>
+    <conversionRule conversionWord="clr" converterClass="org.springframework.boot.logging.logback.ColorConverter" />
+    <conversionRule conversionWord="wex" converterClass="org.springframework.boot.logging.logback.WhitespaceThrowableProxyConverter" />
+    <conversionRule conversionWord="wEx" converterClass="org.springframework.boot.logging.logback.ExtendedWhitespaceThrowableProxyConverter" />
+
     <springProperty name="ACCESS_KEY" source="aws.cloudwatch.access-key"/>
     <springProperty name="SECRET_KEY" source="aws.cloudwatch.secret-key"/>
     <springProperty name="LOG_REGION" source="aws.cloudwatch.region"/>
@@ -10,9 +14,6 @@
     </appender>
 
     <appender name="AWS_LOGS" class="ca.pjer.logback.AwsLogsAppender">
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>info</level>
-        </filter>
         <logGroupName>JECT-log</logGroupName>
         <logStreamUuidPrefix>JECT-log-dev-</logStreamUuidPrefix>
         <logRegion>${LOG_REGION}</logRegion>
@@ -23,6 +24,7 @@
     </appender>
 
     <logger name="org.ject.support" level="DEBUG" />
+
     <root level="INFO">
         <appender-ref ref="AWS_LOGS"/>
         <appender-ref ref="CONSOLE"/>
