@@ -190,6 +190,7 @@ public class ApplyService implements ApplyUsecase {
                 .name(request.name())
                 .phoneNumber(request.phoneNumber())
                 .jobFamily(request.jobFamily())
+                .region(request.region())
                 .careerDetails(request.careerDetails())
                 .experiencePeriod(request.experiencePeriod())
                 .interestedDomains(request.interestedDomains())
@@ -199,11 +200,11 @@ public class ApplyService implements ApplyUsecase {
     }
 
     private void createApplyIfNotExists(Member member, JobFamily jobFamily) {
-        applyRepository.findByMemberId(member.getId()).orElseGet(() -> {
+        if (!applyRepository.existsByMemberId(member.getId())) {
             var recruit = getPeriodRecruit(jobFamily);
             var newApply = Apply.createApply(member, recruit);
-            return applyRepository.save(newApply);
-        });
+            applyRepository.save(newApply);
+        }
     }
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
