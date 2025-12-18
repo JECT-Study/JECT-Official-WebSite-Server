@@ -1,14 +1,5 @@
 package org.ject.support.domain.apply.service;
 
-import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
-import static org.ject.support.domain.apply.exception.ApplyErrorCode.ALREADY_SUBMITTED;
-import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_FOUND_APPLY;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.Map2JsonSerializer;
@@ -39,6 +30,16 @@ import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
+import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
+import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.apply.exception.ApplyErrorCode.ALREADY_SUBMITTED;
+import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_FOUND_APPLY;
 
 @Slf4j
 @Service
@@ -172,9 +173,21 @@ public class ApplyService implements ApplyUsecase {
     @Override
     @PeriodAccessible(permitAllJob = true)
     public ApplyStatusResponse checkApplyStatus(Long memberId) {
-        return applyRepository.findByMemberId(memberId)
-                .map(ApplyStatusResponse::of)
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
+
+        if (isProfileIncomplete(member)) {
+            return ApplyStatusResponse.tempSavedProfile();
+        }
+
+        Apply apply = applyRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
+
+        if (apply.isTempSaved()) {
+            return  ApplyStatusResponse.tempSavedApply();
+        }
+
+        return ApplyStatusResponse.of(apply.getStatus());
     }
 
     @Override
@@ -244,5 +257,9 @@ public class ApplyService implements ApplyUsecase {
                 .build();
         portfolios.forEach(portfolio -> portfolio.setApplicationForm(applicationForm));
         return applicationForm;
+    }
+
+    private boolean isProfileIncomplete(Member member) {
+        return member.getName() == null || member.getPhoneNumber() == null;
     }
 }

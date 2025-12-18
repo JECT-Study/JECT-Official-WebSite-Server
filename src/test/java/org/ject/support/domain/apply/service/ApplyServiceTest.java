@@ -1,21 +1,5 @@
 package org.ject.support.domain.apply.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
@@ -46,6 +30,23 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
+import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class ApplyServiceTest extends UnitTestSupport {
 
@@ -137,12 +138,35 @@ class ApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
+    void 지원단계중_프로필작성을_하지_않았을_경우_STEP을_PROFILE로_STATUS를_TEMP_SAVED_반환() {
+        // given
+        Long memberId = 1L;
+        Member member = Member.builder()
+                .build();
+        given(memberRepository.findById(memberId))
+                .willReturn(Optional.of(member));
+
+        // when
+        ApplyStatusResponse result = applyService.checkApplyStatus(1L);
+
+        // then
+        assertThat(result).isEqualTo(ApplyStatusResponse.tempSavedProfile());
+    }
+
+    @Test
     void 작성_중인_지원서가_있는_경우_TEMP_SAVED_반환() {
         // given
-        when(applyRepository.findByMemberId(any()))
-                .thenReturn(Optional.of(
+        Long memberId = 1L;
+        Member member = Member.builder()
+                .name("지원자명")
+                .phoneNumber("01012345678")
+                .build();
+        given(memberRepository.findById(memberId))
+                .willReturn(Optional.of(member));
+        given(applyRepository.findByMemberId(any()))
+                .willReturn(Optional.of(
                         Apply.builder()
-                                .id(1L)
+                                .id(memberId)
                                 .status(TEMP_SAVED)
                                 .build()
                 ));
@@ -151,25 +175,32 @@ class ApplyServiceTest extends UnitTestSupport {
         ApplyStatusResponse result = applyService.checkApplyStatus(1L);
 
         // then
-        assertThat(result).isEqualTo(new ApplyStatusResponse(TEMP_SAVED));
+        assertThat(result).isEqualTo(ApplyStatusResponse.tempSavedApply());
     }
 
     @Test
     void 지원서를_제출한_지원자에_대한_제출_상태_확인_시_SUBMITTED_반환() {
         // given
-        when(applyRepository.findByMemberId(any()))
-                .thenReturn(Optional.of(
+        Long memberId = 1L;
+        Member member = Member.builder()
+                        .name("지원자명")
+                        .phoneNumber("01012345678")
+                        .build();
+        given(memberRepository.findById(memberId))
+                .willReturn(Optional.of(member));
+        given(applyRepository.findByMemberId(any()))
+                .willReturn(Optional.of(
                         Apply.builder()
-                                .id(1L)
+                                .id(memberId)
                                 .status(SUBMITTED)
                                 .build()
                 ));
 
         // when
-        ApplyStatusResponse result = applyService.checkApplyStatus(1L);
+        ApplyStatusResponse result = applyService.checkApplyStatus(memberId);
 
         // then
-        assertThat(result).isEqualTo(new ApplyStatusResponse(SUBMITTED));
+        assertThat(result).isEqualTo(ApplyStatusResponse.of(SUBMITTED));
     }
 
     @Test
