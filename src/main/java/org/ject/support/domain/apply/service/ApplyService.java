@@ -184,7 +184,7 @@ public class ApplyService implements ApplyUsecase {
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
         if (apply.isTempSaved()) {
-            return  ApplyStatusResponse.tempSavedApply();
+            return ApplyStatusResponse.tempSavedApply();
         }
 
         return ApplyStatusResponse.of(apply.getStatus());
