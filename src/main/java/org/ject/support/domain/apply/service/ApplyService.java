@@ -176,7 +176,7 @@ public class ApplyService implements ApplyUsecase {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
-        if (isProfileIncomplete(member)) {
+        if (!member.isProfileComplete()) {
             return ApplyStatusResponse.tempSavedProfile();
         }
 
@@ -257,9 +257,5 @@ public class ApplyService implements ApplyUsecase {
                 .build();
         portfolios.forEach(portfolio -> portfolio.setApplicationForm(applicationForm));
         return applicationForm;
-    }
-
-    private boolean isProfileIncomplete(Member member) {
-        return member.getName() == null || member.getPhoneNumber() == null;
     }
 }

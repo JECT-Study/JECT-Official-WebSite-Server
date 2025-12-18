@@ -153,4 +153,8 @@ public class Member extends BaseTimeEntity {
     public void promoteToSemester() {
         this.role = Role.SEMESTER;
     }
+
+    public boolean isProfileComplete() {
+        return this.name != null && this.phoneNumber != null;
+    }
 }
