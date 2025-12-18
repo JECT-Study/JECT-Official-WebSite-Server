@@ -13,7 +13,7 @@ public record MemberProfileResponse(
         Long id,
         String name,
         CareerDetails careerDetails,
-        Region Region,
+        Region region,
         ExperiencePeriod experiencePeriod,
         List<String> interestedDomains
 ) {
@@ -22,7 +22,7 @@ public record MemberProfileResponse(
                 .id(member.getId())
                 .name(member.getName())
                 .careerDetails(member.getCareerDetails())
-                .Region(member.getRegion())
+                .region(member.getRegion())
                 .experiencePeriod(member.getExperiencePeriod())
                 .interestedDomains(member.getInterestedDomains())
                 .build();
