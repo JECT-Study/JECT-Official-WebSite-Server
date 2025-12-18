@@ -44,6 +44,7 @@ public interface ApplyApiSpec {
                     지원자의 지원서 제출 여부를 확인합니다.
                     - TEMP_SAVED: 작성 중인 지원서가 있는 경우
                     - SUBMITTED: 이미 지원서를 제출한 경우
+                    - JOINED: 합격하여 팀에 합류한 경우
                     """)
     ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long memberId);
 
