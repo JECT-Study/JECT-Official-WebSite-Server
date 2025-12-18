@@ -240,7 +240,7 @@ class MemberServiceTest extends UnitTestSupport {
         assertThat(result.id()).isEqualTo(memberId);
         assertThat(result.name()).isEqualTo(name);
         assertThat(result.careerDetails()).isEqualTo(careerDetails);
-        assertThat(result.Region()).isEqualTo(region);
+        assertThat(result.region()).isEqualTo(region);
         assertThat(result.experiencePeriod()).isEqualTo(experiencePeriod);
         assertThat(result.interestedDomains()).isEqualTo(interestedDomains);
     }
