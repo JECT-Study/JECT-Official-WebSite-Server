@@ -37,7 +37,7 @@ public interface MemberApiSpec {
     boolean isInitialMember(@AuthPrincipal Long memberId);
 
     @Operation(
-            summary = "현재 로그인한 회원 정보 조회",
-            description = "현재 로그인한 회원의 정보를 조회합니다.")
+            summary = "현재 로그인한 회원 프로필 조회",
+            description = "현재 로그인한 회원의 프로필를 조회합니다.")
     MemberProfileResponse getCurrentMember(@AuthPrincipal Long memberId);
 }
