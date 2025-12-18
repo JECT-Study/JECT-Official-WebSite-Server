@@ -1,12 +1,11 @@
 package org.ject.support.domain.member.service;
 
-import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
-
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
+import org.ject.support.domain.member.dto.MemberProfileResponse;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -19,6 +18,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
 
 @Service
 @RequiredArgsConstructor
@@ -94,5 +95,12 @@ public class MemberService {
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
         return member.isInitialed();
+    }
+
+    @Transactional(readOnly = true)
+    public MemberProfileResponse getMemberProfile(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
+        return MemberProfileResponse.of(member);
     }
 }
