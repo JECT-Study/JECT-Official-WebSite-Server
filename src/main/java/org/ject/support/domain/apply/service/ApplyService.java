@@ -34,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
 import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
@@ -179,14 +180,23 @@ public class ApplyService implements ApplyUsecase {
         if (!member.isProfileComplete()) {
             return ApplyStatusResponse.tempSavedProfile();
         }
+        // 3. 지원 내역 조회
+        //    - 없으면: 임시 저장 지원 상태 반환
+        //    - 있으면: 상태 값에 따라 분기
+        Optional<Apply> optionalApply = applyRepository.findByMemberId(memberId);
 
-        Apply apply = applyRepository.findByMemberId(memberId)
-                .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
+        if (optionalApply.isEmpty()) {
+            return ApplyStatusResponse.tempSavedApply();
+        }
 
+        Apply apply = optionalApply.get();
+
+        // 4. 지원서가 임시 저장 상태인 경우
         if (apply.isTempSaved()) {
             return ApplyStatusResponse.tempSavedApply();
         }
 
+        // 5. 그 외에는 실제 지원 상태 반환
         return ApplyStatusResponse.of(apply.getStatus());
     }
 
