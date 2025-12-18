@@ -1,18 +1,15 @@
 package org.ject.support.domain.member.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
-
-import java.util.Optional;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.member.CareerDetails;
+import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.MemberStatus;
+import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
+import org.ject.support.domain.member.dto.MemberProfileResponse;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -25,6 +22,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 class MemberServiceTest extends UnitTestSupport {
 
@@ -187,5 +193,55 @@ class MemberServiceTest extends UnitTestSupport {
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+    }
+
+    @Test
+    void 존재하지않는_회원ID로_회원_프로필_정보를_조회할_경우_NOT_FOUND_MEMBER_예외_발생() {
+        // given
+        Long memberId = 1L;
+        given(memberRepository.findById(memberId))
+                .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> memberService.getMemberProfile(memberId))
+                .isInstanceOf(MemberException.class)
+                .extracting(e -> ((MemberException) e).getErrorCode())
+                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+    }
+
+    @Test
+    void 회원ID로_회원_프로필_정보를_조회할_경우_회원정보를_반환한다() {
+        // given
+        Long memberId = 1L;
+        String name = "프로필";
+        String phoneNumber = "01012345678";
+        CareerDetails careerDetails = CareerDetails.EMPLOYEE;
+        Region region = Region.BUSAN;
+        ExperiencePeriod experiencePeriod = ExperiencePeriod.FIVE_PLUS;
+        List<String> interestedDomains = List.of("BACKEND", "FRONTEND");
+
+        Member member = Member.builder()
+                .id(memberId)
+                .name(name)
+                .phoneNumber(phoneNumber)
+                .careerDetails(careerDetails)
+                .region(region)
+                .experiencePeriod(experiencePeriod)
+                .interestedDomains(interestedDomains)
+                .build();
+
+        given(memberRepository.findById(memberId))
+                .willReturn(Optional.of(member));
+
+        // when
+        MemberProfileResponse result = memberService.getMemberProfile(memberId);
+
+        // then
+        assertThat(result.id()).isEqualTo(memberId);
+        assertThat(result.name()).isEqualTo(name);
+        assertThat(result.careerDetails()).isEqualTo(careerDetails);
+        assertThat(result.region()).isEqualTo(region);
+        assertThat(result.experiencePeriod()).isEqualTo(experiencePeriod);
+        assertThat(result.interestedDomains()).isEqualTo(interestedDomains);
     }
 }

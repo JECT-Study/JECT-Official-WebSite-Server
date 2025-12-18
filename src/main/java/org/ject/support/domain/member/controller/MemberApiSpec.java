@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.domain.member.dto.MemberDto;
+import org.ject.support.domain.member.dto.MemberProfileResponse;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "Member", description = "회원 API")
@@ -34,4 +35,9 @@ public interface MemberApiSpec {
             summary = "프로필 정보 최초 등록 여부 확인",
             description = "임시회원의 최초 프로필 정보(이름, 전화번호) 등록 여부를 확인합니다.")
     boolean isInitialMember(@AuthPrincipal Long memberId);
+
+    @Operation(
+            summary = "현재 로그인한 회원 프로필 조회",
+            description = "현재 로그인한 회원의 프로필를 조회합니다.")
+    MemberProfileResponse getCurrentMember(@AuthPrincipal Long memberId);
 }
