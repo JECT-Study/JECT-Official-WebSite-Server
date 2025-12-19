@@ -151,24 +151,21 @@ public class ApplyService implements ApplyUsecase {
         Apply apply = applyRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
-        // 4. Portfolio와 ApplicationForm 영속화
-        if (apply.isSubmitted()) {
-            throw new ApplyException(ALREADY_SUBMITTED);
-        }
-
         String content = map2JsonSerializer.serializeAsString(answers);
         List<Portfolio> newPortfolios = getNewPortfolios(portfolios);
 
-        // 임시 저장한 지원서가 있을 경우 업데이트
+        // 4. ApplicationForm 준비
+        ApplicationForm applicationForm;
         if (apply.isTempSaved()) {
-            ApplicationForm applicationForm = apply.getApplicationForm();
+            applicationForm = apply.getApplicationForm();
             applicationForm.updateContentAndPortfolios(content, newPortfolios);
         } else {
-            ApplicationForm applicationForm = createApplicationForm(apply, content, newPortfolios);
+            applicationForm = createApplicationForm(apply, content, newPortfolios);
             applicationFormRepository.save(applicationForm);
-            apply.updateApplicationForm(applicationForm);
         }
-        apply.updateStatus(SUBMITTED);
+
+        // 5. Apply 엔티티에 제출 위임 (검증 및 상태 변경 포함)
+        apply.submit(applicationForm);
     }
 
     @Override
