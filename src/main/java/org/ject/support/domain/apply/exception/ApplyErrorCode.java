@@ -16,6 +16,7 @@ public enum ApplyErrorCode implements ErrorCode {
     ALREADY_SUBMITTED(CONFLICT, "APPLY-2", "이미 지원서를 제출한 상태입니다."),
     NOT_FOUND_TEMP_APPLICATION_FORM(NOT_FOUND, "APPLY-3", "임시 저장한 지원서가 존재하지 않습니다."),
     NOT_FOUND_SUBMITTED_APPLICATION_FORM(NOT_FOUND, "APPLY-4", "제출된 지원서가 존재하지 않습니다."),
+    NOT_SUBMITTED(CONFLICT, "APPLY-5", "제출 완료된 지원서가 아닙니다."),
     PORTFOLIO_REQUIRED(BAD_REQUEST, "APPLY-6", "포트폴리오를 필수로 제출해야 합니다.")
     ;
 
