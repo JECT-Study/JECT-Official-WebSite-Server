@@ -50,4 +50,8 @@ public class ApplicationForm extends BaseTimeEntity {
         this.portfolios.addAll(newPortfolios);
         newPortfolios.forEach(portfolio -> portfolio.setApplicationForm(this));
     }
+
+    public boolean hasNoPortfolio() {
+        return portfolios == null || portfolios.isEmpty();
+    }
 }

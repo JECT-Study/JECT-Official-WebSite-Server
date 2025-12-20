@@ -17,6 +17,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.ject.support.domain.apply.exception.ApplyErrorCode;
+import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.recruit.domain.Recruit;
@@ -87,6 +89,19 @@ public class Apply extends BaseTimeEntity {
 
     public boolean isSubmitted() {
         return status.equals(Status.SUBMITTED);
+    }
+
+    public void submit(ApplicationForm applicationForm) {
+        if (isSubmitted()) {
+            throw new ApplyException(ApplyErrorCode.ALREADY_SUBMITTED);
+        }
+
+        if (recruit.getJobFamily().isPortfolioRequired() && applicationForm.hasNoPortfolio()) {
+            throw new ApplyException(ApplyErrorCode.PORTFOLIO_REQUIRED);
+        }
+
+        this.applicationForm = applicationForm;
+        this.status = Status.SUBMITTED;
     }
 
     public enum Status {

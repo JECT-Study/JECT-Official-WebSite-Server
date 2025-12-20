@@ -5,6 +5,8 @@ import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.Portfolio;
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
@@ -42,6 +44,7 @@ import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
 import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
 import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
 import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.PD;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
@@ -111,6 +114,57 @@ class ApplyServiceTest extends UnitTestSupport {
 
         // 3. apply의 상태가 SUBMITTED로 변경되었는지 확인
         assertThat(apply.getStatus()).isEqualTo(SUBMITTED);
+    }
+
+    @Test
+    void 지원서_제출_시_PD직군은_포트폴리오가_없으면_실패() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"));
+
+        Recruit recruit = getActiveRecruit(PD, questions);
+        Member applicant = getApplicant(1L, "email@test.com");
+        Map<String, String> answers = Map.of("1", "답변 1");
+        ApplicationForm applicationForm = getApplicationForm(answers.toString());
+        Apply apply = getApply(1L, recruit, applicant, applicationForm, TEMP_SAVED);
+
+        when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
+        when(applyRepository.findByMemberId(applicant.getId())).thenReturn(Optional.of(apply));
+        when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
+
+        // expected
+        assertThatThrownBy(() -> applyService.submitApplication(1L, PD, answers, List.of()))
+                .isInstanceOf(ApplyException.class)
+                .extracting("errorCode")
+                .isEqualTo(ApplyErrorCode.PORTFOLIO_REQUIRED);
+    }
+
+    @Test
+    void 지원서_제출_시_PD직군은_포트폴리오가_있으면_성공() {
+        // given
+        List<Question> questions = List.of(
+                getQuestion(1L, 1, "문항 1", "설명 1"));
+
+        Recruit recruit = getActiveRecruit(PD, questions);
+        Member applicant = getApplicant(1L, "email@test.com");
+        Map<String, String> answers = Map.of("1", "답변 1");
+        ApplicationForm applicationForm = getApplicationForm(answers.toString());
+        Apply apply = getApply(1L, recruit, applicant, applicationForm, TEMP_SAVED);
+
+        List<ApplyPortfolioDto> portfolios = List.of(
+                new ApplyPortfolioDto("url", "name", "100", "1")
+        );
+
+        when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
+        when(applyRepository.findByMemberId(applicant.getId())).thenReturn(Optional.of(apply));
+        when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
+
+        // when
+        applyService.submitApplication(1L, PD, answers, portfolios);
+
+        // then
+        assertThat(apply.getStatus()).isEqualTo(SUBMITTED);
+        assertThat(applicationForm.getPortfolios()).hasSize(1);
     }
 
     @Test
