@@ -2,6 +2,7 @@ package org.ject.support.domain.apply.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Email;
 import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
@@ -46,7 +47,7 @@ public interface ApplyApiSpec {
                     - SUBMITTED: 이미 지원서를 제출한 경우
                     - JOINED: 합격하여 팀에 합류한 경우
                     """)
-    ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long memberId);
+    ApplyStatusResponse checkApplyStatus(@RequestParam @Email String email);
 
     @Operation(
             summary = "프로필 작성(저장)",

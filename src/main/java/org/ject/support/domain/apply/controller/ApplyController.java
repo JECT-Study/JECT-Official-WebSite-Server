@@ -1,6 +1,7 @@
 package org.ject.support.domain.apply.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
@@ -58,9 +59,9 @@ public class ApplyController implements ApplyApiSpec {
 
     @Override
     @GetMapping("/status")
-    @PreAuthorize("hasRole('ROLE_APPLY')")
-    public ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long memberId) {
-        return applyUsecase.checkApplyStatus(memberId);
+    @PreAuthorize("permitAll()")
+    public ApplyStatusResponse checkApplyStatus(@RequestParam @Email String email) {
+        return applyUsecase.checkApplyStatus(email);
     }
 
     @Override
