@@ -194,14 +194,14 @@ class ApplyServiceTest extends UnitTestSupport {
     @Test
     void 지원단계중_프로필작성을_하지_않았을_경우_STEP을_PROFILE로_STATUS를_TEMP_SAVED_반환() {
         // given
-        Long memberId = 1L;
+        String email = "test@example.com";
         Member member = Member.builder()
                 .build();
-        given(memberRepository.findById(memberId))
+        given(memberRepository.findByEmail(email))
                 .willReturn(Optional.of(member));
 
         // when
-        ApplyStatusResponse result = applyService.checkApplyStatus(1L);
+        ApplyStatusResponse result = applyService.checkApplyStatus(email);
 
         // then
         assertThat(result).isEqualTo(ApplyStatusResponse.tempSavedProfile());
@@ -210,23 +210,24 @@ class ApplyServiceTest extends UnitTestSupport {
     @Test
     void 작성_중인_지원서가_있는_경우_TEMP_SAVED_반환() {
         // given
-        Long memberId = 1L;
+        String email = "test@example.com";
         Member member = Member.builder()
+                .id(1L)
                 .name("지원자명")
                 .phoneNumber("01012345678")
                 .build();
-        given(memberRepository.findById(memberId))
+        given(memberRepository.findByEmail(email))
                 .willReturn(Optional.of(member));
-        given(applyRepository.findByMemberId(any()))
+        given(applyRepository.findByMemberId(member.getId()))
                 .willReturn(Optional.of(
                         Apply.builder()
-                                .id(memberId)
+                                .id(1L)
                                 .status(TEMP_SAVED)
                                 .build()
                 ));
 
         // when
-        ApplyStatusResponse result = applyService.checkApplyStatus(1L);
+        ApplyStatusResponse result = applyService.checkApplyStatus(email);
 
         // then
         assertThat(result).isEqualTo(ApplyStatusResponse.tempSavedApply());
@@ -235,23 +236,24 @@ class ApplyServiceTest extends UnitTestSupport {
     @Test
     void 지원서를_제출한_지원자에_대한_제출_상태_확인_시_SUBMITTED_반환() {
         // given
-        Long memberId = 1L;
+        String email = "test@example.com";
         Member member = Member.builder()
+                        .id(1L)
                         .name("지원자명")
                         .phoneNumber("01012345678")
                         .build();
-        given(memberRepository.findById(memberId))
+        given(memberRepository.findByEmail(email))
                 .willReturn(Optional.of(member));
-        given(applyRepository.findByMemberId(any()))
+        given(applyRepository.findByMemberId(member.getId()))
                 .willReturn(Optional.of(
                         Apply.builder()
-                                .id(memberId)
+                                .id(1L)
                                 .status(SUBMITTED)
                                 .build()
                 ));
 
         // when
-        ApplyStatusResponse result = applyService.checkApplyStatus(memberId);
+        ApplyStatusResponse result = applyService.checkApplyStatus(email);
 
         // then
         assertThat(result).isEqualTo(ApplyStatusResponse.of(SUBMITTED));
