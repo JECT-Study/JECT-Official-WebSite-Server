@@ -170,8 +170,8 @@ public class ApplyService implements ApplyUsecase {
 
     @Override
     @PeriodAccessible(permitAllJob = true)
-    public ApplyStatusResponse checkApplyStatus(Long memberId) {
-        Member member = memberRepository.findById(memberId)
+    public ApplyStatusResponse checkApplyStatus(String email) {
+        Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
         if (!member.isProfileComplete()) {
@@ -180,7 +180,7 @@ public class ApplyService implements ApplyUsecase {
         // 3. 지원 내역 조회
         //    - 없으면: 임시 저장 지원 상태 반환
         //    - 있으면: 상태 값에 따라 분기
-        Optional<Apply> optionalApply = applyRepository.findByMemberId(memberId);
+        Optional<Apply> optionalApply = applyRepository.findByMemberId(member.getId());
 
         if (optionalApply.isEmpty()) {
             return ApplyStatusResponse.tempSavedApply();
