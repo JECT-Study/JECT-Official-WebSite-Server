@@ -55,6 +55,11 @@ public class Project extends BaseTimeEntity {
     @Column(length = 2083)
     private String serviceUrl;
 
+    @Column
+    @Convert(converter = StringListConverter.class)
+    @Builder.Default
+    private List<String> badges = new ArrayList<>();
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
