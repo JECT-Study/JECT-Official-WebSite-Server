@@ -67,7 +67,7 @@ public class Project extends BaseTimeEntity {
     @Column(length = 2083)
     private String serviceUrl;
 
-    @Column(length = 50)
+    @Column(length = 50, nullable = false)
     private String serviceType;
 
     @Column
