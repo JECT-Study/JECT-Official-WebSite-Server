@@ -33,9 +33,8 @@ public class ProjectService {
     @Cacheable(value = "project", key = "#category + ':' + #semesterId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
     @Transactional(readOnly = true)
     public Page<ProjectResponse> findProjects(final Project.Category category,
-                                              final Long semesterId,
                                               final Pageable pageable) {
-        return projectRepository.findProjectsByCategoryAndSemester(category, semesterId, pageable);
+        return projectRepository.findProjectsByCategory(category, pageable);
     }
 
     /**

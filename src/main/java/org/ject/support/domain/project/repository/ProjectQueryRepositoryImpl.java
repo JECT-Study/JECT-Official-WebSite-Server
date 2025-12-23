@@ -1,7 +1,6 @@
 package org.ject.support.domain.project.repository;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +23,8 @@ public class ProjectQueryRepositoryImpl implements ProjectQueryRepository {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<ProjectResponse> findProjectsByCategoryAndSemester(final Category category,
-                                                                   final Long semesterId,
-                                                                   final Pageable pageable) {
+    public Page<ProjectResponse> findProjectsByCategory(final Category category,
+                                                        final Pageable pageable) {
         List<ProjectResponse> content = queryFactory.select(new QProjectResponse(
                         project.id,
                         project.thumbnailUrl,
@@ -36,7 +34,7 @@ public class ProjectQueryRepositoryImpl implements ProjectQueryRepository {
                         project.serviceType
                 ))
                 .from(project)
-                .where(project.category.eq(category), eqSemesterId(semesterId))
+                .where(eqCategory(category))
                 .orderBy(project.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -49,10 +47,10 @@ public class ProjectQueryRepositoryImpl implements ProjectQueryRepository {
         return PageResponse.from(content, pageable, countQuery.fetchFirst());
     }
 
-    private BooleanExpression eqSemesterId(Long semesterId) {
-        if (semesterId == null) {
-            return Expressions.TRUE;
+    private BooleanExpression eqCategory(Category category) {
+        if (category == null) {
+            return null;
         }
-        return project.team.semesterId.eq(semesterId);
+        return project.category.eq(category);
     }
 }

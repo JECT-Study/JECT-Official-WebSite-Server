@@ -39,7 +39,7 @@ class ProjectQueryRepositoryTest {
     }
 
     @Test
-    void 기수별_프로젝트_목록_조회() {
+    void 카테고리별_프로젝트_조회() {
         // given
         Project project1 = createProject(Project.Category.SEMESTER_1, team1);
         Project project2 = createProject(Project.Category.SEMESTER_1, team2);
@@ -48,16 +48,16 @@ class ProjectQueryRepositoryTest {
 
         // when
         Page<ProjectResponse> result =
-                projectRepository.findProjectsByCategoryAndSemester(Project.Category.SEMESTER_1, 1L, PageRequest.of(0, 30));
+                projectRepository.findProjectsByCategory(Project.Category.SEMESTER_1, PageRequest.of(0, 30));
 
         // then
         assertThat(result).isNotNull();
 
         List<ProjectResponse> responses = result.getContent();
-        assertThat(responses).hasSize(2);
+        assertThat(responses).hasSize(3);
 
         ProjectResponse firstResponse = responses.get(0);
-        assertThat(firstResponse.id()).isEqualTo(2L);
+        assertThat(firstResponse.id()).isEqualTo(3L);
         assertThat(firstResponse.name()).isEqualTo("projectName");
         assertThat(firstResponse.summary()).isEqualTo("summary");
         assertThat(firstResponse.thumbnailUrl()).isEqualTo("https://test.net/thumbnail.png");
@@ -66,7 +66,7 @@ class ProjectQueryRepositoryTest {
     }
 
     @Test
-    void 프로젝트_카테고리중_2기가진행한_프로젝트_조회() {
+    void 카테고리로_프로젝트_필터링_조회() {
         // given
         Project project1 = createProject(Project.Category.SEMESTER_1, team1);
         Project project2 = createProject(Project.Category.SEMESTER_1, team2);
@@ -76,7 +76,7 @@ class ProjectQueryRepositoryTest {
 
         // when
         Page<ProjectResponse> result =
-                projectRepository.findProjectsByCategoryAndSemester(Project.Category.SEMESTER_1, 1L, PageRequest.of(0, 30));
+                projectRepository.findProjectsByCategory(Project.Category.SEMESTER_1, PageRequest.of(0, 30));
 
         // then
         assertThat(result.getContent()).hasSize(2);
@@ -106,21 +106,20 @@ class ProjectQueryRepositoryTest {
     }
 
     @Test
-    void semesterId가_NULL이면_전체_조회() {
+    void 카테고리가_없을_경우_전체_프로젝트_조회() {
         // given
         Project project1 = createProject(Project.Category.SEMESTER_1, team1);
         Project project2 = createProject(Project.Category.SEMESTER_1, team2);
-        Project project3 = createProject(Project.Category.SEMESTER_1, team3);
-        Project project4 = createProject(Project.Category.SEMESTER_1, team3);
+        Project project3 = createProject(Project.Category.SEMESTER_2, team3);
+        Project project4 = createProject(Project.Category.SEMESTER_3, team3);
         projectRepository.saveAll(List.of(project1, project2, project3, project4));
 
         // when
         Page<ProjectResponse> result =
-                projectRepository.findProjectsByCategoryAndSemester(Project.Category.SEMESTER_1, null, PageRequest.of(0, 30));
+                projectRepository.findProjectsByCategory(null, PageRequest.of(0, 30));
 
         // then
         assertThat(result).isNotNull();
-
         List<ProjectResponse> responses = result.getContent();
         assertThat(responses).hasSize(4);
     }

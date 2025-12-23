@@ -23,10 +23,9 @@ public class ProjectController implements ProjectApiSpec {
 
     @Override
     @GetMapping
-    public Page<ProjectResponse> findProjects(@RequestParam final Project.Category category,
-                                              @RequestParam(required = false) final Long semesterId,
+    public Page<ProjectResponse> findProjects(@RequestParam(required = false) final Project.Category category,
                                               final Pageable pageable) {
-        return projectService.findProjects(category, semesterId, pageable);
+        return projectService.findProjects(category, pageable);
     }
 
     @Override
