@@ -81,6 +81,8 @@ public class Project extends BaseTimeEntity {
     @Builder.Default
     private List<ProjectIntro> projectIntros = new ArrayList<>();
 
+    @Getter
+    @AllArgsConstructor
     public enum Category {
 
         SEMESTER_1(1, "1기"),
@@ -89,18 +91,5 @@ public class Project extends BaseTimeEntity {
 
         private final int order;
         private final String displayName;
-
-        Category(int order, String displayName) {
-            this.order = order;
-            this.displayName = displayName;
-        }
-
-        public int getOrder() {
-            return order;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
     }
 }
