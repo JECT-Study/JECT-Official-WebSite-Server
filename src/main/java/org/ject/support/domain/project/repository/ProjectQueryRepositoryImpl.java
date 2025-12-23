@@ -32,7 +32,8 @@ public class ProjectQueryRepositoryImpl implements ProjectQueryRepository {
                         project.thumbnailUrl,
                         project.name,
                         project.summary,
-                        project.description
+                        project.description,
+                        project.serviceType
                 ))
                 .from(project)
                 .where(project.category.eq(category), eqSemesterId(semesterId))

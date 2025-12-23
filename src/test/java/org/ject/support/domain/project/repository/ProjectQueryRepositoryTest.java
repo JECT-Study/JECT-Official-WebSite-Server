@@ -62,6 +62,7 @@ class ProjectQueryRepositoryTest {
         assertThat(firstResponse.summary()).isEqualTo("summary");
         assertThat(firstResponse.thumbnailUrl()).isEqualTo("https://test.net/thumbnail.png");
         assertThat(firstResponse.description()).isEqualTo("description");
+        assertThat(firstResponse.serviceType()).isEqualTo("WEB");
     }
 
     @Test
@@ -130,6 +131,7 @@ class ProjectQueryRepositoryTest {
                 .thumbnailUrl("https://test.net/thumbnail.png")
                 .summary("summary")
                 .description("description")
+                .serviceType("WEB")
                 .startDate(LocalDate.of(2025, 3, 2))
                 .endDate(LocalDate.of(2025, 6, 30))
                 .category(category)

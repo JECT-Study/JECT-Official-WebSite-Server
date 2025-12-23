@@ -10,4 +10,4 @@ SET category = 'DESCRIPTION'
 WHERE category = 'DEV';
 
 -- project 테이블에 serviceType 필드 추가
-ALTER TABLE project ADD COLUMN serviceType VARCHAR(50) NOT NULL DEFAULT 'WEB';
+ALTER TABLE project ADD COLUMN service_type VARCHAR(50) NOT NULL DEFAULT 'WEB';
