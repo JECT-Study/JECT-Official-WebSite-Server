@@ -16,7 +16,7 @@ public interface ProjectApiSpec {
 
     @Operation(
             summary = "프로젝트 목록 조회",
-            description = "카테고리와 기수 ID를 통해 프로젝트 목록을 조회합니다.")
+            description = "카테고리 통해 프로젝트 목록을 조회합니다.")
     Page<ProjectResponse> findProjects(@RequestParam(required = false) final Project.Category category,
                                        final Pageable pageable);
 
