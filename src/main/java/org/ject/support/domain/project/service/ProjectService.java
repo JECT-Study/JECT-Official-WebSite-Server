@@ -1,15 +1,12 @@
 package org.ject.support.domain.project.service;
 
-import static org.ject.support.domain.project.entity.ProjectIntro.Category.DEV;
-import static org.ject.support.domain.project.entity.ProjectIntro.Category.SERVICE;
-
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectIntroResponse;
 import org.ject.support.domain.project.dto.ProjectResponse;
+import org.ject.support.domain.project.dto.ProjectSummaryResponse;
 import org.ject.support.domain.project.entity.Project;
 import org.ject.support.domain.project.entity.ProjectIntro;
 import org.ject.support.domain.project.exception.ProjectErrorCode;
@@ -20,6 +17,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+import static org.ject.support.domain.project.entity.ProjectIntro.Category.DEV;
+import static org.ject.support.domain.project.entity.ProjectIntro.Category.SERVICE;
 
 @Service
 @RequiredArgsConstructor
@@ -55,6 +57,16 @@ public class ProjectService {
         List<ProjectIntroResponse> devIntros = mapToResponsesByCategory(projectIntros, DEV);
 
         return ProjectDetailResponse.toResponse(project, teamMemberNames, serviceIntros, devIntros);
+    }
+
+    /**
+     * 전체 프로젝트의 요약된 현황을 조회합니다.
+     */
+    @Cacheable(value = "project", key = "'summary'")
+    @Transactional(readOnly = true)
+    public ProjectSummaryResponse findProjectSummary() {
+        List<Project> projects = projectRepository.findAll();
+        return ProjectSummaryResponse.of(projects);
     }
 
     private List<ProjectIntroResponse> mapToResponsesByCategory(List<ProjectIntro> projectIntros,

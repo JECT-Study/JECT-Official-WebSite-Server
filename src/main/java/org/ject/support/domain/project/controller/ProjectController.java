@@ -3,6 +3,7 @@ package org.ject.support.domain.project.controller;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectResponse;
+import org.ject.support.domain.project.dto.ProjectSummaryResponse;
 import org.ject.support.domain.project.entity.Project;
 import org.ject.support.domain.project.service.ProjectService;
 import org.springframework.data.domain.Page;
@@ -32,5 +33,11 @@ public class ProjectController implements ProjectApiSpec {
     @GetMapping("/{projectId}")
     public ProjectDetailResponse findProjectDetails(@PathVariable final Long projectId) {
         return projectService.findProjectDetails(projectId);
+    }
+
+    @Override
+    @GetMapping("/summary")
+    public ProjectSummaryResponse findProjectSummary() {
+        return projectService.findProjectSummary();
     }
 }
