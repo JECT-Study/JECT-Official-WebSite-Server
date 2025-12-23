@@ -6,6 +6,7 @@ import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectIntroResponse;
 import org.ject.support.domain.project.dto.ProjectResponse;
+import org.ject.support.domain.project.dto.ProjectSummaryResponse;
 import org.ject.support.domain.project.entity.Project;
 import org.ject.support.domain.project.entity.ProjectIntro;
 import org.ject.support.domain.project.exception.ProjectErrorCode;
@@ -62,6 +63,16 @@ public class ProjectService {
                 sampleImages,
                 descriptionImages
         );
+    }
+
+    /**
+     * 전체 프로젝트의 요약된 현황을 조회합니다.
+     */
+    @Cacheable(value = "project", key = "'summary'")
+    @Transactional(readOnly = true)
+    public ProjectSummaryResponse findProjectSummary() {
+        List<Project> projects = projectRepository.findAll();
+        return ProjectSummaryResponse.of(projects);
     }
 
     private ProjectIntroResponse findSingleIntroByCategory(
