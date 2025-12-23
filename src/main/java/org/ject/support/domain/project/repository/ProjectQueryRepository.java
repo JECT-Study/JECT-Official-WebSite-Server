@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable;
 
 public interface ProjectQueryRepository {
 
-    Page<ProjectResponse> findProjectsByCategoryAndSemester(Project.Category category,
-                                                            Long semesterId,
-                                                            Pageable pageable);
+    Page<ProjectResponse> findProjectsByCategory(Project.Category category,
+                                                 Pageable pageable);
 }

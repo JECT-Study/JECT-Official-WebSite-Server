@@ -67,6 +67,9 @@ public class Project extends BaseTimeEntity {
     @Column(length = 2083)
     private String serviceUrl;
 
+    @Column(length = 50, nullable = false)
+    private String serviceType;
+
     @Column
     @Convert(converter = StringListConverter.class)
     @Builder.Default

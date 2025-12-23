@@ -49,10 +49,10 @@ class ProjectServiceTest extends UnitTestSupport {
         productDesigners = List.of("designer1");
         frontendDevelopers = List.of("front1", "front2");
         backendDevelopers = List.of("back1", "back2", "back3");
-        ProjectIntro serviceIntro1 = createProjectIntro(1L, "serviceImage1.png", Category.SERVICE, 1);
-        ProjectIntro serviceIntro2 = createProjectIntro(2L, "serviceImage2.png", Category.SERVICE, 2);
-        ProjectIntro serviceIntro3 = createProjectIntro(3L, "serviceImage3.png", Category.SERVICE, 3);
-        ProjectIntro devIntro1 = createProjectIntro(4L, "devImage1.png", Category.DEV, 1);
+        ProjectIntro serviceIntro1 = createProjectIntro(1L, "serviceImage1.png", Category.SAMPLE, 1);
+        ProjectIntro serviceIntro2 = createProjectIntro(2L, "serviceImage2.png", Category.SAMPLE, 2);
+        ProjectIntro serviceIntro3 = createProjectIntro(3L, "serviceImage3.png", Category.SAMPLE, 3);
+        ProjectIntro devIntro1 = createProjectIntro(4L, "devImage1.png", Category.DESCRIPTION, 1);
         project = Project.builder()
                 .id(1L)
                 .summary("summary")
@@ -88,8 +88,8 @@ class ProjectServiceTest extends UnitTestSupport {
         assertThat(result.teamMemberNames().backendDevelopers()).hasSize(3);
         assertThat(result.description()).isEqualTo(project.getDescription());
         assertThat(result.serviceUrl()).isEqualTo(project.getServiceUrl());
-        assertThat(result.serviceIntros()).hasSize(3);
-        assertThat(result.devIntros()).hasSize(1);
+        assertThat(result.sampleImageUrls()).hasSize(3);
+        assertThat(result.descriptionImageUrls()).hasSize(1);
     }
 
     @Test
@@ -103,7 +103,7 @@ class ProjectServiceTest extends UnitTestSupport {
         ProjectDetailResponse result = projectService.findProjectDetails(1L);
 
         // then
-        assertThat(result.serviceIntros())
+        assertThat(result.sampleImageUrls())
                 .extracting(ProjectIntroResponse::sequence)
                 .containsExactly(1, 2, 3);
     }

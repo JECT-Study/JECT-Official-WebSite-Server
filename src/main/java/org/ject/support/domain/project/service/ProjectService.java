@@ -20,9 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static org.ject.support.domain.project.entity.ProjectIntro.Category.DEV;
-import static org.ject.support.domain.project.entity.ProjectIntro.Category.SERVICE;
-
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
@@ -33,12 +30,11 @@ public class ProjectService {
     /**
      * 주어진 기수의 프로젝트를 모두 조회합니다.
      */
-    @Cacheable(value = "project", key = "#category + ':' + #semesterId + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
+    @Cacheable(value = "project", key = "#category + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
     @Transactional(readOnly = true)
     public Page<ProjectResponse> findProjects(final Project.Category category,
-                                              final Long semesterId,
                                               final Pageable pageable) {
-        return projectRepository.findProjectsByCategoryAndSemester(category, semesterId, pageable);
+        return projectRepository.findProjectsByCategory(category, pageable);
     }
 
     /**
@@ -50,13 +46,22 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ProjectException(ProjectErrorCode.NOT_FOUND_PROJECT));
 
-        TeamMemberNames teamMemberNames = memberRepository.findMemberNamesByTeamId(project.getTeam().getId());
+        TeamMemberNames teamMemberNames =
+                memberRepository.findMemberNamesByTeamId(project.getTeam().getId());
 
         List<ProjectIntro> projectIntros = project.getProjectIntros();
-        List<ProjectIntroResponse> serviceIntros = mapToResponsesByCategory(projectIntros, SERVICE);
-        List<ProjectIntroResponse> devIntros = mapToResponsesByCategory(projectIntros, DEV);
 
-        return ProjectDetailResponse.toResponse(project, teamMemberNames, serviceIntros, devIntros);
+        ProjectIntroResponse bannerImage = findSingleIntroByCategory(projectIntros, ProjectIntro.Category.BANNER);
+        List<ProjectIntroResponse> sampleImages = findIntroResponsesByCategory(projectIntros, ProjectIntro.Category.SAMPLE);
+        List<ProjectIntroResponse> descriptionImages = findIntroResponsesByCategory(projectIntros, ProjectIntro.Category.DESCRIPTION);
+
+        return ProjectDetailResponse.toResponse(
+                project,
+                teamMemberNames,
+                bannerImage,
+                sampleImages,
+                descriptionImages
+        );
     }
 
     /**
@@ -69,10 +74,23 @@ public class ProjectService {
         return ProjectSummaryResponse.of(projects);
     }
 
-    private List<ProjectIntroResponse> mapToResponsesByCategory(List<ProjectIntro> projectIntros,
-                                                                final ProjectIntro.Category category) {
-        return projectIntros.stream()
-                .filter(projectIntro -> projectIntro.isCategory(category))
+    private ProjectIntroResponse findSingleIntroByCategory(
+            List<ProjectIntro> intros,
+            ProjectIntro.Category category
+    ) {
+        return intros.stream()
+                .filter(intro -> intro.isCategory(category))
+                .findFirst()
+                .map(ProjectIntroResponse::toResponse)
+                .orElse(null);
+    }
+
+    private List<ProjectIntroResponse> findIntroResponsesByCategory(
+            List<ProjectIntro> intros,
+            ProjectIntro.Category category
+    ) {
+        return intros.stream()
+                .filter(intro -> intro.isCategory(category))
                 .map(ProjectIntroResponse::toResponse)
                 .toList();
     }
