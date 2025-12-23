@@ -95,6 +95,7 @@ class ProjectQueryRepositoryTest {
                 .startDate(LocalDate.of(2025, 3, 1))
                 .endDate(LocalDate.of(2025, 6, 30))
                 .team(team1)
+                .serviceType("WEB")
                 .build();
 
         // when
