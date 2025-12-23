@@ -6,6 +6,7 @@ import org.ject.support.domain.member.entity.Team;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectIntroResponse;
+import org.ject.support.domain.project.dto.ProjectSummaryResponse;
 import org.ject.support.domain.project.entity.Project;
 import org.ject.support.domain.project.entity.ProjectIntro;
 import org.ject.support.domain.project.exception.ProjectException;
@@ -23,7 +24,6 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.project.entity.ProjectIntro.Category;
-import static org.ject.support.domain.project.entity.ProjectIntro.builder;
 import static org.mockito.Mockito.when;
 
 class ProjectServiceTest extends UnitTestSupport {
@@ -132,8 +132,34 @@ class ProjectServiceTest extends UnitTestSupport {
         assertThat(result.techStack()).containsExactly("java", "Spring", "JPA", "QueryDSL", "MySQL", "AWS");
     }
 
+    @Test
+    void 전체_프로젝트_요약_조회() {
+        Project p1 = Project.builder().id(10L).category(Project.Category.SEMESTER_1).build();
+        Project p2 = Project.builder().id(11L).category(Project.Category.SEMESTER_2).build();
+        Project p3 = Project.builder().id(12L).category(Project.Category.SEMESTER_2).build();
+
+        when(projectRepository.findAll()).thenReturn(List.of(p1, p2, p3));
+
+        // when
+        ProjectSummaryResponse summary = projectService.findProjectSummary();
+
+        // then
+        assertThat(summary.categorySummaries()).hasSize(1 + Project.Category.values().length);
+        assertThat(summary.categorySummaries().get(0).categoryName()).isEqualTo("ALL");
+        assertThat(summary.categorySummaries().get(0).count()).isEqualTo(3L);
+
+        assertThat(summary.categorySummaries().get(1).categoryName()).isEqualTo(Project.Category.SEMESTER_1.name());
+        assertThat(summary.categorySummaries().get(1).count()).isEqualTo(1L);
+
+        assertThat(summary.categorySummaries().get(2).categoryName()).isEqualTo(Project.Category.SEMESTER_2.name());
+        assertThat(summary.categorySummaries().get(2).count()).isEqualTo(2L);
+
+        assertThat(summary.categorySummaries().get(3).categoryName()).isEqualTo(Project.Category.SEMESTER_3.name());
+        assertThat(summary.categorySummaries().get(3).count()).isEqualTo(0L);
+    }
+
     private ProjectIntro createProjectIntro(Long id, String imageUrl, Category category, int sequence) {
-        return builder()
+        return ProjectIntro.builder()
                 .id(id)
                 .imageUrl(imageUrl)
                 .category(category)
