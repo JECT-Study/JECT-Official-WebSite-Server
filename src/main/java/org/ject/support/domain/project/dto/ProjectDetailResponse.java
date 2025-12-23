@@ -19,8 +19,9 @@ public record ProjectDetailResponse(
         List<String> badges,
         String description,
         String serviceUrl,
-        List<ProjectIntroResponse> serviceIntros,
-        List<ProjectIntroResponse> devIntros
+        ProjectIntroResponse bannerImageUrl,
+        List<ProjectIntroResponse> sampleImageUrls,
+        List<ProjectIntroResponse> descriptionImageUrls
 ) {
 
     @QueryProjection
@@ -29,8 +30,9 @@ public record ProjectDetailResponse(
 
     public static ProjectDetailResponse toResponse(Project project,
                                                    TeamMemberNames teamMemberNames,
-                                                   List<ProjectIntroResponse> serviceIntros,
-                                                   List<ProjectIntroResponse> devIntros) {
+                                                   ProjectIntroResponse bannerImageUrl,
+                                                   List<ProjectIntroResponse> sampleImageUrls,
+                                                   List<ProjectIntroResponse> descriptionImageUrls) {
         return ProjectDetailResponse.builder()
                 .thumbnailUrl(project.getThumbnailUrl())
                 .name(project.getName())
@@ -41,8 +43,9 @@ public record ProjectDetailResponse(
                 .badges(project.getBadges())
                 .description(project.getDescription())
                 .serviceUrl(project.getServiceUrl())
-                .serviceIntros(serviceIntros)
-                .devIntros(devIntros)
+                .bannerImageUrl(bannerImageUrl)
+                .sampleImageUrls(sampleImageUrls)
+                .descriptionImageUrls(descriptionImageUrls)
                 .build();
     }
 }
