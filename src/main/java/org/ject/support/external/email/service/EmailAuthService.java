@@ -41,8 +41,10 @@ public class EmailAuthService {
         String key = RATE_LIMIT_KEY_PREFIX + toEmail;
         if (Boolean.TRUE.equals(redisTemplate.hasKey(key))) {
             Long retryAfter = redisTemplate.getExpire(key);
-            long seconds = retryAfter > 0 ? retryAfter : RATE_LIMIT_DURATION_MINUTES * 60;
-            throw new RateLimitException(seconds);
+            if (retryAfter == null || retryAfter < 0) {
+                retryAfter = RATE_LIMIT_DURATION_MINUTES * 60;
+            }
+            throw new RateLimitException(retryAfter);
         }
 
         redisTemplate.opsForValue().set(key, "1", Duration.ofMinutes(RATE_LIMIT_DURATION_MINUTES));
