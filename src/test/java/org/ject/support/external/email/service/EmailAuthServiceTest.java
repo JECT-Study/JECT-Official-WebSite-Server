@@ -1,13 +1,11 @@
 package org.ject.support.external.email.service;
 
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.RateLimitException;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
@@ -21,8 +19,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-@ExtendWith(MockitoExtension.class)
-class EmailAuthServiceTest {
+class EmailAuthServiceTest extends UnitTestSupport {
 
     @InjectMocks
     private EmailAuthService emailAuthService;
@@ -37,8 +34,7 @@ class EmailAuthServiceTest {
     private ValueOperations<String, String> valueOperations;
 
     @Test
-    @DisplayName("인증번호 발송 시 Rate Limit이 적용되어 있지 않다면 정상 발송된다")
-    void sendAuthCode_success() {
+    void 인증번호_발송_시_Rate_Limit이_적용되어_있지_않다면_정상_발송된다() {
         // given
         String email = "test@example.com";
 
@@ -56,8 +52,7 @@ class EmailAuthServiceTest {
     }
 
     @Test
-    @DisplayName("3분 내에 재요청 시 RateLimitException이 발생한다")
-    void sendAuthCode_fail_rate_limit() {
+    void _3분_내에_재요청_시_RateLimitException이_발생한다() {
         // given
         String email = "test@example.com";
         given(redisTemplate.hasKey(anyString())).willReturn(true); // 이미 키가 존재함
@@ -74,8 +69,7 @@ class EmailAuthServiceTest {
     }
 
     @Test
-    @DisplayName("PIN 재설정 메일은 Rate Limit 영향을 받지 않는다")
-    void sendAuthCode_pin_reset_ignore_limit() {
+    void PIN_재설정_메일은_Rate_Limit_영향을_받지_않는다() {
         // given
         String email = "test@example.com";
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
