@@ -10,7 +10,6 @@ import java.util.List;
 
 @Builder
 public record ProjectDetailResponse(
-        String thumbnailUrl,
         String name,
         LocalDate startDate,
         LocalDate endDate,
@@ -34,7 +33,6 @@ public record ProjectDetailResponse(
                                                    List<ProjectIntroResponse> sampleImageUrls,
                                                    List<ProjectIntroResponse> descriptionImageUrls) {
         return ProjectDetailResponse.builder()
-                .thumbnailUrl(project.getThumbnailUrl())
                 .name(project.getName())
                 .startDate(project.getStartDate())
                 .endDate(project.getEndDate())

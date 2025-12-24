@@ -78,7 +78,6 @@ class ProjectServiceTest extends UnitTestSupport {
         ProjectDetailResponse result = projectService.findProjectDetails(1L);
 
         // then
-        assertThat(result.thumbnailUrl()).isEqualTo(project.getThumbnailUrl());
         assertThat(result.name()).isEqualTo(project.getName());
         assertThat(result.startDate()).isEqualTo(project.getStartDate());
         assertThat(result.endDate()).isEqualTo(project.getEndDate());
