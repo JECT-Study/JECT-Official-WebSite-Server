@@ -2,8 +2,10 @@ package org.ject.support.common.exception;
 
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.response.ErrorResponse;
+import org.ject.support.external.email.exception.RateLimitException;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -30,6 +32,20 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = e.getErrorCode();
         logException(e, errorCode);
         return ErrorResponse.of(errorCode);
+    }
+
+    /**
+     * 횟수 제한 예외 처리 (Retry-After 헤더 추가)
+     */
+    @ExceptionHandler(RateLimitException.class)
+    protected ResponseEntity<ErrorResponse> handleRateLimitException(RateLimitException e) {
+        ErrorCode errorCode = e.getErrorCode();
+        logException(e, errorCode);
+        
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", String.valueOf(e.getRetryAfter()))
+                .body(ErrorResponse.of(errorCode));
     }
 
     /**
