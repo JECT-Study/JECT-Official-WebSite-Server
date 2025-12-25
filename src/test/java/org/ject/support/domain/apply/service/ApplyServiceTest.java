@@ -45,6 +45,8 @@ import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
 import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.PD;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
@@ -98,7 +100,7 @@ class ApplyServiceTest extends UnitTestSupport {
         Apply apply = getApply(1L, recruit, applicant, applicationForm, TEMP_SAVED);
 
         when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
-        when(applyRepository.findByMemberId(applicant.getId())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
         // when
@@ -129,7 +131,7 @@ class ApplyServiceTest extends UnitTestSupport {
         Apply apply = getApply(1L, recruit, applicant, applicationForm, TEMP_SAVED);
 
         when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
-        when(applyRepository.findByMemberId(applicant.getId())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
         // expected
@@ -156,7 +158,7 @@ class ApplyServiceTest extends UnitTestSupport {
         );
 
         when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
-        when(applyRepository.findByMemberId(applicant.getId())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
         // when
@@ -218,7 +220,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 .build();
         given(memberRepository.findByEmail(email))
                 .willReturn(Optional.of(member));
-        given(applyRepository.findByMemberId(member.getId()))
+        given(applyRepository.findByMemberIdInActiveRecruit(eq(member.getId()), any()))
                 .willReturn(Optional.of(
                         Apply.builder()
                                 .id(1L)
@@ -244,7 +246,7 @@ class ApplyServiceTest extends UnitTestSupport {
                         .build();
         given(memberRepository.findByEmail(email))
                 .willReturn(Optional.of(member));
-        given(applyRepository.findByMemberId(member.getId()))
+        given(applyRepository.findByMemberIdInActiveRecruit(eq(member.getId()), any()))
                 .willReturn(Optional.of(
                         Apply.builder()
                                 .id(1L)
@@ -284,7 +286,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         String content = "newContent";
 
-        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(content);
 
         // when
@@ -325,7 +327,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Apply apply = getApply(1L, recruit, applicant, applicationForm, SUBMITTED);
 
-        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
 
         // when, then
         assertThatThrownBy(() -> applyService.saveApplicationTemporarily(1L, answers, List.of()))
@@ -338,7 +340,7 @@ class ApplyServiceTest extends UnitTestSupport {
         long memberId = 1L;
         Map<String, String> answers = Map.of("1", "답변1");
 
-        given(applyRepository.findByMemberId(memberId)).willReturn(Optional.empty());
+        given(applyRepository.findByMemberIdInActiveRecruit(eq(memberId), any())).willReturn(Optional.empty());
 
         // expected
         assertThatThrownBy(() -> applyService.saveApplicationTemporarily(memberId, answers, List.of()))
@@ -375,7 +377,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         String newContent = "newContent";
 
-        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(newContent);
 
         // when
@@ -405,7 +407,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Apply apply = getApply(1L, recruit, getApplicant(1L, "email@test.com"), applicationForm, TEMP_SAVED);
 
-        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruit(eq(1L), any())).thenReturn(Optional.of(apply));
 
         // when
         applyService.deleteProfileAndTempApplicationForm(1L);
@@ -440,8 +442,8 @@ class ApplyServiceTest extends UnitTestSupport {
                 .content("content")
                 .build(), SUBMITTED);
 
-        when(applyRepository.findByMemberId(1L)).thenReturn(Optional.of(apply1));
-        when(applyRepository.findByMemberId(2L)).thenReturn(Optional.of(apply2));
+        when(applyRepository.findByMemberIdInActiveRecruit(eq(1L), any())).thenReturn(Optional.of(apply1));
+        when(applyRepository.findByMemberIdInActiveRecruit(eq(2L), any())).thenReturn(Optional.of(apply2));
 
         // when, then
         assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(1L))
@@ -466,7 +468,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Apply apply = getApply(1L, recruit, getApplicant(1L, "email@test.com"), tempApplicationForm, TEMP_SAVED);
 
-        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruit(eq(1L), any())).thenReturn(Optional.of(apply));
         when(string2MapSerializer.serializeAsMap(tempApplicationForm.getContent())).thenReturn(answers);
 
         // when
@@ -488,7 +490,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Apply apply = getApply(1L, getActiveRecruit(BE, questions), getApplicant(1L, "email@test.com"), null, JOINED);
 
-        when(applyRepository.findByMemberId(any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruit(eq(1L), any())).thenReturn(Optional.of(apply));
 
         // when, then
         assertThatThrownBy(() -> applyService.findTempApplicationForm(1L))
@@ -512,7 +514,7 @@ class ApplyServiceTest extends UnitTestSupport {
         Recruit recruit = getActiveRecruit(request.jobFamily(), List.of());
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(applyRepository.existsByMemberId(memberId)).willReturn(false);
+        given(applyRepository.existsByMemberIdInActiveRecruit(eq(memberId), any())).willReturn(false);
         given(recruitRepository.findActiveRecruits(any())).willReturn(List.of(recruit));
 
         // when
@@ -548,7 +550,7 @@ class ApplyServiceTest extends UnitTestSupport {
         );
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(applyRepository.existsByMemberId(memberId)).willReturn(true);
+        given(applyRepository.existsByMemberIdInActiveRecruit(eq(memberId), any())).willReturn(true);
 
         // when
         applyService.saveProfile(memberId, request);
@@ -561,6 +563,23 @@ class ApplyServiceTest extends UnitTestSupport {
         assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
         assertThat(member.getCareerDetails()).isEqualTo(request.careerDetails());
         assertThat(member.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
+    }
+
+    @Test
+    void 지원상태확인_지원내역없음_신규지원가능() {
+        // given
+        String email = "re-apply@example.com";
+        Member member = getApplicant(1L, email);
+        member.edit(member.toEditor().name("Test").phoneNumber("010-0000-0000").build()); // 프로필 작성 완료 상태로
+
+        given(memberRepository.findByEmail(email)).willReturn(Optional.of(member));
+        given(applyRepository.findByMemberIdInActiveRecruit(eq(member.getId()), any())).willReturn(Optional.empty());
+
+        // when
+        ApplyStatusResponse result = applyService.checkApplyStatus(email);
+
+        // then
+        assertThat(result).isEqualTo(ApplyStatusResponse.tempSavedApply());
     }
 
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {
