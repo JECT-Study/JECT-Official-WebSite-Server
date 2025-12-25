@@ -1,11 +1,28 @@
 package org.ject.support.domain.apply.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
+import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.PD;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
-import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
@@ -32,26 +49,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.PD;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 class ApplyServiceTest extends UnitTestSupport {
 
