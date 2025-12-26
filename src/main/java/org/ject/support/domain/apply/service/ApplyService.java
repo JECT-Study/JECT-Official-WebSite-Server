@@ -57,7 +57,7 @@ public class ApplyService implements ApplyUsecase {
     @PeriodAccessible(permitAllJob = true)
     @Transactional(readOnly = true)
     public TempApplicationFormResponse findTempApplicationForm(final Long memberId) {
-        Apply apply = applyRepository.findByMemberId(memberId)
+        Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
         if (apply.isNotTempSaved()) {
@@ -80,7 +80,7 @@ public class ApplyService implements ApplyUsecase {
                                            Map<String, String> answers,
                                            List<ApplyPortfolioDto> portfolios) {
         // 1. memberId를 바탕으로 apply 조회
-        Apply apply = applyRepository.findByMemberId(memberId)
+        Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
         Apply.Status applyStatus = apply.getStatus();
@@ -117,7 +117,7 @@ public class ApplyService implements ApplyUsecase {
     @Transactional
     public void deleteProfileAndTempApplicationForm(Long memberId) {
         // 지원 정보 조회
-        Apply apply = applyRepository.findByMemberId(memberId)
+        Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
         // 지원서를 임시 저장하지 않은 경우 실패
@@ -148,7 +148,7 @@ public class ApplyService implements ApplyUsecase {
         validateQuestions(answers, recruit);
 
         // 3. 지원 정보 조회
-        Apply apply = applyRepository.findByMemberId(memberId)
+        Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
         String content = map2JsonSerializer.serializeAsString(answers);
@@ -180,7 +180,7 @@ public class ApplyService implements ApplyUsecase {
         // 3. 지원 내역 조회
         //    - 없으면: 임시 저장 지원 상태 반환
         //    - 있으면: 상태 값에 따라 분기
-        Optional<Apply> optionalApply = applyRepository.findByMemberId(member.getId());
+        Optional<Apply> optionalApply = applyRepository.findByMemberIdInActiveRecruit(member.getId(), LocalDateTime.now());
 
         if (optionalApply.isEmpty()) {
             return ApplyStatusResponse.tempSavedApply();
@@ -221,7 +221,7 @@ public class ApplyService implements ApplyUsecase {
     }
 
     private void createApplyIfNotExists(Member member, JobFamily jobFamily) {
-        if (!applyRepository.existsByMemberId(member.getId())) {
+        if (!applyRepository.existsByMemberIdInActiveRecruit(member.getId(), LocalDateTime.now())) {
             try {
                 var recruit = getPeriodRecruit(jobFamily);
                 var newApply = Apply.createApply(member, recruit);

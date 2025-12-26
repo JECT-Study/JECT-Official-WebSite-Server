@@ -5,6 +5,7 @@ import org.ject.support.domain.recruit.domain.Recruit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.query.Param;
@@ -15,6 +16,12 @@ public interface ApplyRepository extends JpaRepository<Apply, Long>, ApplyQueryR
 
     @Query("select a from Apply a where a.member.id = :memberId")
     Optional<Apply> findByMemberId(Long memberId);
+
+    @Query("select a from Apply a join a.recruit r where a.member.id = :memberId and r.startDate <= :now and r.endDate >= :now")
+    Optional<Apply> findByMemberIdInActiveRecruit(@Param("memberId") Long memberId, @Param("now") LocalDateTime now);
+
+    @Query("select count(a) > 0 from Apply a join a.recruit r where a.member.id = :memberId and r.startDate <= :now and r.endDate >= :now")
+    boolean existsByMemberIdInActiveRecruit(@Param("memberId") Long memberId, @Param("now") LocalDateTime now);
 
     List<Apply> findByRecruitAndStatus(Recruit recruit, Apply.Status status);
 
