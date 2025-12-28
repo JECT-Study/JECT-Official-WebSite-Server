@@ -174,27 +174,9 @@ public class ApplyService implements ApplyUsecase {
         Member member = memberRepository.findByEmail(email)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
-        if (!member.isProfileComplete()) {
-            return ApplyStatusResponse.tempSavedProfile();
-        }
-        // 3. 지원 내역 조회
-        //    - 없으면: 임시 저장 지원 상태 반환
-        //    - 있으면: 상태 값에 따라 분기
-        Optional<Apply> optionalApply = applyRepository.findByMemberIdInActiveRecruit(member.getId(), LocalDateTime.now());
-
-        if (optionalApply.isEmpty()) {
-            return ApplyStatusResponse.tempSavedApply();
-        }
-
-        Apply apply = optionalApply.get();
-
-        // 4. 지원서가 임시 저장 상태인 경우
-        if (apply.isTempSaved()) {
-            return ApplyStatusResponse.tempSavedApply();
-        }
-
-        // 5. 그 외에는 실제 지원 상태 반환
-        return ApplyStatusResponse.of(apply.getStatus());
+        return applyRepository.findByMemberIdInActiveRecruit(member.getId(), LocalDateTime.now())
+                .map(ApplyStatusResponse::of)
+                .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
     }
 
     @Override
