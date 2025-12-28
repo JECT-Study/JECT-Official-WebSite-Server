@@ -2,6 +2,7 @@ package org.ject.support.domain.apply.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
@@ -54,5 +55,5 @@ public interface ApplyApiSpec {
             description = "지원자의 프로필을 작성(저장)합니다."
     )
     void saveProfile(@AuthPrincipal Long memberId,
-                     @RequestBody ApplyProfileRequest request);
+                     @RequestBody @Valid ApplyProfileRequest request);
 }
