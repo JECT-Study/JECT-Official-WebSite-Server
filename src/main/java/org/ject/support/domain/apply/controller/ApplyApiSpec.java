@@ -44,9 +44,9 @@ public interface ApplyApiSpec {
             summary = "지원 상태 확인",
             description = """
                     지원자의 지원서 제출 여부를 확인합니다.
+                    - JOINED: 프로필을 저장한 경우
                     - TEMP_SAVED: 작성 중인 지원서가 있는 경우
                     - SUBMITTED: 이미 지원서를 제출한 경우
-                    - JOINED: 합격하여 팀에 합류한 경우
                     """)
     ApplyStatusResponse checkApplyStatus(@RequestParam @Email String email);
 
