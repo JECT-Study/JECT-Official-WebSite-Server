@@ -191,19 +191,21 @@ class ApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 지원단계중_프로필작성을_하지_않았을_경우_STEP을_PROFILE로_STATUS를_TEMP_SAVED_반환() {
+    void 지원상태_조회_시_프로필작성을_하지_않았을_경우_예외발생() {
         // given
         String email = "test@example.com";
         Member member = Member.builder()
                 .build();
         given(memberRepository.findByEmail(email))
                 .willReturn(Optional.of(member));
+        given(applyRepository.findByMemberIdInActiveRecruit(eq(member.getId()), any()))
+                .willReturn(Optional.empty());
 
-        // when
-        ApplyStatusResponse result = applyService.checkApplyStatus(email);
-
-        // then
-        assertThat(result).isEqualTo(ApplyStatusResponse.tempSavedProfile());
+        // expected
+        assertThatThrownBy(() -> applyService.checkApplyStatus(email))
+                .isInstanceOf(ApplyException.class)
+                .extracting("errorCode")
+                .isEqualTo(ApplyErrorCode.NOT_FOUND_APPLY);
     }
 
     @Test
@@ -229,7 +231,7 @@ class ApplyServiceTest extends UnitTestSupport {
         ApplyStatusResponse result = applyService.checkApplyStatus(email);
 
         // then
-        assertThat(result).isEqualTo(ApplyStatusResponse.tempSavedApply());
+        assertThat(result.status()).isEqualTo(TEMP_SAVED);
     }
 
     @Test
@@ -255,7 +257,7 @@ class ApplyServiceTest extends UnitTestSupport {
         ApplyStatusResponse result = applyService.checkApplyStatus(email);
 
         // then
-        assertThat(result).isEqualTo(ApplyStatusResponse.of(SUBMITTED));
+        assertThat(result.status()).isEqualTo(SUBMITTED);
     }
 
     @Test
@@ -560,23 +562,6 @@ class ApplyServiceTest extends UnitTestSupport {
         assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
         assertThat(member.getCareerDetails()).isEqualTo(request.careerDetails());
         assertThat(member.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
-    }
-
-    @Test
-    void 지원상태확인_지원내역없음_신규지원가능() {
-        // given
-        String email = "re-apply@example.com";
-        Member member = getApplicant(1L, email);
-        member.edit(member.toEditor().name("Test").phoneNumber("010-0000-0000").build()); // 프로필 작성 완료 상태로
-
-        given(memberRepository.findByEmail(email)).willReturn(Optional.of(member));
-        given(applyRepository.findByMemberIdInActiveRecruit(eq(member.getId()), any())).willReturn(Optional.empty());
-
-        // when
-        ApplyStatusResponse result = applyService.checkApplyStatus(email);
-
-        // then
-        assertThat(result).isEqualTo(ApplyStatusResponse.tempSavedApply());
     }
 
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {
