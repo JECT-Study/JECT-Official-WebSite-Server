@@ -66,6 +66,7 @@ public class ApplyService implements ApplyUsecase {
 
         ApplicationForm tempApplicationForm = apply.getApplicationForm();
         return TempApplicationFormResponse.from(
+                apply.getRecruit().getJobFamily(),
                 string2MapSerializer.serializeAsMap(tempApplicationForm.getContent()),
                 tempApplicationForm.getPortfolios()
                         .stream()

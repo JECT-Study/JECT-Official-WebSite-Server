@@ -37,7 +37,7 @@ public record TempApplyDetailResponse(
             DateTimeUtil.formatWithDayOfWeek(apply.getCreatedAt()),
             DateTimeUtil.formatWithDayOfWeek(apply.getUpdatedAt()),
             apply.getRecruit().getJobFamily(),
-            TempApplicationFormResponse.from(answers, portfolios)
+            TempApplicationFormResponse.from(apply.getRecruit().getJobFamily(), answers, portfolios)
         );
     }
 }
