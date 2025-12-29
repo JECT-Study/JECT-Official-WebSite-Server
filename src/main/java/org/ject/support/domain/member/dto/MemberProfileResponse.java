@@ -12,6 +12,7 @@ import java.util.List;
 public record MemberProfileResponse(
         Long id,
         String name,
+        String phoneNumber,
         CareerDetails careerDetails,
         Region region,
         ExperiencePeriod experiencePeriod,
@@ -21,6 +22,7 @@ public record MemberProfileResponse(
         return MemberProfileResponse.builder()
                 .id(member.getId())
                 .name(member.getName())
+                .phoneNumber(member.getPhoneNumber())
                 .careerDetails(member.getCareerDetails())
                 .region(member.getRegion())
                 .experiencePeriod(member.getExperiencePeriod())

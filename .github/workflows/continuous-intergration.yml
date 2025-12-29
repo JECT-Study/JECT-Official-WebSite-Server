@@ -33,7 +33,7 @@ jobs:
         uses: gradle/gradle-build-action@v3
         with:
           arguments: build
-          cache-read-only: false
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
 
       - name: Build with Gradle
         run: ./gradlew build -x test
