@@ -2,12 +2,16 @@ package org.ject.support.domain.recruit.controller;
 
 import org.assertj.core.api.Assertions;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberStatus;
+import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.QuestionRepository;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.AuthenticatedUser;
 import org.ject.support.testconfig.IntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +27,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.ject.support.domain.member.Role.USER;
 import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -48,6 +51,9 @@ class QuestionControllerTest {
     MemberRepository memberRepository;
 
     @Autowired
+    SemesterRepository semesterRepository;
+
+    @Autowired
     RedisTemplate<String, String> redisTemplate;
 
     Member member;
@@ -62,10 +68,15 @@ class QuestionControllerTest {
                 Question.builder().sequence(5).inputType(TEXT).isRequired(true).title("title5").label("label").build()
         );
 
+        Semester savedSemester = semesterRepository.save(Semester.builder()
+                .name("1기")
+                .isRecruiting(true)
+                .build());
+
         Recruit recruit = Recruit.builder()
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
-                .semesterId(1L)
+                .semester(savedSemester)
                 .jobFamily(JobFamily.BE)
                 .build();
 
@@ -77,12 +88,13 @@ class QuestionControllerTest {
 
         member = Member.builder()
                 .email("test32@gmail.com")
+                .semesterId(1L)
                 .jobFamily(JobFamily.BE)
                 .name("김젝트")
-                .role(USER)
+                .role(Role.SEMESTER)
                 .phoneNumber("01012345678")
-                .semesterId(1L)
                 .pin("123456") // PIN 필드 추가
+                .status(MemberStatus.ACTIVE)
                 .build();
         memberRepository.save(member);
     }

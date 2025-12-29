@@ -1,6 +1,5 @@
 package org.ject.support.common.security.config;
 
-import java.util.Arrays;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtAccessDeniedHandler;
 import org.ject.support.common.security.jwt.JwtAuthenticationEntryPoint;
@@ -22,6 +21,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 @RequiredArgsConstructor
@@ -47,9 +48,9 @@ public class SecurityConfig {
     @Bean
     public static RoleHierarchy roleHierarchy() {
         return RoleHierarchyImpl.fromHierarchy("""
-                ROLE_ADMIN > ROLE_USER
-                ROLE_USER > ROLE_TEMP
-                ROLE_TEMP > ROLE_VERIFICATION
+                ROLE_ADMIN > ROLE_SEMESTER
+                ROLE_SEMESTER > ROLE_APPLY
+                ROLE_APPLY > ROLE_VERIFICATION
                 """);
     }
 

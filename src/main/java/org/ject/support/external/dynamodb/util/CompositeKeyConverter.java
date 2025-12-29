@@ -6,6 +6,7 @@ import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
+@Deprecated
 public class CompositeKeyConverter implements AttributeConverter<CompositeKey> {
     @Override
     public AttributeValue transformFrom(final CompositeKey compositeKey) {

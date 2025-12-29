@@ -1,18 +1,18 @@
 package org.ject.support.common.security.jwt;
 
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.env.Environment;
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -22,8 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.common.exception.GlobalErrorCode.AUTHENTICATION_REQUIRED;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-class JwtTokenProviderTest {
+class JwtTokenProviderTest extends UnitTestSupport {
 
     private JwtTokenProvider jwtTokenProvider;
 
@@ -32,13 +31,17 @@ class JwtTokenProviderTest {
     @Mock
     private HttpServletRequest request;
 
+    @Mock
+    private Environment environment;
+
     private Member testMember;
     private Authentication authentication;
 
     @BeforeEach
     void setUp() {
         jwtTokenProvider = new JwtTokenProvider();
-        jwtCookieProvider = new JwtCookieProvider();
+        jwtCookieProvider = new JwtCookieProvider(environment);
+
         ReflectionTestUtils.setField(jwtTokenProvider, "accessExpirationTime", 3600000L); // 1시간
         ReflectionTestUtils.setField(jwtTokenProvider, "refreshExpirationTime", 1209600000L); // 2주
         
@@ -52,7 +55,8 @@ class JwtTokenProviderTest {
                 .email("test@example.com")
                 .name("Test User")
                 .phoneNumber("01012345678")
-                .role(Role.USER)
+                .status(MemberStatus.ACTIVE)
+                .role(Role.SEMESTER)
                 .jobFamily(JobFamily.BE)
                 .build();
 
@@ -61,8 +65,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Access 토큰 생성 테스트")
-    void createAccessToken() {
+    void Access_토큰_생성_테스트() {
         // when
         String token = jwtTokenProvider.createAccessToken(authentication, testMember.getId());
 
@@ -73,8 +76,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Refresh 토큰 생성 테스트")
-    void createRefreshToken() {
+    void Refresh_토큰_생성_테스트() {
         // when
         String token = jwtTokenProvider.createRefreshToken(authentication, testMember.getId());
 
@@ -84,8 +86,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("토큰으로부터 Authentication 객체 추출 테스트")
-    void getAuthenticationByToken() {
+    void 토큰으로부터_Authentication_객체_추출_테스트() {
         // given
         String token = jwtTokenProvider.createAccessToken(authentication, testMember.getId());
 
@@ -99,8 +100,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("HTTP 요청에서 토큰 추출 테스트")
-    void resolveToken() {
+    void HTTP_요청에서_토큰_추출_테스트() {
         // given
         String token = "test-token";
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
@@ -113,14 +113,13 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("쿠키 생성 테스트")
-    void createCookies() {
+    void 쿠키_생성_테스트() {
         // given
         String token = "test-token";
 
         // when
-        Cookie refreshCookie = jwtCookieProvider.createRefreshCookie(token);
-        Cookie accessCookie = jwtCookieProvider.createAccessCookie(token);
+        ResponseCookie refreshCookie = jwtCookieProvider.createRefreshCookie(token);
+        ResponseCookie accessCookie = jwtCookieProvider.createAccessCookie(token);
 
         // then
         assertThat(refreshCookie.getName()).isEqualTo("refreshToken");
@@ -133,8 +132,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("토큰 재발급 테스트")
-    void reissueAccessToken() {
+    void 토큰_재발급_테스트() {
         // given
         String refreshToken = jwtTokenProvider.createRefreshToken(authentication, testMember.getId());
 
@@ -150,8 +148,7 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("유효하지 않은 토큰 검증 테스트")
-    void validateInvalidToken() {
+    void 유효하지_않은_토큰_검증_테스트() {
         // given
         String invalidToken = "invalid-token";
 
@@ -160,30 +157,27 @@ class JwtTokenProviderTest {
     }
 
     @Test
-    @DisplayName("Authentication이 null일 때 예외 발생 테스트")
-    void validateNullAuthentication() {
+    void Authentication이_null일_때_예외_발생_테스트() {
         // when & then
         assertThatThrownBy(() -> jwtTokenProvider.createAccessToken(null, testMember.getId()))
                 .isInstanceOf(GlobalException.class)
                 .extracting(e -> ((GlobalException) e).getErrorCode().getMessage())
                 .isEqualTo(AUTHENTICATION_REQUIRED.getMessage());
     }
-    
+
     @Test
-    @DisplayName("토큰에 ROLE_ 접두사가 포함된 역할이 저장되는지 확인")
-    void createAccessToken_ShouldStoreRoleWithPrefix() {
+    void 토큰에_ROLE_접두사가_포함된_역할이_저장되는지_확인() {
         // when
         String token = jwtTokenProvider.createAccessToken(authentication, testMember.getId());
-        
+
         // then
         Authentication resultAuth = jwtTokenProvider.getAuthenticationByToken(token);
         assertThat(resultAuth.getAuthorities()).isNotEmpty();
-        assertThat(resultAuth.getAuthorities().iterator().next().getAuthority()).isEqualTo("ROLE_USER");
+        assertThat(resultAuth.getAuthorities().iterator().next().getAuthority()).isEqualTo("ROLE_SEMESTER");
     }
-    
+
     @Test
-    @DisplayName("토큰에서 ROLE_ 접두사가 있는 역할을 추출할 때 정상적으로 처리되는지 확인")
-    void getAuthenticationByToken_WithRolePrefix_ShouldHandleCorrectly() {
+    void 토큰에서_ROLE_접두사가_있는_역할을_추출할_때_정상적으로_처리되는지_확인() {
         // given
         // 테스트를 위해 ROLE_ 접두사가 있는 역할을 가진 사용자로 테스트 멤버 재설정
         testMember = Member.builder()
@@ -191,6 +185,7 @@ class JwtTokenProviderTest {
                 .email("admin@example.com")
                 .name("Admin User")
                 .phoneNumber("01098765432")
+                .status(MemberStatus.ACTIVE)
                 .role(Role.ADMIN)
                 .build();
         

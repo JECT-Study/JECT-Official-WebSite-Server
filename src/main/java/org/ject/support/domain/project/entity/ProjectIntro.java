@@ -15,6 +15,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.base.BaseTimeEntity;
 
 @Entity
@@ -46,7 +47,13 @@ public class ProjectIntro extends BaseTimeEntity {
         return this.category == category;
     }
 
+    @Getter
+    @RequiredArgsConstructor
     public enum Category {
-        SERVICE, DEV
+        BANNER("배너 이미지"),
+        SAMPLE("샘플 이미지"),
+        DESCRIPTION("소개 이미지");
+
+        private final String description;
     }
 }

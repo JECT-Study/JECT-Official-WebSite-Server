@@ -1,12 +1,15 @@
 package org.ject.support.domain.admin.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.admin.dto.AdminAuthSendSlackRequest;
-import org.ject.support.domain.admin.dto.AdminAuthSendSlackResponse;
-import org.ject.support.domain.admin.dto.AdminVerifySlackRequest;
-import org.ject.support.domain.admin.dto.AdminVerifySlackResponse;
+import org.ject.support.common.security.CustomSuccessHandler;
+import org.ject.support.domain.admin.dto.AdminAuthSendRequest;
+import org.ject.support.domain.admin.dto.AdminAuthSendResponse;
+import org.ject.support.domain.admin.dto.AdminVerifyRequest;
 import org.ject.support.domain.admin.service.AdminAuthService;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,22 +21,24 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminAuthController implements AdminAuthApiSpec {
 
     private final AdminAuthService adminAuthService;
+    private final CustomSuccessHandler customSuccessHandler;
 
-    @PostMapping("/auth/slack-codes")
-    public AdminAuthSendSlackResponse sendAdminAuthSlackCode(@RequestBody @Valid AdminAuthSendSlackRequest request) {
-        String email = adminAuthService.sendSlackAdminAuthCode(request.email());
-        return AdminAuthSendSlackResponse.builder()
+    @PostMapping("/auth/codes")
+    public AdminAuthSendResponse sendAdminAuthCode(@RequestBody @Valid AdminAuthSendRequest request) {
+        String email = adminAuthService.sendAdminAuthCode(request.email());
+        return AdminAuthSendResponse.builder()
                 .email(email)
                 .build();
     }
 
-    @PostMapping("/auth/slack-codes/verify")
-    public AdminVerifySlackResponse verifyAdminAuthSlackCode(@RequestBody @Valid AdminVerifySlackRequest request) {
-        // TODO : 관리자 인증 Slack 코드 검증 로직 구현, accessToken 발급
-        return AdminVerifySlackResponse.builder()
-                .id("1")
-                .email(request.email())
-                .name("관리자")
-                .build();
+    @PostMapping("/auth/codes/verify")
+    public boolean verifyAdminAuthCode(
+            @RequestBody @Valid AdminVerifyRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        Authentication authentication = adminAuthService.verifyAdminAuthCode(request.email(), request.code());
+        customSuccessHandler.onAuthenticationSuccess(httpRequest, httpResponse, authentication);
+        return true;
     }
 }

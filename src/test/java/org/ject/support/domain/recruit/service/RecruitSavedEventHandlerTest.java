@@ -1,16 +1,16 @@
 package org.ject.support.domain.recruit.service;
 
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.RecruitSavedEvent;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -19,8 +19,7 @@ import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
-class RecruitSavedEventHandlerTest {
+class RecruitSavedEventHandlerTest extends UnitTestSupport {
 
     @InjectMocks
     RecruitSavedEventHandler recruitSavedEventHandler;
@@ -40,7 +39,7 @@ class RecruitSavedEventHandlerTest {
     void setUp() {
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semesterId(1L)
+                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))

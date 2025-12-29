@@ -2,21 +2,23 @@ package org.ject.support.domain.member.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 
 public class MemberDto {
 
-    public record RegisterRequest (
+    public record RegisterRequest(
 
             @NotBlank @Pattern(regexp = "^\\d{6}$", message = "PIN 번호는 6자리 숫자여야 합니다.") String pin) {
 
-        public Member toEntity(String email, String encodedPin, Long semesterId) {
+        public Member toEntity(Long semesterId, String email, String encodedPin) {
             return Member.builder()
-                    .email(email)
                     .semesterId(semesterId)
+                    .email(email)
                     .pin(encodedPin)
-                    .role(Role.TEMP)
+                    .status(MemberStatus.ACTIVE)
+                    .role(Role.APPLY)
                     .build();
         }
     }
@@ -24,7 +26,7 @@ public class MemberDto {
     /**
      * 임시회원이 최초로 이름과 전화번호를 등록할 때 사용하는 DTO
      */
-    public record InitialProfileRequest (
+    public record InitialProfileRequest(
 
             @NotBlank @Pattern(regexp = "^[가-힣]{1,5}$", message = "한글 1~5글자만 입력 가능합니다.")
             String name,

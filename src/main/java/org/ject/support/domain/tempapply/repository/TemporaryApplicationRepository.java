@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+@Deprecated
 @Repository
 public class TemporaryApplicationRepository extends AbstractDynamoDbRepository<TemporaryApplication> {
     public TemporaryApplicationRepository(final DynamoDbTemplate dynamoDbTemplate) {

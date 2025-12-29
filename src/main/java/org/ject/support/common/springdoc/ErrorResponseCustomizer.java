@@ -70,7 +70,7 @@ public class ErrorResponseCustomizer implements OperationCustomizer {
         example.description(apiErrorResponse.description());
         return ExampleHolder.builder()
                 .example(example)
-                .code(apiErrorResponse.code())
+                .code(errorCode.getHttpStatus().value())
                 .name(apiErrorResponse.name())
                 .build();
     }

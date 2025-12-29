@@ -3,6 +3,7 @@ package org.ject.support.domain.project.controller;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectResponse;
+import org.ject.support.domain.project.dto.ProjectSummaryResponse;
 import org.ject.support.domain.project.entity.Project;
 import org.ject.support.domain.project.service.ProjectService;
 import org.springframework.data.domain.Page;
@@ -22,15 +23,20 @@ public class ProjectController implements ProjectApiSpec {
 
     @Override
     @GetMapping
-    public Page<ProjectResponse> findProjects(@RequestParam final Project.Category category,
-                                              @RequestParam(required = false) final Long semesterId,
+    public Page<ProjectResponse> findProjects(@RequestParam(required = false) final Project.Category category,
                                               final Pageable pageable) {
-        return projectService.findProjects(category, semesterId, pageable);
+        return projectService.findProjects(category, pageable);
     }
 
     @Override
     @GetMapping("/{projectId}")
     public ProjectDetailResponse findProjectDetails(@PathVariable final Long projectId) {
         return projectService.findProjectDetails(projectId);
+    }
+
+    @Override
+    @GetMapping("/summary")
+    public ProjectSummaryResponse findProjectSummary() {
+        return projectService.findProjectSummary();
     }
 }

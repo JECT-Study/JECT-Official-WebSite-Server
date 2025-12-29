@@ -19,7 +19,7 @@ public class QuestionController implements QuestionApiSpec {
 
     @Override
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_APPLY')")
     public QuestionResponses findQuestions(@RequestParam JobFamily jobFamily) {
         return questionService.findQuestions(jobFamily);
     }

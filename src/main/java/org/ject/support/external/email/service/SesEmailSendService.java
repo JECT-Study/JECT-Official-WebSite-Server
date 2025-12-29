@@ -2,11 +2,10 @@ package org.ject.support.external.email.service;
 
 import com.google.common.collect.Lists;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.Map2JsonSerializer;
-import org.ject.support.external.email.domain.EmailSendGroup;
-import org.ject.support.external.email.exception.EmailErrorCode;
+import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.EmailException;
-import org.ject.support.external.email.repository.EmailSendGroupRepository;
 import org.ject.support.external.infrastructure.SesRateLimiter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -25,6 +24,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
+import static org.ject.support.external.email.exception.EmailErrorCode.EMAIL_SEND_FAILURE;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SesEmailSendService implements EmailSendService {
@@ -32,7 +34,6 @@ public class SesEmailSendService implements EmailSendService {
     private static final String GROUP_CODE_TAG_NAME = "group_code";
 
     private final Map2JsonSerializer map2JsonSerializer;
-    private final EmailSendGroupRepository emailSendGroupRepository;
     private final SesV2Client sesV2Client;
     private final SesRateLimiter rateLimiter;
 
@@ -40,42 +41,40 @@ public class SesEmailSendService implements EmailSendService {
     private String from;
 
     @Override
-    public void sendTemplatedEmail(String sendGroupCode, String to, Map<String, String> params) {
-        // 전송 그룹 정보 조회
-        EmailSendGroup sendGroup = getSendGroup(sendGroupCode);
-
+    public void sendTemplatedEmail(EmailTemplate sendGroupCode, String toEmail, Map<String, String> params) {
         // 이메일 콘텐츠 구성
         EmailContent emailContent = EmailContent.builder()
-                .template(getTemplate(sendGroup.getTemplateName(), params))
+                .template(getTemplate(sendGroupCode.getTemplateName(), params))
                 .build();
 
         // 이메일 그룹 식별용 태그 설정
-        MessageTag messageTag = getMessageTag(sendGroup.getCode());
+        MessageTag messageTag = getMessageTag(sendGroupCode.getTag());
 
         // 단건 이메일 요청 생성
         SendEmailRequest emailRequest = SendEmailRequest.builder()
-                .destination(getDestination(to))
+                .destination(getDestination(toEmail))
                 .content(emailContent)
                 .fromEmailAddress(from)
                 .emailTags(messageTag)
                 .build();
 
-        // 이메일 전송
-        sesV2Client.sendEmail(emailRequest);
+        try {
+            sesV2Client.sendEmail(emailRequest);
+        } catch (Exception e) {
+            log.error("이메일 전송 실패 sendGroupCode={}", sendGroupCode.getTemplateName(), e);
+            throw new EmailException(EMAIL_SEND_FAILURE);
+        }
     }
 
     @Override
-    public void sendBulkTemplatedEmail(String sendGroupCode, List<String> toList, Map<String, String> params) {
-        // 전송 그룹 정보 조회
-        EmailSendGroup sendGroup = getSendGroup(sendGroupCode);
-
+    public void sendBulkTemplatedEmail(EmailTemplate sendGroupCode, List<String> toList, Map<String, String> params) {
         // 이메일 콘텐츠 구성
         BulkEmailContent content = BulkEmailContent.builder()
-                .template(getTemplate(sendGroup.getTemplateName(), params))
+                .template(getTemplate(sendGroupCode.getTemplateName(), params))
                 .build();
 
         // 이메일 그룹 식별용 태그 설정
-        MessageTag messageTag = getMessageTag(sendGroup.getCode());
+        MessageTag messageTag = getMessageTag(sendGroupCode.getTag());
 
         // 수신자 리스트를 초당 전송량만큼 분할하여 전송
         Lists.partition(toList, rateLimiter.getRateLimitPerSecond())
@@ -97,11 +96,6 @@ public class SesEmailSendService implements EmailSendService {
 
                     sesV2Client.sendBulkEmail(sendBulkEmailRequest);
                 });
-    }
-
-    private EmailSendGroup getSendGroup(String sendGroupCode) {
-        return emailSendGroupRepository.findByCode(sendGroupCode)
-                .orElseThrow(() -> new EmailException(EmailErrorCode.NOT_FOUND_SEND_GROUP));
     }
 
     private Template getTemplate(String templateName, Map<String, String> parameter) {

@@ -1,18 +1,9 @@
 package org.ject.support.external.s3;
 
-import org.ject.support.domain.file.dto.UploadFileRequest;
-import org.ject.support.domain.file.dto.UploadFileResponse;
-import org.ject.support.domain.file.exception.FileException;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
-import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.when;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -20,14 +11,19 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
+import org.ject.support.base.UnitTestSupport;
+import org.ject.support.domain.file.dto.UploadFileRequest;
+import org.ject.support.domain.file.dto.UploadFileResponse;
+import org.ject.support.domain.file.exception.FileException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.when;
-
-@ExtendWith(MockitoExtension.class)
-class S3ServiceTest {
+class S3ServiceTest extends UnitTestSupport {
 
     private static final String CDN_DOMAIN = "https://test-ject-cdn.net";
     private static final int EXPIRE_MINUTES = 10;
@@ -58,8 +54,7 @@ class S3ServiceTest {
     }
 
     @Test
-    @DisplayName("포트폴리오 업로드를 위한 pre-signed url 생성")
-    void upload_portfolio() throws MalformedURLException {
+    void 포트폴리오_업로드를_위한_presigned_url_생성() throws MalformedURLException {
         // given
         when(presignedPutObjectRequest.url()).thenReturn(URI.create(expectedPortfolioUploadUrls.get(0)).toURL());
         when(presignedPutObjectRequest.expiration()).thenReturn(expirationTime);
@@ -82,8 +77,7 @@ class S3ServiceTest {
     }
 
     @Test
-    @DisplayName("객체 키 생성")
-    void create_key_name() throws MalformedURLException {
+    void 객체_키_생성() throws MalformedURLException {
         // given
         when(presignedPutObjectRequest.url()).thenReturn(URI.create(expectedPortfolioUploadUrls.get(0)).toURL());
         when(presignedPutObjectRequest.expiration()).thenReturn(expirationTime);
@@ -104,8 +98,7 @@ class S3ServiceTest {
     }
 
     @Test
-    @DisplayName("유효하지 않은 확장자로 인한 포트폴리오 업로드 실패")
-    void upload_portfolio_fail() {
+    void 유효하지_않은_확장자로_인한_포트폴리오_업로드_실패() {
         // given
         List<UploadFileRequest> invalidRequests = List.of(new UploadFileRequest("test.png", "image/png", 12345));
 
@@ -116,8 +109,7 @@ class S3ServiceTest {
 
 
     @Test
-    @DisplayName("포트폴리오 최대 용량을 초과해 업로드 실패")
-    void exceeded_portfolio_max_size() {
+    void 포트폴리오_최대_용량을_초과해_업로드_실패() {
         // given
         List<UploadFileRequest> invalidRequests = List.of(
                 new UploadFileRequest("test1.pdf", "application/pdf", 53428800),

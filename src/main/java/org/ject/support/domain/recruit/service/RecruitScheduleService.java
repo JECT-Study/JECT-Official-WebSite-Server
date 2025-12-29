@@ -2,7 +2,7 @@ package org.ject.support.domain.recruit.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.tempapply.service.RemindApplyService;
+import org.ject.support.domain.apply.service.RemindApplyService;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 

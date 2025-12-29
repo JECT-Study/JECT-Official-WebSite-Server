@@ -1,12 +1,6 @@
 package org.ject.support.external.dynamodb.repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.tempapply.domain.TemporaryApplication;
 import org.ject.support.domain.tempapply.repository.TemporaryApplicationRepository;
 import org.ject.support.external.dynamodb.domain.CompositeKey;
@@ -17,6 +11,14 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@Deprecated
 @IntegrationTest
 class TemporaryApplicationRepositoryTest {
 

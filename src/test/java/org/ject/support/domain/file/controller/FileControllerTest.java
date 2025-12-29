@@ -1,10 +1,16 @@
 package org.ject.support.domain.file.controller;
 
+import org.ject.support.domain.file.exception.FileErrorCode;
+import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberStatus;
+import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.Constants;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.ject.support.testconfig.AuthenticatedUser;
 import org.ject.support.testconfig.IntegrationTest;
@@ -20,11 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.PD;
-import static org.ject.support.domain.member.JobFamily.PM;
-import static org.ject.support.domain.member.Role.USER;
+import static org.ject.support.domain.file.exception.FileErrorCode.INVALID_EXTENSION;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -47,16 +49,20 @@ class FileControllerTest extends ApplicationPeriodTest {
     @Autowired
     private RecruitRepository recruitRepository;
 
+    @Autowired
+    private SemesterRepository semesterRepository;
+
     @BeforeEach
     void setUp() {
         member = Member.builder()
                 .email("test32@gmail.com")
-                .jobFamily(BE)
-                .name("홍길동") // 한글 1~5글자로 수정
-                .role(USER)
-                .phoneNumber("01012345678") // 010으로 시작하는 11자리 수정
                 .semesterId(1L)
+                .jobFamily(JobFamily.BE)
+                .name("홍길동") // 한글 1~5글자로 수정
+                .role(Role.SEMESTER)
+                .phoneNumber("01012345678") // 010으로 시작하는 11자리 수정
                 .pin("123456") // PIN 추가
+                .status(MemberStatus.ACTIVE)
                 .build();
         memberRepository.save(member);
     }
@@ -66,9 +72,10 @@ class FileControllerTest extends ApplicationPeriodTest {
     @AuthenticatedUser
     @Transactional
     void test_access_period() throws Exception {
+        Semester savedSemester = semesterRepository.save(getSemester(true));
         recruitRepository.save(Recruit.builder()
-                .jobFamily(BE)
-                .semesterId(1L)
+                .jobFamily(JobFamily.BE)
+                .semester(savedSemester)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .build());
@@ -87,20 +94,21 @@ class FileControllerTest extends ApplicationPeriodTest {
     @Transactional
     void not_in_period() throws Exception {
         // given
+        Semester savedSemester = semesterRepository.save(getSemester(true));
         recruitRepository.save(Recruit.builder()
-                .jobFamily(BE)
-                .semesterId(1L)
+                .jobFamily(JobFamily.BE)
+                .semester(savedSemester)
                 .startDate(LocalDateTime.now().plusDays(3))
                 .endDate(LocalDateTime.now().plusDays(5))
                 .build());
 
-        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, PM.name())))
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.PM.name())))
                 .thenReturn(Boolean.toString(false));
-        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, PD.name())))
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.PD.name())))
                 .thenReturn(Boolean.toString(false));
-        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, FE.name())))
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.FE.name())))
                 .thenReturn(Boolean.toString(false));
-        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, BE.name())))
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.BE.name())))
                 .thenReturn(Boolean.toString(false));
 
         // then
@@ -108,7 +116,7 @@ class FileControllerTest extends ApplicationPeriodTest {
                         .contentType("application/json")
                         .param("memberId", member.getId().toString())
                         .content(getContent()))
-                .andExpect(content().string(containsString("G-11")))
+                .andExpect(content().string(containsString("GLOBAL-9")))
                 .andDo(print());
     }
 
@@ -130,7 +138,7 @@ class FileControllerTest extends ApplicationPeriodTest {
                                     }
                                 ]
                                 """))
-                .andExpect(content().string(containsString("INVALID_EXTENSION")))
+                .andExpect(content().string(containsString(INVALID_EXTENSION.getCode())))
                 .andDo(print());
     }
 
@@ -140,9 +148,10 @@ class FileControllerTest extends ApplicationPeriodTest {
     @Transactional
     void exceeded_portfolio_max_size() throws Exception {
         // given
+        Semester savedSemester = semesterRepository.save(getSemester(true));
         recruitRepository.save(Recruit.builder()
-                .jobFamily(BE)
-                .semesterId(1L)
+                .jobFamily(JobFamily.BE)
+                .semester(savedSemester)
                 .startDate(LocalDateTime.now().plusDays(3))
                 .endDate(LocalDateTime.now().plusDays(5))
                 .build());
@@ -166,10 +175,17 @@ class FileControllerTest extends ApplicationPeriodTest {
                                 ]
                                 """)
                 )
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("EXCEEDED_PORTFOLIO_SIZE")))
+                .andExpect(status().isPayloadTooLarge())
+                .andExpect(content().string(containsString(FileErrorCode.EXCEEDED_PORTFOLIO_MAX_SIZE.getCode())))
                 .andDo(print())
                 .andReturn();
+    }
+
+    private Semester getSemester(boolean isRecruiting) {
+        return Semester.builder()
+                .name("1기")
+                .isRecruiting(isRecruiting)
+                .build();
     }
 
     private String getContent() {

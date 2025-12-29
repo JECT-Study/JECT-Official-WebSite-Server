@@ -20,8 +20,8 @@ public interface FileApiSpec {
             description = "프로젝트 썸네일, 소개서 등 콘텐츠를 업로드합니다."
     )
     @ApiErrorResponses(responses = {
-            @ApiErrorResponse(value = FileErrorCode.class, code = 400, name = "INVALID_EXTENSION"),
-            @ApiErrorResponse(value = FileErrorCode.class, code = 400, name = "EXCEEDED_PORTFOLIO_MAX_SIZE")
+            @ApiErrorResponse(value = FileErrorCode.class, name = "INVALID_EXTENSION"),
+            @ApiErrorResponse(value = FileErrorCode.class, name = "EXCEEDED_PORTFOLIO_MAX_SIZE")
     })
     List<UploadFileResponse> uploadContents(@AuthPrincipal final Long memberId,
                                             @RequestBody final List<UploadFileRequest> requests);
@@ -31,8 +31,8 @@ public interface FileApiSpec {
             description = "지원자의 포트폴리오를 업로드합니다."
     )
     @ApiErrorResponses(responses = {
-            @ApiErrorResponse(value = FileErrorCode.class, code = 400, name = "INVALID_EXTENSION"),
-            @ApiErrorResponse(value = FileErrorCode.class, code = 400, name = "EXCEEDED_PORTFOLIO_MAX_SIZE")
+            @ApiErrorResponse(value = FileErrorCode.class, name = "INVALID_EXTENSION"),
+            @ApiErrorResponse(value = FileErrorCode.class, name = "EXCEEDED_PORTFOLIO_MAX_SIZE")
     })
     List<UploadFileResponse> uploadPortfolios(@AuthPrincipal final Long memberId,
                                               @RequestBody final List<UploadFileRequest> requests);

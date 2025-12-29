@@ -14,6 +14,7 @@ import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 import java.util.List;
 import java.util.Optional;
 
+@Deprecated
 @Repository
 @RequiredArgsConstructor
 public abstract class AbstractDynamoDbRepository<T extends EntityWithPrimaryKey> implements DynamoDbRepository<T> {

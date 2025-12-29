@@ -1,6 +1,5 @@
 package org.ject.support.common.response;
 
-import org.ject.support.common.exception.ErrorCode;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -30,8 +29,9 @@ public class ResponseWrapper implements ResponseBodyAdvice<Object> {
         }
 
         // Error Response 반환
-        if (body instanceof ErrorCode errorCode) {
-            return new ApiResponse<>(errorCode.getCode(),errorCode.getMessage());
+        if (body instanceof ErrorResponse errorResponse) {
+            response.setStatusCode(errorResponse.getStatus());
+            return new ApiResponse<>(errorResponse.getCode(), errorResponse.getMessages());
         }
 
         // Success Response 반환

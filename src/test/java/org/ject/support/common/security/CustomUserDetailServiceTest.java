@@ -1,7 +1,7 @@
 package org.ject.support.common.security;
 
-import java.util.Optional;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberException;
@@ -13,6 +13,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,7 +39,8 @@ class CustomUserDetailServiceTest {
                 .email("test@example.com")
                 .name("Test User")
                 .phoneNumber("01012345678")
-                .role(Role.USER)
+                .role(Role.SEMESTER)
+                .status(MemberStatus.ACTIVE)
                 .jobFamily(JobFamily.BE)
                 .build();
     }

@@ -1,6 +1,6 @@
 package org.ject.support.external.dynamodb.util;
 
-import org.ject.support.domain.recruit.dto.ApplyPortfolioDto;
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeConverter;
 import software.amazon.awssdk.enhanced.dynamodb.AttributeValueType;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Deprecated
 public class ApplyTemporaryPortfolioConverter implements AttributeConverter<List<ApplyPortfolioDto>> {
 
     private static final String FILE_URL = "fileUrl";

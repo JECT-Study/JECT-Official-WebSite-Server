@@ -25,4 +25,7 @@ public class Team extends BaseTimeEntity {
 
     @Column(length = 30, nullable = false)
     private String name;
+
+    @Column(nullable = false)
+    private Long semesterId;
 }

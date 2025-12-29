@@ -12,8 +12,6 @@ import java.lang.annotation.Target;
 public @interface ApiErrorResponse {
     Class<? extends ErrorCode> value();
 
-    int code();
-
     String name();
 
     String description() default "";

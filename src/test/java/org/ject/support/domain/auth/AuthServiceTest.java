@@ -17,6 +17,7 @@ import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.auth.dto.AuthVerificationResult;
 import org.ject.support.domain.auth.exception.AuthException;
 import org.ject.support.domain.auth.service.AuthService;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
@@ -88,7 +89,8 @@ class AuthServiceTest {
                 .id(TEST_MEMBER_ID)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
-                .role(Role.USER)
+                .status(MemberStatus.ACTIVE)
+                .role(Role.SEMESTER)
                 .build();
         
         given(valueOperations.get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
@@ -168,7 +170,8 @@ class AuthServiceTest {
                 .id(TEST_MEMBER_ID)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
-                .role(Role.USER)
+                .role(Role.SEMESTER)
+                .status(MemberStatus.ACTIVE)
                 .build();
         
         given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(member));
@@ -205,7 +208,8 @@ class AuthServiceTest {
                 .id(TEST_MEMBER_ID)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
-                .role(Role.USER)
+                .role(Role.SEMESTER)
+                .status(MemberStatus.ACTIVE)
                 .build();
         
         given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(member));
@@ -270,6 +274,7 @@ class AuthServiceTest {
         Member member = Member.builder()
                 .email(TEST_EMAIL)
                 .name("테스트")
+                .status(MemberStatus.ACTIVE)
                 .build();
         Authentication mockAuthentication = mock(Authentication.class);
         

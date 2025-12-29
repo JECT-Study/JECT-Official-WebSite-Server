@@ -1,28 +1,32 @@
 package org.ject.support.domain.member.service;
 
-import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
-
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto;
 import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
 import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
+import org.ject.support.domain.member.dto.MemberProfileResponse;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.exception.SemesterErrorCode;
+import org.ject.support.domain.recruit.exception.SemesterException;
+import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
 
 @Service
 @RequiredArgsConstructor
 public class MemberService {
 
     private final MemberRepository memberRepository;
-    private final OngoingSemesterProvider ongoingSemesterProvider;
+    private final SemesterRepository semesterRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
 
@@ -55,15 +59,18 @@ public class MemberService {
      */
     private Member createTempMemberWithPin(RegisterRequest registerRequest, String email) {
         String encodedPin = passwordEncoder.encode(registerRequest.pin());
-        Long ongoingSemesterId = ongoingSemesterProvider.getOngoingSemesterId();
-        Member member = registerRequest.toEntity(email, encodedPin, ongoingSemesterId);
+
+        Semester semester = semesterRepository.findRecruitingSemester()
+                .orElseThrow(() -> new SemesterException(SemesterErrorCode.NOT_FOUND_RECRUITING_SEMESTER));
+
+        Member member = registerRequest.toEntity(semester.getId(), email, encodedPin);
 
         return memberRepository.save(member);
     }
 
     /**
      * 임시회원의 최초 프로필 정보(이름, 전화번호) 등록
-     * 임시회원(ROLE_TEMP)이 최초로 이름과 전화번호를 등록할 때 호출됩니다.
+     * 임시회원(ROLE_APPLY)이 최초로 이름과 전화번호를 등록할 때 호출됩니다.
      */
     @Transactional
     public void registerInitialProfile(MemberDto.InitialProfileRequest request, Long memberId) {
@@ -88,5 +95,12 @@ public class MemberService {
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
         return member.isInitialed();
+    }
+
+    @Transactional(readOnly = true)
+    public MemberProfileResponse getMemberProfile(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
+        return MemberProfileResponse.of(member);
     }
 }

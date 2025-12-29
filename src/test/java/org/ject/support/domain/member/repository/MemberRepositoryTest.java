@@ -1,6 +1,7 @@
 package org.ject.support.domain.member.repository;
 
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.testconfig.QueryDslTestConfig;
@@ -17,7 +18,8 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @DataJpaTest
 class MemberRepositoryTest {
 
-    @Autowired MemberRepository memberRepository;
+    @Autowired
+    MemberRepository memberRepository;
 
     @Test
     void 이메일과_역활로_회원을_조회시_존재하는_회원을_반환한다() {
@@ -58,6 +60,7 @@ class MemberRepositoryTest {
                 .jobFamily(jobFamily)
                 .role(role)
                 .pin("123456")
+                .status(MemberStatus.ACTIVE)
                 .build();
     }
 }

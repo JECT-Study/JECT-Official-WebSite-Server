@@ -8,6 +8,7 @@ import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.common.security.CustomSuccessHandler;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.dto.MemberDto;
+import org.ject.support.domain.member.dto.MemberProfileResponse;
 import org.ject.support.domain.member.service.MemberService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -34,10 +35,10 @@ public class MemberController implements MemberApiSpec {
      * PIN 번호를 암호화하여 임시 회원을 생성합니다.
      */
     @Override
-    @PostMapping
+    @PostMapping("/apply")
     @PreAuthorize("hasRole('ROLE_VERIFICATION')")
-    public boolean registerMember(HttpServletRequest request, HttpServletResponse response,
-                                  @Valid @RequestBody MemberDto.RegisterRequest registerRequest) {
+    public boolean registerTempMember(HttpServletRequest request, HttpServletResponse response,
+                                      @Valid @RequestBody MemberDto.RegisterRequest registerRequest) {
 
         // 쿠키에서 verification 토큰 추출
         String token = jwtTokenProvider.resolveVerificationToken(request);
@@ -54,11 +55,11 @@ public class MemberController implements MemberApiSpec {
 
     /**
      * 임시회원의 최초 정보 등록 API
-     * 임시회원(ROLE_TEMP)이 이름과 전화번호를 처음 등록할 때 사용합니다.
+     * 임시회원(ROLE_APPLY)이 이름과 전화번호를 처음 등록할 때 사용합니다.
      */
     @Override
     @PutMapping("/profile/initial")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_APPLY')")
     public void registerInitialProfile(@AuthPrincipal Long memberId,
                              @Valid @RequestBody MemberDto.InitialProfileRequest request) {
 
@@ -68,7 +69,7 @@ public class MemberController implements MemberApiSpec {
 
     @Override
     @PutMapping("/pin")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_APPLY')")
     public void resetPin(@AuthPrincipal Long memberId,
                          @Valid @RequestBody MemberDto.UpdatePinRequest request) {
 
@@ -78,9 +79,16 @@ public class MemberController implements MemberApiSpec {
 
     @Override
     @GetMapping("/profile/initial/status")
-    @PreAuthorize("hasRole('ROLE_TEMP')")
+    @PreAuthorize("hasRole('ROLE_APPLY')")
     public boolean isInitialMember(@AuthPrincipal Long memberId) {
         // 임시회원의 최초 프로필 정보 등록 여부 확인
         return memberService.checkIsInitialed(memberId);
+    }
+
+    @Override
+    @GetMapping("/me")
+    @PreAuthorize("hasRole('ROLE_APPLY') or hasRole('ROLE_SEMESTER')")
+    public MemberProfileResponse getCurrentMember(@AuthPrincipal Long memberId) {
+        return memberService.getMemberProfile(memberId);
     }
 }

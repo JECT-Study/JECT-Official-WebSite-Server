@@ -1,9 +1,11 @@
 package org.ject.support.external.email.dto;
 
+import org.ject.support.external.email.domain.EmailTemplate;
+
 import java.util.Map;
 
 public record SendManualTemplatedEmailRequest(
-        String sendGroupCode,
+        EmailTemplate sendGroupCode,
         String to,
         Map<String, String> content) {
 }

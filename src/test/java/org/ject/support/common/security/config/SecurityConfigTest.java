@@ -1,10 +1,5 @@
 package org.ject.support.common.security.config;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
-import java.util.List;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +11,12 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -32,13 +33,13 @@ class SecurityConfigTest extends ApplicationPeriodTest {
     @DisplayName("RoleHierarchy가 올바르게 설정되었는지 확인")
     void roleHierarchy_ShouldBeConfiguredCorrectly() {
         // given
-        SimpleGrantedAuthority tempAuthority = new SimpleGrantedAuthority("ROLE_TEMP");
-        SimpleGrantedAuthority userAuthority = new SimpleGrantedAuthority("ROLE_USER");
+        SimpleGrantedAuthority tempAuthority = new SimpleGrantedAuthority("ROLE_APPLY");
+        SimpleGrantedAuthority userAuthority = new SimpleGrantedAuthority("ROLE_SEMESTER");
         SimpleGrantedAuthority adminAuthority = new SimpleGrantedAuthority("ROLE_ADMIN");
         SimpleGrantedAuthority verificationAuthority = new SimpleGrantedAuthority("ROLE_VERIFICATION");
 
         // when & then
-        // ADMIN > USER > TEMP 계층 구조 확인
+        // ADMIN > SEMESTER > APPLY 계층 구조 확인
         List<String> adminAuthorities = roleHierarchy.getReachableGrantedAuthorities(
                 java.util.Collections.singleton(adminAuthority))
                 .stream()
@@ -50,7 +51,7 @@ class SecurityConfigTest extends ApplicationPeriodTest {
                 userAuthority.getAuthority(), 
                 tempAuthority.getAuthority());
 
-        // USER > TEMP 계층 구조 확인
+        // SEMESTER > APPLY 계층 구조 확인
         List<String> userAuthorities = roleHierarchy.getReachableGrantedAuthorities(
                 java.util.Collections.singleton(userAuthority))
                 .stream()
@@ -61,7 +62,7 @@ class SecurityConfigTest extends ApplicationPeriodTest {
                 .contains(userAuthority.getAuthority(), tempAuthority.getAuthority())
                 .doesNotContain(adminAuthority.getAuthority());
 
-        // TEMP > VERIFICATION 계층 구조 확인
+        // APPLY > VERIFICATION 계층 구조 확인
         List<String> tempAuthorities = roleHierarchy.getReachableGrantedAuthorities(
                 java.util.Collections.singleton(tempAuthority))
                 .stream()
@@ -78,6 +79,6 @@ class SecurityConfigTest extends ApplicationPeriodTest {
     void permitAll_ShouldAllowAccessWithoutAuthentication() throws Exception {
         // 인증 없이 접근 가능한지 확인 (SecurityConfig에서 .anyRequest().permitAll() 설정)
         mockMvc.perform(get("/any-path"))
-                .andExpect(status().isOk()); // 404는 경로가 없어서이지, 인증 실패(401, 403)가 아님
+                .andExpect(status().isNotFound()); // 404는 경로가 없어서이지, 인증 실패(401, 403)가 아님
     }
 }
