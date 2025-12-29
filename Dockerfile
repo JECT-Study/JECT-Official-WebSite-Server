@@ -1,13 +1,10 @@
 
 
-FROM openjdk:21-jdk-alpine
+FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y curl && \
-    rm -rf /var/lib/apt/lists/* && \
-    apt-get clean && \
-    addgroup --system spring && adduser --system spring --ingroup spring
+RUN apk add --no-cache curl && \
+    addgroup -S spring && adduser -S spring -G spring
 
 COPY build/libs/ject*.jar app.jar
 RUN chown spring:spring app.jar
