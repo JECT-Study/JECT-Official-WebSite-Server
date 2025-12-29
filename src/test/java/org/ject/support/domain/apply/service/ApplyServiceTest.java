@@ -193,16 +193,18 @@ class ApplyServiceTest extends UnitTestSupport {
     @Test
     void 지원상태_조회_시_프로필작성을_하지_않았을_경우_예외발생() {
         // given
-        String email = "test@example.com";
         Member member = Member.builder()
+                .id(1L)
+                .name("지원자명")
+                .phoneNumber("01012345678")
                 .build();
-        given(memberRepository.findByEmail(email))
+        given(memberRepository.findById(member.getId()))
                 .willReturn(Optional.of(member));
         given(applyRepository.findByMemberIdInActiveRecruit(eq(member.getId()), any()))
                 .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> applyService.checkApplyStatus(email))
+        assertThatThrownBy(() -> applyService.checkApplyStatus(member.getId()))
                 .isInstanceOf(ApplyException.class)
                 .extracting("errorCode")
                 .isEqualTo(ApplyErrorCode.NOT_FOUND_APPLY);
@@ -211,13 +213,12 @@ class ApplyServiceTest extends UnitTestSupport {
     @Test
     void 작성_중인_지원서가_있는_경우_TEMP_SAVED_반환() {
         // given
-        String email = "test@example.com";
         Member member = Member.builder()
                 .id(1L)
                 .name("지원자명")
                 .phoneNumber("01012345678")
                 .build();
-        given(memberRepository.findByEmail(email))
+        given(memberRepository.findById(member.getId()))
                 .willReturn(Optional.of(member));
         given(applyRepository.findByMemberIdInActiveRecruit(eq(member.getId()), any()))
                 .willReturn(Optional.of(
@@ -228,7 +229,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 ));
 
         // when
-        ApplyStatusResponse result = applyService.checkApplyStatus(email);
+        ApplyStatusResponse result = applyService.checkApplyStatus(member.getId());
 
         // then
         assertThat(result.status()).isEqualTo(TEMP_SAVED);
@@ -237,13 +238,12 @@ class ApplyServiceTest extends UnitTestSupport {
     @Test
     void 지원서를_제출한_지원자에_대한_제출_상태_확인_시_SUBMITTED_반환() {
         // given
-        String email = "test@example.com";
         Member member = Member.builder()
-                        .id(1L)
-                        .name("지원자명")
-                        .phoneNumber("01012345678")
-                        .build();
-        given(memberRepository.findByEmail(email))
+                .id(1L)
+                .name("지원자명")
+                .phoneNumber("01012345678")
+                .build();
+        given(memberRepository.findById(member.getId()))
                 .willReturn(Optional.of(member));
         given(applyRepository.findByMemberIdInActiveRecruit(eq(member.getId()), any()))
                 .willReturn(Optional.of(
@@ -254,7 +254,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 ));
 
         // when
-        ApplyStatusResponse result = applyService.checkApplyStatus(email);
+        ApplyStatusResponse result = applyService.checkApplyStatus(member.getId());
 
         // then
         assertThat(result.status()).isEqualTo(SUBMITTED);
