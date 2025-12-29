@@ -11,8 +11,6 @@ import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.List;
-
 @Configuration
 @RequiredArgsConstructor
 public class SpringdocConfig {
@@ -44,24 +42,6 @@ public class SpringdocConfig {
                 // 전역으로 Security 적용
                 .addSecurityItem(new SecurityRequirement()
                         .addList(securitySchemeName));
-    }
-
-    @Bean
-    public GroupedOpenApi coreApi() {
-        return GroupedOpenApi.builder()
-                .group("Core API")
-                .pathsToExclude("/admin/**")
-                .build()
-                .addAllOperationCustomizer(List.of(successResponseCustomizer, errorResponseCustomizer));
-    }
-
-    @Bean
-    public GroupedOpenApi adminApi() {
-        return GroupedOpenApi.builder()
-                .group("Admin API")
-                .pathsToMatch("/admin/**")
-                .build()
-                .addAllOperationCustomizer(List.of(successResponseCustomizer, errorResponseCustomizer));
     }
 
     @Bean
