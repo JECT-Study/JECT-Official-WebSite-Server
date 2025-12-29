@@ -476,6 +476,7 @@ class ApplyServiceTest extends UnitTestSupport {
         // then
         assertThat(result.answers()).isEqualTo(answers);
         assertThat(result.portfolios()).isEmpty();
+        assertThat(result.jobFamily()).isEqualTo(BE);
     }
 
     @Test
