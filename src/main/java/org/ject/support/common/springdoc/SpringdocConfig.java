@@ -63,4 +63,20 @@ public class SpringdocConfig {
                 .build()
                 .addAllOperationCustomizer(List.of(successResponseCustomizer, errorResponseCustomizer));
     }
+
+    @Bean
+    public GroupedOpenApi coreApi() {
+        return GroupedOpenApi.builder()
+                .group("Core API")
+                .pathsToExclude("/admin/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi adminApi() {
+        return GroupedOpenApi.builder()
+                .group("Admin API")
+                .pathsToMatch("/admin/**")
+                .build();
+    }
 }
