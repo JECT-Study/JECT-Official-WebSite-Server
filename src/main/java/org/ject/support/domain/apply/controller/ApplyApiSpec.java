@@ -3,7 +3,6 @@ package org.ject.support.domain.apply.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Email;
 import org.ject.support.common.security.AuthPrincipal;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
@@ -48,7 +47,7 @@ public interface ApplyApiSpec {
                     - TEMP_SAVED: 작성 중인 지원서가 있는 경우
                     - SUBMITTED: 이미 지원서를 제출한 경우
                     """)
-    ApplyStatusResponse checkApplyStatus(@RequestParam @Email String email);
+    ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long memberId);
 
     @Operation(
             summary = "프로필 작성(저장)",
