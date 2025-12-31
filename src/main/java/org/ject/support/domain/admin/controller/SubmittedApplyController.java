@@ -12,7 +12,6 @@ import org.ject.support.domain.member.JobFamily;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,14 +30,12 @@ public class SubmittedApplyController implements SubmittedApplyApiSpec {
 
     @Override
     @GetMapping("/count")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public SubmittedApplyCountResponse getSubmittedApplyCount() {
         return submittedApplyService.countSubmittedApply();
     }
 
     @Override
     @GetMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public Page<SubmittedApplyResponse> findSubmittedApplies(@RequestParam(required = false) final JobFamily jobFamily,
                                                              @PageableDefault(size = 15) final Pageable pageable) {
         return submittedApplyService.findSubmittedApplies(jobFamily, pageable);
@@ -46,14 +43,12 @@ public class SubmittedApplyController implements SubmittedApplyApiSpec {
 
     @Override
     @GetMapping("/{applyId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public SubmittedApplyDetailResponse findSubmittedApplyDetail(@PathVariable("applyId") final Long applyId) {
         return submittedApplyService.findSubmittedApplyDetail(applyId);
     }
 
     @Override
     @PutMapping("/{applyId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void editSubmittedApply(@PathVariable("applyId") final Long applyId,
                                    @RequestBody @Valid final SubmittedApplyEditRequest request) {
         submittedApplyService.updateSubmittedApply(applyId, request);
@@ -61,14 +56,12 @@ public class SubmittedApplyController implements SubmittedApplyApiSpec {
 
     @Override
     @DeleteMapping("/{applyId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void deleteSubmittedApply(@PathVariable("applyId") final Long applyId) {
         submittedApplyService.deleteSubmittedApply(applyId);
     }
 
     @Override
     @DeleteMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public int deleteSubmittedApplies(@RequestBody @Valid final SubmittedApplyBulkDeleteRequest request) {
         return submittedApplyService.deleteSubmittedApplies(request.applyIds());
     }

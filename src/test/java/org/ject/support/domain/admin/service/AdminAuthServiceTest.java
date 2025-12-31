@@ -110,7 +110,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(discordRateLimiter.tryConsume(1)).willReturn(true);
-        given(discordComponent.sendAdminLoginMessage(anyString())).willReturn(Mono.empty());
+        given(discordComponent.sendAdminLoginMessage(anyString(), anyString())).willReturn(Mono.empty());
 
         // when
         String result = adminAuthService.sendAdminAuthCode(email);

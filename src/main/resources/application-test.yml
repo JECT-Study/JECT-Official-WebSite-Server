@@ -68,3 +68,4 @@ notification:
   discord:
     webhook:
       admin-login: dummy-url-for-test
+      supporter-token-issue: dummy-url-for-test

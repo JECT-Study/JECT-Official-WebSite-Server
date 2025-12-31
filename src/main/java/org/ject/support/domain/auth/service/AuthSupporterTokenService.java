@@ -43,8 +43,7 @@ public class AuthSupporterTokenService {
 
         Claims claims = Jwts.claims();
         claims.put("memberId", member.getId());
-        claims.put("role", "ROLE_ADMIN");
-        claims.put("tokenType", "TEMP");
+        claims.put("role", "ROLE_SUPPORTER");
         claims.put("purpose", "SUPPORTER_DATA_VIEW");
         claims.put("scopes", List.of("ADMIN_READ"));
         claims.setSubject("SYSTEM_SUPPORTER");

@@ -1,19 +1,15 @@
 package org.ject.support.common.security.jwt;
 
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
+import org.ject.support.common.exception.GlobalErrorCode;
+import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
+import org.ject.support.domain.auth.exception.AuthErrorCode;
+import org.ject.support.domain.auth.exception.AuthException;
 import org.ject.support.domain.member.Role;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -22,6 +18,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * JWT 토큰 기반의 인증을 처리하는 필터
@@ -39,38 +38,42 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) {
 
         String accessToken = jwtTokenProvider.resolveAccessToken(request);
 
-        if (accessToken != null && jwtTokenProvider.validateToken(accessToken)) {
-            try {
+        try {
+            if (accessToken != null) {
+                if (!jwtTokenProvider.validateToken(accessToken)) {
+                    throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+                }
                 Authentication auth = jwtTokenProvider.getAuthenticationByToken(accessToken);
                 SecurityContextHolder.getContext().setAuthentication(auth);
                 chain.doFilter(request, response);
                 return;
-            } catch (Exception e) {
-                log.error("엑세스 토큰 인증 실패: {}", e.getMessage());
             }
-        }
 
-        String verificationToken = jwtTokenProvider.resolveVerificationToken(request);
-        if (verificationToken != null && jwtTokenProvider.validateToken(verificationToken)) {
-            try {
+            String verificationToken = jwtTokenProvider.resolveVerificationToken(request);
+            if (verificationToken != null) {
+                if (!jwtTokenProvider.validateToken(verificationToken)) {
+                    throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+                }
                 // verification 토큰에서 이메일 추출
                 String email = jwtTokenProvider.extractEmailFromVerificationToken(verificationToken);
                 Authentication auth = createVerificationAuthentication(email);
                 SecurityContextHolder.getContext().setAuthentication(auth);
                 chain.doFilter(request, response);
                 return;
-            } catch (Exception e) {
-                log.error("검증 토큰 인증 실패: {}", e.getMessage());
             }
-        }
 
-        // 두 토큰 모두 없거나 유효하지 않으면, 인증 없이 진행
-        chain.doFilter(request, response);
+            // 두 토큰 모두 없으면 인증 없이 진행 (익명 요청)
+            chain.doFilter(request, response);
+
+        } catch (Exception e) {
+            log.error("JWT 인증 처리 중 에러 발생", e);
+            SecurityContextHolder.clearContext();
+            throw new GlobalException(GlobalErrorCode.INVALID_ACCESS_TOKEN);
+        }
     }
     
     private Authentication createVerificationAuthentication(String email) {
