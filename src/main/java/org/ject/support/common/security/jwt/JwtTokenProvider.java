@@ -64,6 +64,12 @@ public class JwtTokenProvider {
     }
 
     public String createToken(Claims claims, long expirationMillis) {
+        if (claims == null) {
+            throw new IllegalArgumentException("Claims cannot be null");
+        }
+        if (expirationMillis <= 0) {
+            throw new IllegalArgumentException("Expiration time must be positive");
+        }
         Date now = new Date();
         Date expireDate = new Date(now.getTime() + expirationMillis);
 
