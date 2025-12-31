@@ -26,7 +26,7 @@ import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_CREDE
 @Transactional(readOnly = true)
 public class AuthSupporterTokenService {
 
-    private final long TOKEN_EXPIRATION_MILLIS = 10 * 60 * 1000; // 10분
+    private final long TOKEN_EXPIRATION_MILLIS = 24 * 60 * 60 * 1000; // 1일
 
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberRepository memberRepository;
