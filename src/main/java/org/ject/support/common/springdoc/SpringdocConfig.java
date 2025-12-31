@@ -48,7 +48,10 @@ public class SpringdocConfig {
     public GroupedOpenApi coreApi() {
         return GroupedOpenApi.builder()
                 .group("Core API")
-                .pathsToExclude("/admin/**")
+                .pathsToExclude(
+                        "/admin/**",
+                        "/admin-auth/**"
+                )
                 .build();
     }
 
@@ -56,7 +59,10 @@ public class SpringdocConfig {
     public GroupedOpenApi adminApi() {
         return GroupedOpenApi.builder()
                 .group("Admin API")
-                .pathsToMatch("/admin/**")
+                .pathsToMatch(
+                        "/admin/**",
+                        "/admin-auth/**"
+                )
                 .build();
     }
 }
