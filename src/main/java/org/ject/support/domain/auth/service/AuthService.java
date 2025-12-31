@@ -1,12 +1,12 @@
 package org.ject.support.domain.auth.service;
 
 
-import static org.ject.support.domain.auth.exception.AuthErrorCode.*;
-import static org.ject.support.domain.member.exception.MemberErrorCode.*;
-
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
-import org.ject.support.domain.auth.exception.AuthException;
 import org.ject.support.domain.auth.dto.AuthVerificationResult;
+import org.ject.support.domain.auth.exception.AuthException;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -19,9 +19,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.JwtException;
-import lombok.RequiredArgsConstructor;
+import static org.ject.support.domain.auth.exception.AuthErrorCode.EXPIRED_REFRESH_TOKEN;
+import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_AUTH_CODE;
+import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_CREDENTIALS;
+import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_REFRESH_TOKEN;
+import static org.ject.support.domain.auth.exception.AuthErrorCode.NOT_FOUND_AUTH_CODE;
+import static org.ject.support.domain.member.exception.MemberErrorCode.NOT_FOUND_MEMBER;
 
 @Service
 @RequiredArgsConstructor

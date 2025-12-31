@@ -10,8 +10,6 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import java.security.Key;
-import java.util.Date;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.exception.GlobalException;
@@ -22,6 +20,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
+
+import java.security.Key;
+import java.util.Date;
 
 import static org.ject.support.common.exception.GlobalErrorCode.AUTHENTICATION_REQUIRED;
 
@@ -53,6 +54,18 @@ public class JwtTokenProvider {
         claims.setSubject(authentication.getName());
         Date now = new Date();
         Date expireDate = new Date(now.getTime() + accessExpirationTime);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setIssuedAt(now)
+                .setExpiration(expireDate)
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public String createToken(Claims claims, long expirationMillis) {
+        Date now = new Date();
+        Date expireDate = new Date(now.getTime() + expirationMillis);
 
         return Jwts.builder()
                 .setClaims(claims)

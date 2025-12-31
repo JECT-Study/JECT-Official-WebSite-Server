@@ -46,7 +46,7 @@ public class AdminAuthService {
 
         if (discordRateLimiter.tryConsume(1)) {
             redisTemplate.opsForValue().set(key, authCode, Duration.ofSeconds(ADMIN_LOGIN_AUTH_CODE_EXPIRATION));
-            discordComponent.sendAdminLoginMessage(makeAdminLoginMessage(member.getEmail(), authCode))
+            discordComponent.sendAdminLoginMessage(member.getEmail(), authCode)
                     .doOnError(e -> log.error("Discord 전송 실패: {}", member.getEmail(), e))
                     .subscribe();
         } else {
@@ -108,13 +108,5 @@ public class AdminAuthService {
     private int getFailCount(String failCountKey) {
         String failCountStr = redisTemplate.opsForValue().get(failCountKey);
         return failCountStr == null ? 0 : Integer.parseInt(failCountStr);
-    }
-
-    private String makeAdminLoginMessage(String email, String code) {
-        return """
-               관리자 로그인 인증 코드 요청
-               관리자 이메일: %s
-               인증 코드 : %s
-               """.formatted(email, code);
     }
 }
