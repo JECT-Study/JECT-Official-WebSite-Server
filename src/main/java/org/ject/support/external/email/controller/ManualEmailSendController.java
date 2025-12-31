@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.external.email.dto.SendManualBulkTemplatedEmailRequest;
 import org.ject.support.external.email.dto.SendManualTemplatedEmailRequest;
 import org.ject.support.external.email.service.SesEmailSendService;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,14 +18,12 @@ public class ManualEmailSendController implements ManualEmailSendApiSpec {
 
     @Override
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void sendManualTemplatedEmail(@RequestBody SendManualTemplatedEmailRequest request) {
         emailSendService.sendTemplatedEmail(request.sendGroupCode(), request.to(), request.content());
     }
 
     @Override
     @PostMapping("/bulk")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void sendManualBulkTemplatedEmail(@RequestBody SendManualBulkTemplatedEmailRequest request) {
         emailSendService.sendBulkTemplatedEmail(request.sendGroupCode(), request.toList(), request.content());
     }

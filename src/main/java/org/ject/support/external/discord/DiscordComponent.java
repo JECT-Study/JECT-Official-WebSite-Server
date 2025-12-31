@@ -1,6 +1,7 @@
 package org.ject.support.external.discord;
 
 import lombok.extern.slf4j.Slf4j;
+import org.ject.support.external.notification.NotificationMessageFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
@@ -15,24 +16,47 @@ import reactor.core.publisher.Mono;
 public class DiscordComponent {
 
     private final WebClient webClient;
-    private final Environment environment;
     private final String prefix;
+    private final NotificationMessageFactory messageFactory;
 
     @Value("${notification.discord.webhook.admin-login}")
     private String adminLoginWebhook;
 
-    public DiscordComponent(WebClient webClient, Environment environment) {
+    @Value("${notification.discord.webhook.supporter-token-issue}")
+    private String supporterTokenIssueWebhook;
+
+    public DiscordComponent(
+            WebClient webClient,
+            Environment environment,
+            NotificationMessageFactory messageFactory
+    ) {
         this.webClient = webClient;
-        this.environment = environment;
         this.prefix = resolvePrefix(environment);
+        this.messageFactory = messageFactory;
     }
 
-    public Mono<Void> sendAdminLoginMessage(String description) {
-        DiscordWebhookPayload.Embed content = new DiscordWebhookPayload.Embed("로그인 인증 요청", description);
+    public Mono<Void> sendAdminLoginMessage(String email, String code) {
+        String description = messageFactory.adminLoginCode(email, code);
+
+        DiscordWebhookPayload.Embed embed =
+                new DiscordWebhookPayload.Embed("로그인 인증 요청", description);
+
         DiscordWebhookPayload payload = new DiscordWebhookPayload();
         payload.setContent("[관리자 로그인]");
-        payload.getEmbeds().add(content);
+        payload.getEmbeds().add(embed);
         return sendMessage(adminLoginWebhook, payload);
+    }
+
+    public Mono<Void> sendSupporterTokenIssueMessage(String email, String accessToken) {
+        String description = messageFactory.supporterAccessTokenIssued(email, accessToken);
+
+        DiscordWebhookPayload.Embed embed =
+                new DiscordWebhookPayload.Embed("서포터즈 엑세스 토큰 발급 요청", description);
+
+        DiscordWebhookPayload payload = new DiscordWebhookPayload();
+        payload.setContent("[서포터즈 엑세스 토큰 발급]");
+        payload.getEmbeds().add(embed);
+        return sendMessage(supporterTokenIssueWebhook, payload);
     }
 
     /**

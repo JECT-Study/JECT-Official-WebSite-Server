@@ -25,21 +25,18 @@ public class RecruitController implements RecruitApiSpec {
 
     @Override
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void registerRecruit(@RequestBody @Valid List<RecruitRegisterRequest> requests) {
         recruitUsecase.registerRecruits(requests);
     }
 
     @Override
     @PutMapping("/{recruitId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void updateRecruit(@PathVariable Long recruitId, @RequestBody @Valid RecruitUpdateRequest request) {
         recruitUsecase.updateRecruit(recruitId, request);
     }
 
     @Override
     @DeleteMapping("/{recruitId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public void cancelRecruit(@PathVariable Long recruitId) {
         recruitUsecase.cancelRecruit(recruitId);
     }
