@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/admin")
+@RequestMapping("/admin-auth")
 public class AdminAuthController implements AdminAuthApiSpec {
 
     private final AdminAuthService adminAuthService;
     private final CustomSuccessHandler customSuccessHandler;
 
-    @PostMapping("/auth/codes")
+    @PostMapping("/code")
     public AdminAuthSendResponse sendAdminAuthCode(@RequestBody @Valid AdminAuthSendRequest request) {
         String email = adminAuthService.sendAdminAuthCode(request.email());
         return AdminAuthSendResponse.builder()
@@ -31,7 +31,7 @@ public class AdminAuthController implements AdminAuthApiSpec {
                 .build();
     }
 
-    @PostMapping("/auth/codes/verify")
+    @PostMapping("/verify-code")
     public boolean verifyAdminAuthCode(
             @RequestBody @Valid AdminVerifyRequest request,
             HttpServletRequest httpRequest,
