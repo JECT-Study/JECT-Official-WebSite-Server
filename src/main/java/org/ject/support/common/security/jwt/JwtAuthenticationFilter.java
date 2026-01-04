@@ -9,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.exception.GlobalErrorCode;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
-import org.ject.support.domain.auth.exception.AuthErrorCode;
-import org.ject.support.domain.auth.exception.AuthException;
 import org.ject.support.domain.member.Role;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -64,9 +62,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     jwtTokenProvider.resolveVerificationToken(request);
 
             if (verificationToken != null) {
-                if (!jwtTokenProvider.validateToken(verificationToken)) {
-                    // verification token은 실패 시 에러가 맞음
-                    throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+                if (jwtTokenProvider.validateToken(verificationToken)) {
+                    // 토큰이 유효한 경우, 인증 정보를 SecurityContext에 설정
+                    Authentication auth = jwtTokenProvider.getAuthenticationByToken(accessToken);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } else {
+                    clearAuthCookie(response, "Authentication auth = jwtTokenProvider.getAuthenticationByToken(accessToken);\n" +
+                            "                    SecurityContextHolder.getContext().setAuthentication(auth);");
+                    SecurityContextHolder.clearContext();
                 }
 
                 String email = jwtTokenProvider.extractEmailFromVerificationToken(verificationToken);
