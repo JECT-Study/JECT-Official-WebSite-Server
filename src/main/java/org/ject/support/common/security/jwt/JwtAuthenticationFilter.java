@@ -49,6 +49,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtTokenProvider.validateToken(accessToken)) {
                     Authentication auth = jwtTokenProvider.getAuthenticationByToken(accessToken);
                     SecurityContextHolder.getContext().setAuthentication(auth);
+
+                    chain.doFilter(request, response);
+                    return;
                 } else {
                     clearAuthCookie(response, "accessToken");
                     SecurityContextHolder.clearContext();
@@ -64,6 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (verificationToken != null) {
                 if (jwtTokenProvider.validateToken(verificationToken)) {
                     String email = jwtTokenProvider.extractEmailFromVerificationToken(verificationToken);
+
                     Authentication auth = createVerificationAuthentication(email);
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 } else {
