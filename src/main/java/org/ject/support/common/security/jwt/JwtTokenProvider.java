@@ -214,6 +214,7 @@ public class JwtTokenProvider {
         Cookie cookie = new Cookie("verificationToken", null);
         cookie.setPath("/");
         cookie.setHttpOnly(true);
+        cookie.setSecure(true);
         cookie.setMaxAge(0);
         response.addCookie(cookie);
     }
