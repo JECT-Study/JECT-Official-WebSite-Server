@@ -63,19 +63,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (verificationToken != null) {
                 if (jwtTokenProvider.validateToken(verificationToken)) {
-                    // 토큰이 유효한 경우, 인증 정보를 SecurityContext에 설정
-                    Authentication auth = jwtTokenProvider.getAuthenticationByToken(accessToken);
+                    String email = jwtTokenProvider.extractEmailFromVerificationToken(verificationToken);
+                    Authentication auth = createVerificationAuthentication(email);
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 } else {
-                    clearAuthCookie(response, "Authentication auth = jwtTokenProvider.getAuthenticationByToken(accessToken);\n" +
-                            "                    SecurityContextHolder.getContext().setAuthentication(auth);");
+                    clearAuthCookie(response, "verificationToken");
                     SecurityContextHolder.clearContext();
                 }
-
-                String email = jwtTokenProvider.extractEmailFromVerificationToken(verificationToken);
-
-                Authentication auth = createVerificationAuthentication(email);
-                SecurityContextHolder.getContext().setAuthentication(auth);
             }
 
             chain.doFilter(request, response);
