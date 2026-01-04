@@ -1,6 +1,7 @@
 package org.ject.support.common.security.jwt;
 
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -40,33 +41,40 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) {
 
-        String accessToken = jwtTokenProvider.resolveAccessToken(request);
-
         try {
+            // =========================
+            // 1. Access Token 처리 (선택 인증)
+            // =========================
+            String accessToken = jwtTokenProvider.resolveAccessToken(request);
+
             if (accessToken != null) {
-                if (!jwtTokenProvider.validateToken(accessToken)) {
-                    throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+                if (jwtTokenProvider.validateToken(accessToken)) {
+                    Authentication auth = jwtTokenProvider.getAuthenticationByToken(accessToken);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } else {
+                    clearAuthCookie(response, "accessToken");
+                    SecurityContextHolder.clearContext();
                 }
-                Authentication auth = jwtTokenProvider.getAuthenticationByToken(accessToken);
-                SecurityContextHolder.getContext().setAuthentication(auth);
-                chain.doFilter(request, response);
-                return;
             }
 
-            String verificationToken = jwtTokenProvider.resolveVerificationToken(request);
+            // =========================
+            // 2. Verification Token 처리 (의도적 인증)
+            // =========================
+            String verificationToken =
+                    jwtTokenProvider.resolveVerificationToken(request);
+
             if (verificationToken != null) {
                 if (!jwtTokenProvider.validateToken(verificationToken)) {
+                    // verification token은 실패 시 에러가 맞음
                     throw new AuthException(AuthErrorCode.INVALID_TOKEN);
                 }
-                // verification 토큰에서 이메일 추출
+
                 String email = jwtTokenProvider.extractEmailFromVerificationToken(verificationToken);
+
                 Authentication auth = createVerificationAuthentication(email);
                 SecurityContextHolder.getContext().setAuthentication(auth);
-                chain.doFilter(request, response);
-                return;
             }
 
-            // 두 토큰 모두 없으면 인증 없이 진행 (익명 요청)
             chain.doFilter(request, response);
 
         } catch (Exception e) {
@@ -87,5 +95,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return new UsernamePasswordAuthenticationToken(
                 userDetails, "", authorities);
     }
-}
 
+    private void clearAuthCookie(HttpServletResponse response, String cookieName) {
+        Cookie cookie = new Cookie(cookieName, null);
+        cookie.setMaxAge(0);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        response.addCookie(cookie);
+    }
+}
