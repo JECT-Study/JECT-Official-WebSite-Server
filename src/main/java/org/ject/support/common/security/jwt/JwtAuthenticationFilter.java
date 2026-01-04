@@ -70,11 +70,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     clearAuthCookie(response, "verificationToken");
                     SecurityContextHolder.clearContext();
                 }
-
-                String email = jwtTokenProvider.extractEmailFromVerificationToken(verificationToken);
-
-                Authentication auth = createVerificationAuthentication(email);
-                SecurityContextHolder.getContext().setAuthentication(auth);
             }
 
             chain.doFilter(request, response);
