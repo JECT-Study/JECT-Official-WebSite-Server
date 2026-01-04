@@ -9,8 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.exception.GlobalErrorCode;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
-import org.ject.support.domain.auth.exception.AuthErrorCode;
-import org.ject.support.domain.auth.exception.AuthException;
 import org.ject.support.domain.member.Role;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -51,6 +49,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (jwtTokenProvider.validateToken(accessToken)) {
                     Authentication auth = jwtTokenProvider.getAuthenticationByToken(accessToken);
                     SecurityContextHolder.getContext().setAuthentication(auth);
+
+                    chain.doFilter(request, response);
+                    return;
                 } else {
                     clearAuthCookie(response, "accessToken");
                     SecurityContextHolder.clearContext();
@@ -64,15 +65,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     jwtTokenProvider.resolveVerificationToken(request);
 
             if (verificationToken != null) {
-                if (!jwtTokenProvider.validateToken(verificationToken)) {
-                    // verification token은 실패 시 에러가 맞음
-                    throw new AuthException(AuthErrorCode.INVALID_TOKEN);
+                if (jwtTokenProvider.validateToken(verificationToken)) {
+                    String email = jwtTokenProvider.extractEmailFromVerificationToken(verificationToken);
+
+                    Authentication auth = createVerificationAuthentication(email);
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                } else {
+                    clearAuthCookie(response, "verificationToken");
+                    SecurityContextHolder.clearContext();
                 }
-
-                String email = jwtTokenProvider.extractEmailFromVerificationToken(verificationToken);
-
-                Authentication auth = createVerificationAuthentication(email);
-                SecurityContextHolder.getContext().setAuthentication(auth);
             }
 
             chain.doFilter(request, response);

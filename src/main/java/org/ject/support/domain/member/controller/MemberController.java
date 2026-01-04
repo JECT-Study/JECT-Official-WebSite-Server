@@ -50,6 +50,9 @@ public class MemberController implements MemberApiSpec {
         Authentication authentication = memberService.registerTempMember(registerRequest, email);
         customSuccessHandler.onAuthenticationSuccess(request, response, authentication);
 
+        // verification 토큰은 더 이상 필요 없으므로 삭제
+        jwtTokenProvider.deleteVerificationCookie(response);
+
         return true;
     }
 
