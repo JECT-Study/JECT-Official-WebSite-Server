@@ -10,6 +10,7 @@ import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.exception.GlobalException;
@@ -205,7 +206,19 @@ public class JwtTokenProvider {
                 .signWith(secretKey)
                 .compact();
     }
-    
+
+    /**
+     * 인증번호 검증 쿠키 삭제
+     */
+    public void deleteVerificationCookie(HttpServletResponse response) {
+        Cookie cookie = new Cookie("verificationToken", null);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+    }
+
     /**
      * 인증번호 검증 토큰에서 이메일 추출
      */
