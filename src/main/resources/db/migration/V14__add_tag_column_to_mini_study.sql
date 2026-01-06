@@ -1,0 +1,2 @@
+ALTER TABLE mini_study
+    ADD COLUMN tag VARCHAR(255) NOT NULL DEFAULT '';
