@@ -9,21 +9,21 @@ import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
-import org.ject.support.external.discord.DiscordComponent;
 import org.ject.support.external.infrastructure.DiscordRateLimiter;
+import org.ject.support.external.notification.event.AdminLoginNotificationEvent;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.core.Authentication;
-import reactor.core.publisher.Mono;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -49,13 +49,13 @@ class AdminAuthServiceTest extends UnitTestSupport {
     DiscordRateLimiter discordRateLimiter;
 
     @Mock
-    DiscordComponent discordComponent;
-
-    @Mock
     JwtTokenProvider jwtTokenProvider;
 
     @Mock
     private Authentication authentication;
+
+    @Mock
+    ApplicationEventPublisher applicationEventPublisher;
 
     @Test
     void 관리자로그인_1차인증시_LOCKED_상태의_상태의_계정일_경우_LOCKED_ADMIN_예외_발생() {
@@ -97,7 +97,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 관리자_로그인_시도를_성공한_경우_관리자의_Email_반환() {
+    void 관리자_로그인_인증코드_요청_시_이벤트를_발행한다() {
         // given
         long memberId = 1L;
         String email = "test.com";
@@ -107,10 +107,10 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .status(MemberStatus.ACTIVE)
                 .role(Role.ADMIN)
                 .build();
+
         given(adminMemberComponent.getMemberAdminByEmail(email)).willReturn(adminMember);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(discordRateLimiter.tryConsume(1)).willReturn(true);
-        given(discordComponent.sendAdminLoginMessage(anyString(), anyString())).willReturn(Mono.empty());
 
         // when
         String result = adminAuthService.sendAdminAuthCode(email);
@@ -118,6 +118,8 @@ class AdminAuthServiceTest extends UnitTestSupport {
         // then
         verify(adminMemberComponent).getMemberAdminByEmail(email);
         verify(discordRateLimiter).tryConsume(1);
+        verify(applicationEventPublisher)
+                .publishEvent(any(AdminLoginNotificationEvent.class));
         assertEquals(email, result);
     }
 
