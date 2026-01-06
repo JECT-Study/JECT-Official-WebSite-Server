@@ -8,5 +8,6 @@ import org.springframework.data.domain.Pageable;
 public interface ApplyQueryRepository {
     Page<Apply> findAppliesByStatus(final JobFamily jobFamily,
                                     final Apply.Status status,
+                                    final Long semesterId,
                                     final Pageable pageable);
 }
