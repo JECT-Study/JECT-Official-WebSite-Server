@@ -37,6 +37,7 @@ public interface AdminTempApplyApiSpec {
     )
     Page<TempSavedApplyResponse> getTempApplies(
             @RequestParam(required = false) JobFamily jobFamily,
+            @RequestParam(required = false) final Long semesterId,
             @PageableDefault(size = 15) final Pageable pageable
     );
 }

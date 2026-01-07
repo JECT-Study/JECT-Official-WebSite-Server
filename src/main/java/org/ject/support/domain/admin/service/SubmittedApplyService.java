@@ -41,8 +41,9 @@ public class SubmittedApplyService {
 
     @Transactional(readOnly = true)
     public Page<SubmittedApplyResponse> findSubmittedApplies(final JobFamily jobFamily,
+                                                             final Long semesterId,
                                                              final Pageable pageable) {
-        Page<Apply> applyPage = applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, pageable);
+        Page<Apply> applyPage = applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
 
         List<SubmittedApplyResponse> content = applyPage.getContent().stream()
                 .map(this::toSubmittedApplyResponse)

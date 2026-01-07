@@ -37,8 +37,9 @@ public class SubmittedApplyController implements SubmittedApplyApiSpec {
     @Override
     @GetMapping
     public Page<SubmittedApplyResponse> findSubmittedApplies(@RequestParam(required = false) final JobFamily jobFamily,
+                                                             @RequestParam(required = false) final Long semesterId,
                                                              @PageableDefault(size = 15) final Pageable pageable) {
-        return submittedApplyService.findSubmittedApplies(jobFamily, pageable);
+        return submittedApplyService.findSubmittedApplies(jobFamily, semesterId, pageable);
     }
 
     @Override

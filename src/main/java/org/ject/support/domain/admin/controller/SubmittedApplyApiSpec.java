@@ -28,6 +28,7 @@ public interface SubmittedApplyApiSpec {
             summary = "제출된 지원서 목록 조회",
             description = "제출된 지원서들의 목록을 조회합니다.")
     Page<SubmittedApplyResponse> findSubmittedApplies(@RequestParam(required = false) final JobFamily jobFamily,
+                                                      @RequestParam(required = false) final Long semesterId,
                                                       @PageableDefault(size = 15) final Pageable pageable);
 
     @Operation(

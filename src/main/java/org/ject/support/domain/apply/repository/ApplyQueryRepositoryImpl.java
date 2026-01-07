@@ -26,7 +26,9 @@ public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
 
     @Override
     public Page<Apply> findAppliesByStatus(final JobFamily jobFamily,
-                                           final Apply.Status status, final Pageable pageable) {
+                                           final Apply.Status status,
+                                           final Long semesterId,
+                                           final Pageable pageable) {
 
         List<Apply> content = queryFactory
                 .selectFrom(apply)
@@ -37,7 +39,8 @@ public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
                 .where(
                         apply.member.isDeleted.eq(false),
                         eqJobFamily(jobFamily),
-                        eqApplyStatus(status)
+                        eqApplyStatus(status),
+                        eqSemesterId(semesterId)
                 )
                 .orderBy(apply.createdAt.desc())
                 .offset(pageable.getOffset())
@@ -51,7 +54,8 @@ public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
                 .where(
                         apply.member.isDeleted.eq(false),
                         eqJobFamily(jobFamily),
-                        eqApplyStatus(status)
+                        eqApplyStatus(status),
+                        eqSemesterId(semesterId)
                 ).fetchOne();
 
         return PageResponse.from(content, pageable, total);
@@ -65,6 +69,12 @@ public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
     private BooleanExpression eqApplyStatus(final Apply.Status status) {
         return Optional.ofNullable(status)
                 .map(apply.status::eq)
+                .orElse(null);
+    }
+
+    private BooleanExpression eqSemesterId(final Long semesterId) {
+        return Optional.ofNullable(semesterId)
+                .map(apply.recruit.semester.id::eq)
                 .orElse(null);
     }
 }
