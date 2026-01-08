@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.jectalk.enums.ContentType;
+import org.ject.support.domain.project.entity.Project.Category;
 
 @Entity
 @Getter
@@ -38,4 +39,8 @@ public class Jectalk extends BaseTimeEntity {
 
     @Column(nullable = false)
     private String author;
+
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(30)", nullable = false)
+    private Category category;
 }
