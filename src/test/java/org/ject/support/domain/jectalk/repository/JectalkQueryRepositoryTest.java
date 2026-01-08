@@ -43,17 +43,21 @@ class JectalkQueryRepositoryTest {
         assertThat(responses).hasSize(2); // 현재 페이지의 데이터 개수
         responses.forEach(jectalkResponse -> {
             assertThat(jectalkResponse.id()).isNotNull();
-            assertThat(jectalkResponse.name()).isNotNull();
-            assertThat(jectalkResponse.imageUrl()).isNotNull();
-            assertThat(jectalkResponse.youtubeUrl()).isNotNull();
+            assertThat(jectalkResponse.title()).isNotNull();
+            assertThat(jectalkResponse.thumbnailUrl()).isNotNull();
+            assertThat(jectalkResponse.contentUrl()).isNotNull();
+            assertThat(jectalkResponse.description()).isNotNull();
+            assertThat(jectalkResponse.contentType()).isNotNull();
             assertThat(jectalkResponse.summary()).isNotNull();
         });
 
         JectalkResponse firstResponse = responses.get(0);
-        assertThat(firstResponse.name()).isEqualTo("젝톡 3"); // ID 내림차순이므로 마지막에 생성된 데이터가 첫 번째
-        assertThat(firstResponse.summary()).isEqualTo("summary");
-        assertThat(firstResponse.youtubeUrl()).isEqualTo("https://youtube.com/jectalk3");
-        assertThat(firstResponse.imageUrl()).isEqualTo("https://image.com/jectalk3.png");
+        assertThat(firstResponse.title()).isEqualTo("젝톡 3"); // ID 내림차순이므로 마지막에 생성된 데이터가 첫 번째
+        assertThat(firstResponse.description()).isEqualTo("description");
+        assertThat(firstResponse.contentUrl()).isEqualTo("https://youtube.com/jectalk3");
+        assertThat(firstResponse.thumbnailUrl()).isEqualTo("https://image.com/jectalk3.png");
+        assertThat(firstResponse.summary()).isEqualTo("author");
+
 
         // 두 번째 페이지 조회
         Page<JectalkResponse> secondPage = jectalkRepository.findJectalks(PageRequest.of(1, 2));
@@ -63,10 +67,12 @@ class JectalkQueryRepositoryTest {
     private Jectalk createJectalk(String name) {
         String urlSafeName = "jectalk" + name.replaceAll("[젝톡 ]", "");
         return Jectalk.builder()
-                .name(name)
-                .summary("summary")
-                .youtubeUrl("https://youtube.com/" + urlSafeName)
-                .imageUrl("https://image.com/" + urlSafeName + ".png")
+                .title(name)
+                .description("description")
+                .contentType(org.ject.support.domain.jectalk.enums.ContentType.YOUTUBE)
+                .contentUrl("https://youtube.com/" + urlSafeName)
+                .thumbnailUrl("https://image.com/" + urlSafeName + ".png")
+                .author("author")
                 .build();
     }
 }
