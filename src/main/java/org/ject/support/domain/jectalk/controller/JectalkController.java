@@ -3,11 +3,13 @@ package org.ject.support.domain.jectalk.controller;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.jectalk.dto.JectalkResponse;
 import org.ject.support.domain.jectalk.service.JectalkService;
+import org.ject.support.domain.project.entity.Project;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -19,7 +21,9 @@ public class JectalkController implements JectalkApiSpec {
 
     @Override
     @GetMapping
-    public Page<JectalkResponse> findJectalks(@PageableDefault(size = 12) Pageable pageable) {
-        return jectalkService.findJectalks(pageable);
+    public Page<JectalkResponse> findJectalks(
+            @PageableDefault(size = 12) Pageable pageable,
+            @RequestParam(required = false) Project.Category category) {
+        return jectalkService.findJectalks(pageable, category);
     }
 }
