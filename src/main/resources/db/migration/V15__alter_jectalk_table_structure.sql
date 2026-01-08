@@ -9,7 +9,7 @@ ALTER TABLE jectalk ADD COLUMN author VARCHAR(255) NOT NULL DEFAULT '';
 UPDATE jectalk SET author = summary;
 
 -- content_type 컬럼 추가
-ALTER TABLE jectalk ADD COLUMN content_type VARCHAR(50) NOT NULL DEFAULT '';
+ALTER TABLE jectalk ADD COLUMN content_type VARCHAR(50) NOT NULL DEFAULT 'YOUTUBE';
 
 -- 컬럼명 변경
 ALTER TABLE jectalk CHANGE COLUMN name title VARCHAR(50) NOT NULL;
