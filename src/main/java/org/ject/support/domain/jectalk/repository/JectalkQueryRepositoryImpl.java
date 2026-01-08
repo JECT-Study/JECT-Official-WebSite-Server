@@ -24,10 +24,12 @@ public class JectalkQueryRepositoryImpl implements JectalkQueryRepository {
         List<JectalkResponse> content = queryFactory
                 .select(new QJectalkResponse(
                         jectalk.id,
-                        jectalk.name,
-                        jectalk.youtubeUrl,
-                        jectalk.imageUrl,
-                        jectalk.summary
+                        jectalk.title,
+                        jectalk.description,
+                        jectalk.contentUrl,
+                        jectalk.contentType,
+                        jectalk.thumbnailUrl,
+                        jectalk.author
                 ))
                 .from(jectalk)
                 .orderBy(jectalk.id.desc())
