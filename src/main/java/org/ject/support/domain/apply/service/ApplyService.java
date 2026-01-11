@@ -27,6 +27,8 @@ import org.ject.support.domain.recruit.exception.QuestionException;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.ject.support.external.n8n.event.ApplicationSubmittedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +36,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
 import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
@@ -52,6 +53,8 @@ public class ApplyService implements ApplyUsecase {
     private final MemberRepository memberRepository;
     private final Map2JsonSerializer map2JsonSerializer;
     private final String2MapSerializer string2MapSerializer;
+
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @PeriodAccessible(permitAllJob = true)
@@ -167,6 +170,10 @@ public class ApplyService implements ApplyUsecase {
 
         // 5. Apply 엔티티에 제출 위임 (검증 및 상태 변경 포함)
         apply.submit(applicationForm);
+
+        // 6. n8n에 지원 완료 이벤트 발행
+        applicationEventPublisher
+                .publishEvent(new ApplicationSubmittedEvent(apply.getId()));
     }
 
     @Override
