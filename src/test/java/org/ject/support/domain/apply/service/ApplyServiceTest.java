@@ -1,23 +1,5 @@
 package org.ject.support.domain.apply.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.PD;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
@@ -45,10 +27,31 @@ import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.exception.QuestionException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.ject.support.external.n8n.event.ApplicationSubmittedEvent;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.context.ApplicationEventPublisher;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
+import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.PD;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class ApplyServiceTest extends UnitTestSupport {
 
@@ -72,6 +75,9 @@ class ApplyServiceTest extends UnitTestSupport {
 
     @Mock
     String2MapSerializer string2MapSerializer;
+
+    @Mock
+    ApplicationEventPublisher applicationEventPublisher;
 
     @Test
     void 지원서_제출_성공() {
@@ -113,6 +119,10 @@ class ApplyServiceTest extends UnitTestSupport {
 
         // 3. apply의 상태가 SUBMITTED로 변경되었는지 확인
         assertThat(apply.getStatus()).isEqualTo(SUBMITTED);
+
+        // 4. AdminLoginNotificationEvent 이벤트가 발행되었는지 확인
+        verify(applicationEventPublisher)
+                .publishEvent(any(ApplicationSubmittedEvent.class));
     }
 
     @Test
@@ -164,6 +174,8 @@ class ApplyServiceTest extends UnitTestSupport {
         // then
         assertThat(apply.getStatus()).isEqualTo(SUBMITTED);
         assertThat(applicationForm.getPortfolios()).hasSize(1);
+        verify(applicationEventPublisher)
+                .publishEvent(any(ApplicationSubmittedEvent.class));
     }
 
     @Test
