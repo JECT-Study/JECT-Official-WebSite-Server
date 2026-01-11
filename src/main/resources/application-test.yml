@@ -69,3 +69,8 @@ notification:
     webhook:
       admin-login: dummy-url-for-test
       supporter-token-issue: dummy-url-for-test
+
+n8n:
+  secret-key: n8n-test-secret-key
+  webhook:
+    application-submit: http://localhost:5678/webhook/application-submit
