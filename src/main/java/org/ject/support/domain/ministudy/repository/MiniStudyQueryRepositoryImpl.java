@@ -28,7 +28,8 @@ public class MiniStudyQueryRepositoryImpl implements MiniStudyQueryRepository {
                         miniStudy.name,
                         miniStudy.linkUrl,
                         miniStudy.imageUrl,
-                        miniStudy.summary
+                        miniStudy.summary,
+                        miniStudy.tag
                 ))
                 .from(miniStudy)
                 .orderBy(miniStudy.id.desc())

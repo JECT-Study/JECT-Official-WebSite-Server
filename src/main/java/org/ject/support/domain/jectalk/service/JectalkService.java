@@ -3,6 +3,7 @@ package org.ject.support.domain.jectalk.service;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.jectalk.dto.JectalkResponse;
 import org.ject.support.domain.jectalk.repository.JectalkRepository;
+import org.ject.support.domain.project.entity.Project;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,9 +16,9 @@ public class JectalkService {
 
     private final JectalkRepository jectalkRepository;
 
-    @Cacheable(value = "jectalk", key = "#pageable.pageNumber + ':' + #pageable.pageSize")
+    @Cacheable(value = "jectalk", key = "#pageable.pageNumber + ':' + #pageable.pageSize + ':' + (#category != null ? #category.name() : 'ALL')")
     @Transactional(readOnly = true)
-    public Page<JectalkResponse> findJectalks(Pageable pageable) {
-        return jectalkRepository.findJectalks(pageable);
+    public Page<JectalkResponse> findJectalks(Pageable pageable, Project.Category category) {
+        return jectalkRepository.findJectalks(pageable, category);
     }
 }

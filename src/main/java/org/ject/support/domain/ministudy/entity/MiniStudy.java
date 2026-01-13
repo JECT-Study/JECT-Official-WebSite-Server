@@ -23,6 +23,9 @@ public class MiniStudy extends BaseTimeEntity {
     @Column(nullable = false)
     private String summary;
 
+    @Column(nullable = false)
+    private String tag;
+
     @Column(length = 2083)
     private String linkUrl;
 

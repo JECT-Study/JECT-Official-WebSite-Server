@@ -164,16 +164,17 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
     void 임시_저장된_지원서를_조회할때_결과가_없으면_빈페이지_반환한다() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
+        Long semesterId = null;
         Page<Apply> applyPage = new PageImpl<>(List.of(), pageable, 0);
 
-        given(applyRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, pageable))
+        given(applyRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable))
                 .willReturn(applyPage);
 
         // when
-        Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, pageable);
+        Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, semesterId, pageable);
 
         // then
-        verify(applyRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, pageable);
+        verify(applyRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable);
         assertThat(result.getTotalElements()).isEqualTo(0);
         assertThat(result.getContent()).isEmpty();
     }
@@ -182,6 +183,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
     void 임시_저장된_지원서를_조회_한다() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
+        Long semesterId = null;
 
         Member m1 = Member.builder().name("김1").build();
         Member m2 = Member.builder().name("김2").build();
@@ -210,20 +212,55 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         List<Apply> applies = List.of(a1, a2);
         Page<Apply> applyPage = new PageImpl<>(applies, pageable, applies.size());
 
-        given(applyRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, pageable))
+        given(applyRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable))
                 .willReturn(applyPage);
 
         // applicationForm.content가 "{}" 이므로 이 호출을 stub 처리
         given(string2MapSerializer.serializeAsMap("{}")).willReturn(java.util.Map.of());
 
         Page<TempSavedApplyResponse> result =
-                adminTempApplyService.getTempApplies(null, pageable);
+                adminTempApplyService.getTempApplies(null, semesterId, pageable);
 
-        verify(applyRepository).findAppliesByStatus(null,Apply.Status.TEMP_SAVED, pageable);
+        verify(applyRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable);
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
         assertThat(result.getContent().get(1).applyId()).isEqualTo(2L);
     }
 
+    @Test
+    void 임시_저장된_지원서를_semesterId로_필터링하여_조회한다() {
+        // given
+        Pageable pageable = PageRequest.of(0, 10);
+        Long semesterId = 1L;
+
+        Member member = Member.builder().name("김젝트").build();
+        Semester semester = Semester.builder().name("1").build();
+        Recruit recruit = Recruit.builder().semester(semester).build();
+        ApplicationForm form = ApplicationForm.builder().content("{}").build();
+
+        Apply apply = Apply.builder()
+                .id(1L)
+                .member(member)
+                .recruit(recruit)
+                .status(Apply.Status.TEMP_SAVED)
+                .applicationForm(form)
+                .build();
+
+        List<Apply> applies = List.of(apply);
+        Page<Apply> applyPage = new PageImpl<>(applies, pageable, applies.size());
+
+        given(applyRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable))
+                .willReturn(applyPage);
+        given(string2MapSerializer.serializeAsMap("{}")).willReturn(java.util.Map.of());
+
+        // when
+        Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, semesterId, pageable);
+
+        // then
+        verify(applyRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
+    }
 }

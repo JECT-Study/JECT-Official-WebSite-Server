@@ -9,8 +9,9 @@ import org.ject.support.domain.admin.exception.AdminErrorCode;
 import org.ject.support.domain.admin.exception.AdminException;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.entity.Member;
-import org.ject.support.external.discord.DiscordComponent;
 import org.ject.support.external.infrastructure.DiscordRateLimiter;
+import org.ject.support.external.notification.event.AdminLoginNotificationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -24,10 +25,10 @@ import java.time.Duration;
 @Transactional(readOnly = true)
 public class AdminAuthService {
 
+    private final ApplicationEventPublisher applicationEventPublisher;
     private final RedisTemplate<String, String> redisTemplate;
     private final AdminMemberComponent adminMemberComponent;
     private final DiscordRateLimiter discordRateLimiter;
-    private final DiscordComponent discordComponent;
     private final JwtTokenProvider jwtTokenProvider;
 
     private static final String ADMIN_LOGIN_AUTH_CODE_KEY_PREFIX = "admin-login:";
@@ -46,9 +47,9 @@ public class AdminAuthService {
 
         if (discordRateLimiter.tryConsume(1)) {
             redisTemplate.opsForValue().set(key, authCode, Duration.ofSeconds(ADMIN_LOGIN_AUTH_CODE_EXPIRATION));
-            discordComponent.sendAdminLoginMessage(member.getEmail(), authCode)
-                    .doOnError(e -> log.error("Discord 전송 실패: {}", member.getEmail(), e))
-                    .subscribe();
+
+            applicationEventPublisher
+                    .publishEvent(new AdminLoginNotificationEvent(email, authCode));
         } else {
             throw new AdminException(AdminErrorCode.TOO_MANY_REQUESTS);
         }

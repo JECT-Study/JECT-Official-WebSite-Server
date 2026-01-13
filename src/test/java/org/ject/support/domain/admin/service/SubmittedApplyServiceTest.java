@@ -219,39 +219,41 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // given
         var pageable = PageRequest.of(0, 15);
         var jobFamily = JobFamily.BE;
+        Long semesterId = null;
 
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED ,pageable))
+        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, pageable);
+        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, pageable);
+        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
     }
 
     @Test
     void 제출된_지원서_목록_조회시_JobFamily가_null이면_전체_조회() {
         // given
         var pageable = PageRequest.of(0, 15);
+        Long semesterId = null;
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(applyRepository.findAppliesByStatus(null, Status.SUBMITTED, pageable))
+        given(applyRepository.findAppliesByStatus(null, Status.SUBMITTED, semesterId, pageable))
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(null, pageable);
+        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(null, semesterId, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(applyRepository).findAppliesByStatus(null, Status.SUBMITTED, pageable);
+        verify(applyRepository).findAppliesByStatus(null, Status.SUBMITTED, semesterId, pageable);
     }
 
     @Test
@@ -259,18 +261,19 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // given
         var pageable = PageRequest.of(0, 15);
         var jobFamily = JobFamily.BE;
+        Long semesterId = null;
         var page = new PageImpl<Apply>(List.of(), pageable, 0L);
 
-        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, pageable))
+        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, pageable);
+        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, pageable);
 
         // then
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
-        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, pageable);
+        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
     }
 
     @Test
@@ -278,6 +281,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // given
         var pageable = PageRequest.of(1, 10, Sort.by("createdAt").descending());
         var jobFamily = JobFamily.BE;
+        Long semesterId = null;
 
         var member2 = Member.builder().name("김젝트2").build();
         var apply2 = Apply.builder()
@@ -291,18 +295,40 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applies = List.of(submittedApply, apply2);
         var page = new PageImpl<>(applies, pageable, 25L);
 
-        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, pageable))
+        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, pageable);
+        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(25L);
         assertThat(result.getNumber()).isEqualTo(1);
         assertThat(result.getSize()).isEqualTo(10);
-        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, pageable);
+        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
+    }
+
+    @Test
+    void 제출된_지원서_목록을_semesterId로_필터링하여_조회() {
+        // given
+        var pageable = PageRequest.of(0, 15);
+        var jobFamily = JobFamily.BE;
+        Long semesterId = 1L;
+
+        var applies = List.of(submittedApply);
+        var page = new PageImpl<>(applies, pageable, 1L);
+
+        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
+                .willReturn(page);
+
+        // when
+        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
     }
 
     @Test

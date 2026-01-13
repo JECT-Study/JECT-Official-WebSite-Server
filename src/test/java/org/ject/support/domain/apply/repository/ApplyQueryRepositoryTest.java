@@ -83,7 +83,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
@@ -110,7 +110,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findAppliesByStatus(null, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(null, status, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(3);
@@ -132,7 +132,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -155,7 +155,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -176,7 +176,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(10);
@@ -192,7 +192,7 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, null, pageable);
 
 
         // then
@@ -221,13 +221,55 @@ class ApplyQueryRepositoryTest {
         Apply.Status status = SUBMITTED;
 
         // when
-        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, pageable);
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(3);
         assertThat(result.getContent().get(0)).isEqualTo(apply3);
         assertThat(result.getContent().get(1)).isEqualTo(apply2);
         assertThat(result.getContent().get(2)).isEqualTo(apply1);
+    }
+
+    @Test
+    void semesterId로_제출된_지원서_필터링_조회() {
+        // given
+        Semester semester2 = semesterRepository.save(Semester.builder()
+                .name("2기")
+                .isRecruiting(false)
+                .build());
+
+        Recruit recruit1 = recruitRepository.save(Recruit.builder()
+                .semester(semester)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(7))
+                .jobFamily(BE)
+                .build());
+
+        Recruit recruit2 = recruitRepository.save(Recruit.builder()
+                .semester(semester2)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(7))
+                .jobFamily(BE)
+                .build());
+
+        Member member1 = createMember("be1@test.com", BE);
+        Member member2 = createMember("be2@test.com", BE);
+        memberRepository.saveAll(List.of(member1, member2));
+
+        Apply apply1 = getApply(member1, recruit1, SUBMITTED);
+        Apply apply2 = getApply(member2, recruit2, SUBMITTED);
+        applyRepository.saveAll(List.of(apply1, apply2));
+
+        Pageable pageable = PageRequest.of(0, 15);
+        Apply.Status status = SUBMITTED;
+
+        // when
+        Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, semester.getId(), pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().getFirst().getRecruit().getSemester()).isEqualTo(semester);
     }
 
     private Recruit getRecruit(JobFamily jobFamily) {
