@@ -47,6 +47,9 @@ public class Question extends BaseTimeEntity {
     @Column(length = 100, nullable = false)
     private String title;
 
+    @Column(length = 200)
+    private String subtitle;
+
     @Column(length = 30, nullable = false)
     private String label;
 
