@@ -29,6 +29,7 @@ public class QuestionQueryRepositoryImpl implements QuestionQueryRepository {
                         question.inputType,
                         question.isRequired,
                         question.title,
+                        question.subtitle,
                         question.label,
                         question.selectOptions,
                         question.inputHint,
