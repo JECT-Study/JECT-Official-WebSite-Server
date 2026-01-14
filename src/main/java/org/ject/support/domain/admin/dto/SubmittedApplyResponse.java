@@ -44,7 +44,9 @@ public record SubmittedApplyResponse(
                 Optional.ofNullable(apply.getMember().getExperiencePeriod())
                         .map(ExperiencePeriod::getDescription)
                         .orElse(""),
-                new ArrayList<>(apply.getMember().getInterestedDomains()),
+                new ArrayList<>(Optional.ofNullable(apply.getMember().getInterestedDomains())
+                        .orElse(List.of())
+                ),
                 Optional.ofNullable(apply.getApplicationForm())
                         .map(ApplicationForm::getPortfolios)
                         .map(portfolioList -> !portfolioList.isEmpty())
