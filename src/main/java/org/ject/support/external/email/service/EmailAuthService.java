@@ -34,7 +34,7 @@ public class EmailAuthService {
     }
 
     private void checkRateLimit(EmailTemplate sendGroupCode, String toEmail) {
-        if (sendGroupCode != EmailTemplate.AUTH_CODE) {
+        if (sendGroupCode == EmailTemplate.REMIND_APPLY) {
             return;
         }
 
