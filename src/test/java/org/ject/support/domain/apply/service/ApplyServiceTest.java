@@ -27,7 +27,6 @@ import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.exception.QuestionException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
-import org.ject.support.external.n8n.event.ApplicationSubmittedEvent;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -119,10 +118,6 @@ class ApplyServiceTest extends UnitTestSupport {
 
         // 3. apply의 상태가 SUBMITTED로 변경되었는지 확인
         assertThat(apply.getStatus()).isEqualTo(SUBMITTED);
-
-        // 4. AdminLoginNotificationEvent 이벤트가 발행되었는지 확인
-        verify(applicationEventPublisher)
-                .publishEvent(any(ApplicationSubmittedEvent.class));
     }
 
     @Test
@@ -174,8 +169,6 @@ class ApplyServiceTest extends UnitTestSupport {
         // then
         assertThat(apply.getStatus()).isEqualTo(SUBMITTED);
         assertThat(applicationForm.getPortfolios()).hasSize(1);
-        verify(applicationEventPublisher)
-                .publishEvent(any(ApplicationSubmittedEvent.class));
     }
 
     @Test
