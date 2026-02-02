@@ -52,6 +52,25 @@ class EmailAuthServiceTest extends UnitTestSupport {
     }
 
     @Test
+    void 인증번호_재설정_시_Rate_Limit이_적용되어_있지_않다면_정상_발송된다() {
+        // given
+        String email = "test@example.com";
+
+        given(redisTemplate.hasKey(anyString())).willReturn(false);
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+
+        // when
+        emailAuthService.sendAuthCode(EmailTemplate.PIN_RESET, email);
+
+        // then
+        // 1. Rate Limit 키가 설정되었는지 검증 (3분)
+        verify(valueOperations).set(eq("email:rate_limit:" + email), eq("1"), eq(Duration.ofMinutes(3)));
+        // 2. 이메일 발송이 호출되었는지 검증
+        verify(emailSendService).sendTemplatedEmail(eq(EmailTemplate.PIN_RESET), eq(email), any());
+    }
+
+
+    @Test
     void _3분_내에_재요청_시_RateLimitException이_발생한다() {
         // given
         String email = "test@example.com";
@@ -69,19 +88,19 @@ class EmailAuthServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void PIN_재설정_메일은_Rate_Limit_영향을_받지_않는다() {
+    void 리마인더_메일은_Rate_Limit_영향을_받지_않는다() {
         // given
         String email = "test@example.com";
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
         // when
-        emailAuthService.sendAuthCode(EmailTemplate.PIN_RESET, email);
+        emailAuthService.sendAuthCode(EmailTemplate.REMIND_APPLY, email);
 
         // then
         // Rate Limit 체크(hasKey)를 하지 않아야 함
         verify(redisTemplate, never()).hasKey(anyString());
 
         // 이메일 발송은 정상 호출
-        verify(emailSendService).sendTemplatedEmail(eq(EmailTemplate.PIN_RESET), eq(email), any());
+        verify(emailSendService).sendTemplatedEmail(eq(EmailTemplate.REMIND_APPLY), eq(email), any());
     }
 }
