@@ -77,8 +77,8 @@ public class ApplyService implements ApplyUsecase {
     @PeriodAccessible(permitAllJob = true)
     @Transactional
     public void saveApplicationTemporarily(Long memberId,
-                                           Map<String, String> answers,
-                                           List<ApplyPortfolioDto> portfolios) {
+            Map<String, String> answers,
+            List<ApplyPortfolioDto> portfolios) {
         // 1. memberId를 바탕으로 apply 조회
         Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
@@ -138,9 +138,9 @@ public class ApplyService implements ApplyUsecase {
     @PeriodAccessible
     @Transactional
     public void submitApplication(Long memberId,
-                                  JobFamily jobFamily,
-                                  Map<String, String> answers,
-                                  List<ApplyPortfolioDto> portfolios) {
+            JobFamily jobFamily,
+            Map<String, String> answers,
+            List<ApplyPortfolioDto> portfolios) {
         // 1. jobFamily를 통해 현재 기수 지원양식 id 조회
         Recruit recruit = getPeriodRecruit(jobFamily);
 
@@ -192,7 +192,7 @@ public class ApplyService implements ApplyUsecase {
         var memberEditor = memberEditorBuilder
                 .name(request.name())
                 .phoneNumber(request.phoneNumber())
-                .jobFamily(request.jobFamily())
+
                 .region(request.region())
                 .careerDetails(request.careerDetails())
                 .experiencePeriod(request.experiencePeriod())
@@ -223,7 +223,7 @@ public class ApplyService implements ApplyUsecase {
                 });
     }
 
-    //TODO 2025 02 20 17:07:14 : caching
+    // TODO 2025 02 20 17:07:14 : caching
 
     private Recruit getPeriodRecruit(final JobFamily jobFamily) {
         return recruitRepository.findActiveRecruits(LocalDateTime.now()).stream()

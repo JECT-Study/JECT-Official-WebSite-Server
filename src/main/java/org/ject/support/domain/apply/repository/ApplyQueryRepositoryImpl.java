@@ -22,59 +22,59 @@ import static org.ject.support.domain.member.entity.QMember.member;
 @RequiredArgsConstructor
 public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
 
-    private final JPAQueryFactory queryFactory;
+        private final JPAQueryFactory queryFactory;
 
-    @Override
-    public Page<Apply> findAppliesByStatus(final JobFamily jobFamily,
-                                           final Apply.Status status,
-                                           final Long semesterId,
-                                           final Pageable pageable) {
+        @Override
+        public Page<Apply> findAppliesByStatus(final JobFamily jobFamily,
+                        final Apply.Status status,
+                        final Long semesterId,
+                        final Pageable pageable) {
 
-        List<Apply> content = queryFactory
-                .selectFrom(apply)
-                .distinct()
-                .join(apply.member, member).fetchJoin()
-                .join(apply.applicationForm, applicationForm).fetchJoin()
-                .leftJoin(apply.applicationForm.portfolios, portfolio).fetchJoin()
-                .where(
-                        apply.member.isDeleted.eq(false),
-                        eqJobFamily(jobFamily),
-                        eqApplyStatus(status),
-                        eqSemesterId(semesterId)
-                )
-                .orderBy(apply.createdAt.desc())
-                .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetch();
+                List<Apply> content = queryFactory
+                                .selectFrom(apply)
+                                .distinct()
+                                .join(apply.member, member).fetchJoin()
+                                .join(apply.applicationForm, applicationForm).fetchJoin()
+                                .leftJoin(apply.applicationForm.portfolios, portfolio).fetchJoin()
+                                .where(
+                                                apply.member.isDeleted.eq(false),
+                                                eqJobFamily(jobFamily),
+                                                eqApplyStatus(status),
+                                                eqSemesterId(semesterId))
+                                .orderBy(apply.createdAt.desc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
+                                .fetch();
 
-        Long total = queryFactory
-                .select(apply.count())
-                .from(apply)
-                .join(apply.member, member)
-                .where(
-                        apply.member.isDeleted.eq(false),
-                        eqJobFamily(jobFamily),
-                        eqApplyStatus(status),
-                        eqSemesterId(semesterId)
-                ).fetchOne();
+                Long total = queryFactory
+                                .select(apply.count())
+                                .from(apply)
+                                .join(apply.member, member)
+                                .where(
+                                                apply.member.isDeleted.eq(false),
+                                                eqJobFamily(jobFamily),
+                                                eqApplyStatus(status),
+                                                eqSemesterId(semesterId))
+                                .fetchOne();
 
-        return PageResponse.from(content, pageable, total);
-    }
+                return PageResponse.from(content, pageable, total);
+        }
 
-    private BooleanExpression eqJobFamily(final JobFamily jobFamily) {
-        return Optional.ofNullable(jobFamily)
-                .map(apply.member.jobFamily::eq)
-                .orElse(null);
-    }
-    private BooleanExpression eqApplyStatus(final Apply.Status status) {
-        return Optional.ofNullable(status)
-                .map(apply.status::eq)
-                .orElse(null);
-    }
+        private BooleanExpression eqJobFamily(final JobFamily jobFamily) {
+                return Optional.ofNullable(jobFamily)
+                                .map(apply.recruit.jobFamily::eq)
+                                .orElse(null);
+        }
 
-    private BooleanExpression eqSemesterId(final Long semesterId) {
-        return Optional.ofNullable(semesterId)
-                .map(apply.recruit.semester.id::eq)
-                .orElse(null);
-    }
+        private BooleanExpression eqApplyStatus(final Apply.Status status) {
+                return Optional.ofNullable(status)
+                                .map(apply.status::eq)
+                                .orElse(null);
+        }
+
+        private BooleanExpression eqSemesterId(final Long semesterId) {
+                return Optional.ofNullable(semesterId)
+                                .map(apply.recruit.semester.id::eq)
+                                .orElse(null);
+        }
 }

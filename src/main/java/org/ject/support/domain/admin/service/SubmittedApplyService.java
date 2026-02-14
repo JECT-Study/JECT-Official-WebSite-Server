@@ -41,8 +41,8 @@ public class SubmittedApplyService {
 
     @Transactional(readOnly = true)
     public Page<SubmittedApplyResponse> findSubmittedApplies(final JobFamily jobFamily,
-                                                             final Long semesterId,
-                                                             final Pageable pageable) {
+            final Long semesterId,
+            final Pageable pageable) {
         Page<Apply> applyPage = applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
 
         List<SubmittedApplyResponse> content = applyPage.getContent().stream()
@@ -67,7 +67,7 @@ public class SubmittedApplyService {
 
     @Transactional
     public void updateSubmittedApply(final Long applyId,
-                                     final SubmittedApplyEditRequest request) {
+            final SubmittedApplyEditRequest request) {
         Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
         ensureSubmitted(apply);
@@ -77,7 +77,7 @@ public class SubmittedApplyService {
                 .name(request.name())
                 .phoneNumber(request.phoneNumber())
                 .email(request.email())
-                .jobFamily(request.jobFamily())
+
                 .build();
         member.edit(memberEditor);
 
@@ -164,7 +164,7 @@ public class SubmittedApplyService {
         // 제출된 지원서인지 검증
         ensureSubmitted(apply);
 
-        //  제출된 지원서 제거
+        // 제출된 지원서 제거
         apply.deleteApplicationForm();
 
         // 프로필 제거
