@@ -22,6 +22,15 @@ class MemberTest {
                 .name(name)
                 .phoneNumber(phoneNumber)
                 .email(email)
+                .role(role)
+                .region(region)
+                .status(MemberStatus.ACTIVE)
+                .build();
+
+        // then
+        assertThat(member.getName()).isEqualTo(name);
+        assertThat(member.getPhoneNumber()).isEqualTo(phoneNumber);
+        assertThat(member.getEmail()).isEqualTo(email);
         assertThat(member.getRole()).isEqualTo(role);
         assertThat(member.getRegion()).isEqualTo(region);
     }
