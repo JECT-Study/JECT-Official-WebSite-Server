@@ -176,11 +176,11 @@ class MemberQueryRepositoryTest {
                 var semester1 = createSemester("1기");
                 semesterRepository.save(semester1);
 
-                var admin1 = createMemberWithSemester("가젝트", "01011111111", "admin1@test.com", BE, Role.ADMIN,
+                var admin1 = createMemberWithSemester("가젝트", "01011111111", "admin1@test.com", Role.ADMIN,
                                 semester1.getId());
-                var admin2 = createMemberWithSemester("나젝트", "01011111112", "admin2@test.com", FE, Role.ADMIN,
+                var admin2 = createMemberWithSemester("나젝트", "01011111112", "admin2@test.com", Role.ADMIN,
                                 semester1.getId());
-                var admin3 = createMemberWithSemester("다젝트", "01011111113", "admin3@test.com", BE, Role.ADMIN,
+                var admin3 = createMemberWithSemester("다젝트", "01011111113", "admin3@test.com", Role.ADMIN,
                                 semester1.getId());
 
                 memberRepository.saveAll(List.of(admin1, admin2, admin3));
@@ -317,13 +317,12 @@ class MemberQueryRepositoryTest {
                                 .build();
         }
 
-        private Member createMemberWithSemester(String name, String phoneNumber, String email, JobFamily jobFamily,
+        private Member createMemberWithSemester(String name, String phoneNumber, String email,
                         Role role, Long semesterId) {
                 return Member.builder()
                                 .name(name)
                                 .phoneNumber(phoneNumber)
                                 .email(email)
-                                .jobFamily(jobFamily)
                                 .role(role)
                                 .pin("123456")
                                 .status(MemberStatus.ACTIVE)
