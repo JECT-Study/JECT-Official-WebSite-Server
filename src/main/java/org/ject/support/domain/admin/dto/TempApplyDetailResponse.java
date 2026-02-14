@@ -19,25 +19,22 @@ public record TempApplyDetailResponse(
         String savedAt,
         String lastModifiedAt,
         JobFamily recruitJobFamily,
-        TempApplicationFormResponse tempApplicationFormResponse
-) {
+        TempApplicationFormResponse tempApplicationFormResponse) {
 
     public static TempApplyDetailResponse from(
             Apply apply,
             Map<String, String> answers,
-            List<ApplyPortfolioDto> portfolios
-    ) {
+            List<ApplyPortfolioDto> portfolios) {
         return new TempApplyDetailResponse(
-            apply.getId(),
-            apply.getMember().getName(),
-            apply.getMember().getPhoneNumber(),
-            apply.getMember().getEmail(),
-            apply.getMember().getJobFamily(),
-            apply.getRecruit().getSemester().getName(),
-            DateTimeUtil.formatWithDayOfWeek(apply.getCreatedAt()),
-            DateTimeUtil.formatWithDayOfWeek(apply.getUpdatedAt()),
-            apply.getRecruit().getJobFamily(),
-            TempApplicationFormResponse.from(apply.getRecruit().getJobFamily(), answers, portfolios)
-        );
+                apply.getId(),
+                apply.getMember().getName(),
+                apply.getMember().getPhoneNumber(),
+                apply.getMember().getEmail(),
+                apply.getRecruit().getJobFamily(),
+                apply.getRecruit().getSemester().getName(),
+                DateTimeUtil.formatWithDayOfWeek(apply.getCreatedAt()),
+                DateTimeUtil.formatWithDayOfWeek(apply.getUpdatedAt()),
+                apply.getRecruit().getJobFamily(),
+                TempApplicationFormResponse.from(apply.getRecruit().getJobFamily(), answers, portfolios));
     }
 }

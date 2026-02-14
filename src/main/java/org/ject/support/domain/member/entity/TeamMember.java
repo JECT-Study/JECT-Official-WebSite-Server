@@ -11,9 +11,15 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import org.ject.support.domain.base.BaseTimeEntity;
+import lombok.Getter;
+import org.ject.support.domain.member.JobFamily;
 
 @Entity
+@Getter
 @Builder
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -27,7 +33,27 @@ public class TeamMember extends BaseTimeEntity {
     @JoinColumn(name = "member_id", nullable = false)
     private Member member;
 
+    @Enumerated(EnumType.STRING)
+    @Column(columnDefinition = "varchar(45)", nullable = false)
+    private JobFamily jobFamily;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;
+
+    public void updateJobFamily(JobFamily jobFamily) {
+        this.jobFamily = jobFamily;
+    }
+
+    public Member getMember() {
+        return member;
+    }
+
+    public Team getTeam() {
+        return team;
+    }
+
+    public JobFamily getJobFamily() {
+        return jobFamily;
+    }
 }

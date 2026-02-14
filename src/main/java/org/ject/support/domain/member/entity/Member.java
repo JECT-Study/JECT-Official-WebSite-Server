@@ -23,7 +23,7 @@ import org.ject.support.common.util.StringListConverter;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
-import org.ject.support.domain.member.JobFamily;
+
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
@@ -56,10 +56,6 @@ public class Member extends BaseTimeEntity {
     private String phoneNumber;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "varchar(45)")
-    private JobFamily jobFamily;
-
-    @Enumerated(EnumType.STRING)
     @Column(length = 30)
     private Region region;
 
@@ -75,9 +71,6 @@ public class Member extends BaseTimeEntity {
     @Convert(converter = StringListConverter.class)
     @Builder.Default
     private List<String> interestedDomains = new ArrayList<>();
-
-    @Column(nullable = false)
-    private Long semesterId;
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(10)", nullable = false)
@@ -118,8 +111,7 @@ public class Member extends BaseTimeEntity {
                 .name(this.name)
                 .phoneNumber(this.phoneNumber)
                 .email(this.email)
-                .semesterId(this.semesterId)
-                .jobFamily(this.jobFamily)
+
                 .region(this.region)
                 .experiencePeriod(this.experiencePeriod)
                 .careerDetails(this.careerDetails)
@@ -131,8 +123,7 @@ public class Member extends BaseTimeEntity {
         this.name = editor.name();
         this.phoneNumber = editor.phoneNumber();
         this.email = editor.email();
-        this.semesterId = editor.semesterId();
-        this.jobFamily = editor.jobFamily();
+
         this.region = editor.region();
         this.experiencePeriod = editor.experiencePeriod();
         this.careerDetails = editor.careerDetails();
@@ -143,7 +134,7 @@ public class Member extends BaseTimeEntity {
     public void deleteProfile() {
         this.name = null;
         this.phoneNumber = null;
-        this.jobFamily = null;
+
         this.region = null;
         this.careerDetails = null;
         this.experiencePeriod = null;
