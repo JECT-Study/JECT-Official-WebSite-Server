@@ -26,7 +26,7 @@ class MemberRepositoryTest {
         // given
         String email = "test@example.com";
         Role role = Role.ADMIN;
-        Member member = createMember("테스트", "01012345678", email, JobFamily.FE, role);
+        Member member = createMember("테스트", "01012345678", email, role);
         memberRepository.save(member);
 
         // when
@@ -51,13 +51,11 @@ class MemberRepositoryTest {
         assertThat(found).isEmpty();
     }
 
-    private Member createMember(String name, String phoneNumber, String email, JobFamily jobFamily, Role role) {
+    private Member createMember(String name, String phoneNumber, String email, Role role) {
         return Member.builder()
                 .name(name)
                 .phoneNumber(phoneNumber)
                 .email(email)
-                .semesterId(1L)
-                .jobFamily(jobFamily)
                 .role(role)
                 .pin("123456")
                 .status(MemberStatus.ACTIVE)
