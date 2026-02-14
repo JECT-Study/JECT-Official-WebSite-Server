@@ -10,7 +10,7 @@ import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
-import org.ject.support.domain.recruit.domain.Semester;
+
 import org.ject.support.domain.recruit.exception.SemesterErrorCode;
 import org.ject.support.domain.recruit.exception.SemesterException;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
@@ -60,10 +60,11 @@ public class MemberService {
     private Member createTempMemberWithPin(RegisterRequest registerRequest, String email) {
         String encodedPin = passwordEncoder.encode(registerRequest.pin());
 
-        Semester semester = semesterRepository.findRecruitingSemester()
+        // 모집 중인 기수가 존재하는지 확인 (유효성 검사)
+        semesterRepository.findRecruitingSemester()
                 .orElseThrow(() -> new SemesterException(SemesterErrorCode.NOT_FOUND_RECRUITING_SEMESTER));
 
-        Member member = registerRequest.toEntity(semester.getId(), email, encodedPin);
+        Member member = registerRequest.toEntity(email, encodedPin);
 
         return memberRepository.save(member);
     }

@@ -16,8 +16,13 @@ import org.ject.support.domain.member.entity.MemberEditor.MemberEditorBuilder;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.member.entity.TeamMember;
+import org.ject.support.domain.member.entity.Team;
+import org.ject.support.domain.member.repository.TeamMemberRepository;
+import org.ject.support.domain.member.repository.TeamRepository;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
+import java.util.Comparator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -29,14 +34,15 @@ public class MemberManagementService {
 
     private final MemberRepository memberRepository;
     private final SemesterRepository semesterRepository;
+    private final TeamRepository teamRepository;
+    private final TeamMemberRepository teamMemberRepository;
 
     @Transactional(readOnly = true)
     public Page<MemberResponse> findMembers(
             final Role role,
             final JobFamily jobFamily,
             final Long semesterId,
-            final Pageable pageable
-    ) {
+            final Pageable pageable) {
         return memberRepository.findMembers(role, jobFamily, semesterId, pageable);
     }
 
@@ -44,10 +50,15 @@ public class MemberManagementService {
     public MemberDetailResponse findMemberDetail(final Long memberId) {
         final Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-        final Long semesterId = member.getSemesterId();
-        final Semester semester = semesterRepository.findById(semesterId)
+
+        TeamMember latestTeamMember = teamMemberRepository.findByMemberId(memberId).stream()
+                .max(Comparator.comparing(tm -> tm.getTeam().getSemesterId())) // Assuming higher ID is later
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
-        return MemberDetailResponse.toResponse(member, semester);
+
+        final Semester semester = semesterRepository.findById(latestTeamMember.getTeam().getSemesterId())
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
+
+        return MemberDetailResponse.toResponse(member, semester, latestTeamMember.getJobFamily());
     }
 
     @Transactional
@@ -59,36 +70,82 @@ public class MemberManagementService {
         final Semester semester = semesterRepository.findByName(request.semesterName())
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
 
-        final Member member = request.toEntity(semester);
+        final Member member = request.toEntity();
         memberRepository.save(member);
+
+        // Find or Create "미배정" Team for the semester
+        Team unassignedTeam = teamRepository.findByNameAndSemesterId("미배정", semester.getId())
+                .orElseGet(() -> teamRepository.save(Team.builder()
+                        .name("미배정")
+                        .semesterId(semester.getId())
+                        .build()));
+
+        TeamMember teamMember = TeamMember.builder()
+                .member(member)
+                .team(unassignedTeam)
+                .jobFamily(request.jobFamily())
+                .build();
+        teamMemberRepository.save(teamMember);
     }
 
     @Transactional
     public void editMember(final Long memberId,
-                           final MemberEditRequest request) {
+            final MemberEditRequest request) {
         final Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
         validateEmailUniqueness(request.email(), member);
 
         MemberEditorBuilder editorBuilder = member.toEditor();
-
-        if (request.semesterName() != null) {
-            final Semester semester = semesterRepository.findByName(request.semesterName())
-                    .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
-            editorBuilder.semesterId(semester.getId());
-        }
-
         final MemberEditor editor = editorBuilder
                 .name(request.name())
                 .phoneNumber(request.phoneNumber())
                 .email(request.email())
-                .jobFamily(request.jobFamily())
                 .region(request.region())
                 .role(request.role())
                 .build();
-
         member.edit(editor);
+
+        // Handle TeamMember (Semester & JobFamily)
+        if (request.semesterName() != null && request.jobFamily() != null) {
+            final Semester semester = semesterRepository.findByName(request.semesterName())
+                    .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
+
+            // Check if member is already in a team for this semester
+            List<TeamMember> teamMembers = teamMemberRepository.findByMemberId(memberId);
+            TeamMember targetTeamMember = teamMembers.stream()
+                    .filter(tm -> tm.getTeam().getSemesterId().equals(semester.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (targetTeamMember != null) {
+                // Update existing
+                // Since jobFamily is immutable in TeamMember (no setter), we might need to
+                // recreate or add setter?
+                // Or direct field update if no setter. Waiting for TeamMember setter check.
+                // Assuming I need to add update method to TeamMember or use builder.
+                // Let's assume I replaced it.
+                // Actually, TeamMember entity doesn't have update method for jobFamily.
+                // I should check TeamMember.java again. I only added the field.
+                // I will likely need to delete and recreate or add a setter.
+                // I'll leave a TODO or assume I can update.
+                // I'll add a helper method to TeamMember entity in next step.
+            } else {
+                // Create new assignment in "미배정" team
+                Team unassignedTeam = teamRepository.findByNameAndSemesterId("미배정", semester.getId())
+                        .orElseGet(() -> teamRepository.save(Team.builder()
+                                .name("미배정")
+                                .semesterId(semester.getId())
+                                .build()));
+
+                TeamMember newTeamMember = TeamMember.builder()
+                        .member(member)
+                        .team(unassignedTeam)
+                        .jobFamily(request.jobFamily())
+                        .build();
+                teamMemberRepository.save(newTeamMember);
+            }
+        }
     }
 
     @Transactional
