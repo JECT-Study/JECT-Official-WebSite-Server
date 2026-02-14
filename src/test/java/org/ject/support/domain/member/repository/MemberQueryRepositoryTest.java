@@ -146,16 +146,18 @@ class MemberQueryRepositoryTest {
                 var semester2 = createSemester("2기");
                 semesterRepository.saveAll(List.of(semester1, semester2));
 
-                var admin1 = createMemberWithSemester("가젝트", "01011111111", "admin1@test.com", BE, Role.ADMIN,
-                                semester1.getId());
-                var admin2 = createMemberWithSemester("나젝트", "01011111112", "admin2@test.com", FE, Role.ADMIN,
-                                semester1.getId());
-                var semester1Member = createMemberWithSemester("다젝트", "01011111113", "semester1@test.com", BE,
-                                Role.SEMESTER, semester1.getId());
-                var apply1 = createMemberWithSemester("라젝트", "01011111114", "apply1@test.com", PD, Role.APPLY,
-                                semester2.getId());
-
-                memberRepository.saveAll(List.of(admin1, admin2, semester1Member, apply1));
+                var admin1 = createMemberWithSemesterAndJobFamily("가젝트", "01011111111", "admin1@test.com", BE,
+                                Role.ADMIN,
+                                semester1);
+                var admin2 = createMemberWithSemesterAndJobFamily("나젝트", "01011111112", "admin2@test.com", FE,
+                                Role.ADMIN,
+                                semester1);
+                var semester1Member = createMemberWithSemesterAndJobFamily("다젝트", "01011111113", "semester1@test.com",
+                                BE,
+                                Role.SEMESTER, semester1);
+                var apply1 = createMemberWithSemesterAndJobFamily("라젝트", "01011111114", "apply1@test.com", PD,
+                                Role.APPLY,
+                                semester2);
 
                 var pageable = PageRequest.of(0, 15);
 
@@ -176,14 +178,15 @@ class MemberQueryRepositoryTest {
                 var semester1 = createSemester("1기");
                 semesterRepository.save(semester1);
 
-                var admin1 = createMemberWithSemester("가젝트", "01011111111", "admin1@test.com", Role.ADMIN,
-                                semester1.getId());
-                var admin2 = createMemberWithSemester("나젝트", "01011111112", "admin2@test.com", Role.ADMIN,
-                                semester1.getId());
-                var admin3 = createMemberWithSemester("다젝트", "01011111113", "admin3@test.com", Role.ADMIN,
-                                semester1.getId());
-
-                memberRepository.saveAll(List.of(admin1, admin2, admin3));
+                var admin1 = createMemberWithSemesterAndJobFamily("가젝트", "01011111111", "admin1@test.com", BE,
+                                Role.ADMIN,
+                                semester1);
+                var admin2 = createMemberWithSemesterAndJobFamily("나젝트", "01011111112", "admin2@test.com", FE,
+                                Role.ADMIN,
+                                semester1);
+                var admin3 = createMemberWithSemesterAndJobFamily("다젝트", "01011111113", "admin3@test.com", BE,
+                                Role.ADMIN,
+                                semester1);
 
                 var pageable = PageRequest.of(0, 15);
 
@@ -208,14 +211,15 @@ class MemberQueryRepositoryTest {
                 var semester2 = createSemester("2기");
                 semesterRepository.saveAll(List.of(semester1, semester2));
 
-                var semester1Member1 = createMemberWithSemester("가젝트", "01011111111", "semester1@test.com", BE,
-                                Role.SEMESTER, semester1.getId());
-                var semester1Member2 = createMemberWithSemester("나젝트", "01011111112", "semester2@test.com", FE,
-                                Role.SEMESTER, semester1.getId());
-                var semester2Member1 = createMemberWithSemester("다젝트", "01011111113", "semester3@test.com", BE,
-                                Role.SEMESTER, semester2.getId());
-
-                memberRepository.saveAll(List.of(semester1Member1, semester1Member2, semester2Member1));
+                var semester1Member1 = createMemberWithSemesterAndJobFamily("가젝트", "01011111111", "semester1@test.com",
+                                BE,
+                                Role.SEMESTER, semester1);
+                var semester1Member2 = createMemberWithSemesterAndJobFamily("나젝트", "01011111112", "semester2@test.com",
+                                FE,
+                                Role.SEMESTER, semester1);
+                var semester2Member1 = createMemberWithSemesterAndJobFamily("다젝트", "01011111113", "semester3@test.com",
+                                BE,
+                                Role.SEMESTER, semester2);
 
                 var pageable = PageRequest.of(0, 15);
 
@@ -240,16 +244,18 @@ class MemberQueryRepositoryTest {
                 var semester2 = createSemester("2기");
                 semesterRepository.saveAll(List.of(semester1, semester2));
 
-                var semester1BE1 = createMemberWithSemester("가젝트", "01011111111", "semester1be1@test.com", BE,
-                                Role.ADMIN, semester1.getId());
-                var semester1BE2 = createMemberWithSemester("나젝트", "01011111112", "semester1be2@test.com", BE,
-                                Role.ADMIN, semester1.getId());
-                var semester1FE1 = createMemberWithSemester("다젝트", "01011111113", "semester1fe1@test.com", FE,
-                                Role.ADMIN, semester1.getId());
-                var semester2BE1 = createMemberWithSemester("라젝트", "01011111114", "semester2be1@test.com", BE,
-                                Role.ADMIN, semester2.getId());
-
-                memberRepository.saveAll(List.of(semester1BE1, semester1BE2, semester1FE1, semester2BE1));
+                var semester1BE1 = createMemberWithSemesterAndJobFamily("가젝트", "01011111111", "semester1be1@test.com",
+                                BE,
+                                Role.ADMIN, semester1);
+                var semester1BE2 = createMemberWithSemesterAndJobFamily("나젝트", "01011111112", "semester1be2@test.com",
+                                BE,
+                                Role.ADMIN, semester1);
+                var semester1FE1 = createMemberWithSemesterAndJobFamily("다젝트", "01011111113", "semester1fe1@test.com",
+                                FE,
+                                Role.ADMIN, semester1);
+                var semester2BE1 = createMemberWithSemesterAndJobFamily("라젝트", "01011111114", "semester2be1@test.com",
+                                BE,
+                                Role.ADMIN, semester2);
 
                 var pageable = PageRequest.of(0, 10);
 
@@ -276,10 +282,8 @@ class MemberQueryRepositoryTest {
                 var semester1 = createSemester("1기");
                 semesterRepository.save(semester1);
 
-                var deletedMember = createMemberWithSemester("삭제회원", "01011111111", "deleted@test.com", BE,
-                                Role.SEMESTER, semester1.getId());
-
-                memberRepository.save(deletedMember);
+                var deletedMember = createMemberWithSemesterAndJobFamily("삭제회원", "01011111111", "deleted@test.com", BE,
+                                Role.SEMESTER, semester1);
 
                 // 회원 삭제 (소프트 삭제)
                 memberRepository.delete(deletedMember);
@@ -317,16 +321,26 @@ class MemberQueryRepositoryTest {
                                 .build();
         }
 
-        private Member createMemberWithSemester(String name, String phoneNumber, String email,
-                        Role role, Long semesterId) {
-                return Member.builder()
+        private Member createMemberWithSemesterAndJobFamily(String name, String phoneNumber, String email,
+                        JobFamily jobFamily, Role role, Semester semester) {
+                Member m = memberRepository.save(Member.builder()
                                 .name(name)
                                 .phoneNumber(phoneNumber)
                                 .email(email)
                                 .role(role)
                                 .pin("123456")
                                 .status(MemberStatus.ACTIVE)
-                                .build();
+                                .build());
+                Team t = teamRepository.save(Team.builder()
+                                .name(name + "_team")
+                                .semesterId(semester.getId())
+                                .build());
+                teamMemberRepository.save(TeamMember.builder()
+                                .team(t)
+                                .member(m)
+                                .jobFamily(jobFamily)
+                                .build());
+                return m;
         }
 
         private Team createTeam(String name) {
