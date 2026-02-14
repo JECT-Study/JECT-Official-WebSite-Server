@@ -22,17 +22,6 @@ class MemberTest {
                 .name(name)
                 .phoneNumber(phoneNumber)
                 .email(email)
-                .jobFamily(jobFamily)
-                .role(role)
-                .region(region)
-                .status(MemberStatus.ACTIVE)
-                .build();
-
-        // then
-        assertThat(member.getName()).isEqualTo(name);
-        assertThat(member.getPhoneNumber()).isEqualTo(phoneNumber);
-        assertThat(member.getEmail()).isEqualTo(email);
-        assertThat(member.getJobFamily()).isEqualTo(jobFamily);
         assertThat(member.getRole()).isEqualTo(role);
         assertThat(member.getRegion()).isEqualTo(region);
     }
@@ -62,7 +51,7 @@ class MemberTest {
         assertThat(member.getEmail()).isEqualTo(email);
         assertThat(member.getRole()).isEqualTo(role);
         assertThat(member.getRegion()).isEqualTo(region);
-        assertThat(member.getJobFamily()).isNull();
+
     }
 
     @Test

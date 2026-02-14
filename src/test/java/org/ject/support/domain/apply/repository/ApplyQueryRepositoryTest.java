@@ -194,14 +194,13 @@ class ApplyQueryRepositoryTest {
         // when
         Page<Apply> result = applyRepository.findAppliesByStatus(BE, status, null, pageable);
 
-
         // then
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
     }
 
     @Test
-    void createdAt_기준_내림차순_정렬()  {
+    void createdAt_기준_내림차순_정렬() {
         // given
         Member member1 = createMember("be1@test.com", BE);
         Member member2 = createMember("be2@test.com", BE);
@@ -300,8 +299,7 @@ class ApplyQueryRepositoryTest {
     private Member createMember(String email, JobFamily jobFamily) {
         return Member.builder()
                 .email(email)
-                .jobFamily(jobFamily)
-                .semesterId(1L)
+
                 .role(Role.APPLY)
                 .pin("123456")
                 .status(MemberStatus.ACTIVE)

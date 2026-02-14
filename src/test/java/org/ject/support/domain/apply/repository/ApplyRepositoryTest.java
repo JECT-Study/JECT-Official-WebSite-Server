@@ -147,7 +147,7 @@ class ApplyRepositoryTest {
     private Member createMember(String email, Role role) {
         return Member.builder()
                 .email(email)
-                .semesterId(1L)
+
                 .role(role)
                 .pin("123456")
                 .status(MemberStatus.ACTIVE)

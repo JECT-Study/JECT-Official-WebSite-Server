@@ -41,7 +41,7 @@ class CustomUserDetailServiceTest {
                 .phoneNumber("01012345678")
                 .role(Role.SEMESTER)
                 .status(MemberStatus.ACTIVE)
-                .jobFamily(JobFamily.BE)
+
                 .build();
     }
 

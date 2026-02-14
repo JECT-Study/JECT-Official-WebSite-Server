@@ -119,17 +119,7 @@ public class MemberManagementService {
                     .orElse(null);
 
             if (targetTeamMember != null) {
-                // Update existing
-                // Since jobFamily is immutable in TeamMember (no setter), we might need to
-                // recreate or add setter?
-                // Or direct field update if no setter. Waiting for TeamMember setter check.
-                // Assuming I need to add update method to TeamMember or use builder.
-                // Let's assume I replaced it.
-                // Actually, TeamMember entity doesn't have update method for jobFamily.
-                // I should check TeamMember.java again. I only added the field.
-                // I will likely need to delete and recreate or add a setter.
-                // I'll leave a TODO or assume I can update.
-                // I'll add a helper method to TeamMember entity in next step.
+                targetTeamMember.updateJobFamily(request.jobFamily());
             } else {
                 // Create new assignment in "미배정" team
                 Team unassignedTeam = teamRepository.findByNameAndSemesterId("미배정", semester.getId())

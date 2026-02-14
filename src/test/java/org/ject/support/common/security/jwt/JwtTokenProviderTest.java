@@ -44,7 +44,7 @@ class JwtTokenProviderTest extends UnitTestSupport {
 
         ReflectionTestUtils.setField(jwtTokenProvider, "accessExpirationTime", 3600000L); // 1시간
         ReflectionTestUtils.setField(jwtTokenProvider, "refreshExpirationTime", 1209600000L); // 2주
-        
+
         // secretKey 초기화 추가
         String salt = "secretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkeysecretkey";
         ReflectionTestUtils.setField(jwtTokenProvider, "salt", salt);
@@ -57,7 +57,7 @@ class JwtTokenProviderTest extends UnitTestSupport {
                 .phoneNumber("01012345678")
                 .status(MemberStatus.ACTIVE)
                 .role(Role.SEMESTER)
-                .jobFamily(JobFamily.BE)
+
                 .build();
 
         CustomUserDetails userDetails = new CustomUserDetails(testMember);
@@ -188,14 +188,14 @@ class JwtTokenProviderTest extends UnitTestSupport {
                 .status(MemberStatus.ACTIVE)
                 .role(Role.ADMIN)
                 .build();
-        
+
         CustomUserDetails userDetails = new CustomUserDetails(testMember);
         authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
-        
+
         // when
         String token = jwtTokenProvider.createAccessToken(authentication, testMember.getId());
         Authentication resultAuth = jwtTokenProvider.getAuthenticationByToken(token);
-        
+
         // then
         assertThat(resultAuth).isNotNull();
         assertThat(resultAuth.getName()).isEqualTo(testMember.getEmail());

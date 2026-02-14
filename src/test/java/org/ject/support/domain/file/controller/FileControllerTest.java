@@ -35,7 +35,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @IntegrationTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {"spring.data.redis.repositories.enabled=false"})
+@TestPropertySource(properties = { "spring.data.redis.repositories.enabled=false" })
 class FileControllerTest extends ApplicationPeriodTest {
 
     @Autowired
@@ -56,8 +56,7 @@ class FileControllerTest extends ApplicationPeriodTest {
     void setUp() {
         member = Member.builder()
                 .email("test32@gmail.com")
-                .semesterId(1L)
-                .jobFamily(JobFamily.BE)
+
                 .name("홍길동") // 한글 1~5글자로 수정
                 .role(Role.SEMESTER)
                 .phoneNumber("01012345678") // 010으로 시작하는 11자리 수정
@@ -81,9 +80,9 @@ class FileControllerTest extends ApplicationPeriodTest {
                 .build());
 
         mockMvc.perform(post("/upload/portfolios")
-                        .contentType("application/json")
-                        .param("memberId", member.getId().toString())
-                        .content(getContent()))
+                .contentType("application/json")
+                .param("memberId", member.getId().toString())
+                .content(getContent()))
                 .andExpect(content().string(containsString("SUCCESS")))
                 .andDo(print());
     }
@@ -113,9 +112,9 @@ class FileControllerTest extends ApplicationPeriodTest {
 
         // then
         mockMvc.perform(post("/upload/portfolios")
-                        .contentType("application/json")
-                        .param("memberId", member.getId().toString())
-                        .content(getContent()))
+                .contentType("application/json")
+                .param("memberId", member.getId().toString())
+                .content(getContent()))
                 .andExpect(content().string(containsString("GLOBAL-9")))
                 .andDo(print());
     }
@@ -127,17 +126,17 @@ class FileControllerTest extends ApplicationPeriodTest {
     void invalid_portfolio_content_type() throws Exception {
         // when, then
         mockMvc.perform(post("/upload/portfolios")
-                        .contentType("application/json")
-                        .param("memberId", member.getId().toString())
-                        .content("""
-                                [
-                                    {
-                                        "name": "test1.png",
-                                        "contentType": "image/png",
-                                        "contentLength": 126203
-                                    }
-                                ]
-                                """))
+                .contentType("application/json")
+                .param("memberId", member.getId().toString())
+                .content("""
+                        [
+                            {
+                                "name": "test1.png",
+                                "contentType": "image/png",
+                                "contentLength": 126203
+                            }
+                        ]
+                        """))
                 .andExpect(content().string(containsString(INVALID_EXTENSION.getCode())))
                 .andDo(print());
     }
@@ -158,23 +157,22 @@ class FileControllerTest extends ApplicationPeriodTest {
 
         // when, then
         mockMvc.perform(post("/upload/portfolios")
-                        .contentType("application/json")
-                        .param("memberId", member.getId().toString())
-                        .content("""
-                                [
-                                    {
-                                        "name": "test1.pdf",
-                                        "contentType": "application/pdf",
-                                        "contentLength": 53428800
-                                    },
-                                    {
-                                        "name": "test2.pdf",
-                                        "contentType": "application/pdf",
-                                        "contentLength": 52428800
-                                    }
-                                ]
-                                """)
-                )
+                .contentType("application/json")
+                .param("memberId", member.getId().toString())
+                .content("""
+                        [
+                            {
+                                "name": "test1.pdf",
+                                "contentType": "application/pdf",
+                                "contentLength": 53428800
+                            },
+                            {
+                                "name": "test2.pdf",
+                                "contentType": "application/pdf",
+                                "contentLength": 52428800
+                            }
+                        ]
+                        """))
                 .andExpect(status().isPayloadTooLarge())
                 .andExpect(content().string(containsString(FileErrorCode.EXCEEDED_PORTFOLIO_MAX_SIZE.getCode())))
                 .andDo(print())

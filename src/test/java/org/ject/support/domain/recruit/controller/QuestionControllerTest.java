@@ -35,83 +35,86 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @IntegrationTest
 @AutoConfigureMockMvc
-@TestPropertySource(properties = {"spring.data.redis.repositories.enabled=false"})
+@TestPropertySource(properties = { "spring.data.redis.repositories.enabled=false" })
 class QuestionControllerTest {
 
-    @Autowired
-    MockMvc mockMvc;
+        @Autowired
+        MockMvc mockMvc;
 
-    @Autowired
-    RecruitRepository recruitRepository;
+        @Autowired
+        RecruitRepository recruitRepository;
 
-    @Autowired
-    QuestionRepository questionRepository;
+        @Autowired
+        QuestionRepository questionRepository;
 
-    @Autowired
-    MemberRepository memberRepository;
+        @Autowired
+        MemberRepository memberRepository;
 
-    @Autowired
-    SemesterRepository semesterRepository;
+        @Autowired
+        SemesterRepository semesterRepository;
 
-    @Autowired
-    RedisTemplate<String, String> redisTemplate;
+        @Autowired
+        RedisTemplate<String, String> redisTemplate;
 
-    Member member;
+        Member member;
 
-    @BeforeEach
-    void setUp() {
-        List<Question> questions = List.of(
-                Question.builder().sequence(1).inputType(TEXT).isRequired(true).title("title1").label("label").selectOptions(List.of("a", "b", "c")).build(),
-                Question.builder().sequence(2).inputType(TEXT).isRequired(true).title("title2").label("label").build(),
-                Question.builder().sequence(3).inputType(TEXT).isRequired(true).title("title3").label("label").build(),
-                Question.builder().sequence(4).inputType(TEXT).isRequired(true).title("title4").label("label").build(),
-                Question.builder().sequence(5).inputType(TEXT).isRequired(true).title("title5").label("label").build()
-        );
+        @BeforeEach
+        void setUp() {
+                List<Question> questions = List.of(
+                                Question.builder().sequence(1).inputType(TEXT).isRequired(true).title("title1")
+                                                .label("label").selectOptions(List.of("a", "b", "c")).build(),
+                                Question.builder().sequence(2).inputType(TEXT).isRequired(true).title("title2")
+                                                .label("label").build(),
+                                Question.builder().sequence(3).inputType(TEXT).isRequired(true).title("title3")
+                                                .label("label").build(),
+                                Question.builder().sequence(4).inputType(TEXT).isRequired(true).title("title4")
+                                                .label("label").build(),
+                                Question.builder().sequence(5).inputType(TEXT).isRequired(true).title("title5")
+                                                .label("label").build());
 
-        Semester savedSemester = semesterRepository.save(Semester.builder()
-                .name("1기")
-                .isRecruiting(true)
-                .build());
+                Semester savedSemester = semesterRepository.save(Semester.builder()
+                                .name("1기")
+                                .isRecruiting(true)
+                                .build());
 
-        Recruit recruit = Recruit.builder()
-                .startDate(LocalDateTime.now().minusDays(1))
-                .endDate(LocalDateTime.now().plusDays(1))
-                .semester(savedSemester)
-                .jobFamily(JobFamily.BE)
-                .build();
+                Recruit recruit = Recruit.builder()
+                                .startDate(LocalDateTime.now().minusDays(1))
+                                .endDate(LocalDateTime.now().plusDays(1))
+                                .semester(savedSemester)
+                                .jobFamily(JobFamily.BE)
+                                .build();
 
-        for (Question question : questions) {
-            recruit.addQuestion(question);
+                for (Question question : questions) {
+                        recruit.addQuestion(question);
+                }
+
+                recruitRepository.save(recruit);
+
+                member = Member.builder()
+                                .email("test32@gmail.com")
+
+                                .name("김젝트")
+                                .role(Role.SEMESTER)
+                                .phoneNumber("01012345678")
+                                .pin("123456") // PIN 필드 추가
+                                .status(MemberStatus.ACTIVE)
+                                .build();
+                memberRepository.save(member);
         }
 
-        recruitRepository.save(recruit);
+        @Test
+        @DisplayName("지원서 문항 조회 시 redis에 캐싱")
+        @AuthenticatedUser
+        void find_questions_cache() throws Exception {
+                // when
+                mockMvc.perform(get("/apply/questions")
+                                .param("jobFamily", "BE"))
+                                .andExpect(status().isOk())
+                                .andExpect(content().string(containsString("SUCCESS")))
+                                .andDo(print());
 
-        member = Member.builder()
-                .email("test32@gmail.com")
-                .semesterId(1L)
-                .jobFamily(JobFamily.BE)
-                .name("김젝트")
-                .role(Role.SEMESTER)
-                .phoneNumber("01012345678")
-                .pin("123456") // PIN 필드 추가
-                .status(MemberStatus.ACTIVE)
-                .build();
-        memberRepository.save(member);
-    }
-
-    @Test
-    @DisplayName("지원서 문항 조회 시 redis에 캐싱")
-    @AuthenticatedUser
-    void find_questions_cache() throws Exception {
-        // when
-        mockMvc.perform(get("/apply/questions")
-                        .param("jobFamily", "BE"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("SUCCESS")))
-                .andDo(print());
-
-        // then
-        Long countExistingKeys = redisTemplate.countExistingKeys(List.of("cache::question::BE"));
-        Assertions.assertThat(countExistingKeys).isEqualTo(1);
-    }
+                // then
+                Long countExistingKeys = redisTemplate.countExistingKeys(List.of("cache::question::BE"));
+                Assertions.assertThat(countExistingKeys).isEqualTo(1);
+        }
 }
