@@ -2,6 +2,7 @@ package org.ject.support.domain.admin.service;
 
 import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER;
 
+import java.util.Comparator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.member.JobFamily;
@@ -13,9 +14,13 @@ import org.ject.support.domain.admin.dto.MemberResponse;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberEditor;
 import org.ject.support.domain.member.entity.MemberEditor.MemberEditorBuilder;
+import org.ject.support.domain.member.entity.Team;
+import org.ject.support.domain.member.entity.TeamMember;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.member.repository.TeamMemberRepository;
+import org.ject.support.domain.member.repository.TeamRepository;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.springframework.data.domain.Page;
@@ -29,14 +34,15 @@ public class MemberManagementService {
 
     private final MemberRepository memberRepository;
     private final SemesterRepository semesterRepository;
+    private final TeamRepository teamRepository;
+    private final TeamMemberRepository teamMemberRepository;
 
     @Transactional(readOnly = true)
     public Page<MemberResponse> findMembers(
             final Role role,
             final JobFamily jobFamily,
             final Long semesterId,
-            final Pageable pageable
-    ) {
+            final Pageable pageable) {
         return memberRepository.findMembers(role, jobFamily, semesterId, pageable);
     }
 
@@ -44,10 +50,15 @@ public class MemberManagementService {
     public MemberDetailResponse findMemberDetail(final Long memberId) {
         final Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-        final Long semesterId = member.getSemesterId();
-        final Semester semester = semesterRepository.findById(semesterId)
+
+        final TeamMember latestTeamMember = teamMemberRepository.findByMemberId(memberId).stream()
+                .max(Comparator.comparing(tm -> tm.getTeam().getSemesterId()))
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
-        return MemberDetailResponse.toResponse(member, semester);
+
+        final Semester semester = semesterRepository.findById(latestTeamMember.getTeam().getSemesterId())
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
+
+        return MemberDetailResponse.toResponse(member, semester, latestTeamMember.getJobFamily());
     }
 
     @Transactional
@@ -61,11 +72,20 @@ public class MemberManagementService {
 
         final Member member = request.toEntity(semester);
         memberRepository.save(member);
+
+        final Team unassignedTeam = findOrCreateUnassignedTeam(semester.getId());
+
+        final TeamMember teamMember = TeamMember.builder()
+                .member(member)
+                .team(unassignedTeam)
+                .jobFamily(request.jobFamily())
+                .build();
+        teamMemberRepository.save(teamMember);
     }
 
     @Transactional
     public void editMember(final Long memberId,
-                           final MemberEditRequest request) {
+            final MemberEditRequest request) {
         final Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
@@ -73,10 +93,36 @@ public class MemberManagementService {
 
         MemberEditorBuilder editorBuilder = member.toEditor();
 
+        // 대상 학기 결정
+        Long targetSemesterId = member.getSemesterId();
         if (request.semesterName() != null) {
             final Semester semester = semesterRepository.findByName(request.semesterName())
                     .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
+            targetSemesterId = semester.getId();
             editorBuilder.semesterId(semester.getId());
+        }
+
+        // TeamMember 관리 (semester 또는 jobFamily 변경 시)
+        if (request.semesterName() != null || request.jobFamily() != null) {
+            final Long semesterId = targetSemesterId;
+            teamMemberRepository.findByMemberIdAndTeamSemesterId(memberId, semesterId)
+                    .ifPresentOrElse(
+                            tm -> {
+                                if (request.jobFamily() != null) {
+                                    tm.updateJobFamily(request.jobFamily());
+                                }
+                            },
+                            () -> {
+                                final Team unassignedTeam = findOrCreateUnassignedTeam(semesterId);
+                                final TeamMember newTeamMember = TeamMember.builder()
+                                        .member(member)
+                                        .team(unassignedTeam)
+                                        .jobFamily(request.jobFamily() != null
+                                                ? request.jobFamily()
+                                                : member.getJobFamily())
+                                        .build();
+                                teamMemberRepository.save(newTeamMember);
+                            });
         }
 
         final MemberEditor editor = editorBuilder
@@ -121,5 +167,13 @@ public class MemberManagementService {
         if (memberRepository.existsByEmail(newEmail)) {
             throw new MemberException(MemberErrorCode.DUPLICATE_EMAIL);
         }
+    }
+
+    private Team findOrCreateUnassignedTeam(final Long semesterId) {
+        return teamRepository.findByNameAndSemesterId("미배정", semesterId)
+                .orElseGet(() -> teamRepository.save(Team.builder()
+                        .name("미배정")
+                        .semesterId(semesterId)
+                        .build()));
     }
 }

@@ -17,9 +17,13 @@ import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.entity.Team;
+import org.ject.support.domain.member.entity.TeamMember;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.member.repository.TeamMemberRepository;
+import org.ject.support.domain.member.repository.TeamRepository;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.junit.jupiter.api.Test;
@@ -30,385 +34,424 @@ import org.springframework.data.domain.PageRequest;
 
 class MemberManagementServiceTest extends UnitTestSupport {
 
-    @InjectMocks
-    private MemberManagementService memberManagementService;
+        @InjectMocks
+        private MemberManagementService memberManagementService;
 
-    @Mock
-    private MemberRepository memberRepository;
+        @Mock
+        private MemberRepository memberRepository;
 
-    @Mock
-    private SemesterRepository semesterRepository;
+        @Mock
+        private SemesterRepository semesterRepository;
 
-    private final String TEST_NAME = "홍길동";
-    private final String TEST_EMAIL = "test@example.com";
-    private final String TEST_PHONE_NUMBER = "01012345678";
+        @Mock
+        private TeamRepository teamRepository;
 
-    @Test
-    void 회원_목록_조회_성공() {
-        // given
-        var role = Role.SEMESTER;
-        var jobFamily = JobFamily.BE;
-        var semesterId = 1L;
-        var pageable = PageRequest.of(0, 15);
+        @Mock
+        private TeamMemberRepository teamMemberRepository;
 
-        var memberList = List.of(
-                MemberResponse.builder()
-                        .id(1L)
-                        .name("회원1")
-                        .phoneNumber("01012345678")
-                        .email("member1@test.com")
-                        .jobFamily(jobFamily)
-                        .semesterName("1기")
-                        .build(),
-                MemberResponse.builder()
-                        .id(2L)
-                        .name("회원2")
-                        .phoneNumber("01012345679")
-                        .email("member2@test.com")
-                        .jobFamily(jobFamily)
-                        .semesterName("1기")
-                        .build()
-        );
-        var expectedPage = new PageImpl<>(memberList, pageable, 2);
+        private final String TEST_NAME = "홍길동";
+        private final String TEST_EMAIL = "test@example.com";
+        private final String TEST_PHONE_NUMBER = "01012345678";
 
-        given(memberRepository.findMembers(role, jobFamily, semesterId, pageable))
-                .willReturn(expectedPage);
+        @Test
+        void 회원_목록_조회_성공() {
+                // given
+                var role = Role.SEMESTER;
+                var jobFamily = JobFamily.BE;
+                var semesterId = 1L;
+                var pageable = PageRequest.of(0, 15);
 
-        // when
-        var result = memberManagementService.findMembers(role, jobFamily, semesterId, pageable);
+                var memberList = List.of(
+                                MemberResponse.builder()
+                                                .id(1L)
+                                                .name("회원1")
+                                                .phoneNumber("01012345678")
+                                                .email("member1@test.com")
+                                                .jobFamily(jobFamily)
+                                                .semesterName("1기")
+                                                .build(),
+                                MemberResponse.builder()
+                                                .id(2L)
+                                                .name("회원2")
+                                                .phoneNumber("01012345679")
+                                                .email("member2@test.com")
+                                                .jobFamily(jobFamily)
+                                                .semesterName("1기")
+                                                .build());
+                var expectedPage = new PageImpl<>(memberList, pageable, 2);
 
-        // then
-        assertThat(result).isEqualTo(expectedPage);
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getTotalElements()).isEqualTo(2);
-        verify(memberRepository).findMembers(role, jobFamily, semesterId, pageable);
-    }
+                given(memberRepository.findMembers(role, jobFamily, semesterId, pageable))
+                                .willReturn(expectedPage);
 
-    @Test
-    void 회원_목록_조회_필터_없이_성공() {
-        // given
-        var role = Role.ADMIN;
-        var pageable = PageRequest.of(0, 15);
+                // when
+                var result = memberManagementService.findMembers(role, jobFamily, semesterId, pageable);
 
-        var memberList = List.of(
-                MemberResponse.builder()
-                        .id(1L)
-                        .name("관리자1")
-                        .phoneNumber("01012345678")
-                        .email("admin1@test.com")
-                        .jobFamily(JobFamily.BE)
-                        .semesterName("1기")
-                        .build()
-        );
-        var expectedPage = new PageImpl<>(memberList, pageable, 1);
+                // then
+                assertThat(result).isEqualTo(expectedPage);
+                assertThat(result.getContent()).hasSize(2);
+                assertThat(result.getTotalElements()).isEqualTo(2);
+                verify(memberRepository).findMembers(role, jobFamily, semesterId, pageable);
+        }
 
-        given(memberRepository.findMembers(role, null, null, pageable))
-                .willReturn(expectedPage);
+        @Test
+        void 회원_목록_조회_필터_없이_성공() {
+                // given
+                var role = Role.ADMIN;
+                var pageable = PageRequest.of(0, 15);
 
-        // when
-        var result = memberManagementService.findMembers(role, null, null, pageable);
+                var memberList = List.of(
+                                MemberResponse.builder()
+                                                .id(1L)
+                                                .name("관리자1")
+                                                .phoneNumber("01012345678")
+                                                .email("admin1@test.com")
+                                                .jobFamily(JobFamily.BE)
+                                                .semesterName("1기")
+                                                .build());
+                var expectedPage = new PageImpl<>(memberList, pageable, 1);
 
-        // then
-        assertThat(result).isEqualTo(expectedPage);
-        assertThat(result.getContent()).hasSize(1);
-        verify(memberRepository).findMembers(role, null, null, pageable);
-    }
+                given(memberRepository.findMembers(role, null, null, pageable))
+                                .willReturn(expectedPage);
 
-    @Test
-    void 회원_상세_조회_성공() {
-        // given
-        var memberId = 1L;
-        var semesterId = 1L;
+                // when
+                var result = memberManagementService.findMembers(role, null, null, pageable);
 
-        var member = Member.builder()
-                .id(memberId)
-                .name(TEST_NAME)
-                .phoneNumber(TEST_PHONE_NUMBER)
-                .email(TEST_EMAIL)
-                .jobFamily(JobFamily.BE)
-                .role(Role.SEMESTER)
-                .semesterId(semesterId)
-                .build();
+                // then
+                assertThat(result).isEqualTo(expectedPage);
+                assertThat(result.getContent()).hasSize(1);
+                verify(memberRepository).findMembers(role, null, null, pageable);
+        }
 
-        var semester = Semester.builder()
-                .id(semesterId)
-                .name("1기")
-                .build();
+        @Test
+        void 회원_상세_조회_성공() {
+                // given
+                var memberId = 1L;
+                var semesterId = 1L;
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(semesterRepository.findById(semesterId)).willReturn(Optional.of(semester));
+                var member = Member.builder()
+                                .id(memberId)
+                                .name(TEST_NAME)
+                                .phoneNumber(TEST_PHONE_NUMBER)
+                                .email(TEST_EMAIL)
+                                .jobFamily(JobFamily.BE)
+                                .role(Role.SEMESTER)
+                                .semesterId(semesterId)
+                                .build();
 
-        // when
-        var result = memberManagementService.findMemberDetail(memberId);
+                var semester = Semester.builder()
+                                .id(semesterId)
+                                .name("1기")
+                                .build();
 
-        // then
-        assertThat(result.id()).isEqualTo(memberId);
-        assertThat(result.name()).isEqualTo(TEST_NAME);
-        assertThat(result.email()).isEqualTo(TEST_EMAIL);
-        assertThat(result.phoneNumber()).isEqualTo(TEST_PHONE_NUMBER);
-        assertThat(result.jobFamily()).isEqualTo(JobFamily.BE);
-        assertThat(result.role()).isEqualTo(Role.SEMESTER);
-        assertThat(result.semesterName()).isEqualTo("1");
+                var team = Team.builder()
+                                .id(1L)
+                                .name("미배정")
+                                .semesterId(semesterId)
+                                .build();
 
-        verify(memberRepository).findById(memberId);
-        verify(semesterRepository).findById(semesterId);
-    }
+                var teamMember = TeamMember.builder()
+                                .id(1L)
+                                .member(member)
+                                .team(team)
+                                .jobFamily(JobFamily.BE)
+                                .build();
 
-    @Test
-    void 회원_상세_조회_실패_존재하지_않는_회원() {
-        // given
-        var memberId = 999L;
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(teamMemberRepository.findByMemberId(memberId)).willReturn(List.of(teamMember));
+                given(semesterRepository.findById(semesterId)).willReturn(Optional.of(semester));
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+                // when
+                var result = memberManagementService.findMemberDetail(memberId);
 
-        // expected
-        assertThatThrownBy(() -> memberManagementService.findMemberDetail(memberId))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+                // then
+                assertThat(result.id()).isEqualTo(memberId);
+                assertThat(result.name()).isEqualTo(TEST_NAME);
+                assertThat(result.email()).isEqualTo(TEST_EMAIL);
+                assertThat(result.phoneNumber()).isEqualTo(TEST_PHONE_NUMBER);
+                assertThat(result.jobFamily()).isEqualTo(JobFamily.BE);
+                assertThat(result.role()).isEqualTo(Role.SEMESTER);
+                assertThat(result.semesterName()).isEqualTo("1");
 
-        verify(memberRepository).findById(memberId);
-    }
+                verify(memberRepository).findById(memberId);
+                verify(teamMemberRepository).findByMemberId(memberId);
+                verify(semesterRepository).findById(semesterId);
+        }
 
-    @Test
-    void 회원_상세_조회_실패_존재하지_않는_기수() {
-        // given
-        var memberId = 1L;
-        var semesterId = 999L;
+        @Test
+        void 회원_상세_조회_실패_존재하지_않는_회원() {
+                // given
+                var memberId = 999L;
 
-        var member = Member.builder()
-                .id(memberId)
-                .name(TEST_NAME)
-                .semesterId(semesterId)
-                .build();
+                given(memberRepository.findById(memberId)).willReturn(Optional.empty());
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(semesterRepository.findById(semesterId)).willReturn(Optional.empty());
+                // expected
+                assertThatThrownBy(() -> memberManagementService.findMemberDetail(memberId))
+                                .isInstanceOf(MemberException.class)
+                                .extracting(e -> ((MemberException) e).getErrorCode())
+                                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
 
-        // expected
-        assertThatThrownBy(() -> memberManagementService.findMemberDetail(memberId))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER);
+                verify(memberRepository).findById(memberId);
+        }
 
-        verify(memberRepository).findById(memberId);
-        verify(semesterRepository).findById(semesterId);
-    }
+        @Test
+        void 회원_상세_조회_실패_TeamMember가_없는_경우() {
+                // given
+                var memberId = 1L;
 
-    @Test
-    void 관리자용_회원_등록_성공() {
-        // given
-        var request = new MemberRegisterRequest(
-                Role.SEMESTER,
-                TEST_NAME,
-                TEST_PHONE_NUMBER,
-                TEST_EMAIL,
-                JobFamily.BE,
-                Region.SEOUL,
-                "1기"
-        );
+                var member = Member.builder()
+                                .id(memberId)
+                                .name(TEST_NAME)
+                                .semesterId(1L)
+                                .build();
 
-        var semester = Semester.builder()
-                .id(1L)
-                .name("1기")
-                .build();
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(teamMemberRepository.findByMemberId(memberId)).willReturn(List.of());
 
-        given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
-        given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
-        given(memberRepository.save(any(Member.class))).willReturn(any(Member.class));
+                // expected
+                assertThatThrownBy(() -> memberManagementService.findMemberDetail(memberId))
+                                .isInstanceOf(MemberException.class)
+                                .extracting(e -> ((MemberException) e).getErrorCode())
+                                .isEqualTo(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER);
 
-        // when
-        memberManagementService.registerMember(request);
+                verify(memberRepository).findById(memberId);
+                verify(teamMemberRepository).findByMemberId(memberId);
+        }
 
-        // then
-        verify(memberRepository).existsByEmail(TEST_EMAIL);
-        verify(semesterRepository).findByName("1기");
-        verify(memberRepository).save(any(Member.class));
-    }
+        @Test
+        void 관리자용_회원_등록_성공() {
+                // given
+                var request = new MemberRegisterRequest(
+                                Role.SEMESTER,
+                                TEST_NAME,
+                                TEST_PHONE_NUMBER,
+                                TEST_EMAIL,
+                                JobFamily.BE,
+                                Region.SEOUL,
+                                "1기");
 
-    @Test
-    void 관리자용_회원_등록_실패_이미_존재하는_이메일() {
-        // given
-        var request = new MemberRegisterRequest(
-                Role.SEMESTER,
-                TEST_NAME,
-                TEST_PHONE_NUMBER,
-                TEST_EMAIL,
-                JobFamily.BE,
-                Region.SEOUL,
-                "1"
-        );
+                var semester = Semester.builder()
+                                .id(1L)
+                                .name("1기")
+                                .build();
 
-        given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(true);
+                var unassignedTeam = Team.builder()
+                                .id(1L)
+                                .name("미배정")
+                                .semesterId(1L)
+                                .build();
 
-        // expected
-        assertThatThrownBy(() -> memberManagementService.registerMember(request))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.ALREADY_EXIST_MEMBER);
+                given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
+                given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
+                given(teamRepository.findByNameAndSemesterId("미배정", 1L)).willReturn(Optional.of(unassignedTeam));
 
-        verify(memberRepository).existsByEmail(TEST_EMAIL);
-    }
+                // when
+                memberManagementService.registerMember(request);
 
-    @Test
-    void 회원_정보_수정_성공() {
-        // given
-        var memberId = 1L;
-        var request = MemberEditRequest.builder()
-                .role(Role.SEMESTER)
-                .name("수정된이름")
-                .phoneNumber("01087654321")
-                .email("updated@test.com")
-                .jobFamily(JobFamily.FE)
-                .semesterName("1기")
-                .build();
+                // then
+                verify(memberRepository).existsByEmail(TEST_EMAIL);
+                verify(semesterRepository).findByName("1기");
+                verify(memberRepository).save(any(Member.class));
+                verify(teamRepository).findByNameAndSemesterId("미배정", 1L);
+                verify(teamMemberRepository).save(any(TeamMember.class));
+        }
 
-        var member = Member.builder()
-                .id(memberId)
-                .name(TEST_NAME)
-                .phoneNumber(TEST_PHONE_NUMBER)
-                .email(TEST_EMAIL)
-                .jobFamily(JobFamily.BE)
-                .role(Role.SEMESTER)
-                .semesterId(1L)
-                .build();
+        @Test
+        void 관리자용_회원_등록_실패_이미_존재하는_이메일() {
+                // given
+                var request = new MemberRegisterRequest(
+                                Role.SEMESTER,
+                                TEST_NAME,
+                                TEST_PHONE_NUMBER,
+                                TEST_EMAIL,
+                                JobFamily.BE,
+                                Region.SEOUL,
+                                "1");
 
-        var semester = Semester.builder()
-                .id(1L)
-                .name("1기")
-                .build();
+                given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(true);
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
+                // expected
+                assertThatThrownBy(() -> memberManagementService.registerMember(request))
+                                .isInstanceOf(MemberException.class)
+                                .extracting(e -> ((MemberException) e).getErrorCode())
+                                .isEqualTo(MemberErrorCode.ALREADY_EXIST_MEMBER);
 
-        // when
-        memberManagementService.editMember(memberId, request);
+                verify(memberRepository).existsByEmail(TEST_EMAIL);
+        }
 
-        // then
-        verify(memberRepository).findById(memberId);
-        assertThat(member.getName()).isEqualTo(request.name());
-        assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
-        assertThat(member.getEmail()).isEqualTo(request.email());
-        assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
-        assertThat(member.getSemesterId()).isEqualTo(semester.getId());
-    }
+        @Test
+        void 회원_정보_수정_성공() {
+                // given
+                var memberId = 1L;
+                var request = MemberEditRequest.builder()
+                                .role(Role.SEMESTER)
+                                .name("수정된이름")
+                                .phoneNumber("01087654321")
+                                .email("updated@test.com")
+                                .jobFamily(JobFamily.FE)
+                                .semesterName("1기")
+                                .build();
 
-    @Test
-    void 회원_정보_수정_실패_존재하지_않는_회원() {
-        // given
-        var memberId = 999L;
-        var request = MemberEditRequest.builder()
-                .role(Role.SEMESTER)
-                .name("수정된이름")
-                .phoneNumber("01087654321")
-                .email("updated@test.com")
-                .jobFamily(JobFamily.FE)
-                .semesterName("2")
-                .build();
+                var member = Member.builder()
+                                .id(memberId)
+                                .name(TEST_NAME)
+                                .phoneNumber(TEST_PHONE_NUMBER)
+                                .email(TEST_EMAIL)
+                                .jobFamily(JobFamily.BE)
+                                .role(Role.SEMESTER)
+                                .semesterId(1L)
+                                .build();
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+                var semester = Semester.builder()
+                                .id(1L)
+                                .name("1기")
+                                .build();
 
-        // expected
-        assertThatThrownBy(() -> memberManagementService.editMember(memberId, request))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+                var team = Team.builder()
+                                .id(1L)
+                                .name("미배정")
+                                .semesterId(1L)
+                                .build();
 
-        verify(memberRepository).findById(memberId);
-    }
+                var existingTeamMember = TeamMember.builder()
+                                .id(1L)
+                                .member(member)
+                                .team(team)
+                                .jobFamily(JobFamily.BE)
+                                .build();
 
-    @Test
-    void 단일_회원_삭제_성공() {
-        // given
-        var memberId = 1L;
-        var member = Member.builder()
-                .id(memberId)
-                .name(TEST_NAME)
-                .email(TEST_EMAIL)
-                .build();
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
+                given(teamMemberRepository.findByMemberIdAndTeamSemesterId(memberId, 1L))
+                                .willReturn(Optional.of(existingTeamMember));
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        doNothing().when(memberRepository).delete(member);
+                // when
+                memberManagementService.editMember(memberId, request);
 
-        // when
-        memberManagementService.deleteMember(memberId);
+                // then
+                verify(memberRepository).findById(memberId);
+                assertThat(member.getName()).isEqualTo(request.name());
+                assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
+                assertThat(member.getEmail()).isEqualTo(request.email());
+                assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
+                assertThat(member.getSemesterId()).isEqualTo(semester.getId());
+                assertThat(existingTeamMember.getJobFamily()).isEqualTo(JobFamily.FE);
+        }
 
-        // then
-        verify(memberRepository).findById(memberId);
-        verify(memberRepository).delete(member);
-    }
+        @Test
+        void 회원_정보_수정_실패_존재하지_않는_회원() {
+                // given
+                var memberId = 999L;
+                var request = MemberEditRequest.builder()
+                                .role(Role.SEMESTER)
+                                .name("수정된이름")
+                                .phoneNumber("01087654321")
+                                .email("updated@test.com")
+                                .jobFamily(JobFamily.FE)
+                                .semesterName("2")
+                                .build();
 
-    @Test
-    void 단일_회원_삭제_실패_존재하지_않는_회원() {
-        // given
-        var memberId = 999L;
+                given(memberRepository.findById(memberId)).willReturn(Optional.empty());
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+                // expected
+                assertThatThrownBy(() -> memberManagementService.editMember(memberId, request))
+                                .isInstanceOf(MemberException.class)
+                                .extracting(e -> ((MemberException) e).getErrorCode())
+                                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
 
-        // expected
-        assertThatThrownBy(() -> memberManagementService.deleteMember(memberId))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+                verify(memberRepository).findById(memberId);
+        }
 
-        verify(memberRepository).findById(memberId);
-    }
+        @Test
+        void 단일_회원_삭제_성공() {
+                // given
+                var memberId = 1L;
+                var member = Member.builder()
+                                .id(memberId)
+                                .name(TEST_NAME)
+                                .email(TEST_EMAIL)
+                                .build();
 
-    @Test
-    void 다중_회원_삭제_성공() {
-        // given
-        var memberIds = List.of(1L, 2L, 3L);
-        var members = List.of(
-                Member.builder().id(1L).name("가젝트").email("member1@test.com").build(),
-                Member.builder().id(2L).name("나젝트").email("member2@test.com").build(),
-                Member.builder().id(3L).name("다젝트").email("member3@test.com").build()
-        );
+                given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+                doNothing().when(memberRepository).delete(member);
 
-        given(memberRepository.findAllById(memberIds)).willReturn(members);
-        doNothing().when(memberRepository).deleteAll(members);
+                // when
+                memberManagementService.deleteMember(memberId);
 
-        // when
-        memberManagementService.deleteMembers(memberIds);
+                // then
+                verify(memberRepository).findById(memberId);
+                verify(memberRepository).delete(member);
+        }
 
-        // then
-        verify(memberRepository).findAllById(memberIds);
-        verify(memberRepository).deleteAll(members);
-    }
+        @Test
+        void 단일_회원_삭제_실패_존재하지_않는_회원() {
+                // given
+                var memberId = 999L;
 
-    @Test
-    void 다중_회원_삭제_실패_일부_회원이_존재하지_않음() {
-        // given
-        var memberIds = List.of(1L, 2L, 999L); // 999L은 존재하지 않는 회원
-        var members = List.of(
-                Member.builder().id(1L).name("가젝트").email("member1@test.com").build(),
-                Member.builder().id(2L).name("나젝트").email("member2@test.com").build()
+                given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+
+                // expected
+                assertThatThrownBy(() -> memberManagementService.deleteMember(memberId))
+                                .isInstanceOf(MemberException.class)
+                                .extracting(e -> ((MemberException) e).getErrorCode())
+                                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+
+                verify(memberRepository).findById(memberId);
+        }
+
+        @Test
+        void 다중_회원_삭제_성공() {
+                // given
+                var memberIds = List.of(1L, 2L, 3L);
+                var members = List.of(
+                                Member.builder().id(1L).name("가젝트").email("member1@test.com").build(),
+                                Member.builder().id(2L).name("나젝트").email("member2@test.com").build(),
+                                Member.builder().id(3L).name("다젝트").email("member3@test.com").build());
+
+                given(memberRepository.findAllById(memberIds)).willReturn(members);
+                doNothing().when(memberRepository).deleteAll(members);
+
+                // when
+                memberManagementService.deleteMembers(memberIds);
+
+                // then
+                verify(memberRepository).findAllById(memberIds);
+                verify(memberRepository).deleteAll(members);
+        }
+
+        @Test
+        void 다중_회원_삭제_실패_일부_회원이_존재하지_않음() {
+                // given
+                var memberIds = List.of(1L, 2L, 999L); // 999L은 존재하지 않는 회원
+                var members = List.of(
+                                Member.builder().id(1L).name("가젝트").email("member1@test.com").build(),
+                                Member.builder().id(2L).name("나젝트").email("member2@test.com").build()
                 // 999L에 해당하는 회원은 없음
-        );
+                );
 
-        given(memberRepository.findAllById(memberIds)).willReturn(members);
+                given(memberRepository.findAllById(memberIds)).willReturn(members);
 
-        // expected
-        assertThatThrownBy(() -> memberManagementService.deleteMembers(memberIds))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+                // expected
+                assertThatThrownBy(() -> memberManagementService.deleteMembers(memberIds))
+                                .isInstanceOf(MemberException.class)
+                                .extracting(e -> ((MemberException) e).getErrorCode())
+                                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
 
-        verify(memberRepository).findAllById(memberIds);
-    }
+                verify(memberRepository).findAllById(memberIds);
+        }
 
-    @Test
-    void 다중_회원_삭제_실패_빈_목록() {
-        // given
-        List<Long> emptyMemberIds = List.of();
-        List<Member> emptyMembers = List.of();
+        @Test
+        void 다중_회원_삭제_실패_빈_목록() {
+                // given
+                List<Long> emptyMemberIds = List.of();
+                List<Member> emptyMembers = List.of();
 
-        given(memberRepository.findAllById(emptyMemberIds)).willReturn(emptyMembers);
+                given(memberRepository.findAllById(emptyMemberIds)).willReturn(emptyMembers);
 
-        // when
-        memberManagementService.deleteMembers(emptyMemberIds);
+                // when
+                memberManagementService.deleteMembers(emptyMemberIds);
 
-        // then
-        verify(memberRepository).findAllById(emptyMemberIds);
-        verify(memberRepository).deleteAll(emptyMembers);
-    }
+                // then
+                verify(memberRepository).findAllById(emptyMemberIds);
+                verify(memberRepository).deleteAll(emptyMembers);
+        }
 }
