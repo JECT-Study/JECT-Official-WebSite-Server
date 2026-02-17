@@ -43,19 +43,19 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                                                 member.isDeleted.eq(false))
                                 .transform(GroupBy.groupBy(teamMember.team.id).as(new QTeamMemberNames(
                                                 GroupBy.list(new CaseBuilder()
-                                                                .when(member.jobFamily.eq(PM))
+                                                                .when(teamMember.jobFamily.eq(PM))
                                                                 .then(member.name)
                                                                 .otherwise((String) null)),
                                                 GroupBy.list(new CaseBuilder()
-                                                                .when(member.jobFamily.eq(PD))
+                                                                .when(teamMember.jobFamily.eq(PD))
                                                                 .then(member.name)
                                                                 .otherwise((String) null)),
                                                 GroupBy.list(new CaseBuilder()
-                                                                .when(member.jobFamily.eq(FE))
+                                                                .when(teamMember.jobFamily.eq(FE))
                                                                 .then(member.name)
                                                                 .otherwise((String) null)),
                                                 GroupBy.list(new CaseBuilder()
-                                                                .when(member.jobFamily.eq(BE))
+                                                                .when(teamMember.jobFamily.eq(BE))
                                                                 .then(member.name)
                                                                 .otherwise((String) null)))))
                                 .get(teamId);
