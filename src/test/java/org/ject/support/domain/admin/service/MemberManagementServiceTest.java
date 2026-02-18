@@ -3,6 +3,7 @@ package org.ject.support.domain.admin.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
@@ -17,9 +18,13 @@ import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.entity.Team;
+import org.ject.support.domain.member.entity.TeamMember;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.member.repository.TeamMemberRepository;
+import org.ject.support.domain.member.repository.TeamRepository;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.junit.jupiter.api.Test;
@@ -38,6 +43,12 @@ class MemberManagementServiceTest extends UnitTestSupport {
 
     @Mock
     private SemesterRepository semesterRepository;
+
+    @Mock
+    private TeamRepository teamRepository;
+
+    @Mock
+    private TeamMemberRepository teamMemberRepository;
 
     private final String TEST_NAME = "홍길동";
     private final String TEST_EMAIL = "test@example.com";
@@ -130,12 +141,26 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 .semesterId(semesterId)
                 .build();
 
+        var team = Team.builder()
+                .id(1L)
+                .name("미배정")
+                .semesterId(semesterId)
+                .build();
+
+        var teamMember = TeamMember.builder()
+                .id(1L)
+                .member(member)
+                .team(team)
+                .jobFamily(JobFamily.BE)
+                .build();
+
         var semester = Semester.builder()
                 .id(semesterId)
                 .name("1기")
                 .build();
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(teamMemberRepository.findByMemberId(memberId)).willReturn(List.of(teamMember));
         given(semesterRepository.findById(semesterId)).willReturn(Optional.of(semester));
 
         // when
@@ -151,6 +176,7 @@ class MemberManagementServiceTest extends UnitTestSupport {
         assertThat(result.semesterName()).isEqualTo("1");
 
         verify(memberRepository).findById(memberId);
+        verify(teamMemberRepository).findByMemberId(memberId);
         verify(semesterRepository).findById(semesterId);
     }
 
@@ -171,19 +197,18 @@ class MemberManagementServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 회원_상세_조회_실패_존재하지_않는_기수() {
+    void 회원_상세_조회_실패_팀멤버_없음() {
         // given
         var memberId = 1L;
-        var semesterId = 999L;
 
         var member = Member.builder()
                 .id(memberId)
                 .name(TEST_NAME)
-                .semesterId(semesterId)
+                .semesterId(999L)
                 .build();
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(semesterRepository.findById(semesterId)).willReturn(Optional.empty());
+        given(teamMemberRepository.findByMemberId(memberId)).willReturn(List.of());
 
         // expected
         assertThatThrownBy(() -> memberManagementService.findMemberDetail(memberId))
@@ -192,7 +217,7 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 .isEqualTo(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER);
 
         verify(memberRepository).findById(memberId);
-        verify(semesterRepository).findById(semesterId);
+        verify(teamMemberRepository).findByMemberId(memberId);
     }
 
     @Test
@@ -213,9 +238,28 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 .name("1기")
                 .build();
 
+        var savedMember = Member.builder()
+                .id(1L)
+                .name(TEST_NAME)
+                .phoneNumber(TEST_PHONE_NUMBER)
+                .email(TEST_EMAIL)
+                .jobFamily(JobFamily.BE)
+                .role(Role.SEMESTER)
+                .region(Region.SEOUL)
+                .semesterId(1L)
+                .build();
+
+        var unassignedTeam = Team.builder()
+                .id(1L)
+                .name("미배정")
+                .semesterId(1L)
+                .build();
+
         given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
         given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
-        given(memberRepository.save(any(Member.class))).willReturn(any(Member.class));
+        given(memberRepository.save(any(Member.class))).willReturn(savedMember);
+        given(teamRepository.findByNameAndSemesterId("미배정", 1L)).willReturn(Optional.of(unassignedTeam));
+        given(teamMemberRepository.save(any(TeamMember.class))).willReturn(any(TeamMember.class));
 
         // when
         memberManagementService.registerMember(request);
@@ -224,6 +268,8 @@ class MemberManagementServiceTest extends UnitTestSupport {
         verify(memberRepository).existsByEmail(TEST_EMAIL);
         verify(semesterRepository).findByName("1기");
         verify(memberRepository).save(any(Member.class));
+        verify(teamRepository).findByNameAndSemesterId("미배정", 1L);
+        verify(teamMemberRepository).save(any(TeamMember.class));
     }
 
     @Test
@@ -236,7 +282,7 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 TEST_EMAIL,
                 JobFamily.BE,
                 Region.SEOUL,
-                "1"
+                "1기"
         );
 
         given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(true);
@@ -278,8 +324,23 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 .name("1기")
                 .build();
 
+        var team = Team.builder()
+                .id(1L)
+                .name("미배정")
+                .semesterId(1L)
+                .build();
+
+        var existingTeamMember = TeamMember.builder()
+                .id(1L)
+                .member(member)
+                .team(team)
+                .jobFamily(JobFamily.BE)
+                .build();
+
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
         given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
+        given(teamMemberRepository.findByMemberIdAndTeamSemesterId(memberId, 1L))
+                .willReturn(Optional.of(existingTeamMember));
 
         // when
         memberManagementService.editMember(memberId, request);
@@ -303,7 +364,7 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 .phoneNumber("01087654321")
                 .email("updated@test.com")
                 .jobFamily(JobFamily.FE)
-                .semesterName("2")
+                .semesterName("2기")
                 .build();
 
         given(memberRepository.findById(memberId)).willReturn(Optional.empty());
