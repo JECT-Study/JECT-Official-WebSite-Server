@@ -27,8 +27,8 @@ public class RedisTestContainersConfig implements DisposableBean {
     @Container
     private static final GenericContainer<?> redisContainer = new GenericContainer<>("redis:7.4-alpine")
             .withExposedPorts(REDIS_PORT)
-            .waitingFor(Wait.forListeningPort())
-            .withStartupTimeout(Duration.ofSeconds(60));
+            .waitingFor(Wait.forLogMessage(".*Ready to accept connections.*\\n", 1))
+            .withStartupTimeout(Duration.ofSeconds(120));
 
     static {
         log.info("Redis TestContainer 초기화 시작. Docker Image: {}", redisContainer.getDockerImageName());
