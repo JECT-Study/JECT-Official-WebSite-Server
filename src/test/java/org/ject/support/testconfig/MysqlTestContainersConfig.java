@@ -9,11 +9,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @Profile("test")
 @TestConfiguration
-@Testcontainers
-public class MysqlTestContainersConfig implements DisposableBean {
+public class MysqlTestContainersConfig {
     private static final int PORT = 3306;
 
-    @Container
     static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:8.2")
             .withExposedPorts(PORT);
 
@@ -24,10 +22,5 @@ public class MysqlTestContainersConfig implements DisposableBean {
     }
 
 
-    @Override
-    public void destroy() {
-        if(mysqlContainer.isRunning()){
-            mysqlContainer.stop();
-        }
-    }
+
 }
