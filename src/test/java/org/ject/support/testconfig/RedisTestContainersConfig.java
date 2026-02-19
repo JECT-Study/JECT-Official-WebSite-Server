@@ -25,7 +25,7 @@ public class RedisTestContainersConfig implements DisposableBean {
     private static final int REDIS_PORT = 6379;
 
     @Container
-    private static final GenericContainer<?> redisContainer = new GenericContainer<>("redis:7.4-alpine")
+    private static final GenericContainer<?> redisContainer = new GenericContainer<>("redis:8.0-M03-alpine")
             .withExposedPorts(REDIS_PORT)
             .withStartupTimeout(Duration.ofSeconds(180));
 
