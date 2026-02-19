@@ -26,7 +26,7 @@ jobs:
           DOCKER_TLS_CERTDIR: ""
     env:
       DOCKER_HOST: tcp://localhost:2375
-      DOCKER_API_VERSION: "1.44"
+      DOCKER_API_VERSION: "1.43"
       TESTCONTAINERS_CHECKS_DISABLE: "false"
       TESTCONTAINERS_RYUK_DISABLED: "false"
 
