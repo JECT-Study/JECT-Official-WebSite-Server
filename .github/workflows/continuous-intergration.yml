@@ -25,6 +25,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Docker Engine (compat for Testcontainers)
+        uses: docker/setup-docker-action@v4
+        with:
+          version: "27.5.1"
+
       - name: Check Docker
         run: |
           docker --version
