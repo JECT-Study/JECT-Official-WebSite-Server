@@ -14,10 +14,14 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Profile("test")
 @TestConfiguration
 @Testcontainers
 public class RedisTestContainersConfig implements DisposableBean {
+    private static final Logger log = LoggerFactory.getLogger(RedisTestContainersConfig.class);
     private static final int REDIS_PORT = 6379;
 
     @Container
@@ -27,13 +31,17 @@ public class RedisTestContainersConfig implements DisposableBean {
             .withStartupTimeout(Duration.ofSeconds(60));
 
     static {
+        log.info("Redis TestContainer 초기화 시작. Docker Image: {}", redisContainer.getDockerImageName());
         try {
             if (!redisContainer.isRunning()) {
+                log.info("Redis TestContainer 시작 시도...");
                 redisContainer.start();
-                // 컨테이너가 완전히 시작될 때까지 잠시 대기
-                Thread.sleep(1000);
+                log.info("Redis TestContainer 시작 성공. Host={}, Port={}", redisContainer.getHost(), redisContainer.getMappedPort(REDIS_PORT));
+            } else {
+                 log.info("Redis TestContainer 이미 실행 중. Host={}, Port={}", redisContainer.getHost(), redisContainer.getMappedPort(REDIS_PORT));
             }
         } catch (Exception e) {
+            log.error("Redis TestContainer 시작 실패", e);
             throw new RuntimeException("Redis 컨테이너 시작 실패", e);
         }
     }
