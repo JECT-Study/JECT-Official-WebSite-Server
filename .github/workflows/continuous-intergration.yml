@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DOCKER_HOST: unix:///var/run/docker.sock
+      DOCKER_API_VERSION: "1.44"
       TESTCONTAINERS_CHECKS_DISABLE: "false"
       TESTCONTAINERS_RYUK_DISABLED: "false"
 
@@ -37,6 +38,7 @@ jobs:
           echo "OS: $RUNNER_OS"
           echo "Arch: $RUNNER_ARCH"
           echo "DOCKER_HOST=$DOCKER_HOST"
+          echo "DOCKER_API_VERSION=$DOCKER_API_VERSION"
           env | sort | grep -E 'TESTCONTAINERS|DOCKER|CI|GITHUB_ACTIONS' || true
 
       - name: Ensure Docker daemon is running
@@ -47,6 +49,12 @@ jobs:
           fi
           docker info
           docker run --rm hello-world
+
+      - name: Verify Docker API Compatibility
+        run: |
+          docker version
+          docker version --format '{{.Server.APIVersion}}'
+          docker version --format '{{.Client.APIVersion}}'
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
