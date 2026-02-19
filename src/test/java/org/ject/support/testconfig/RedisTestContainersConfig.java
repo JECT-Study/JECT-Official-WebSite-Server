@@ -30,35 +30,28 @@ public class RedisTestContainersConfig implements DisposableBean {
         try {
             if (!redisContainer.isRunning()) {
                 redisContainer.start();
-                // 컨테이너가 완전히 시작될 때까지 잠시 대기
-                Thread.sleep(1000);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Redis 컨테이너 시작 실패", e);
+            throw new RuntimeException("Redis 컨테이너 시작 실패. Docker가 실행 중인지 확인하세요.", e);
         }
     }
 
     @Bean
     @Primary
     public RedisConnectionFactory redisConnectionFactory() {
-        try {
-            // 컨테이너가 실행 중인지 확인
-            if (!redisContainer.isRunning()) {
-                redisContainer.start();
-            }
-            
-            return new LettuceConnectionFactory(
-                    redisContainer.getHost(),
-                    redisContainer.getMappedPort(REDIS_PORT)
-            );
-        } catch (Exception e) {
-            throw new RuntimeException("Redis 연결 팩토리 생성 실패", e);
+        if (!redisContainer.isRunning()) {
+            redisContainer.start();
         }
+
+        return new LettuceConnectionFactory(
+                redisContainer.getHost(),
+                redisContainer.getMappedPort(REDIS_PORT)
+        );
     }
 
     @Override
     public void destroy() {
-        if(redisContainer.isRunning()) {
+        if (redisContainer.isRunning()) {
             redisContainer.stop();
         }
     }
