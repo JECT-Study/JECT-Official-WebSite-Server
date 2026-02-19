@@ -16,13 +16,24 @@ permissions:
 jobs:
   check-application:
     runs-on: ubuntu-latest
+    env:
+      DOCKER_HOST: unix:///var/run/docker.sock
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Check Docker
         run: |
-          docker version
+          docker --version
+          docker info
+        continue-on-error: true
+
+      - name: Ensure Docker daemon is running
+        run: |
+          if ! docker info > /dev/null 2>&1; then
+            sudo systemctl start docker
+            sleep 3
+          fi
           docker info
 
       - name: Set up JDK 21
