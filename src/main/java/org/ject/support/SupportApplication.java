@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @ConfigurationPropertiesScan
 @SpringBootApplication
 public class SupportApplication {
+    // 테스트 주석: CI/CD 파이프라인 동작 확인용
     public static void main(String[] args) {
         SpringApplication.run(SupportApplication.class, args);
     }
