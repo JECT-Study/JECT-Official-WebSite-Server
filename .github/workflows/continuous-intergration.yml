@@ -102,10 +102,17 @@ jobs:
           DOCKER_API_VERSION: "1.44"
         run: |
           printenv | grep -E 'DOCKER|TESTCONTAINERS' || true
+          cat >/tmp/ci-testcontainers.init.gradle <<'EOF'
+          allprojects {
+              tasks.withType(Test).configureEach {
+                  systemProperty 'docker.api.version', '1.44'
+                  systemProperty 'org.testcontainers.docker.client.strategy', 'org.testcontainers.dockerclient.UnixSocketClientProviderStrategy'
+              }
+          }
+          EOF
           ./gradlew test jacocoTestReport jacocoTestCoverageVerification \
-            --info --stacktrace \
-            -Ddocker.api.version=1.44 \
-            -Dorg.testcontainers.docker.client.strategy=org.testcontainers.dockerclient.UnixSocketClientProviderStrategy
+            --info --stacktrace --no-daemon \
+            -I /tmp/ci-testcontainers.init.gradle
 
       - name: Report Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
