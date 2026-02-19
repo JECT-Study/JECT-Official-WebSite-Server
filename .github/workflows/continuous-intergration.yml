@@ -27,8 +27,8 @@ jobs:
     env:
       DOCKER_HOST: tcp://localhost:2375
       DOCKER_API_VERSION: "1.43"
-      TESTCONTAINERS_CHECKS_DISABLE: "false"
-      TESTCONTAINERS_RYUK_DISABLED: "false"
+      TESTCONTAINERS_CHECKS_DISABLE: "true"
+      TESTCONTAINERS_RYUK_DISABLED: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -105,21 +105,7 @@ jobs:
           ./gradlew -q dependencyInsight --dependency com.github.docker-java:docker-java-transport-zerodep --configuration testRuntimeClasspath
 
       - name: Test with Gradle
-        env:
-          DOCKER_API_VERSION: "1.44"
-        run: |
-          printenv | grep -E 'DOCKER|TESTCONTAINERS' || true
-          cat >/tmp/ci-testcontainers.init.gradle <<'EOF'
-          allprojects {
-              tasks.withType(Test).configureEach {
-                  systemProperty 'docker.api.version', '1.44'
-                  systemProperty 'org.testcontainers.docker.client.strategy', 'org.testcontainers.dockerclient.UnixSocketClientProviderStrategy'
-              }
-          }
-          EOF
-          ./gradlew test jacocoTestReport jacocoTestCoverageVerification \
-            --info --stacktrace --no-daemon \
-            -I /tmp/ci-testcontainers.init.gradle
+        run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon
 
       - name: Report Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
