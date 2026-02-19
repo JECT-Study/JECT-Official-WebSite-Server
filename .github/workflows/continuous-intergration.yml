@@ -51,6 +51,7 @@ jobs:
         run: |
           docker --version
           docker info
+          ls -l /var/run/docker.sock
           id
 
       - name: Debug Runtime Environment
@@ -105,7 +106,22 @@ jobs:
           ./gradlew -q dependencyInsight --dependency com.github.docker-java:docker-java-transport-zerodep --configuration testRuntimeClasspath
 
       - name: Test with Gradle
-        run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon
+        
+        env:
+          DOCKER_API_VERSION: "1.43"
+        run: |
+          printenv | grep -E 'DOCKER|TESTCONTAINERS' || true
+          cat >/tmp/ci-testcontainers.init.gradle <<'EOF'
+          allprojects {
+              tasks.withType(Test).configureEach {
+                  systemProperty 'docker.api.version', '1.43'
+                  systemProperty 'org.testcontainers.docker.client.strategy', 'org.testcontainers.dockerclient.UnixSocketClientProviderStrategy'
+              }
+          }
+          EOF
+          ./gradlew test jacocoTestReport jacocoTestCoverageVerification \
+            --info --stacktrace --no-daemon \
+            -I /tmp/ci-testcontainers.init.gradle
 
       - name: Report Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
