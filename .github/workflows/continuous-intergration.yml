@@ -71,6 +71,27 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
 
+      - name: Diagnose Testcontainers Runtime
+        run: |
+          echo "DOCKER_HOST=$DOCKER_HOST"
+          echo "DOCKER_API_VERSION=$DOCKER_API_VERSION"
+          echo "_JAVA_OPTIONS=$_JAVA_OPTIONS"
+          echo "JAVA_TOOL_OPTIONS=$JAVA_TOOL_OPTIONS"
+          printenv | sort | grep -E 'DOCKER|TESTCONTAINERS|JAVA_TOOL_OPTIONS|_JAVA_OPTIONS' || true
+          docker version
+          docker context ls
+          ls -la ~/.testcontainers.properties || true
+          cat ~/.testcontainers.properties || true
+
+      - name: Dependency Insight for Docker/Testcontainers
+        run: |
+          ./gradlew -q dependencyInsight --dependency org.testcontainers:testcontainers --configuration testRuntimeClasspath
+          ./gradlew -q dependencyInsight --dependency com.redis:testcontainers-redis --configuration testRuntimeClasspath
+          ./gradlew -q dependencyInsight --dependency com.github.docker-java:docker-java-api --configuration testRuntimeClasspath
+          ./gradlew -q dependencyInsight --dependency com.github.docker-java:docker-java-core --configuration testRuntimeClasspath
+          ./gradlew -q dependencyInsight --dependency com.github.docker-java:docker-java-transport --configuration testRuntimeClasspath
+          ./gradlew -q dependencyInsight --dependency com.github.docker-java:docker-java-transport-zerodep --configuration testRuntimeClasspath
+
       - name: Test with Gradle
         env:
           DOCKER_API_VERSION: "1.44"
@@ -78,7 +99,8 @@ jobs:
           printenv | grep -E 'DOCKER|TESTCONTAINERS' || true
           ./gradlew test jacocoTestReport jacocoTestCoverageVerification \
             --info --stacktrace \
-            -Ddocker.api.version=1.44
+            -Ddocker.api.version=1.44 \
+            -Dorg.testcontainers.docker.client.strategy=org.testcontainers.dockerclient.UnixSocketClientProviderStrategy
 
       - name: Report Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
