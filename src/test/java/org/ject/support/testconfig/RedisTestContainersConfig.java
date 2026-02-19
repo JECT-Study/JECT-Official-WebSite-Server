@@ -1,6 +1,8 @@
 package org.ject.support.testconfig;
 
 import java.time.Duration;
+import java.util.PriorityQueue;
+
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
