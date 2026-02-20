@@ -93,7 +93,7 @@ public class MemberManagementService {
 
         MemberEditorBuilder editorBuilder = member.toEditor();
 
-        // 대상 학기 결정
+        // 기수 설정
         Long targetSemesterId = member.getSemesterId();
         if (request.semesterName() != null) {
             final Semester semester = semesterRepository.findByName(request.semesterName())
@@ -102,7 +102,7 @@ public class MemberManagementService {
             editorBuilder.semesterId(semester.getId());
         }
 
-        // TeamMember 관리 (semester 또는 jobFamily 변경 시)
+        // semester 또는 jobFamily 변경 시
         if (request.semesterName() != null || request.jobFamily() != null) {
             final Long semesterId = targetSemesterId;
             teamMemberRepository.findByMemberIdAndTeamSemesterId(memberId, semesterId)
