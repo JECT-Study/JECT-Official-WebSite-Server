@@ -40,4 +40,8 @@ public class TeamMember extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(45)")
     private JobFamily jobFamily;
+
+    public void updateJobFamily(JobFamily jobFamily) {
+        this.jobFamily = jobFamily;
+    }
 }
