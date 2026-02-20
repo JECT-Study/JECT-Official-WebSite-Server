@@ -1,6 +1,7 @@
 package org.ject.support.testconfig;
 
 import java.time.Duration;
+
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -13,18 +14,19 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Profile("test")
 @TestConfiguration
 @Testcontainers
+@Slf4j
 public class RedisTestContainersConfig implements DisposableBean {
     private static final int REDIS_PORT = 6379;
 
-    @Container
-    private static final GenericContainer<?> redisContainer = new GenericContainer<>("redis:8.0-M03-alpine")
+    // @Container 어노테이션 제거
+    private static final GenericContainer<?> redisContainer = new GenericContainer<>("redis:7.4-alpine")
             .withExposedPorts(REDIS_PORT)
-            .waitingFor(Wait.forListeningPort())
-            .withStartupTimeout(Duration.ofSeconds(60));
-
+            .withStartupTimeout(Duration.ofSeconds(180));
     static {
         try {
             if (!redisContainer.isRunning()) {
