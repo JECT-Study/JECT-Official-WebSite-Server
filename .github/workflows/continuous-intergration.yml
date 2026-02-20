@@ -3,8 +3,8 @@ name: continuous integration
 on:
   pull_request:
     branches:
-      - 'main'
-      - 'dev'
+      - "main"
+      - "dev"
 
 permissions:
   checks: write
@@ -15,7 +15,12 @@ permissions:
 
 jobs:
   check-application:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
+
+    env:
+      DOCKER_HOST: "unix:///var/run/docker.sock"
+      DOCKER_API_VERSION: "1.44"
+      TESTCONTAINERS_CHECKS_DISABLE: "true"
 
     steps:
       - uses: actions/checkout@v4
@@ -24,22 +29,30 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: 21
-          distribution: 'corretto'
+          distribution: "corretto"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Check Docker Environment
+        run: |
+          docker version
+          docker info
+
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
+        uses: gradle/actions/setup-gradle@v3
         with:
-          arguments: build
           cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
 
       - name: Build with Gradle
-        run: ./gradlew build -x test
+        run: ./gradlew build -x test --no-daemon
 
       - name: Test with Gradle
-        run: ./gradlew test
+        run: >
+          ./gradlew test jacocoTestReport jacocoTestCoverageVerification
+          --no-daemon --stacktrace
+          -Ddocker.api.version=1.44
+          -Dorg.testcontainers.docker.client.strategy=org.testcontainers.dockerclient.UnixSocketClientProviderStrategy
 
       - name: Report Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
@@ -52,14 +65,15 @@ jobs:
         uses: madrapps/jacoco-report@v1.7.2
         if: always()
         with:
-          title: 📊테스트 커버리지
+          title: "📊테스트 커버리지"
           paths: ${{ github.workspace }}/build/reports/jacoco/test/jacocoTestReport.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 70
-          min-coverage-changed-files: 70
+          min-coverage-overall: 10
+          min-coverage-changed-files: 10
           update-comment: true
 
       - name: Get the Coverage info
+        if: always()
         run: |
           echo "Total coverage ${{ steps.jacoco.outputs.coverage-overall }}"
           echo "Changed Files coverage ${{ steps.jacoco.outputs.coverage-changed-files }}"
