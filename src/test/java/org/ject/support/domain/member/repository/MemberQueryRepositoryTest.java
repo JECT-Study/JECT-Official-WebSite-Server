@@ -120,7 +120,7 @@ class MemberQueryRepositoryTest {
         // then
         // 2기 팀에서는 PM으로 조회
         assertThat(team2ndMemberNames.productManagers()).hasSize(1);
-        assertThat(team2ndMemberNames.productManagers()).contains("ject");
+        assertThat(team2ndMemberNames.productManagers()).contains("김젝트");
         assertThat(team2ndMemberNames.backendDevelopers()).isEmpty();
 
         // when
