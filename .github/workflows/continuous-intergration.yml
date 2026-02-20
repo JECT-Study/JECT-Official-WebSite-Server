@@ -15,12 +15,29 @@ permissions:
 
 jobs:
   check-application:
-    runs-on: ubuntu-latest
-    # Testcontainers 안정성을 위한 설정
+    runs-on: ubuntu-22.04
+
+    # ✅ DinD (Docker-in-Docker)로 Docker daemon을 고정
+    services:
+      docker:
+        image: docker:26-dind
+        ports:
+          - 2375:2375
+        env:
+          DOCKER_TLS_CERTDIR: ""
+        options: >-
+          --privileged
+          --health-cmd "docker info"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 30
+
+    # Testcontainers 안정성을 위한 설정 (✅ DOCKER_HOST를 DinD로 고정)
     env:
       TESTCONTAINERS_RYUK_DISABLED: "true"
       TESTCONTAINERS_CHECKS_DISABLE: "true"
-      DOCKER_HOST: "unix:///var/run/docker.sock"
+      DOCKER_HOST: "tcp://localhost:2375"
+      DOCKER_TLS_CERTDIR: ""
 
     steps:
       - uses: actions/checkout@v4
@@ -34,9 +51,10 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Check Docker Environment
+      # ✅ 이제 /var/run/docker.sock 확인 대신 DinD daemon 확인
+      - name: Check Docker Environment (DinD)
         run: |
-          ls -l /var/run/docker.sock
+          docker version
           docker info
 
       - name: Setup Gradle
@@ -48,7 +66,7 @@ jobs:
         run: ./gradlew build -x test --no-daemon
 
       - name: Test with Gradle
-        run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon
+        run: ./gradlew test jacocoTestReport jacocoTestCoverageVerification --no-daemon --stacktrace
 
       - name: Report Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
