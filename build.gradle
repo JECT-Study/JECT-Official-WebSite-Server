@@ -186,7 +186,7 @@ jacocoTestCoverageVerification {
             limit {
                 counter = "LINE" // 라인 커버리지
                 value = "COVEREDRATIO"
-                minimum = 0.10  // 최소 10% 이상 만족 (CI 통과를 위해 임시 하향)
+                minimum = 0.70
             }
 
             excludes = jacocoExcludes
