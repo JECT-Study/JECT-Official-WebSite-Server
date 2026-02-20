@@ -84,12 +84,10 @@ dependencies {
     testImplementation 'com.h2database:h2'
 
     // TestContainers
-    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
-    testImplementation 'org.testcontainers:mysql:1.20.4'
-    testImplementation 'org.testcontainers:rabbitmq:1.20.4'
-    testImplementation 'com.redis:testcontainers-redis:2.2.2'
-    implementation 'org.testcontainers:testcontainers-bom:1.20.2'
-    implementation 'org.testcontainers:testcontainers'
+    testImplementation platform("org.testcontainers:testcontainers-bom:1.20.4")
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:mysql'
+    testImplementation 'org.testcontainers:rabbitmq'
 
     //p6spy
     implementation "com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.2"
