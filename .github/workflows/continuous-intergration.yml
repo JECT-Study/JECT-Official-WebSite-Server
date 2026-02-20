@@ -36,8 +36,6 @@ jobs:
 
       - name: Check Docker Environment
         run: |
-          printenv | grep -E 'DOCKER|TESTCONTAINERS|JAVA_TOOL_OPTIONS|_JAVA_OPTIONS' || true
-          cat ~/.testcontainers.properties || true
           docker version
           docker info
 
@@ -52,7 +50,7 @@ jobs:
       - name: Test with Gradle
         run: >
           ./gradlew test jacocoTestReport jacocoTestCoverageVerification
-          --no-daemon --stacktrace --info
+          --no-daemon --stacktrace
           -Ddocker.api.version=1.44
           -Dorg.testcontainers.docker.client.strategy=org.testcontainers.dockerclient.UnixSocketClientProviderStrategy
 
