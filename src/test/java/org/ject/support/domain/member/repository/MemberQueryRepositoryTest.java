@@ -129,7 +129,7 @@ class MemberQueryRepositoryTest {
 
         // then
         // 1기 팀에서는 BE로 조회되어야 함
-        assertThat(teamAMemberNames.backendDevelopers()).contains("ject");
+        assertThat(teamAMemberNames.backendDevelopers()).contains("김젝트");
     }
 
     @Test
