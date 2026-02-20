@@ -43,19 +43,23 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                         member.isDeleted.eq(false))
                 .transform(GroupBy.groupBy(teamMember.team.id).as(new QTeamMemberNames(
                         GroupBy.list(new CaseBuilder()
-                                .when(member.jobFamily.eq(PM))
+                                .when(teamMember.jobFamily.eq(PM)
+                                        .or(teamMember.jobFamily.isNull().and(member.jobFamily.eq(PM))))
                                 .then(member.name)
                                 .otherwise((String) null)),
                         GroupBy.list(new CaseBuilder()
-                                .when(member.jobFamily.eq(PD))
+                                .when(teamMember.jobFamily.eq(PD)
+                                        .or(teamMember.jobFamily.isNull().and(member.jobFamily.eq(PD))))
                                 .then(member.name)
                                 .otherwise((String) null)),
                         GroupBy.list(new CaseBuilder()
-                                .when(member.jobFamily.eq(FE))
+                                .when(teamMember.jobFamily.eq(FE)
+                                        .or(teamMember.jobFamily.isNull().and(member.jobFamily.eq(FE))))
                                 .then(member.name)
                                 .otherwise((String) null)),
                         GroupBy.list(new CaseBuilder()
-                                .when(member.jobFamily.eq(BE))
+                                .when(teamMember.jobFamily.eq(BE)
+                                        .or(teamMember.jobFamily.isNull().and(member.jobFamily.eq(BE))))
                                 .then(member.name)
                                 .otherwise((String) null))
                 ))).get(teamId);
