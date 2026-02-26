@@ -1,16 +1,14 @@
 package org.ject.support.external.email.service;
 
+import java.time.Duration;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.CodeGeneratorUtil;
 import org.ject.support.external.email.domain.EmailTemplate;
-import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.RateLimitException;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-
-import java.time.Duration;
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -34,7 +32,7 @@ public class EmailAuthService {
     }
 
     private void checkRateLimit(EmailTemplate sendGroupCode, String toEmail) {
-        if (sendGroupCode != EmailTemplate.AUTH_CODE) {
+        if (sendGroupCode == EmailTemplate.REMIND_APPLY) {
             return;
         }
 

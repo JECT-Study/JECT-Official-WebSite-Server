@@ -111,7 +111,7 @@ class QuestionControllerTest {
                 .andDo(print());
 
         // then
-        Long countExistingKeys = redisTemplate.countExistingKeys(List.of("question::BE"));
+        Long countExistingKeys = redisTemplate.countExistingKeys(List.of("cache::question::BE"));
         Assertions.assertThat(countExistingKeys).isEqualTo(1);
     }
 }

@@ -17,9 +17,11 @@ import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.entity.TeamMember;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.member.repository.TeamMemberRepository;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.junit.jupiter.api.Test;
@@ -38,6 +40,9 @@ class MemberManagementServiceTest extends UnitTestSupport {
 
     @Mock
     private SemesterRepository semesterRepository;
+
+    @Mock
+    private TeamMemberRepository teamMemberRepository;
 
     private final String TEST_NAME = "홍길동";
     private final String TEST_EMAIL = "test@example.com";
@@ -280,17 +285,73 @@ class MemberManagementServiceTest extends UnitTestSupport {
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
         given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
+        given(teamMemberRepository.findByMemberId(memberId)).willReturn(List.of());
 
         // when
         memberManagementService.editMember(memberId, request);
 
         // then
         verify(memberRepository).findById(memberId);
+        verify(teamMemberRepository).findByMemberId(memberId);
         assertThat(member.getName()).isEqualTo(request.name());
         assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
         assertThat(member.getEmail()).isEqualTo(request.email());
         assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
         assertThat(member.getSemesterId()).isEqualTo(semester.getId());
+    }
+
+    @Test
+    void 회원_정보_수정_시_TeamMember_jobFamily_동기화() {
+        // given
+        var memberId = 1L;
+        var request = MemberEditRequest.builder()
+                .role(Role.SEMESTER)
+                .name("수정된이름")
+                .phoneNumber("01087654321")
+                .email("updated@test.com")
+                .jobFamily(JobFamily.PM)  // BE -> PM으로 변경
+                .semesterName("1기")
+                .build();
+
+        var member = Member.builder()
+                .id(memberId)
+                .name(TEST_NAME)
+                .phoneNumber(TEST_PHONE_NUMBER)
+                .email(TEST_EMAIL)
+                .jobFamily(JobFamily.BE)
+                .role(Role.SEMESTER)
+                .semesterId(1L)
+                .build();
+
+        var semester = Semester.builder()
+                .id(1L)
+                .name("1기")
+                .build();
+
+        // 해당 멤버가 속한 TeamMember 목록
+        var teamMember1 = TeamMember.builder()
+                .id(1L)
+                .member(member)
+                .jobFamily(JobFamily.BE)
+                .build();
+        var teamMember2 = TeamMember.builder()
+                .id(2L)
+                .member(member)
+                .jobFamily(JobFamily.BE)
+                .build();
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
+        given(teamMemberRepository.findByMemberId(memberId)).willReturn(List.of(teamMember1, teamMember2));
+
+        // when
+        memberManagementService.editMember(memberId, request);
+
+        // then
+        verify(teamMemberRepository).findByMemberId(memberId);
+        // TeamMember의 jobFamily도 PM으로 변경되어야 함
+        assertThat(teamMember1.getJobFamily()).isEqualTo(JobFamily.PM);
+        assertThat(teamMember2.getJobFamily()).isEqualTo(JobFamily.PM);
     }
 
     @Test
