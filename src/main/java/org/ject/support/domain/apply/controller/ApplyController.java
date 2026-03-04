@@ -59,8 +59,9 @@ public class ApplyController implements ApplyApiSpec {
     @Override
     @GetMapping("/status")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long memberId) {
-        return applyUsecase.checkApplyStatus(memberId);
+    public ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long memberId,
+                                                @RequestParam Long recruitId) {
+        return applyUsecase.checkApplyStatus(memberId, recruitId);
     }
 
     @Override
