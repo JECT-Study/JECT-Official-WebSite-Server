@@ -24,6 +24,7 @@ Creates a Pull Request for the current work.
     -   **Content**: Follow `.github/PULL_REQUEST_TEMPLATE.md`.
         -   `## #️⃣연관된 이슈`: e.g. `close #ID`.
         -   `## 📝 작업 내용`: Summary of changes (Why & What).
+        -   (Optional) Test/Verification status.
         -   `## 🙏 리뷰 요구사항 (선택)`: Specific things to review.
     -   **Show draft to user**.
 

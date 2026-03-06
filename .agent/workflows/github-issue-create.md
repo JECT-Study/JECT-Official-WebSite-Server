@@ -1,5 +1,5 @@
 ---
-description: description: GitHub Issue 생성 및 현재 작업 컨텍스트 보존
+description: "GitHub Issue 생성 및 현재 작업 컨텍스트 보존"
 ---
 
 # GitHub Issue 생성 Workflow

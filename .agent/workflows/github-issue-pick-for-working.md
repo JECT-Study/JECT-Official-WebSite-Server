@@ -1,5 +1,5 @@
 ---
-description: description: GitHub Issue 기반 작업 시작 (브랜치 생성 포함)
+description: "GitHub Issue 기반 작업 시작 (브랜치 생성 포함)"
 ---
 
 

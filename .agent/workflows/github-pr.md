@@ -1,5 +1,5 @@
 ---
-description: description: "현재 작업 내용으로 브랜치 생성(필요 시) 및 PR 생성 (Base: develop)"
+description: "현재 작업 내용으로 브랜치 생성(필요 시) 및 PR 생성 (Base: develop)"
 ---
 
 

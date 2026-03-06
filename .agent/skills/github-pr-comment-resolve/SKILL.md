@@ -11,9 +11,23 @@ Systematically address code review comments.
 
 1.  **Fetch Comments**
     -   Get PR number: `gh pr view --json number`
-    -   Get unresolved comments:
+    -   Get unresolved comments using GraphQL:
         ```bash
-        gh api /repos/:owner/:repo/pulls/<PR_NUM>/comments --jq '.[] | select(.position != null) | {id: .id, path: .path, body: .body}'
+        gh api graphql -F owner=':owner' -F name=':repo' -F pr=<PR_NUM> -f query='
+        query($owner: String!, $name: String!, $pr: Int!) {
+          repository(owner: $owner, name: $name) {
+            pullRequest(number: $pr) {
+              reviewThreads(last: 50) {
+                nodes {
+                  id
+                  isResolved
+                  path
+                  comments(first: 5) { nodes { body } }
+                }
+              }
+            }
+          }
+        }' --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)'
         ```
 
 2.  **Analyze & Plan**

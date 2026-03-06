@@ -1,5 +1,5 @@
 ---
-description: description: PR 리뷰 코멘트 조회, 분석, 수정 작업 및 답변 등록 워크플로우
+description: "PR 리뷰 코멘트 조회, 분석, 수정 작업 및 답변 등록 워크플로우"
 ---
 
 
@@ -15,11 +15,26 @@ description: description: PR 리뷰 코멘트 조회, 분석, 수정 작업 및 
 # PR 번호 확인
 gh pr view --json number
 
-# 리뷰 코멘트 상세 조회 (JSON 형식 권장)
-gh api /repos/:owner/:repo/pulls/<PR_NUMBER>/comments --jq '.[] | {id: .id, path: .path, line: .line, body: .body, diff_hunk: .diff_hunk}'
+# 리뷰 코멘트 상세 조회 (GraphQL 권장, 해결되지 않은 코멘트 필터링)
+gh api graphql -F owner=':owner' -F name=':repo' -F pr=<PR_NUMBER> -f query='
+query($owner: String!, $name: String!, $pr: Int!) {
+  repository(owner: $owner, name: $name) {
+    pullRequest(number: $pr) {
+      reviewThreads(last: 20) {
+        nodes {
+          id
+          isResolved
+          path
+          line
+          comments(first: 10) { nodes { body } }
+        }
+      }
+    }
+  }
+}' --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)'
 ```
 
-- **팁**: 해결되지 않은(unresolved) 코멘트 위주로 필터링하여 리스트를 작성합니다.
+- **팁**: GraphQL 조회를 통해 해결되지 않은(unresolved) 코멘트 위주로 필터링하여 리스트를 작성할 수 있습니다.
 
 ## 2. 코멘트 검토 및 작업 계획 수립
 
