@@ -1,4 +1,4 @@
-package org.ject.support.domain.apply.repository;
+package org.ject.support.domain.admin.repository;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -20,7 +20,7 @@ import static org.ject.support.domain.member.entity.QMember.member;
 
 @Repository
 @RequiredArgsConstructor
-public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
+public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository {
 
     private final JPAQueryFactory queryFactory;
 
@@ -66,6 +66,7 @@ public class ApplyQueryRepositoryImpl implements ApplyQueryRepository {
                 .map(apply.member.jobFamily::eq)
                 .orElse(null);
     }
+
     private BooleanExpression eqApplyStatus(final Apply.Status status) {
         return Optional.ofNullable(status)
                 .map(apply.status::eq)

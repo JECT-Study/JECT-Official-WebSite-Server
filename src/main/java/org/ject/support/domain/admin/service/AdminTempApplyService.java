@@ -11,6 +11,7 @@ import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
+import org.ject.support.domain.admin.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.springframework.data.domain.Page;
@@ -28,6 +29,7 @@ import java.util.Optional;
 public class AdminTempApplyService {
 
     private final ApplyRepository applyRepository;
+    private final AdminApplyQueryRepository adminApplyQueryRepository;
     private final String2MapSerializer string2MapSerializer;
 
     public TempApplyDetailResponse getTempApplyDetail(Long tempApplyId) {
@@ -58,7 +60,7 @@ public class AdminTempApplyService {
 
     public Page<TempSavedApplyResponse> getTempApplies(JobFamily jobFamily, Long semesterId, Pageable pageable) {
         Apply.Status tempSavedStatus = Apply.Status.TEMP_SAVED;
-        Page<Apply> applyPage = applyRepository.findAppliesByStatus(jobFamily, tempSavedStatus, semesterId, pageable);
+        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, tempSavedStatus, semesterId, pageable);
 
         List<TempSavedApplyResponse> content = applyPage.getContent().stream()
                 .map(this::toTempSavedApplyResponse)

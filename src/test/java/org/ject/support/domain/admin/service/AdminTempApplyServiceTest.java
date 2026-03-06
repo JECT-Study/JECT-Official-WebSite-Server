@@ -8,6 +8,7 @@ import org.ject.support.domain.admin.dto.TempSavedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.exception.ApplyException;
+import org.ject.support.domain.admin.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.recruit.domain.Recruit;
@@ -35,6 +36,9 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
 
     @Mock
     private ApplyRepository applyRepository;
+
+    @Mock
+    private AdminApplyQueryRepository adminApplyQueryRepository;
 
     @Mock
     private String2MapSerializer string2MapSerializer;
@@ -167,14 +171,14 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         Long semesterId = null;
         Page<Apply> applyPage = new PageImpl<>(List.of(), pageable, 0);
 
-        given(applyRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable))
                 .willReturn(applyPage);
 
         // when
         Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, semesterId, pageable);
 
         // then
-        verify(applyRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable);
         assertThat(result.getTotalElements()).isEqualTo(0);
         assertThat(result.getContent()).isEmpty();
     }
@@ -212,7 +216,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         List<Apply> applies = List.of(a1, a2);
         Page<Apply> applyPage = new PageImpl<>(applies, pageable, applies.size());
 
-        given(applyRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable))
                 .willReturn(applyPage);
 
         // applicationForm.content가 "{}" 이므로 이 호출을 stub 처리
@@ -221,7 +225,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         Page<TempSavedApplyResponse> result =
                 adminTempApplyService.getTempApplies(null, semesterId, pageable);
 
-        verify(applyRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable);
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
@@ -250,7 +254,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         List<Apply> applies = List.of(apply);
         Page<Apply> applyPage = new PageImpl<>(applies, pageable, applies.size());
 
-        given(applyRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable))
                 .willReturn(applyPage);
         given(string2MapSerializer.serializeAsMap("{}")).willReturn(java.util.Map.of());
 
@@ -258,7 +262,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, semesterId, pageable);
 
         // then
-        verify(applyRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, pageable);
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);

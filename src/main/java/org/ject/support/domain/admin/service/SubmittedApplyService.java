@@ -15,6 +15,7 @@ import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
+import org.ject.support.domain.admin.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
@@ -36,6 +37,7 @@ import java.util.Optional;
 public class SubmittedApplyService {
 
     private final ApplyRepository applyRepository;
+    private final AdminApplyQueryRepository adminApplyQueryRepository;
     private final String2MapSerializer string2MapSerializer;
     private final Map2JsonSerializer map2JsonSerializer;
 
@@ -43,7 +45,7 @@ public class SubmittedApplyService {
     public Page<SubmittedApplyResponse> findSubmittedApplies(final JobFamily jobFamily,
                                                              final Long semesterId,
                                                              final Pageable pageable) {
-        Page<Apply> applyPage = applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
+        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
 
         List<SubmittedApplyResponse> content = applyPage.getContent().stream()
                 .map(this::toSubmittedApplyResponse)

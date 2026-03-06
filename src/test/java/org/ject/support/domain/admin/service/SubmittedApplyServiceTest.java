@@ -12,6 +12,7 @@ import org.ject.support.domain.apply.domain.Apply.Status;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
+import org.ject.support.domain.admin.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
@@ -47,6 +48,9 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
 
     @Mock
     private ApplyRepository applyRepository;
+
+    @Mock
+    private AdminApplyQueryRepository adminApplyQueryRepository;
 
     @Mock
     private String2MapSerializer string2MapSerializer;
@@ -224,7 +228,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
                 .willReturn(page);
 
         // when
@@ -233,7 +237,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
     }
 
     @Test
@@ -244,7 +248,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(applyRepository.findAppliesByStatus(null, Status.SUBMITTED, semesterId, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(null, Status.SUBMITTED, semesterId, pageable))
                 .willReturn(page);
 
         // when
@@ -253,7 +257,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(applyRepository).findAppliesByStatus(null, Status.SUBMITTED, semesterId, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(null, Status.SUBMITTED, semesterId, pageable);
     }
 
     @Test
@@ -264,7 +268,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         Long semesterId = null;
         var page = new PageImpl<Apply>(List.of(), pageable, 0L);
 
-        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
                 .willReturn(page);
 
         // when
@@ -273,7 +277,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // then
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
-        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
     }
 
     @Test
@@ -295,7 +299,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applies = List.of(submittedApply, apply2);
         var page = new PageImpl<>(applies, pageable, 25L);
 
-        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
                 .willReturn(page);
 
         // when
@@ -306,7 +310,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         assertThat(result.getTotalElements()).isEqualTo(25L);
         assertThat(result.getNumber()).isEqualTo(1);
         assertThat(result.getSize()).isEqualTo(10);
-        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
     }
 
     @Test
@@ -319,7 +323,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(applyRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable))
                 .willReturn(page);
 
         // when
@@ -328,7 +332,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(applyRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
     }
 
     @Test
