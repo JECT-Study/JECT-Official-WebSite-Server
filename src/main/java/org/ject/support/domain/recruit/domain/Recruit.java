@@ -54,8 +54,9 @@ public class Recruit extends BaseTimeEntity {
     private JobFamily jobFamily;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "recruit_type", columnDefinition = "varchar(45)")
-    private RecruitType recruitType;
+    @Column(name = "recruit_type", columnDefinition = "varchar(45)", nullable = false)
+    @Builder.Default
+    private RecruitType recruitType = RecruitType.REGULAR;
 
     @OneToMany(mappedBy = "recruit", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

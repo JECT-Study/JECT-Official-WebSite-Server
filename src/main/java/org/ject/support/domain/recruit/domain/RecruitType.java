@@ -1,19 +1,15 @@
 package org.ject.support.domain.recruit.domain;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
-/**
- * 모집 단위
- */
+@Getter
+@RequiredArgsConstructor
 public enum RecruitType {
+    REGULAR("정규 모집"),
+    REGULAR_WAITLIST("정규 모집 - 추가합격"),
+    BACKFILL("기존 기수 모집"),
+    MANUAL("별도 합류"),
+    ;
 
-    /** 정규 모집 */
-    REGULAR,
-
-    /** 정규 모집 - 추가합격 */
-    REGULAR_ADDITIONAL,
-
-    /** 기존 기수 모집 */
-    EXISTING_MEMBER,
-
-    /** 별도 합류 */
-    SEPARATE
+    private final String description;
 }
