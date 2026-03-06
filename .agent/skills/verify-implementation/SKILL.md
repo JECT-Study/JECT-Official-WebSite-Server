@@ -7,7 +7,7 @@ argument-hint: "[선택사항: 특정 verify 스킬 이름]"
 
 # 구현 검증
 
-## 목적
+## Purpose
 
 프로젝트에 등록된 모든 `verify-*` 스킬을 순차적으로 실행하여 통합 검증을 수행합니다:
 
@@ -16,14 +16,14 @@ argument-hint: "[선택사항: 특정 verify 스킬 이름]"
 - 발견된 이슈에 대해 수정 방법을 제시
 - 사용자 승인 후 수정 적용 및 재검증
 
-## 실행 시점
+## When to Run
 
 - 새로운 기능을 구현한 후
 - Pull Request를 생성하기 전
 - 코드 리뷰 중
 - 코드베이스 규칙 준수 여부를 감사할 때
 
-## 실행 대상 스킬
+## Related Files (Execution Target Skills)
 
 이 스킬이 순차 실행하는 검증 스킬 목록입니다. `/manage-skills`가 스킬을 생성/삭제할 때 이 목록을 자동 업데이트합니다.
 
@@ -35,7 +35,7 @@ argument-hint: "[선택사항: 특정 verify 스킬 이름]"
 | 1 | `verify-example` | 예시 검증 설명 |
 -->
 
-## 워크플로우
+## Workflow
 
 ### Step 1: 소개
 
@@ -220,7 +220,7 @@ X개 수정 완료.
 
 ---
 
-## 예외사항
+## Exceptions
 
 다음은 **문제가 아닙니다**:
 

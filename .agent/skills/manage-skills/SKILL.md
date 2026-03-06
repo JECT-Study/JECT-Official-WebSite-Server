@@ -7,7 +7,7 @@ argument-hint: "[선택사항: 특정 스킬 이름 또는 집중할 영역]"
 
 # 세션 기반 스킬 유지보수
 
-## 목적
+## Purpose
 
 현재 세션에서 변경된 내용을 분석하여 검증 스킬의 드리프트를 탐지하고 수정합니다:
 
@@ -16,7 +16,7 @@ argument-hint: "[선택사항: 특정 스킬 이름 또는 집중할 영역]"
 3. **누락된 검사** — 기존 검사에서 다루지 않는 새로운 패턴/규칙
 4. **오래된 값** — 더 이상 일치하지 않는 설정값 또는 탐지 명령어
 
-## 실행 시점
+## When to Run
 
 - 새로운 패턴이나 규칙을 도입하는 기능을 구현한 후
 - 기존 verify 스킬을 수정하고 일관성을 점검하고 싶을 때
@@ -36,7 +36,7 @@ argument-hint: "[선택사항: 특정 스킬 이름 또는 집중할 영역]"
 | `verify-example` | 예시 검증 | `src/example/**/*.ts` |
 -->
 
-## 워크플로우
+## Workflow
 
 ### Step 1: 세션 변경사항 분석
 
@@ -46,8 +46,10 @@ argument-hint: "[선택사항: 특정 스킬 이름 또는 집중할 영역]"
 # 커밋되지 않은 변경사항
 git diff HEAD --name-only
 
-# 현재 브랜치의 커밋 (base에서 분기된 경우)
+# 현재 브랜치에서 base 이후 변경된 파일
 # BASE_BRANCH 환경변수가 없다면 GITHUB_BASE_REF를 확인하고, 모두 없으면 main으로 폴백합니다.
+git log --name-only --pretty="" ${BASE_BRANCH:-${GITHUB_BASE_REF:-main}}..HEAD 2>/dev/null | sed '/^$/d'
+
 # base에서 분기된 이후의 모든 변경사항 (순수 파일 목록)
 git diff ${BASE_BRANCH:-${GITHUB_BASE_REF:-main}}...HEAD --name-only 2>/dev/null
 ```
@@ -343,7 +345,7 @@ ls <file-path> 2>/dev/null || echo "MISSING: <file-path>"
 | `.agent/skills/manage-skills/SKILL.md` | 이 파일 자체 (등록된 검증 스킬 목록을 관리) |
 | `CLAUDE.md` | 프로젝트 지침 (이 스킬이 Skills 섹션을 관리) |
 
-## 예외사항
+## Exceptions
 
 다음은 **문제가 아닙니다**:
 
