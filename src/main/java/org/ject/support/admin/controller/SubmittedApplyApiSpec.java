@@ -11,6 +11,7 @@ import org.ject.support.admin.dto.SubmittedApplyResponse;
 import org.ject.support.domain.member.JobFamily;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -29,7 +30,7 @@ public interface SubmittedApplyApiSpec {
             description = "제출된 지원서들의 목록을 조회합니다.")
     Page<SubmittedApplyResponse> findSubmittedApplies(@RequestParam(required = false) final JobFamily jobFamily,
                                                       @RequestParam(required = false) final Long semesterId,
-                                                      @PageableDefault(size = 15) final Pageable pageable);
+                                                      @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) final Pageable pageable);
 
     @Operation(
             summary = "제출된 지원서 상세 조회",
