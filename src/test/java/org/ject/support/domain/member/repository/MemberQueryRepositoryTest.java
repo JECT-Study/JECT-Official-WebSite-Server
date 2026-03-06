@@ -7,7 +7,7 @@ import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.admin.dto.MemberResponse;
+import org.ject.support.admin.dto.MemberResponse;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.Team;
