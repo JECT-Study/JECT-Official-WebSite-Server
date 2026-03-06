@@ -14,6 +14,7 @@ import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.admin.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.recruit.domain.RecruitType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -58,9 +59,9 @@ public class AdminTempApplyService {
         applyRepository.delete(apply);
     }
 
-    public Page<TempSavedApplyResponse> getTempApplies(JobFamily jobFamily, Long semesterId, Pageable pageable) {
+    public Page<TempSavedApplyResponse> getTempApplies(JobFamily jobFamily, Long semesterId, RecruitType recruitType, Pageable pageable) {
         Apply.Status tempSavedStatus = Apply.Status.TEMP_SAVED;
-        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, tempSavedStatus, semesterId, pageable);
+        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, tempSavedStatus, semesterId, recruitType, pageable);
 
         List<TempSavedApplyResponse> content = applyPage.getContent().stream()
                 .map(this::toTempSavedApplyResponse)

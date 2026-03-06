@@ -9,6 +9,7 @@ import org.ject.support.admin.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.dto.SubmittedApplyResponse;
 import org.ject.support.admin.service.SubmittedApplyService;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.recruit.domain.RecruitType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -39,8 +40,9 @@ public class SubmittedApplyController implements SubmittedApplyApiSpec {
     @GetMapping
     public Page<SubmittedApplyResponse> findSubmittedApplies(@RequestParam(required = false) final JobFamily jobFamily,
                                                              @RequestParam(required = false) final Long semesterId,
+                                                             @RequestParam(required = false) final RecruitType recruitType,
                                                              @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) final Pageable pageable) {
-        return submittedApplyService.findSubmittedApplies(jobFamily, semesterId, pageable);
+        return submittedApplyService.findSubmittedApplies(jobFamily, semesterId, recruitType, pageable);
     }
 
     @Override

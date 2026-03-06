@@ -9,6 +9,7 @@ import org.ject.support.admin.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.dto.SubmittedApplyResponse;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.recruit.domain.RecruitType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -30,6 +31,7 @@ public interface SubmittedApplyApiSpec {
             description = "제출된 지원서들의 목록을 조회합니다.")
     Page<SubmittedApplyResponse> findSubmittedApplies(@RequestParam(required = false) final JobFamily jobFamily,
                                                       @RequestParam(required = false) final Long semesterId,
+                                                      @RequestParam(required = false) final RecruitType recruitType,
                                                       @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) final Pageable pageable);
 
     @Operation(

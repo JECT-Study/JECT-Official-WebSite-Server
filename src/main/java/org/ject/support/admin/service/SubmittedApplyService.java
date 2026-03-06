@@ -18,6 +18,7 @@ import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.admin.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberEditor;
 import org.ject.support.domain.recruit.domain.Recruit;
@@ -44,8 +45,9 @@ public class SubmittedApplyService {
     @Transactional(readOnly = true)
     public Page<SubmittedApplyResponse> findSubmittedApplies(final JobFamily jobFamily,
                                                              final Long semesterId,
+                                                             final RecruitType recruitType,
                                                              final Pageable pageable) {
-        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, pageable);
+        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, recruitType, pageable);
 
         List<SubmittedApplyResponse> content = applyPage.getContent().stream()
                 .map(this::toSubmittedApplyResponse)

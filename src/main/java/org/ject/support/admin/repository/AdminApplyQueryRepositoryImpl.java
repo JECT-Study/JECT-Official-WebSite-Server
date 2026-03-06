@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.recruit.domain.RecruitType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -17,6 +18,7 @@ import static org.ject.support.domain.apply.domain.QApplicationForm.applicationF
 import static org.ject.support.domain.apply.domain.QApply.apply;
 import static org.ject.support.domain.apply.domain.QPortfolio.portfolio;
 import static org.ject.support.domain.member.entity.QMember.member;
+import static org.ject.support.domain.recruit.domain.QRecruit.recruit;
 
 @Repository
 @RequiredArgsConstructor
@@ -28,6 +30,7 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
     public Page<Apply> findAppliesByStatus(final JobFamily jobFamily,
                                            final Apply.Status status,
                                            final Long semesterId,
+                                           final RecruitType recruitType,
                                            final Pageable pageable) {
 
         List<Apply> content = queryFactory
@@ -35,12 +38,14 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
                 .distinct()
                 .join(apply.member, member).fetchJoin()
                 .join(apply.applicationForm, applicationForm).fetchJoin()
+                .join(apply.recruit, recruit).fetchJoin()
                 .leftJoin(apply.applicationForm.portfolios, portfolio).fetchJoin()
                 .where(
                         apply.member.isDeleted.eq(false),
                         eqJobFamily(jobFamily),
                         eqApplyStatus(status),
-                        eqSemesterId(semesterId)
+                        eqSemesterId(semesterId),
+                        eqRecruitType(recruitType)
                 )
                 .orderBy(apply.createdAt.desc())
                 .offset(pageable.getOffset())
@@ -51,11 +56,13 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
                 .select(apply.count())
                 .from(apply)
                 .join(apply.member, member)
+                .join(apply.recruit, recruit)
                 .where(
                         apply.member.isDeleted.eq(false),
                         eqJobFamily(jobFamily),
                         eqApplyStatus(status),
-                        eqSemesterId(semesterId)
+                        eqSemesterId(semesterId),
+                        eqRecruitType(recruitType)
                 ).fetchOne();
 
         return PageResponse.from(content, pageable, total);
@@ -76,6 +83,12 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
     private BooleanExpression eqSemesterId(final Long semesterId) {
         return Optional.ofNullable(semesterId)
                 .map(apply.recruit.semester.id::eq)
+                .orElse(null);
+    }
+
+    private BooleanExpression eqRecruitType(final RecruitType recruitType) {
+        return Optional.ofNullable(recruitType)
+                .map(apply.recruit.recruitType::eq)
                 .orElse(null);
     }
 }
