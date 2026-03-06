@@ -32,7 +32,7 @@ import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PM;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
-@Import(QueryDslTestConfig.class)
+@Import({QueryDslTestConfig.class, AdminApplyQueryRepositoryImpl.class})
 @DataJpaTest
 class AdminApplyQueryRepositoryTest {
 
