@@ -46,6 +46,9 @@ argument-hint: "[선택사항: 특정 스킬 이름 또는 집중할 영역]"
 # 커밋되지 않은 변경사항
 git diff HEAD --name-only
 
+# 아직 추적되지 않은 신규 파일
+git ls-files --others --exclude-standard
+
 # 현재 브랜치에서 base 이후 변경된 파일
 # BASE_BRANCH 환경변수가 없다면 GITHUB_BASE_REF를 확인하고, 모두 없으면 main으로 폴백합니다.
 git log --name-only --pretty="" ${BASE_BRANCH:-${GITHUB_BASE_REF:-main}}..HEAD 2>/dev/null | sed '/^$/d'
@@ -257,11 +260,17 @@ description: <한 줄 설명>. <트리거 조건> 후 사용.
    ```bash
    grep -n "pattern" path/to/file.ts
    ```
+   - **PASS:** 기대되는 결과를 명시합니다.
+   - **FAIL:** 위반 시 관찰되는 결과를 명시합니다.
 
 2. **2단계 검증 (필요시)**
 
 ## Exceptions
-검사를 무시할 수 있는 예외 사항 (있는 경우).
+최소 2-3개의 현실적인 예외 사항을 번호 목록으로 작성합니다.
+
+1. **예외 1** — ...
+2. **예외 2** — ...
+3. **예외 3** — ... (선택)
 ```
 
 4. **연관 스킬 파일 업데이트** — 새 스킬 생성 후 반드시 아래 3개 파일을 업데이트합니다:
@@ -289,7 +298,12 @@ description: <한 줄 설명>. <트리거 조건> 후 사용.
 3. 깨진 파일 참조가 없는지 확인 — Related Files의 각 경로에 대해 파일 존재 확인:
 
 ```bash
-ls <file-path> 2>/dev/null || echo "MISSING: <file-path>"
+# 단일 파일 경로
+test -e "<file-path>" || echo "MISSING FILE: <file-path>"
+
+# glob 패턴
+shopt -s globstar nullglob
+compgen -G "<glob-pattern>" > /dev/null || echo "MISSING PATTERN: <glob-pattern>"
 ```
 
 4. 업데이트된 각 스킬에서 탐지 명령어 하나를 드라이런하여 문법 유효성 검증
