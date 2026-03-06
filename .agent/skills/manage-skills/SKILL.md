@@ -47,11 +47,15 @@ argument-hint: "[선택사항: 특정 스킬 이름 또는 집중할 영역]"
 git diff HEAD --name-only
 
 # 현재 브랜치의 커밋 (base에서 분기된 경우)
-git log --oneline ${GITHUB_BASE_REF:-main}..HEAD 2>/dev/null
+# BASE_BRANCH 환경변수가 없다면 GITHUB_BASE_REF를 확인하고, 모두 없으면 main으로 폴백합니다.
+git log --oneline ${BASE_BRANCH:-${GITHUB_BASE_REF:-main}}..HEAD 2>/dev/null
 
 # base에서 분기된 이후의 모든 변경사항
-git diff ${GITHUB_BASE_REF:-main}...HEAD --name-only 2>/dev/null
+git diff ${BASE_BRANCH:-${GITHUB_BASE_REF:-main}}...HEAD --name-only 2>/dev/null
 ```
+
+> **📌 로컬 테스트 시 주의사항**
+> 로컬 환경에서 테스트할 때 기준 브랜치가 `main`이 아닐 경우(예: `develop` 등), 실행 전에 `export BASE_BRANCH=develop` 처럼 환경 변수를 설정해주세요.
 
 중복을 제거한 목록으로 합칩니다. 선택적 인수로 스킬 이름이나 영역이 지정된 경우 관련 파일만 필터링합니다.
 
@@ -132,7 +136,7 @@ Step 1에서 수집한 각 변경 파일에 대해, 등록된 스킬의 패턴�
 
 다음 결정 트리를 적용합니다:
 
-```
+```text
 커버되지 않은 각 파일 그룹에 대해:
     IF 기존 스킬의 도메인과 관련된 파일인 경우:
         → 결정: 기존 스킬 UPDATE (커버리지 확장)
@@ -216,15 +220,15 @@ grep -n "pattern" path/to/file.ts
    스킬이 커버할 패턴/도메인을 제시하고, 사용자에게 이름을 제공하거나 확인하도록 요청합니다.
 
    **이름 규칙:**
-   - 이름은 반드시 `verify-`로 시작해야 합니다 (예: `verify-auth`, `verify-api`, `verify-caching`)
-   - 사용자가 `verify-` 접두사 없이 이름을 제공하면 자동으로 앞에 추가하고 사용자에게 알립니다
-   - kebab-case를 사용합니다 (예: `verify-error-handling`, `verify_error_handling` 아님)
+   - `<name>`은 `verify-` 접두어를 제외한 순수 슬러그(slug)여야 합니다. (예: `auth`, `api`, `caching`)
+   - 사용자가 `verify-` 접두사를 포함해서 제공하면 자동으로 제거하고 순수 슬러그로 정규화합니다.
+   - kebab-case를 사용합니다.
 
-3. **생성** — `.agent/skills/verify-<name>/SKILL.md`를 다음 템플릿에 따라 생성합니다:
+3. **생성** — `.agent/skills/verify-<name>/SKILL.md` 경로(파일 시스템은 `verify-`를 추가함)를 다음 템플릿에 따라 생성합니다:
 
 ```yaml
 ---
-name: verify-<name>
+name: <name>
 description: <한 줄 설명>. <트리거 조건> 후 사용.
 ---
 ```

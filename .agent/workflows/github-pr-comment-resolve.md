@@ -20,13 +20,13 @@ gh api graphql -F owner=':owner' -F name=':repo' -F pr=<PR_NUMBER> -f query='
 query($owner: String!, $name: String!, $pr: Int!) {
   repository(owner: $owner, name: $name) {
     pullRequest(number: $pr) {
-      reviewThreads(last: 20) {
+      reviewThreads(last: 50) {
         nodes {
           id
           isResolved
           path
           line
-          comments(first: 10) { nodes { body } }
+          comments(first: 20) { nodes { id, body } }
         }
       }
     }
@@ -34,7 +34,7 @@ query($owner: String!, $name: String!, $pr: Int!) {
 }' --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved == false)'
 ```
 
-- **팁**: GraphQL 조회를 통해 해결되지 않은(unresolved) 코멘트 위주로 필터링하여 리스트를 작성할 수 있습니다.
+- **팁**: GraphQL 조회를 통해 최근 코멘트 위주로 필터링(`last`/`first` 커서 조정)하여 전체 리스트를 작성할 수 있습니다.
 
 ## 2. 코멘트 검토 및 작업 계획 수립
 
@@ -69,8 +69,12 @@ git push origin HEAD
 - **중요**: 쉘의 특수문자 해석 오류를 방지하기 위해 답변 내용을 JSON 파일로 작성하여 등록하는 방식을 권장합니다.
 
 ```bash
-# 1. 답변 내용 작성
-echo '{ "body": "제안해주신 내용을 반영하여 리팩토링을 완료했습니다. 감사합니다!" }' > reply.json
+# 1. 답변 내용 작성 (heredoc 사용)
+cat > reply.json <<'EOF'
+{
+  "body": "제안해주신 내용을 반영하여 리팩토링을 완료했습니다. 감사합니다!"
+}
+EOF
 
 # 2. 답변 등록 (comment_id는 1단계에서 확인한 id 사용)
 gh api repos/:owner/:repo/pulls/<PR_NUMBER>/comments/<COMMENT_ID>/replies --input reply.json
