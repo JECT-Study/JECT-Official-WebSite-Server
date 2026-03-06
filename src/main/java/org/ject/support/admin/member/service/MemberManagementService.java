@@ -4,12 +4,14 @@ import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_E
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
 import org.ject.support.admin.member.dto.MemberDetailResponse;
 import org.ject.support.admin.member.dto.MemberEditRequest;
 import org.ject.support.admin.member.dto.MemberRegisterRequest;
 import org.ject.support.admin.member.dto.MemberResponse;
+import org.ject.support.domain.member.dto.MemberProjection;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberEditor;
 import org.ject.support.domain.member.entity.MemberEditor.MemberEditorBuilder;
@@ -40,7 +42,11 @@ public class MemberManagementService {
             final Long semesterId,
             final Pageable pageable
     ) {
-        return memberRepository.findMembers(role, jobFamily, semesterId, pageable);
+        Page<MemberProjection> projections = memberRepository.findMembers(role, jobFamily, semesterId, pageable);
+        List<MemberResponse> content = projections.getContent().stream()
+                .map(MemberResponse::from)
+                .toList();
+        return PageResponse.from(content, pageable, projections.getTotalElements());
     }
 
     @Transactional(readOnly = true)

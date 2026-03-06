@@ -13,6 +13,7 @@ import org.ject.support.base.UnitTestSupport;
 import org.ject.support.admin.member.dto.MemberEditRequest;
 import org.ject.support.admin.member.dto.MemberRegisterRequest;
 import org.ject.support.admin.member.dto.MemberResponse;
+import org.ject.support.domain.member.dto.MemberProjection;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
@@ -57,22 +58,8 @@ class MemberManagementServiceTest extends UnitTestSupport {
         var pageable = PageRequest.of(0, 15);
 
         var memberList = List.of(
-                MemberResponse.builder()
-                        .id(1L)
-                        .name("회원1")
-                        .phoneNumber("01012345678")
-                        .email("member1@test.com")
-                        .jobFamily(jobFamily)
-                        .semesterName("1기")
-                        .build(),
-                MemberResponse.builder()
-                        .id(2L)
-                        .name("회원2")
-                        .phoneNumber("01012345679")
-                        .email("member2@test.com")
-                        .jobFamily(jobFamily)
-                        .semesterName("1기")
-                        .build()
+                new MemberProjection(1L, "회원1", "01012345678", "member1@test.com", jobFamily, "1기"),
+                new MemberProjection(2L, "회원2", "01012345679", "member2@test.com", jobFamily, "1기")
         );
         var expectedPage = new PageImpl<>(memberList, pageable, 2);
 
@@ -83,7 +70,6 @@ class MemberManagementServiceTest extends UnitTestSupport {
         var result = memberManagementService.findMembers(role, jobFamily, semesterId, pageable);
 
         // then
-        assertThat(result).isEqualTo(expectedPage);
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(2);
         verify(memberRepository).findMembers(role, jobFamily, semesterId, pageable);
@@ -96,14 +82,7 @@ class MemberManagementServiceTest extends UnitTestSupport {
         var pageable = PageRequest.of(0, 15);
 
         var memberList = List.of(
-                MemberResponse.builder()
-                        .id(1L)
-                        .name("관리자1")
-                        .phoneNumber("01012345678")
-                        .email("admin1@test.com")
-                        .jobFamily(JobFamily.BE)
-                        .semesterName("1기")
-                        .build()
+                new MemberProjection(1L, "관리자1", "01012345678", "admin1@test.com", JobFamily.BE, "1기")
         );
         var expectedPage = new PageImpl<>(memberList, pageable, 1);
 
@@ -114,7 +93,6 @@ class MemberManagementServiceTest extends UnitTestSupport {
         var result = memberManagementService.findMembers(role, null, null, pageable);
 
         // then
-        assertThat(result).isEqualTo(expectedPage);
         assertThat(result.getContent()).hasSize(1);
         verify(memberRepository).findMembers(role, null, null, pageable);
     }

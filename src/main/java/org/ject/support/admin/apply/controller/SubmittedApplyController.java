@@ -46,8 +46,8 @@ public class SubmittedApplyController {
     @Operation(
             summary = "제출된 지원서 목록 조회",
             description = "제출된 지원서들의 목록을 조회합니다.")
-    public Page<SubmittedApplyResponse> findSubmittedApplies(@RequestParam(required = false) final JobFamily jobFamily,
-                                                             @RequestParam(required = false) final Long semesterId,
+    public Page<SubmittedApplyResponse> findSubmittedApplies(@RequestParam(required = false) final Long semesterId,
+                                                             @RequestParam(required = false) final JobFamily jobFamily,
                                                              @RequestParam(required = false) final RecruitType recruitType,
                                                              @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) final Pageable pageable) {
         return submittedApplyService.findSubmittedApplies(jobFamily, semesterId, recruitType, pageable);

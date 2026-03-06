@@ -1,8 +1,8 @@
 package org.ject.support.admin.member.dto;
 
-import com.querydsl.core.annotations.QueryProjection;
 import lombok.Builder;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.dto.MemberProjection;
 
 @Builder
 public record MemberResponse(
@@ -13,24 +13,18 @@ public record MemberResponse(
         JobFamily jobFamily,
         String semesterName
 ) {
-    @QueryProjection
-    public MemberResponse(
-            Long id,
-            String name,
-            String phoneNumber,
-            String email,
-            JobFamily jobFamily,
-            String semesterName
-    ) {
-        this.id = id;
-        this.name = name;
-        this.phoneNumber = phoneNumber;
-        this.email = email;
-        this.jobFamily = jobFamily;
-        if (semesterName != null) {
-            this.semesterName = semesterName.replaceAll("\\D", "");
-        } else {
-            this.semesterName = "";
-        }
+    public static MemberResponse from(MemberProjection projection) {
+        String semester = projection.semesterName() != null
+                ? projection.semesterName().replaceAll("\\D", "")
+                : "";
+        return new MemberResponse(
+                projection.id(),
+                projection.name(),
+                projection.phoneNumber(),
+                projection.email(),
+                projection.jobFamily(),
+                semester
+        );
     }
 }
+

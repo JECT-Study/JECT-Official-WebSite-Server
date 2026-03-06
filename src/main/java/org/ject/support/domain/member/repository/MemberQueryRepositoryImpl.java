@@ -6,10 +6,10 @@ import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.jpa.JPQLQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
-import org.ject.support.admin.member.dto.QMemberResponse;
+import org.ject.support.domain.member.dto.MemberProjection;
+import org.ject.support.domain.member.dto.QMemberProjection;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Role;
-import org.ject.support.admin.member.dto.MemberResponse;
 import org.ject.support.domain.member.dto.QTeamMemberNames;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.springframework.data.domain.Page;
@@ -78,14 +78,14 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
     }
 
     @Override
-    public Page<MemberResponse> findMembers(
+    public Page<MemberProjection> findMembers(
             final Role role,
             final JobFamily jobFamily,
             final Long semesterId,
             final Pageable pageable
     ) {
-        final List<MemberResponse> content = queryFactory
-                .select(new QMemberResponse(
+        final List<MemberProjection> content = queryFactory
+                .select(new QMemberProjection(
                         member.id,
                         member.name,
                         member.phoneNumber,
