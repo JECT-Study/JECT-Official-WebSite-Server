@@ -48,9 +48,7 @@ git diff HEAD --name-only
 
 # 현재 브랜치의 커밋 (base에서 분기된 경우)
 # BASE_BRANCH 환경변수가 없다면 GITHUB_BASE_REF를 확인하고, 모두 없으면 main으로 폴백합니다.
-git log --oneline ${BASE_BRANCH:-${GITHUB_BASE_REF:-main}}..HEAD 2>/dev/null
-
-# base에서 분기된 이후의 모든 변경사항
+# base에서 분기된 이후의 모든 변경사항 (순수 파일 목록)
 git diff ${BASE_BRANCH:-${GITHUB_BASE_REF:-main}}...HEAD --name-only 2>/dev/null
 ```
 
@@ -84,7 +82,7 @@ git diff ${BASE_BRANCH:-${GITHUB_BASE_REF:-main}}...HEAD --name-only 2>/dev/null
 
 등록된 스킬이 0개인 경우, Step 4 (CREATE vs UPDATE 결정)로 바로 이동합니다. 모든 변경 파일이 "UNCOVERED"로 처리됩니다.
 
-등록된 스킬이 1개 이상인 경우, 각 스킬의 `.agent/skills/verify-<name>/SKILL.md`를 읽고 다음에서 추가 파일 경로 패턴을 추출합니다:
+등록된 스킬이 1개 이상인 경우, **테이블의 `스킬` 열 값(예: `verify-api`)을 그대로 디렉토리명으로 사용**하여 각 스킬의 `.agent/skills/<skill-name>/SKILL.md`를 읽고 다음 섹션을 추출합니다:
 
 1. **Related Files** 섹션 — 테이블을 파싱하여 파일 경로 및 glob 패턴 추출
 2. **Workflow** 섹션 — grep/glob/read 명령어에서 파일 경로 추출
@@ -231,19 +229,38 @@ grep -n "pattern" path/to/file.ts
 name: <name>
 description: <한 줄 설명>. <트리거 조건> 후 사용.
 ---
-```
 
-필수 섹션:
-- **Purpose** — 2-5개의 번호가 매겨진 검증 카테고리
-- **When to Run** — 3-5개의 트리거 조건
-- **Related Files** — 코드베이스의 실제 파일 경로 테이블 (`ls`로 검증, 플레이스홀더 불가)
-- **Workflow** — 검사 단계, 각각 다음을 명시:
-  - 사용할 도구 (Grep, Glob, Read, Bash)
-  - 정확한 파일 경로 또는 패턴
-  - PASS/FAIL 기준
-  - 실패 시 수정 방법
-- **Output Format** — 결과를 위한 마크다운 테이블
-- **Exceptions** — 최소 2-3개의 현실적인 "위반이 아닌" 케이스
+# <스킬 이름> (예: Auth System Verification)
+
+## Purpose
+이 스킬의 목적과 커버하는 내용을 1-2문장으로 설명합니다.
+
+## Checkpoints
+코드 검토 또는 에러 식별에 필요한 5가지 이하의 핵심 체크포인트를 나열합니다.
+
+## When to Run
+이 스킬이 트리거되어야 하는 조건을 명시합니다. (예: `src/auth/*` 파일이 변경될 때)
+
+## Related Files
+이 스킬과 관련된 주요 위치, 코드 조각 또는 문서 링크:
+
+| File/Pattern | Description |
+|---|---|
+| 패턴 또는 경로 (예: `src/auth/**/*.ts`) | 설명 |
+
+## Workflow
+이 스킬을 실행하기 위한 단계별 가이드. 명령어 (grep, ls, find) 등을 포함합니다.
+
+1. **1단계 검증 (예: 토큰 확인)**
+   ```bash
+   grep -n "pattern" path/to/file.ts
+   ```
+
+2. **2단계 검증 (필요시)**
+
+## Exceptions
+검사를 무시할 수 있는 예외 사항 (있는 경우).
+```
 
 4. **연관 스킬 파일 업데이트** — 새 스킬 생성 후 반드시 아래 3개 파일을 업데이트합니다:
 
