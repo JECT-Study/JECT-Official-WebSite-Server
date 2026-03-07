@@ -21,6 +21,7 @@ public record SubmittedApplyResponse(
         JobFamily jobFamily,
         String region,
         String careerDetails,
+        String recruitType,
         String experiencePeriod,
         List<String> interestedDomains,
         boolean hasPortfolio,
@@ -41,6 +42,7 @@ public record SubmittedApplyResponse(
                 Optional.ofNullable(apply.getMember().getCareerDetails())
                         .map(CareerDetails::getDescription)
                         .orElse(""),
+                apply.getRecruit().getRecruitType().name(),
                 Optional.ofNullable(apply.getMember().getExperiencePeriod())
                         .map(ExperiencePeriod::getDescription)
                         .orElse(""),
