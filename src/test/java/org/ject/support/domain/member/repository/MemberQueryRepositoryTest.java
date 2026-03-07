@@ -272,7 +272,7 @@ class MemberQueryRepositoryTest {
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent())
                 .extracting(MemberProjection::semesterName)
-                .containsOnly("2");
+                .containsOnly("2기");
         assertThat(result.getContent())
                 .extracting(MemberProjection::name)
                 .containsExactlyInAnyOrder(semester2Member1.getName());
@@ -305,7 +305,7 @@ class MemberQueryRepositoryTest {
                 .containsOnly(JobFamily.BE);
         assertThat(result.getContent())
                 .extracting(MemberProjection::semesterName)
-                .containsOnly("2");
+                .containsOnly("2기");
         assertThat(result.getContent())
                 .extracting(MemberProjection::name)
                 .containsExactly(semester2BE1.getName()); // createdAt desc 순서
