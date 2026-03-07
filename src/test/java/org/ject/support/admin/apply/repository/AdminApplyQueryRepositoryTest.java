@@ -275,6 +275,45 @@ class AdminApplyQueryRepositoryTest {
         assertThat(result.getContent().getFirst().getRecruit().getSemester()).isEqualTo(semester);
     }
 
+    @Test
+    void recruitType으로_제출된_지원서_필터링_조회() {
+        // given
+        Recruit regularRecruit = recruitRepository.save(Recruit.builder()
+                .semester(semester)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(7))
+                .jobFamily(BE)
+                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.REGULAR)
+                .build());
+
+        Recruit backfillRecruit = recruitRepository.save(Recruit.builder()
+                .semester(semester)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(7))
+                .jobFamily(BE)
+                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.BACKFILL)
+                .build());
+
+        Member member1 = createMember("regular@test.com", BE);
+        Member member2 = createMember("backfill@test.com", BE);
+        memberRepository.saveAll(List.of(member1, member2));
+
+        Apply apply1 = getApply(member1, regularRecruit, SUBMITTED);
+        Apply apply2 = getApply(member2, backfillRecruit, SUBMITTED);
+        applyRepository.saveAll(List.of(apply1, apply2));
+
+        Pageable pageable = PageRequest.of(0, 15);
+        Apply.Status status = SUBMITTED;
+
+        // when
+        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(null, status, null, org.ject.support.domain.recruit.domain.RecruitType.BACKFILL, pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().getFirst().getRecruit().getRecruitType()).isEqualTo(org.ject.support.domain.recruit.domain.RecruitType.BACKFILL);
+    }
+
     private Recruit getRecruit(JobFamily jobFamily) {
         return Recruit.builder()
                 .semester(semester)
