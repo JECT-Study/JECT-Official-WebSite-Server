@@ -8,6 +8,7 @@ import org.ject.support.admin.apply.service.AdminTempApplyService;
 import org.ject.support.domain.member.JobFamily;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,7 +42,7 @@ public class AdminTempApplyController implements AdminTempApplyApiSpec {
     @GetMapping()
     public Page<TempSavedApplyResponse> getTempApplies(@RequestParam(required = false) JobFamily jobFamily,
                                                        @RequestParam(required = false) final Long semesterId,
-                                                       @PageableDefault(size = 15) Pageable pageable) {
+                                                       @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         return adminTempApplyService.getTempApplies(jobFamily, semesterId, pageable);
     }
 }
