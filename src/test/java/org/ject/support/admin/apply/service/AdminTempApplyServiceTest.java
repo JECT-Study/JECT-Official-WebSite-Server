@@ -10,7 +10,6 @@ import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
-import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
@@ -176,30 +175,10 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
                 .willReturn(applyPage);
 
         // when
-        Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, semesterId, null, pageable);
+        Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, semesterId, pageable);
 
         // then
         verify(adminApplyQueryRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, null, pageable);
-        assertThat(result.getTotalElements()).isEqualTo(0);
-        assertThat(result.getContent()).isEmpty();
-    }
-
-    @Test
-    void recruitType으로_임시_저장된_지원서_필터링_조회_성공() {
-        // given
-        Pageable pageable = PageRequest.of(0, 10);
-        Long semesterId = null;
-        RecruitType recruitType = RecruitType.REGULAR;
-        Page<Apply> applyPage = new PageImpl<>(List.of(), pageable, 0);
-
-        given(adminApplyQueryRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, recruitType, pageable))
-                .willReturn(applyPage);
-
-        // when
-        Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, semesterId, recruitType, pageable);
-
-        // then
-        verify(adminApplyQueryRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, recruitType, pageable);
         assertThat(result.getTotalElements()).isEqualTo(0);
         assertThat(result.getContent()).isEmpty();
     }
@@ -244,7 +223,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         given(string2MapSerializer.serializeAsMap("{}")).willReturn(java.util.Map.of());
 
         Page<TempSavedApplyResponse> result =
-                adminTempApplyService.getTempApplies(null, semesterId, null, pageable);
+                adminTempApplyService.getTempApplies(null, semesterId, pageable);
 
         verify(adminApplyQueryRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, null, pageable);
         assertThat(result.getTotalElements()).isEqualTo(2);
@@ -280,7 +259,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         given(string2MapSerializer.serializeAsMap("{}")).willReturn(java.util.Map.of());
 
         // when
-        Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, semesterId, null, pageable);
+        Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, semesterId, pageable);
 
         // then
         verify(adminApplyQueryRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, null, pageable);

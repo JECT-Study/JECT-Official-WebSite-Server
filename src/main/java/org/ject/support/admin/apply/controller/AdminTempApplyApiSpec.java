@@ -6,7 +6,6 @@ import org.ject.support.admin.apply.dto.TempApplyDetailResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplyCountResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.recruit.domain.RecruitType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -39,7 +38,6 @@ public interface AdminTempApplyApiSpec {
     Page<TempSavedApplyResponse> getTempApplies(
             @RequestParam(required = false) JobFamily jobFamily,
             @RequestParam(required = false) final Long semesterId,
-                              @RequestParam(required = false) final RecruitType recruitType,
             @PageableDefault(size = 15) final Pageable pageable
     );
 }
