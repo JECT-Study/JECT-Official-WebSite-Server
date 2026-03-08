@@ -14,7 +14,6 @@ public record SubmittedApplyResponse(
         JobFamily jobFamily,
         String careerDetails,
         String recruitType,
-        String activityStatus,
         String note
 ) {
     public static SubmittedApplyResponse from(Apply apply) {
@@ -28,8 +27,7 @@ public record SubmittedApplyResponse(
                         .map(CareerDetails::getDescription)
                         .orElse(""),
                 apply.getRecruit().getRecruitType().name(),
-                apply.getMember().getStatus().name(),
-                ""
+                apply.getNote()
         );
     }
 }
