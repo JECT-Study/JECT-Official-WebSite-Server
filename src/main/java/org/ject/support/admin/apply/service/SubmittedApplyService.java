@@ -127,10 +127,7 @@ public class SubmittedApplyService {
     }
 
     private SubmittedApplyResponse toSubmittedApplyResponse(final Apply apply) {
-        ApplicationForm applicationForm = apply.getApplicationForm();
-        Map<String, String> content = extractContent(applicationForm);
-        List<ApplyPortfolioDto> portfolios = extractPortfolios(applicationForm);
-        return SubmittedApplyResponse.from(apply, content, portfolios);
+        return SubmittedApplyResponse.from(apply);
     }
 
     private Map<String, String> extractContent(final ApplicationForm applicationForm) {
