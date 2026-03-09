@@ -21,8 +21,8 @@ public record SubmittedApplyDetailResponse(
         String experiencePeriod,
         List<String> interestedDomains,
         String createdAt,
-        String updatedAt,
-        ApplicationFormResponse applicationFormResponse
+        String updatedAt
+        // ApplicationFormResponse applicationFormResponse
 ) {
     public static SubmittedApplyDetailResponse from(Apply apply,
                                                     Map<String, String> answers,
@@ -46,8 +46,8 @@ public record SubmittedApplyDetailResponse(
                         .orElse(""),
                 apply.getMember().getInterestedDomains() == null ? List.of() : apply.getMember().getInterestedDomains(),
                 DateTimeUtil.formatWithDayOfWeek(apply.getCreatedAt()),
-                DateTimeUtil.formatWithDayOfWeek(apply.getUpdatedAt()),
-                ApplicationFormResponse.from(answers, portfolios)
+                DateTimeUtil.formatWithDayOfWeek(apply.getUpdatedAt())
+                // ApplicationFormResponse.from(answers, portfolios)
         );
     }
 }
