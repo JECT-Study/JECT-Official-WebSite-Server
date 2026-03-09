@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.query.Param;
 
-public interface ApplyRepository extends JpaRepository<Apply, Long>, ApplyQueryRepository {
+public interface ApplyRepository extends JpaRepository<Apply, Long> {
 
     boolean existsByMemberId(Long memberId);
 
