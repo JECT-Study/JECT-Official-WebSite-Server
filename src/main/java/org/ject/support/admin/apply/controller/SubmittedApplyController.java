@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
