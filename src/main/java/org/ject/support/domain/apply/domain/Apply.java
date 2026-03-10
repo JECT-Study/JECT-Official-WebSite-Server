@@ -91,6 +91,11 @@ public class Apply extends BaseTimeEntity {
         }
     }
 
+    public void reject() {
+        this.applicationForm = null;
+        this.status = Status.REJECTED;
+    }
+
     public boolean isTempSaved() {
         return status.equals(Status.TEMP_SAVED);
     }
@@ -113,6 +118,6 @@ public class Apply extends BaseTimeEntity {
     }
 
     public enum Status {
-        JOINED, TEMP_SAVED, SUBMITTED
+        JOINED, TEMP_SAVED, SUBMITTED, REJECTED
     }
 }

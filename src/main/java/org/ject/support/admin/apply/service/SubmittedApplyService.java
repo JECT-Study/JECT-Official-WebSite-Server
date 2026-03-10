@@ -50,7 +50,7 @@ public class SubmittedApplyService {
         Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, recruitType, pageable);
 
         List<SubmittedApplyResponse> content = applyPage.getContent().stream()
-                .map(this::toSubmittedApplyResponse)
+                .map(SubmittedApplyResponse::from)
                 .toList();
 
         return PageResponse.from(content, pageable, applyPage.getTotalElements());
@@ -74,7 +74,6 @@ public class SubmittedApplyService {
                                      final SubmittedApplyEditRequest request) {
         Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
-        ensureSubmitted(apply);
 
         Member member = apply.getMember();
         MemberEditor memberEditor = member.toEditor()
@@ -103,7 +102,8 @@ public class SubmittedApplyService {
         Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
 
-        deleteProfileAndApplicationForm(apply);
+        apply.reject();
+        apply.getMember().deleteProfile();
     }
 
     @Transactional
@@ -115,20 +115,21 @@ public class SubmittedApplyService {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);
         }
 
-        applies.forEach(this::deleteProfileAndApplicationForm);
+        applies.forEach(apply -> {
+            apply.reject();
+            apply.getMember().deleteProfile();
+        });
         return applies.size();
     }
 
     private SubmittedApplyDetailResponse toSubmittedApplyDetailResponse(final Apply apply) {
+        // 지원서가 없을 수가 있나? 그리고 그렇다고 하더라도
         ApplicationForm submittedApplicationForm = apply.getApplicationForm();
         Map<String, String> content = extractContent(submittedApplicationForm);
         List<ApplyPortfolioDto> portfolios = extractPortfolios(submittedApplicationForm);
         return SubmittedApplyDetailResponse.from(apply, content, portfolios);
     }
 
-    private SubmittedApplyResponse toSubmittedApplyResponse(final Apply apply) {
-        return SubmittedApplyResponse.from(apply);
-    }
 
     private Map<String, String> extractContent(final ApplicationForm applicationForm) {
         return Optional.ofNullable(applicationForm)
@@ -146,30 +147,13 @@ public class SubmittedApplyService {
                 .toList();
     }
 
-    private void ensureSubmitted(final Apply apply) {
-        if (apply.isNotSubmitted()) {
-            throw new ApplyException(ApplyErrorCode.NOT_FOUND_SUBMITTED_APPLICATION_FORM);
-        }
-    }
-
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
         answers.keySet().stream()
                 .map(Long::parseLong)
                 .filter(recruit::isInvalidQuestionId)
-                .forEach(key -> {
+                .findAny()
+                .ifPresent(key -> {
                     throw new QuestionException(QuestionErrorCode.NOT_FOUND_QUESTION);
                 });
-    }
-
-    private void deleteProfileAndApplicationForm(final Apply apply) {
-        // 제출된 지원서인지 검증
-        ensureSubmitted(apply);
-
-        //  제출된 지원서 제거
-        apply.deleteApplicationForm();
-
-        // 프로필 제거
-        Member applicant = apply.getMember();
-        applicant.deleteProfile();
     }
 }
