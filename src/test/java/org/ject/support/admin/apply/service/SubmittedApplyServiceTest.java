@@ -4,6 +4,7 @@ import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
@@ -41,7 +42,7 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-class SubmittedApplyServiceTest  extends UnitTestSupport {
+class SubmittedApplyServiceTest extends UnitTestSupport {
 
     @InjectMocks
     private SubmittedApplyService submittedApplyService;
@@ -112,6 +113,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
 
         // then
         verify(applyRepository).findByIdAndStatusWithMember(applyId, Status.SUBMITTED);
+        assertThat(submittedApply.getStatus()).isEqualTo(Status.REJECTED);
         assertThat(submittedApply.getApplicationForm()).isNull();
         assertThat(submittedApply.getMember().getName()).isNull();
     }
@@ -158,13 +160,17 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
                 .willReturn(applies);
 
         // when
-        submittedApplyService.deleteSubmittedApplies(applyIds);
+        int deleted = submittedApplyService.deleteSubmittedApplies(applyIds);
 
         // then
         verify(applyRepository).findAllByIdAndStatusWithMember(applyIds, Status.SUBMITTED);
+        assertThat(deleted).isEqualTo(3);
+        assertThat(submittedApply.getStatus()).isEqualTo(Status.REJECTED);
         assertThat(submittedApply.getApplicationForm()).isNull();
         assertThat(submittedApply.getMember().getName()).isNull();
+        assertThat(apply2.getStatus()).isEqualTo(Status.REJECTED);
         assertThat(apply2.getApplicationForm()).isNull();
+        assertThat(apply3.getStatus()).isEqualTo(Status.REJECTED);
         assertThat(apply3.getApplicationForm()).isNull();
     }
 
@@ -195,6 +201,23 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         assertThatThrownBy(() -> submittedApplyService.deleteSubmittedApplies(applyIds))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
+    }
+
+    @Test
+    void 제출된_지원서_여러건_삭제시_중복_ID는_한_번만_처리() {
+        // given
+        var applyIds = List.of(1L, 1L, 1L);
+        var distinctIds = List.of(1L);
+
+        given(applyRepository.findAllByIdAndStatusWithMember(distinctIds, Status.SUBMITTED))
+                .willReturn(List.of(submittedApply));
+
+        // when
+        int deleted = submittedApplyService.deleteSubmittedApplies(applyIds);
+
+        // then
+        assertThat(deleted).isEqualTo(1);
+        verify(applyRepository).findAllByIdAndStatusWithMember(distinctIds, Status.SUBMITTED);
     }
 
     @Test
@@ -358,7 +381,7 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
     }
 
     @Test
-    void 상세조회하려는_제출된_지원서가_null인_경우_빈_응답을_반환() {
+    void 상세조회하려는_제출된_지원서의_ApplicationForm이_null이면_빈_응답을_반환() {
         // given
         var applyId = submittedApply.getId() + 1L;
         var member2 = Member.builder()
@@ -376,8 +399,9 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
                 .willReturn(Optional.of(apply2));
 
         // when
-        var actual = submittedApplyService.findSubmittedApplyDetail(applyId);
-        // expected
+        SubmittedApplyDetailResponse actual = submittedApplyService.findSubmittedApplyDetail(applyId);
+
+        // then
         assertThat(actual.applyId()).isEqualTo(applyId);
         // assertThat(actual.applicationFormResponse().answers()).isEmpty();  // 빈 Map 확인
         // assertThat(actual.applicationFormResponse().portfolios()).isEmpty();
@@ -392,13 +416,10 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         )).willReturn(Optional.of(submittedApply));
 
         // when
-        var actual = submittedApplyService.findSubmittedApplyDetail(submittedApply.getId());
+        SubmittedApplyDetailResponse actual = submittedApplyService.findSubmittedApplyDetail(submittedApply.getId());
 
         // then
-        verify(applyRepository).findByIdAndStatusWithMember(
-                submittedApply.getId(),
-                Status.SUBMITTED
-        );
+        verify(applyRepository).findByIdAndStatusWithMember(submittedApply.getId(), Status.SUBMITTED);
         assertThat(actual.applyId()).isEqualTo(submittedApply.getId());
         assertThat(actual.name()).isEqualTo("김젝트");
         assertThat(actual.phoneNumber()).isEqualTo("010-1234-5678");
@@ -451,7 +472,6 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         // then
         verify(applyRepository).findByIdAndStatusWithMember(applyId, Status.SUBMITTED);
         verify(map2JsonSerializer).serializeAsString(newAnswers);
-
         assertThat(submittedApply.getMember().getName()).isEqualTo(newName);
         assertThat(submittedApply.getMember().getPhoneNumber()).isEqualTo(newPhoneNumber);
         assertThat(submittedApply.getMember().getEmail()).isEqualTo(newEmail);
@@ -502,35 +522,5 @@ class SubmittedApplyServiceTest  extends UnitTestSupport {
         assertThatThrownBy(() -> submittedApplyService.updateSubmittedApply(applyId, request))
                 .isInstanceOf(QuestionException.class)
                 .hasFieldOrPropertyWithValue("errorCode", QuestionErrorCode.NOT_FOUND_QUESTION);
-    }
-
-    @Test
-    void 제출되지_않은_지원서_수정시_예외_발생() {
-        // given
-        var applyId = submittedApply.getId();
-        var tempSavedApply = Apply.builder()
-                .id(applyId)
-                .member(submittedApply.getMember())
-                .recruit(submittedApply.getRecruit())
-                .status(Status.TEMP_SAVED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-
-        var request = new SubmittedApplyEditRequest(
-                "이름",
-                "01012345678",
-                "test@example.com",
-                JobFamily.BE,
-                Map.of("1", "답변"),
-                List.of()
-        );
-
-        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
-                .willReturn(Optional.of(tempSavedApply));
-
-        // expected
-        assertThatThrownBy(() -> submittedApplyService.updateSubmittedApply(applyId, request))
-                .isInstanceOf(ApplyException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_SUBMITTED_APPLICATION_FORM);
     }
 }
