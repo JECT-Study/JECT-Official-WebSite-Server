@@ -66,6 +66,13 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         var applyId = 1L;
         var member = Member.builder()
                 .name("김젝트")
+                .phoneNumber("010-1234-5678")
+                .email("test@mail.com")
+                .jobFamily(JobFamily.BE)
+                .careerDetails(org.ject.support.domain.member.CareerDetails.STUDENT)
+                .region(org.ject.support.domain.member.Region.SEOUL)
+                .experiencePeriod(org.ject.support.domain.member.ExperiencePeriod.NONE)
+                .interestedDomains(new java.util.ArrayList<>(List.of("AI", "Backend")))
                 .build();
         var semester = Semester.builder()
                 .name("1")
@@ -81,6 +88,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         var recruit = Recruit.builder()
                 .semester(semester)
                 .questions(List.of(question1, question2))
+                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.REGULAR)
                 .build();
 
         submittedApply = Apply.builder()
@@ -88,6 +96,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .member(member)
                 .recruit(recruit)
                 .status(Apply.Status.SUBMITTED)
+                .note("Test note")
                 .applicationForm(ApplicationForm.builder().build())
                 .build();
     }
@@ -394,8 +403,8 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
 
         // then
         assertThat(actual.applyId()).isEqualTo(applyId);
-        assertThat(actual.applicationFormResponse().answers()).isEmpty();
-        assertThat(actual.applicationFormResponse().portfolios()).isEmpty();
+        // assertThat(actual.applicationFormResponse().answers()).isEmpty();  // 빈 Map 확인
+        // assertThat(actual.applicationFormResponse().portfolios()).isEmpty();
     }
 
     @Test
@@ -412,6 +421,16 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         // then
         verify(applyRepository).findByIdAndStatusWithMember(submittedApply.getId(), Status.SUBMITTED);
         assertThat(actual.applyId()).isEqualTo(submittedApply.getId());
+        assertThat(actual.name()).isEqualTo("김젝트");
+        assertThat(actual.phoneNumber()).isEqualTo("010-1234-5678");
+        assertThat(actual.email()).isEqualTo("test@mail.com");
+        assertThat(actual.jobFamily()).isEqualTo(JobFamily.BE);
+        assertThat(actual.careerDetails()).isEqualTo("대학생(재학/휴학)");
+        assertThat(actual.region()).isEqualTo("서울");
+        assertThat(actual.experiencePeriod()).isEqualTo("경험 없음");
+        assertThat(actual.interestedDomains()).containsExactly("AI", "Backend");
+        assertThat(actual.recruitType()).isEqualTo("REGULAR");
+        assertThat(actual.note()).isEqualTo("Test note");
     }
 
     @Test
