@@ -8,7 +8,7 @@ import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
-import org.ject.support.admin.apply.service.SubmittedApplyService;
+import org.ject.support.admin.apply.service.AdminApplyService;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.RecruitType;
@@ -27,11 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/admin/submitted-applies")
-@Tag(name = "Submitted Apply", description = "[관리자] 제출된 지원서 관리 API")
-public class SubmittedApplyController {
+@RequestMapping("/admin/applies")
+@Tag(name = "Admin Apply", description = "[관리자] 제출된 지원서 관리 API")
+public class AdminApplyController {
 
-    private final SubmittedApplyService submittedApplyService;
+    private final AdminApplyService AdminApplyService;
 
     @GetMapping
     @Operation(
@@ -42,7 +42,7 @@ public class SubmittedApplyController {
                                                 @RequestParam(required = false) final JobFamily jobFamily,
                                                 @RequestParam(required = false) final RecruitType recruitType,
                                                 @PageableDefault(size = 10, sort = "createdAt", direction = Direction.DESC) final Pageable pageable) {
-        return submittedApplyService.findApplies(applyStatus, semesterId, jobFamily, recruitType, pageable);
+        return AdminApplyService.findApplies(applyStatus, semesterId, jobFamily, recruitType, pageable);
     }
 
     @GetMapping("/{applyId}")
@@ -50,7 +50,7 @@ public class SubmittedApplyController {
             summary = "제출된 지원서 상세 조회",
             description = "전달한 ID에 해당하는 제출된 지원서의 상세 정보를 조회합니다.")
     public SubmittedApplyDetailResponse findSubmittedApplyDetail(@PathVariable("applyId") final Long applyId) {
-        return submittedApplyService.findSubmittedApplyDetail(applyId);
+        return AdminApplyService.findSubmittedApplyDetail(applyId);
     }
 
     @PutMapping("/{applyId}")
@@ -59,7 +59,7 @@ public class SubmittedApplyController {
             description = "전달한 ID에 해당하는 제출된 지원서의 정보를 수정 합니다.")
     public void editSubmittedApply(@PathVariable("applyId") final Long applyId,
                                    @RequestBody @Valid final SubmittedApplyEditRequest request) {
-        submittedApplyService.updateSubmittedApply(applyId, request);
+        AdminApplyService.updateSubmittedApply(applyId, request);
     }
 
     @DeleteMapping("/{applyId}")
@@ -67,7 +67,7 @@ public class SubmittedApplyController {
             summary = "제출된 지원서 삭제",
             description = "선택한 제출된 지원서를 삭제합니다.")
     public void deleteSubmittedApply(@PathVariable("applyId") final Long applyId) {
-        submittedApplyService.deleteSubmittedApply(applyId);
+        AdminApplyService.deleteSubmittedApply(applyId);
     }
 
     @DeleteMapping
@@ -75,6 +75,6 @@ public class SubmittedApplyController {
             summary = "제출된 지원서 다수 삭제",
             description = "선택한 다수의 제출된 지원서들을 삭제합니다. 삭제한 수를 반환합니다.")
     public int deleteSubmittedApplies(@RequestBody @Valid final SubmittedApplyBulkDeleteRequest request) {
-        return submittedApplyService.deleteSubmittedApplies(request.applyIds());
+        return AdminApplyService.deleteSubmittedApplies(request.applyIds());
     }
 }

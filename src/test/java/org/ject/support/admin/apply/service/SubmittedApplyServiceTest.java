@@ -41,7 +41,7 @@ import org.springframework.data.domain.Sort;
 class SubmittedApplyServiceTest extends UnitTestSupport {
 
     @InjectMocks
-    private SubmittedApplyService submittedApplyService;
+    private AdminApplyService submittedApplyService;
 
     @Mock
     private ApplyRepository applyRepository;

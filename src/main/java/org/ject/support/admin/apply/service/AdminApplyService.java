@@ -33,7 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class SubmittedApplyService {
+public class AdminApplyService {
 
     private final ApplyRepository applyRepository;
     private final AdminApplyQueryRepository adminApplyQueryRepository;
