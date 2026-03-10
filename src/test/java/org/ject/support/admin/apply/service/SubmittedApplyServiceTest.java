@@ -489,4 +489,107 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .isInstanceOf(QuestionException.class)
                 .hasFieldOrPropertyWithValue("errorCode", QuestionErrorCode.NOT_FOUND_QUESTION);
     }
+
+    @Test
+    void 임시_저장된_지원서_목록_조회시_결과가_없으면_빈_페이지_반환() {
+        // given
+        var pageable = PageRequest.of(0, 10);
+        Long semesterId = null;
+        var page = new PageImpl<Apply>(List.of(), pageable, 0);
+
+        given(adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable))
+                .willReturn(page);
+
+        // when
+        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+
+        // then
+        verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        assertThat(result.getTotalElements()).isEqualTo(0);
+        assertThat(result.getContent()).isEmpty();
+    }
+
+    @Test
+    void 임시_저장된_지원서_목록_조회_성공() {
+        // given
+        var pageable = PageRequest.of(0, 10);
+        Long semesterId = null;
+
+        var m1 = Member.builder().name("김1").jobFamily(JobFamily.BE).build();
+        var m2 = Member.builder().name("김2").jobFamily(JobFamily.BE).build();
+        var semester = Semester.builder().name("1").build();
+        var recruit = Recruit.builder()
+                .semester(semester)
+                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.REGULAR)
+                .build();
+
+        var a1 = Apply.builder()
+                .id(1L)
+                .member(m1)
+                .recruit(recruit)
+                .status(ApplyStatus.TEMP_SAVED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        var a2 = Apply.builder()
+                .id(2L)
+                .member(m2)
+                .recruit(recruit)
+                .status(ApplyStatus.TEMP_SAVED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        var applies = List.of(a1, a2);
+        var page = new PageImpl<>(applies, pageable, applies.size());
+
+        given(adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable))
+                .willReturn(page);
+
+        // when
+        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+
+        // then
+        verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
+        assertThat(result.getContent().get(1).applyId()).isEqualTo(2L);
+    }
+
+    @Test
+    void 임시_저장된_지원서_목록을_semesterId로_필터링하여_조회() {
+        // given
+        var pageable = PageRequest.of(0, 10);
+        Long semesterId = 1L;
+
+        var member = Member.builder().name("김젝트").jobFamily(JobFamily.BE).build();
+        var semester = Semester.builder().name("1").build();
+        var recruit = Recruit.builder()
+                .semester(semester)
+                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.REGULAR)
+                .build();
+
+        var apply = Apply.builder()
+                .id(1L)
+                .member(member)
+                .recruit(recruit)
+                .status(ApplyStatus.TEMP_SAVED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        var applies = List.of(apply);
+        var page = new PageImpl<>(applies, pageable, applies.size());
+
+        given(adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable))
+                .willReturn(page);
+
+        // when
+        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+
+        // then
+        verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
+    }
 }

@@ -46,7 +46,7 @@ public class AdminApplyService {
                                                 final JobFamily jobFamily,
                                                 final RecruitType recruitType,
                                                 final Pageable pageable) {
-        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, recruitType, pageable);
+        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(applyStatus, semesterId, jobFamily, recruitType, pageable);
 
         List<AdminApplyResponse> content = applyPage.getContent().stream()
                 .map(AdminApplyResponse::from)
