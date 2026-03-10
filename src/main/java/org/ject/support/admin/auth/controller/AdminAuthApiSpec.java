@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.ject.support.admin.auth.dto.AdminAuthSendRequest;
 import org.ject.support.admin.auth.dto.AdminAuthSendResponse;
+import org.ject.support.admin.auth.dto.AdminLoginRequest;
 import org.ject.support.admin.auth.dto.AdminVerifyRequest;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -28,4 +29,15 @@ public interface AdminAuthApiSpec {
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse
     );
+
+    @Operation(
+            summary = "관리자 로그인",
+            description = "관리자 로그인을 시도합니다."
+    )
+    boolean loginAdmin(
+            @RequestBody @Valid AdminLoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    );
+
 }
