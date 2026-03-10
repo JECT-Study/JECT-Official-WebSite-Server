@@ -49,7 +49,7 @@ public class AdminTempApplyService {
     @Transactional
     public void deleteTempApply(Long applyId) {
         Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.TEMP_SAVED)
-                .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
+                .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM));
         apply.getMember().deleteProfile();
         applyRepository.delete(apply);
     }
