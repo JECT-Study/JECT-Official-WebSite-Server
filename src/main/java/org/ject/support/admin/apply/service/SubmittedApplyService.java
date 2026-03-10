@@ -102,7 +102,7 @@ public class SubmittedApplyService {
         Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
 
-        apply.deleteApplicationForm();
+        apply.reject();
         apply.getMember().deleteProfile();
     }
 
@@ -116,7 +116,7 @@ public class SubmittedApplyService {
         }
 
         applies.forEach(apply -> {
-            apply.deleteApplicationForm();
+            apply.reject();
             apply.getMember().deleteProfile();
         });
         return applies.size();

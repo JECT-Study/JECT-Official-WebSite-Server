@@ -104,6 +104,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
 
         // then
         verify(applyRepository).findByIdAndStatusWithMember(applyId, Status.SUBMITTED);
+        assertThat(submittedApply.getStatus()).isEqualTo(Status.REJECTED);
         assertThat(submittedApply.getApplicationForm()).isNull();
         assertThat(submittedApply.getMember().getName()).isNull();
     }
@@ -155,9 +156,12 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         // then
         verify(applyRepository).findAllByIdAndStatusWithMember(applyIds, Status.SUBMITTED);
         assertThat(deleted).isEqualTo(3);
+        assertThat(submittedApply.getStatus()).isEqualTo(Status.REJECTED);
         assertThat(submittedApply.getApplicationForm()).isNull();
         assertThat(submittedApply.getMember().getName()).isNull();
+        assertThat(apply2.getStatus()).isEqualTo(Status.REJECTED);
         assertThat(apply2.getApplicationForm()).isNull();
+        assertThat(apply3.getStatus()).isEqualTo(Status.REJECTED);
         assertThat(apply3.getApplicationForm()).isNull();
     }
 
