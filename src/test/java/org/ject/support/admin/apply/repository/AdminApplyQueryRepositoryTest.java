@@ -2,6 +2,7 @@ package org.ject.support.admin.apply.repository;
 
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
@@ -25,8 +26,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PM;
@@ -83,7 +84,7 @@ class AdminApplyQueryRepositoryTest {
         applyRepository.saveAll(List.of(beApply1, beApply2, feApply));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
         Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
@@ -110,7 +111,7 @@ class AdminApplyQueryRepositoryTest {
         applyRepository.saveAll(List.of(beApply, feApply, pmApply));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
         Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(null, status, null, null, pageable);
@@ -132,7 +133,7 @@ class AdminApplyQueryRepositoryTest {
         applyRepository.saveAll(List.of(submittedApply, tempApply));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
         Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
@@ -155,7 +156,7 @@ class AdminApplyQueryRepositoryTest {
         applyRepository.saveAll(List.of(activeApply, deletedApply));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
         Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
@@ -176,7 +177,7 @@ class AdminApplyQueryRepositoryTest {
         }
 
         Pageable pageable = PageRequest.of(1, 10);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
         Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
@@ -192,7 +193,7 @@ class AdminApplyQueryRepositoryTest {
     void 제출된_지원서가_없으면_빈_페이지_반환() {
         // given
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
         Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
@@ -221,7 +222,7 @@ class AdminApplyQueryRepositoryTest {
         applyRepository.save(apply3);
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
         Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
@@ -264,7 +265,7 @@ class AdminApplyQueryRepositoryTest {
         applyRepository.saveAll(List.of(apply1, apply2));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
         Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, semester.getId(), null, pageable);
@@ -303,7 +304,7 @@ class AdminApplyQueryRepositoryTest {
         applyRepository.saveAll(List.of(apply1, apply2));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
         Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(null, status, null, org.ject.support.domain.recruit.domain.RecruitType.BACKFILL, pageable);
@@ -323,7 +324,7 @@ class AdminApplyQueryRepositoryTest {
                 .build();
     }
 
-    private Apply getApply(Member member, Recruit recruit, Apply.Status status) {
+    private Apply getApply(Member member, Recruit recruit, ApplyStatus status) {
         ApplicationForm applicationForm = ApplicationForm.builder()
                 .build();
 

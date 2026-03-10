@@ -3,6 +3,7 @@ package org.ject.support.admin.apply.service;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
@@ -40,9 +41,9 @@ class ApplyPassServiceTest extends UnitTestSupport {
         Member applicant2 = getApplicant(2L, "applicant2@test.com");
         Member applicant3 = getApplicant(3L, "applicant3@test.com");
 
-        Apply apply1 = getApply(1L, recruit, applicant1, getApplicationForm("content"), Apply.Status.SUBMITTED);
-        Apply apply2 = getApply(2L, recruit, applicant2, getApplicationForm("content"), Apply.Status.SUBMITTED);
-        Apply apply3 = getApply(3L, recruit, applicant3, getApplicationForm("content"), Apply.Status.SUBMITTED);
+        Apply apply1 = getApply(1L, recruit, applicant1, getApplicationForm("content"), ApplyStatus.SUBMITTED);
+        Apply apply2 = getApply(2L, recruit, applicant2, getApplicationForm("content"), ApplyStatus.SUBMITTED);
+        Apply apply3 = getApply(3L, recruit, applicant3, getApplicationForm("content"), ApplyStatus.SUBMITTED);
 
         when(applyRepository.findAllByIdWithMember(List.of(1L, 2L, 3L))).thenReturn(List.of(apply1, apply2, apply3));
 
@@ -64,9 +65,9 @@ class ApplyPassServiceTest extends UnitTestSupport {
         Member applicant2 = getApplicant(2L, "applicant2@test.com");
         Member applicant3 = getApplicant(3L, "applicant3@test.com");
 
-        Apply apply1 = getApply(1L, recruit, applicant1, getApplicationForm("content"), Apply.Status.SUBMITTED);
-        Apply apply2 = getApply(2L, recruit, applicant2, getApplicationForm("content"), Apply.Status.TEMP_SAVED);
-        Apply apply3 = getApply(3L, recruit, applicant3, getApplicationForm("content"), Apply.Status.SUBMITTED);
+        Apply apply1 = getApply(1L, recruit, applicant1, getApplicationForm("content"), ApplyStatus.SUBMITTED);
+        Apply apply2 = getApply(2L, recruit, applicant2, getApplicationForm("content"), ApplyStatus.TEMP_SAVED);
+        Apply apply3 = getApply(3L, recruit, applicant3, getApplicationForm("content"), ApplyStatus.SUBMITTED);
 
         when(applyRepository.findAllByIdWithMember(List.of(1L, 2L, 3L))).thenReturn(List.of(apply1, apply2, apply3));
 
@@ -96,7 +97,7 @@ class ApplyPassServiceTest extends UnitTestSupport {
                 .build();
     }
 
-    private Apply getApply(Long id, Recruit recruit, Member applicant, ApplicationForm applicationForm, Apply.Status status) {
+    private Apply getApply(Long id, Recruit recruit, Member applicant, ApplicationForm applicationForm, ApplyStatus status) {
         return Apply.builder()
                 .id(id)
                 .recruit(recruit)

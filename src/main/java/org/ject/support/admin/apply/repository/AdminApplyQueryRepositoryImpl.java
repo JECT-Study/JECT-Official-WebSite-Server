@@ -5,6 +5,7 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.RecruitType;
 import org.springframework.data.domain.Page;
@@ -28,7 +29,7 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
 
     @Override
     public Page<Apply> findAppliesByStatus(final JobFamily jobFamily,
-                                           final Apply.Status status,
+                                           final ApplyStatus status,
                                            final Long semesterId,
                                            final RecruitType recruitType,
                                            final Pageable pageable) {
@@ -74,7 +75,7 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
                 .orElse(null);
     }
 
-    private BooleanExpression eqApplyStatus(final Apply.Status status) {
+    private BooleanExpression eqApplyStatus(final ApplyStatus status) {
         return Optional.ofNullable(status)
                 .map(apply.status::eq)
                 .orElse(null);

@@ -10,7 +10,7 @@ import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
-import org.ject.support.domain.apply.domain.Apply.Status;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
@@ -47,7 +47,7 @@ public class SubmittedApplyService {
                                                              final Long semesterId,
                                                              final RecruitType recruitType,
                                                              final Pageable pageable) {
-        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, recruitType, pageable);
+        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, ApplyStatus.SUBMITTED, semesterId, recruitType, pageable);
 
         List<SubmittedApplyResponse> content = applyPage.getContent().stream()
                 .map(SubmittedApplyResponse::from)
@@ -58,21 +58,21 @@ public class SubmittedApplyService {
 
     @Transactional(readOnly = true)
     public SubmittedApplyDetailResponse findSubmittedApplyDetail(final Long applyId) {
-        return applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
+        return applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
                 .map(this::toSubmittedApplyDetailResponse)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
     }
 
     @Transactional(readOnly = true)
     public SubmittedApplyCountResponse countSubmittedApply() {
-        Long count = applyRepository.countByStatus(Status.SUBMITTED);
+        Long count = applyRepository.countByStatus(ApplyStatus.SUBMITTED);
         return new SubmittedApplyCountResponse(count);
     }
 
     @Transactional
     public void updateSubmittedApply(final Long applyId,
                                      final SubmittedApplyEditRequest request) {
-        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
+        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
 
         Member member = apply.getMember();
@@ -99,7 +99,7 @@ public class SubmittedApplyService {
 
     @Transactional
     public void deleteSubmittedApply(final Long applyId) {
-        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
+        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
 
         apply.reject();
@@ -109,7 +109,7 @@ public class SubmittedApplyService {
     @Transactional
     public int deleteSubmittedApplies(final List<Long> applyIds) {
         final List<Long> distinctIds = applyIds.stream().distinct().toList();
-        final List<Apply> applies = applyRepository.findAllByIdAndStatusWithMember(distinctIds, Status.SUBMITTED);
+        final List<Apply> applies = applyRepository.findAllByIdAndStatusWithMember(distinctIds, ApplyStatus.SUBMITTED);
 
         if (applies.size() != distinctIds.size()) {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);

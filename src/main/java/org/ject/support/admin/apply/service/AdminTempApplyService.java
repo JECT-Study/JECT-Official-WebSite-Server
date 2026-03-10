@@ -8,6 +8,7 @@ import org.ject.support.admin.apply.dto.TempSavedApplyCountResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
@@ -33,7 +34,7 @@ public class AdminTempApplyService {
     private final String2MapSerializer string2MapSerializer;
 
     public TempApplyDetailResponse getTempApplyDetail(Long tempApplyId) {
-        Apply apply = applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED)
+        Apply apply = applyRepository.findByIdAndStatusWithMember(tempApplyId, ApplyStatus.TEMP_SAVED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM));
 
         ApplicationForm tempApplicationForm = apply.getApplicationForm();
@@ -46,20 +47,20 @@ public class AdminTempApplyService {
     }
 
     public TempSavedApplyCountResponse getTempSavedApplyCount() {
-        Long count = applyRepository.countByStatus(Apply.Status.TEMP_SAVED);
+        Long count = applyRepository.countByStatus(ApplyStatus.TEMP_SAVED);
         return new TempSavedApplyCountResponse(count);
     }
 
     @Transactional
     public void deleteTempApply(Long applyId) {
-        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Apply.Status.TEMP_SAVED)
+        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.TEMP_SAVED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
         apply.getMember().deleteProfile();
         applyRepository.delete(apply);
     }
 
     public Page<TempSavedApplyResponse> getTempApplies(JobFamily jobFamily, Long semesterId, Pageable pageable) {
-        Apply.Status tempSavedStatus = Apply.Status.TEMP_SAVED;
+        ApplyStatus tempSavedStatus = ApplyStatus.TEMP_SAVED;
         Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, tempSavedStatus, semesterId, null, pageable);
 
         List<TempSavedApplyResponse> content = applyPage.getContent().stream()

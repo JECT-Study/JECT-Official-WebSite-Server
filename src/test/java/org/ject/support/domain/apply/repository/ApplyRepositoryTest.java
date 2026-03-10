@@ -1,6 +1,7 @@
 package org.ject.support.domain.apply.repository;
 
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
@@ -21,8 +22,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PD;
@@ -136,7 +137,7 @@ class ApplyRepositoryTest {
                 .build();
     }
 
-    private Apply getApply(Member member, Recruit recruit, Apply.Status status) {
+    private Apply getApply(Member member, Recruit recruit, ApplyStatus status) {
         return Apply.builder()
                 .recruit(recruit)
                 .member(member)

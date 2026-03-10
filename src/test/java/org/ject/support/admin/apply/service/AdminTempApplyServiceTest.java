@@ -7,6 +7,7 @@ import org.ject.support.admin.apply.dto.TempSavedApplyCountResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
@@ -47,7 +48,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
     void 존재하지_않는_임시_저장된_지원서를_조회하면_예외_발생() {
         // given
         Long tempApplyId = 1L;
-        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
+        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, ApplyStatus.TEMP_SAVED))
                 .willReturn(Optional.empty());
 
         // when, then
@@ -72,24 +73,24 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
                 .id(tempApplyId)
                 .member(member)
                 .recruit(recruit)
-                .status(Apply.Status.TEMP_SAVED)
+                .status(ApplyStatus.TEMP_SAVED)
                 .applicationForm(ApplicationForm.builder().build())
                 .build();
-        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
+        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, ApplyStatus.TEMP_SAVED))
                 .willReturn(Optional.of(submittedApply));
 
         // when
         TempApplyDetailResponse result = adminTempApplyService.getTempApplyDetail(tempApplyId);
 
         // then
-        verify(applyRepository).findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED);
+        verify(applyRepository).findByIdAndStatusWithMember(tempApplyId, ApplyStatus.TEMP_SAVED);
         assertThat(result.applyId()).isEqualTo(tempApplyId);
     }
 
     @Test
     void 임시_저장된_지원서의_총_개수를_조회한다() {
         // given
-        Apply.Status targetStatus = Apply.Status.TEMP_SAVED;
+        ApplyStatus targetStatus = ApplyStatus.TEMP_SAVED;
         Long tempSavedCount = 5L;
         given(applyRepository.countByStatus(targetStatus))
                 .willReturn(tempSavedCount);
@@ -105,7 +106,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
     @Test
     void 임시_저장된_지원서의_총_개수가_0개일_경우_0을_조회한다() {
         // given
-        Apply.Status targetStatus = Apply.Status.TEMP_SAVED;
+        ApplyStatus targetStatus = ApplyStatus.TEMP_SAVED;
         Long tempSavedCount = 0L;
         given(applyRepository.countByStatus(targetStatus))
                 .willReturn(tempSavedCount);
@@ -122,7 +123,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
     void 존재하지_않는_임시_저장_상태의_지원서를_삭제_할_경우_예외_발생() {
         // given
         Long tempApplyId = 1L;
-        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
+        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, ApplyStatus.TEMP_SAVED))
                 .willReturn(Optional.empty());
 
         // when, then
@@ -150,17 +151,17 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
                 .id(tempApplyId)
                 .member(member)
                 .recruit(recruit)
-                .status(Apply.Status.TEMP_SAVED)
+                .status(ApplyStatus.TEMP_SAVED)
                 .applicationForm(applicationForm)
                 .build();
-        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED))
+        given(applyRepository.findByIdAndStatusWithMember(tempApplyId, ApplyStatus.TEMP_SAVED))
                 .willReturn(Optional.of(tempSavedApply));
 
         // when
         adminTempApplyService.deleteTempApply(tempApplyId);
 
         // then
-        verify(applyRepository).findByIdAndStatusWithMember(tempApplyId, Apply.Status.TEMP_SAVED);
+        verify(applyRepository).findByIdAndStatusWithMember(tempApplyId, ApplyStatus.TEMP_SAVED);
         verify(applyRepository).delete(tempSavedApply);
     }
 
@@ -171,14 +172,14 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         Long semesterId = null;
         Page<Apply> applyPage = new PageImpl<>(List.of(), pageable, 0);
 
-        given(adminApplyQueryRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, null, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(null, ApplyStatus.TEMP_SAVED, semesterId, null, pageable))
                 .willReturn(applyPage);
 
         // when
         Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, semesterId, pageable);
 
         // then
-        verify(adminApplyQueryRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, null, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(null, ApplyStatus.TEMP_SAVED, semesterId, null, pageable);
         assertThat(result.getTotalElements()).isEqualTo(0);
         assertThat(result.getContent()).isEmpty();
     }
@@ -201,7 +202,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
                 .id(1L)
                 .member(m1)
                 .recruit(recruit)
-                .status(Apply.Status.TEMP_SAVED)
+                .status(ApplyStatus.TEMP_SAVED)
                 .applicationForm(form1)
                 .build();
 
@@ -209,14 +210,14 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
                 .id(2L)
                 .member(m2)
                 .recruit(recruit)
-                .status(Apply.Status.TEMP_SAVED)
+                .status(ApplyStatus.TEMP_SAVED)
                 .applicationForm(form2)
                 .build();
 
         List<Apply> applies = List.of(a1, a2);
         Page<Apply> applyPage = new PageImpl<>(applies, pageable, applies.size());
 
-        given(adminApplyQueryRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, null, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(null, ApplyStatus.TEMP_SAVED, semesterId, null, pageable))
                 .willReturn(applyPage);
 
         // applicationForm.content가 "{}" 이므로 이 호출을 stub 처리
@@ -225,7 +226,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         Page<TempSavedApplyResponse> result =
                 adminTempApplyService.getTempApplies(null, semesterId, pageable);
 
-        verify(adminApplyQueryRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, null, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(null, ApplyStatus.TEMP_SAVED, semesterId, null, pageable);
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
@@ -247,14 +248,14 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
                 .id(1L)
                 .member(member)
                 .recruit(recruit)
-                .status(Apply.Status.TEMP_SAVED)
+                .status(ApplyStatus.TEMP_SAVED)
                 .applicationForm(form)
                 .build();
 
         List<Apply> applies = List.of(apply);
         Page<Apply> applyPage = new PageImpl<>(applies, pageable, applies.size());
 
-        given(adminApplyQueryRepository.findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, null, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(null, ApplyStatus.TEMP_SAVED, semesterId, null, pageable))
                 .willReturn(applyPage);
         given(string2MapSerializer.serializeAsMap("{}")).willReturn(java.util.Map.of());
 
@@ -262,7 +263,7 @@ class AdminTempApplyServiceTest extends UnitTestSupport {
         Page<TempSavedApplyResponse> result = adminTempApplyService.getTempApplies(null, semesterId, pageable);
 
         // then
-        verify(adminApplyQueryRepository).findAppliesByStatus(null, Apply.Status.TEMP_SAVED, semesterId, null, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(null, ApplyStatus.TEMP_SAVED, semesterId, null, pageable);
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
