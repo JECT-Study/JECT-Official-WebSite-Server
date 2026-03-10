@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/applies")
-@Tag(name = "Admin Apply", description = "[관리자] 제출된 지원서 관리 API")
+@Tag(name = "Admin Apply", description = "[관리자] 지원서 관리 API")
 public class AdminApplyController {
 
     private final AdminApplyService AdminApplyService;
