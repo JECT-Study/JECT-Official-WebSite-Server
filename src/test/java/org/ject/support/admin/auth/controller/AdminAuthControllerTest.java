@@ -2,10 +2,14 @@ package org.ject.support.admin.auth.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import org.assertj.core.api.Assertions;
 import org.ject.support.common.security.CustomSuccessHandler;
 import org.ject.support.admin.auth.dto.AdminAuthSendRequest;
 import org.ject.support.admin.auth.dto.AdminAuthSendResponse;
+import org.ject.support.admin.auth.dto.AdminLoginRequest;
 import org.ject.support.admin.auth.dto.AdminVerifyRequest;
 import org.ject.support.admin.auth.service.AdminAuthService;
 import org.junit.jupiter.api.DisplayNameGeneration;
@@ -17,6 +21,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -79,5 +87,50 @@ class AdminAuthControllerTest {
         verify(customSuccessHandler).onAuthenticationSuccess(
                 httpServletRequest, httpServletResponse, authentication
         );
+    }
+
+    @Test
+    void 관리자_로그인에_성공하면_true를_반환한다() {
+        // given
+        String email = "admin@ject.org";
+        String pin = "ABC123";
+        AdminLoginRequest request = new AdminLoginRequest(email, pin);
+        when(adminAuthService.verifyAdminAuthCode(email, pin)).thenReturn(authentication);
+
+        // when
+        boolean result = adminAuthController.loginAdmin(request, httpServletRequest, httpServletResponse);
+
+        // then
+        assertTrue(result);
+        verify(adminAuthService).verifyAdminAuthCode(email, pin);
+        verify(customSuccessHandler).onAuthenticationSuccess(httpServletRequest, httpServletResponse, authentication);
+    }
+
+    @Test
+    void 이메일_형식이_올바르지_않은_경우_유효성_검사에_실패한다() {
+        // given
+        Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+        AdminLoginRequest request = new AdminLoginRequest("invalid-email", "ABC123");
+
+        // when
+        Set<ConstraintViolation<AdminLoginRequest>> violations = validator.validate(request);
+
+        // then
+        assertFalse(violations.isEmpty());
+        assertThat(violations).anyMatch(v -> v.getMessage().equals("유효하지 않은 이메일 형식입니다."));
+    }
+
+    @Test
+    void PIN_번호_형식이_올바르지_않은_경우_유효성_검사에_실패한다() {
+        // given
+        Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+        AdminLoginRequest request = new AdminLoginRequest("admin@ject.org", "123");
+
+        // when
+        Set<ConstraintViolation<AdminLoginRequest>> violations = validator.validate(request);
+
+        // then
+        assertFalse(violations.isEmpty());
+        assertThat(violations).anyMatch(v -> v.getMessage().equals("PIN 번호는 영문 대소문자와 숫자를 포함한 6자리여야 합니다."));
     }
 }
