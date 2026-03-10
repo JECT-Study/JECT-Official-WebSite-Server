@@ -1,28 +1,27 @@
 package org.ject.support.admin.apply.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.data.PageResponse;
-import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.admin.apply.dto.TempApplyDetailResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplyCountResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
+import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
+import org.ject.support.common.data.PageResponse;
+import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
-import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -61,7 +60,8 @@ public class AdminTempApplyService {
 
     public Page<TempSavedApplyResponse> getTempApplies(JobFamily jobFamily, Long semesterId, Pageable pageable) {
         ApplyStatus tempSavedStatus = ApplyStatus.TEMP_SAVED;
-        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, tempSavedStatus, semesterId, null, pageable);
+        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(tempSavedStatus, semesterId, jobFamily,
+                null, pageable);
 
         List<TempSavedApplyResponse> content = applyPage.getContent().stream()
                 .map(this::toTempSavedApplyResponse)

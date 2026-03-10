@@ -8,9 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface AdminApplyQueryRepository {
-    Page<Apply> findAppliesByStatus(final JobFamily jobFamily,
-                                    final ApplyStatus status,
-                                    final Long semesterId,
+    Page<Apply> findAppliesByStatus(final ApplyStatus status, final Long semesterId, final JobFamily jobFamily,
                                     final RecruitType recruitType,
                                     final Pageable pageable);
 }

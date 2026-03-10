@@ -1,5 +1,15 @@
 package org.ject.support.admin.apply.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.FE;
+import static org.ject.support.domain.member.JobFamily.PM;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
+
+import java.time.LocalDateTime;
+import java.util.List;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
@@ -21,17 +31,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
-import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.PM;
-import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 @Import({QueryDslTestConfig.class, AdminApplyQueryRepositoryImpl.class})
 @DataJpaTest
@@ -87,7 +86,7 @@ class AdminApplyQueryRepositoryTest {
         ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(status, null, BE, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
@@ -114,7 +113,7 @@ class AdminApplyQueryRepositoryTest {
         ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(null, status, null, null, pageable);
+        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(status, null, null, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(3);
@@ -136,7 +135,7 @@ class AdminApplyQueryRepositoryTest {
         ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(status, null, BE, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -159,7 +158,7 @@ class AdminApplyQueryRepositoryTest {
         ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(status, null, BE, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -180,7 +179,7 @@ class AdminApplyQueryRepositoryTest {
         ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(status, null, BE, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(10);
@@ -196,7 +195,7 @@ class AdminApplyQueryRepositoryTest {
         ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(status, null, BE, null, pageable);
 
 
         // then
@@ -225,7 +224,7 @@ class AdminApplyQueryRepositoryTest {
         ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(status, null, BE, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(3);
@@ -268,7 +267,7 @@ class AdminApplyQueryRepositoryTest {
         ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, semester.getId(), null, pageable);
+        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(status, semester.getId(), BE, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -307,7 +306,7 @@ class AdminApplyQueryRepositoryTest {
         ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(null, status, null, org.ject.support.domain.recruit.domain.RecruitType.BACKFILL, pageable);
+        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(status, null, null, org.ject.support.domain.recruit.domain.RecruitType.BACKFILL, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);

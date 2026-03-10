@@ -42,11 +42,12 @@ public class SubmittedApplyService {
     private final Map2JsonSerializer map2JsonSerializer;
 
     @Transactional(readOnly = true)
-    public Page<AdminApplyResponse> findSubmittedApplies(final JobFamily jobFamily,
-                                                         final Long semesterId,
-                                                         final RecruitType recruitType,
-                                                         final Pageable pageable) {
-        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, ApplyStatus.SUBMITTED, semesterId, recruitType, pageable);
+    public Page<AdminApplyResponse> findApplies(final ApplyStatus applyStatus,
+                                                final Long semesterId,
+                                                final JobFamily jobFamily,
+                                                final RecruitType recruitType,
+                                                final Pageable pageable) {
+        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, recruitType, pageable);
 
         List<AdminApplyResponse> content = applyPage.getContent().stream()
                 .map(AdminApplyResponse::from)

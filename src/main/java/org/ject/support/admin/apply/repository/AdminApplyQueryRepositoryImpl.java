@@ -1,7 +1,15 @@
 package org.ject.support.admin.apply.repository;
 
+import static org.ject.support.domain.apply.domain.QApplicationForm.applicationForm;
+import static org.ject.support.domain.apply.domain.QApply.apply;
+import static org.ject.support.domain.apply.domain.QPortfolio.portfolio;
+import static org.ject.support.domain.member.entity.QMember.member;
+import static org.ject.support.domain.recruit.domain.QRecruit.recruit;
+
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.apply.domain.Apply;
@@ -12,15 +20,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.ject.support.domain.apply.domain.QApplicationForm.applicationForm;
-import static org.ject.support.domain.apply.domain.QApply.apply;
-import static org.ject.support.domain.apply.domain.QPortfolio.portfolio;
-import static org.ject.support.domain.member.entity.QMember.member;
-import static org.ject.support.domain.recruit.domain.QRecruit.recruit;
-
 @Repository
 @RequiredArgsConstructor
 public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository {
@@ -28,9 +27,9 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Apply> findAppliesByStatus(final JobFamily jobFamily,
-                                           final ApplyStatus status,
+    public Page<Apply> findAppliesByStatus(final ApplyStatus status,
                                            final Long semesterId,
+                                           final JobFamily jobFamily,
                                            final RecruitType recruitType,
                                            final Pageable pageable) {
 
