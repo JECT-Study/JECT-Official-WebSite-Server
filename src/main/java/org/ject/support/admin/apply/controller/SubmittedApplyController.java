@@ -1,13 +1,14 @@
 package org.ject.support.admin.apply.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.admin.apply.service.SubmittedApplyService;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.RecruitType;
@@ -23,9 +24,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
 @RequiredArgsConstructor
@@ -47,10 +45,10 @@ public class SubmittedApplyController {
     @Operation(
             summary = "제출된 지원서 목록 조회",
             description = "제출된 지원서들의 목록을 조회합니다.")
-    public Page<SubmittedApplyResponse> findSubmittedApplies(@RequestParam(required = false) final Long semesterId,
-                                                             @RequestParam(required = false) final JobFamily jobFamily,
-                                                             @RequestParam(required = false) final RecruitType recruitType,
-                                                             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) final Pageable pageable) {
+    public Page<AdminApplyResponse> findSubmittedApplies(@RequestParam(required = false) final Long semesterId,
+                                                         @RequestParam(required = false) final JobFamily jobFamily,
+                                                         @RequestParam(required = false) final RecruitType recruitType,
+                                                         @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) final Pageable pageable) {
         return submittedApplyService.findSubmittedApplies(jobFamily, semesterId, recruitType, pageable);
     }
 

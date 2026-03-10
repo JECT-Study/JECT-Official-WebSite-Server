@@ -1,12 +1,11 @@
 package org.ject.support.admin.apply.dto;
 
+import java.util.Optional;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.JobFamily;
 
-import java.util.Optional;
-
-public record SubmittedApplyResponse(
+public record AdminApplyResponse(
         Long applyId,
         String name,
         String phoneNumber,
@@ -16,8 +15,8 @@ public record SubmittedApplyResponse(
         String recruitType,
         String note
 ) {
-    public static SubmittedApplyResponse from(Apply apply) {
-        return new SubmittedApplyResponse(
+    public static AdminApplyResponse from(Apply apply) {
+        return new AdminApplyResponse(
                 apply.getId(),
                 apply.getMember().getName(),
                 apply.getMember().getPhoneNumber(),

@@ -1,13 +1,17 @@
 package org.ject.support.admin.apply.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.data.PageResponse;
-import org.ject.support.common.util.Map2JsonSerializer;
-import org.ject.support.common.util.String2MapSerializer;
+import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
+import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
+import org.ject.support.common.data.PageResponse;
+import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
@@ -15,23 +19,18 @@ import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
-import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberEditor;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.exception.QuestionErrorCode;
 import org.ject.support.domain.recruit.exception.QuestionException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -43,14 +42,14 @@ public class SubmittedApplyService {
     private final Map2JsonSerializer map2JsonSerializer;
 
     @Transactional(readOnly = true)
-    public Page<SubmittedApplyResponse> findSubmittedApplies(final JobFamily jobFamily,
-                                                             final Long semesterId,
-                                                             final RecruitType recruitType,
-                                                             final Pageable pageable) {
+    public Page<AdminApplyResponse> findSubmittedApplies(final JobFamily jobFamily,
+                                                         final Long semesterId,
+                                                         final RecruitType recruitType,
+                                                         final Pageable pageable) {
         Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, ApplyStatus.SUBMITTED, semesterId, recruitType, pageable);
 
-        List<SubmittedApplyResponse> content = applyPage.getContent().stream()
-                .map(SubmittedApplyResponse::from)
+        List<AdminApplyResponse> content = applyPage.getContent().stream()
+                .map(AdminApplyResponse::from)
                 .toList();
 
         return PageResponse.from(content, pageable, applyPage.getTotalElements());

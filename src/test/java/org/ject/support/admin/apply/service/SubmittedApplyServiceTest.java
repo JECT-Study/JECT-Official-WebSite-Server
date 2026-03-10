@@ -1,19 +1,29 @@
 package org.ject.support.admin.apply.service;
 
-import org.ject.support.base.UnitTestSupport;
-import org.ject.support.common.util.Map2JsonSerializer;
-import org.ject.support.common.util.String2MapSerializer;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
+import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
+import org.ject.support.base.UnitTestSupport;
+import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
-import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
@@ -30,17 +40,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 class SubmittedApplyServiceTest extends UnitTestSupport {
 
@@ -264,7 +263,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
+        Page<AdminApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -284,7 +283,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(null, semesterId, null, pageable);
+        Page<AdminApplyResponse> result = submittedApplyService.findSubmittedApplies(null, semesterId, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -304,7 +303,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
+        Page<AdminApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
 
         // then
         assertThat(result.getContent()).isEmpty();
@@ -335,7 +334,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
+        Page<AdminApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
@@ -359,7 +358,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
+        Page<AdminApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
