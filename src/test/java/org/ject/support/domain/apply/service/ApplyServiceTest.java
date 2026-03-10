@@ -198,6 +198,7 @@ class ApplyServiceTest extends UnitTestSupport {
     @Test
     void 지원상태_조회_시_프로필작성을_하지_않았을_경우_예외발생() {
         // given
+        Long recruitId = 1L;
         Member member = Member.builder()
                 .id(1L)
                 .name("지원자명")
@@ -205,11 +206,11 @@ class ApplyServiceTest extends UnitTestSupport {
                 .build();
         given(memberRepository.findById(member.getId()))
                 .willReturn(Optional.of(member));
-        given(applyRepository.findByMemberIdInActiveRecruit(eq(member.getId()), any()))
+        given(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(member.getId()), eq(recruitId), any()))
                 .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> applyService.checkApplyStatus(member.getId()))
+        assertThatThrownBy(() -> applyService.checkApplyStatus(member.getId(), recruitId))
                 .isInstanceOf(ApplyException.class)
                 .extracting("errorCode")
                 .isEqualTo(ApplyErrorCode.NOT_FOUND_APPLY);
@@ -218,6 +219,7 @@ class ApplyServiceTest extends UnitTestSupport {
     @Test
     void 작성_중인_지원서가_있는_경우_TEMP_SAVED_반환() {
         // given
+        Long recruitId = 1L;
         Member member = Member.builder()
                 .id(1L)
                 .name("지원자명")
@@ -225,7 +227,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 .build();
         given(memberRepository.findById(member.getId()))
                 .willReturn(Optional.of(member));
-        given(applyRepository.findByMemberIdInActiveRecruit(eq(member.getId()), any()))
+        given(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(member.getId()), eq(recruitId), any()))
                 .willReturn(Optional.of(
                         Apply.builder()
                                 .id(1L)
@@ -234,7 +236,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 ));
 
         // when
-        ApplyStatusResponse result = applyService.checkApplyStatus(member.getId());
+        ApplyStatusResponse result = applyService.checkApplyStatus(member.getId(), recruitId);
 
         // then
         assertThat(result.status()).isEqualTo(TEMP_SAVED);
@@ -243,6 +245,7 @@ class ApplyServiceTest extends UnitTestSupport {
     @Test
     void 지원서를_제출한_지원자에_대한_제출_상태_확인_시_SUBMITTED_반환() {
         // given
+        Long recruitId = 1L;
         Member member = Member.builder()
                 .id(1L)
                 .name("지원자명")
@@ -250,7 +253,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 .build();
         given(memberRepository.findById(member.getId()))
                 .willReturn(Optional.of(member));
-        given(applyRepository.findByMemberIdInActiveRecruit(eq(member.getId()), any()))
+        given(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(member.getId()), eq(recruitId), any()))
                 .willReturn(Optional.of(
                         Apply.builder()
                                 .id(1L)
@@ -259,10 +262,31 @@ class ApplyServiceTest extends UnitTestSupport {
                 ));
 
         // when
-        ApplyStatusResponse result = applyService.checkApplyStatus(member.getId());
+        ApplyStatusResponse result = applyService.checkApplyStatus(member.getId(), recruitId);
 
         // then
         assertThat(result.status()).isEqualTo(SUBMITTED);
+    }
+
+    @Test
+    void 동일_회원이라도_다른_공고ID로_조회하면_지원상태_조회_실패() {
+        // given
+        Long requestedRecruitId = 2L;
+        Member member = Member.builder()
+                .id(1L)
+                .name("지원자명")
+                .phoneNumber("01012345678")
+                .build();
+        given(memberRepository.findById(member.getId()))
+                .willReturn(Optional.of(member));
+        given(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(member.getId()), eq(requestedRecruitId), any()))
+                .willReturn(Optional.empty());
+
+        // expected
+        assertThatThrownBy(() -> applyService.checkApplyStatus(member.getId(), requestedRecruitId))
+                .isInstanceOf(ApplyException.class)
+                .extracting("errorCode")
+                .isEqualTo(ApplyErrorCode.NOT_FOUND_APPLY);
     }
 
     @Test

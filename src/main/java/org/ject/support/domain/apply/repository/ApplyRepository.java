@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.repository.query.Param;
 
-public interface ApplyRepository extends JpaRepository<Apply, Long>, ApplyQueryRepository {
+public interface ApplyRepository extends JpaRepository<Apply, Long> {
 
     boolean existsByMemberId(Long memberId);
 
@@ -19,6 +19,11 @@ public interface ApplyRepository extends JpaRepository<Apply, Long>, ApplyQueryR
 
     @Query("select a from Apply a join a.recruit r where a.member.id = :memberId and r.startDate <= :now and r.endDate >= :now")
     Optional<Apply> findByMemberIdInActiveRecruit(@Param("memberId") Long memberId, @Param("now") LocalDateTime now);
+
+    @Query("select a from Apply a join a.recruit r where a.member.id = :memberId and r.id = :recruitId and r.startDate <= :now and r.endDate >= :now")
+    Optional<Apply> findByMemberIdAndRecruitIdInActiveRecruit(@Param("memberId") Long memberId,
+                                                               @Param("recruitId") Long recruitId,
+                                                               @Param("now") LocalDateTime now);
 
     @Query("select count(a) > 0 from Apply a join a.recruit r where a.member.id = :memberId and r.startDate <= :now and r.endDate >= :now")
     boolean existsByMemberIdInActiveRecruit(@Param("memberId") Long memberId, @Param("now") LocalDateTime now);

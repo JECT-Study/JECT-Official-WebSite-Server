@@ -49,6 +49,10 @@ public class Apply extends BaseTimeEntity {
     @Column(columnDefinition = "varchar(50)", nullable = false)
     private Status status;
 
+    @Column(columnDefinition = "varchar(500) default ''", nullable = false)
+    @Builder.Default
+    private String note = "";
+
     public static Apply createApply(Member member, Recruit recruit) {
         return Apply.builder()
                 .member(member)
@@ -59,6 +63,10 @@ public class Apply extends BaseTimeEntity {
 
     public void updateApplicationForm(ApplicationForm newApplicationForm) {
         this.applicationForm = newApplicationForm;
+    }
+
+    public void updateNote(String note) {
+        this.note = note != null ? note : "";
     }
 
     public void updateStatus(Status status) {
@@ -83,6 +91,11 @@ public class Apply extends BaseTimeEntity {
         }
     }
 
+    public void reject() {
+        this.applicationForm = null;
+        this.status = Status.REJECTED;
+    }
+
     public boolean isTempSaved() {
         return status.equals(Status.TEMP_SAVED);
     }
@@ -105,6 +118,6 @@ public class Apply extends BaseTimeEntity {
     }
 
     public enum Status {
-        JOINED, TEMP_SAVED, SUBMITTED
+        JOINED, TEMP_SAVED, SUBMITTED, REJECTED
     }
 }

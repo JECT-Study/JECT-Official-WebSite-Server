@@ -7,7 +7,7 @@ import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.admin.dto.MemberResponse;
+import org.ject.support.domain.member.dto.MemberProjection;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.Team;
@@ -217,7 +217,7 @@ class MemberQueryRepositoryTest {
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent())
-                .extracting(MemberResponse::name)
+                .extracting(MemberProjection::name)
                 .containsExactly(admin2.getName(), admin1.getName()); // createdAt desc 순서
     }
 
@@ -242,10 +242,10 @@ class MemberQueryRepositoryTest {
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent())
-                .extracting(MemberResponse::jobFamily)
+                .extracting(MemberProjection::jobFamily)
                 .containsOnly(JobFamily.BE);
         assertThat(result.getContent())
-                .extracting(MemberResponse::name)
+                .extracting(MemberProjection::name)
                 .containsExactly(admin3.getName(), admin1.getName()); // createdAt desc 순서
     }
 
@@ -271,10 +271,10 @@ class MemberQueryRepositoryTest {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent())
-                .extracting(MemberResponse::semesterName)
-                .containsOnly("2");
+                .extracting(MemberProjection::semesterName)
+                .containsOnly("2기");
         assertThat(result.getContent())
-                .extracting(MemberResponse::name)
+                .extracting(MemberProjection::name)
                 .containsExactlyInAnyOrder(semester2Member1.getName());
     }
 
@@ -301,13 +301,13 @@ class MemberQueryRepositoryTest {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent())
-                .extracting(MemberResponse::jobFamily)
+                .extracting(MemberProjection::jobFamily)
                 .containsOnly(JobFamily.BE);
         assertThat(result.getContent())
-                .extracting(MemberResponse::semesterName)
-                .containsOnly("2");
+                .extracting(MemberProjection::semesterName)
+                .containsOnly("2기");
         assertThat(result.getContent())
-                .extracting(MemberResponse::name)
+                .extracting(MemberProjection::name)
                 .containsExactly(semester2BE1.getName()); // createdAt desc 순서
     }
 
@@ -332,7 +332,7 @@ class MemberQueryRepositoryTest {
         // then
         assertThat(result.getContent())
                 .isNotEmpty()
-                .extracting(MemberResponse::name)
+                .extracting(MemberProjection::name)
                 .doesNotContain(deletedMember.getName());
     }
 

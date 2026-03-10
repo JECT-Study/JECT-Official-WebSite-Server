@@ -170,11 +170,11 @@ public class ApplyService implements ApplyUsecase {
 
     @Override
     @PeriodAccessible(permitAllJob = true)
-    public ApplyStatusResponse checkApplyStatus(Long memberId) {
+    public ApplyStatusResponse checkApplyStatus(Long memberId, Long recruitId) {
         memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
-        return applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
+        return applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(memberId, recruitId, LocalDateTime.now())
                 .map(ApplyStatusResponse::of)
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
     }
