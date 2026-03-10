@@ -6,7 +6,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.service.SubmittedApplyService;
@@ -33,14 +32,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class SubmittedApplyController {
 
     private final SubmittedApplyService submittedApplyService;
-
-    @GetMapping("/count")
-    @Operation(
-            summary = "제출된 지원서 수 조회",
-            description = "제출된 상태의 지원서 총 개수를 조회합니다.")
-    public SubmittedApplyCountResponse getSubmittedApplyCount() {
-        return submittedApplyService.countSubmittedApply();
-    }
 
     @GetMapping
     @Operation(

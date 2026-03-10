@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
-import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
@@ -61,12 +60,6 @@ public class SubmittedApplyService {
         return applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
                 .map(this::toSubmittedApplyDetailResponse)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
-    }
-
-    @Transactional(readOnly = true)
-    public SubmittedApplyCountResponse countSubmittedApply() {
-        Long count = applyRepository.countByStatus(ApplyStatus.SUBMITTED);
-        return new SubmittedApplyCountResponse(count);
     }
 
     @Transactional
