@@ -120,7 +120,7 @@ public class AdminApplyService {
         ApplicationForm submittedApplicationForm = apply.getApplicationForm();
         Map<String, String> content = extractContent(submittedApplicationForm);
         List<ApplyPortfolioDto> portfolios = extractPortfolios(submittedApplicationForm);
-        return AdminApplyDetailResponse.from(apply, content, portfolios);
+        return AdminApplyDetailResponse.from(apply);
     }
 
     private Map<String, String> extractContent(final ApplicationForm applicationForm) {
