@@ -35,8 +35,8 @@ public class AdminApplyController {
 
     @GetMapping
     @Operation(
-            summary = "제출된 지원서 목록 조회",
-            description = "제출된 지원서들의 목록을 조회합니다.")
+            summary = "지원서 목록 조회",
+            description = "지원서들의 목록을 조회합니다.")
     public Page<AdminApplyResponse> findApplies(@RequestParam(required = false) final ApplyStatus applyStatus,
                                                 @RequestParam(required = false) final Long semesterId,
                                                 @RequestParam(required = false) final JobFamily jobFamily,
@@ -47,11 +47,11 @@ public class AdminApplyController {
 
     @GetMapping("/{applyId}")
     @Operation(
-            summary = "제출된 지원서 상세 조회",
+            summary = "지원서 상세 조회",
             description = "전달한 ID에 해당하는 제출된 지원서의 상세 정보를 조회합니다.")
-    public AdminApplyDetailResponse findApplyDetail(@PathVariable final Long applyId,
-                                                    @RequestParam(required = false) final ApplyStatus applyStatus) {
-        return AdminApplyService.findSubmittedApplyDetail(applyId, applyStatus);
+    public AdminApplyDetailResponse findApply(@PathVariable final Long applyId,
+                                              @RequestParam(required = false) final ApplyStatus applyStatus) {
+        return AdminApplyService.findApply(applyId, applyStatus);
     }
 
     @PutMapping("/{applyId}")

@@ -56,8 +56,8 @@ public class AdminApplyService {
     }
 
     @Transactional(readOnly = true)
-    public AdminApplyDetailResponse findSubmittedApplyDetail(final Long applyId,
-                                                             final ApplyStatus applyStatus) {
+    public AdminApplyDetailResponse findApply(final Long applyId,
+                                              final ApplyStatus applyStatus) {
         return applyRepository.findByIdAndStatusWithMember(applyId, applyStatus)
                 .map(this::toSubmittedApplyDetailResponse)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
