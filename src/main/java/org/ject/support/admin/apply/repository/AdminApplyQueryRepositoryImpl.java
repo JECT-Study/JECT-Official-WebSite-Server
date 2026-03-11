@@ -68,6 +68,25 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
         return PageResponse.from(content, pageable, total);
     }
 
+    @Override
+    public Optional<Apply> findApplyByIdByStatus(final Long applyId, final ApplyStatus status) {
+        Apply result = queryFactory
+                .selectFrom(apply)
+                .distinct()
+                .join(apply.member, member).fetchJoin()
+                .join(apply.applicationForm, applicationForm).fetchJoin()
+                .join(apply.recruit, recruit).fetchJoin()
+                .leftJoin(apply.applicationForm.portfolios, portfolio).fetchJoin()
+                .where(
+                        apply.id.eq(applyId),
+                        apply.member.isDeleted.eq(false),
+                        eqApplyStatus(status)
+                )
+                .fetchOne();
+
+        return Optional.ofNullable(result);
+    }
+
     private BooleanExpression eqJobFamily(final JobFamily jobFamily) {
         return Optional.ofNullable(jobFamily)
                 .map(apply.member.jobFamily::eq)
