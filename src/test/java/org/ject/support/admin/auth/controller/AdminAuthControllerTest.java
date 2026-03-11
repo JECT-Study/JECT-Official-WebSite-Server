@@ -133,4 +133,13 @@ class AdminAuthControllerTest {
         assertFalse(violations.isEmpty());
         assertThat(violations).anyMatch(v -> v.getMessage().equals("PIN 번호는 영문 대소문자와 숫자를 포함한 6자리여야 합니다."));
     }
+
+    @Test
+    void 관리자_로그아웃에_성공할_경우_쿠키를_만료시킨다() {
+        // when
+        adminAuthController.logoutAdmin(httpServletResponse);
+
+        // then
+        verify(customSuccessHandler).onLogoutSuccess(httpServletResponse);
+    }
 }

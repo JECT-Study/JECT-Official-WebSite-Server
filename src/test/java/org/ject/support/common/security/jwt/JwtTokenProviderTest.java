@@ -2,6 +2,9 @@ package org.ject.support.common.security.jwt;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.ject.support.base.UnitTestSupport;
+import java.util.List;
+import org.springframework.http.HttpHeaders;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.member.JobFamily;
@@ -174,6 +177,23 @@ class JwtTokenProviderTest extends UnitTestSupport {
         Authentication resultAuth = jwtTokenProvider.getAuthenticationByToken(token);
         assertThat(resultAuth.getAuthorities()).isNotEmpty();
         assertThat(resultAuth.getAuthorities().iterator().next().getAuthority()).isEqualTo("ROLE_SEMESTER");
+    }
+
+    @Test
+    void 로그아웃_시_쿠키를_만료시킨다() {
+        // given
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        // when
+        jwtCookieProvider.deleteAuthCookies(response);
+
+        // then
+        List<String> cookies = response.getHeaders(HttpHeaders.SET_COOKIE);
+        assertThat(cookies).hasSize(3);
+        assertThat(cookies).allSatisfy(cookie -> assertThat(cookie).contains("Max-Age=0"));
+        assertThat(cookies).anySatisfy(cookie -> assertThat(cookie).contains("accessToken="));
+        assertThat(cookies).anySatisfy(cookie -> assertThat(cookie).contains("refreshToken="));
+        assertThat(cookies).anySatisfy(cookie -> assertThat(cookie).contains("verificationToken="));
     }
 
     @Test

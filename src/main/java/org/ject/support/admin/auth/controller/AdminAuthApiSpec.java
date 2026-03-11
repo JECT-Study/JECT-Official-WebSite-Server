@@ -40,4 +40,10 @@ public interface AdminAuthApiSpec {
             HttpServletResponse httpResponse
     );
 
+
+    @Operation(
+            summary = "관리자 로그아웃",
+            description = "관리자가 로그아웃합니다."
+    )
+    void logoutAdmin(HttpServletResponse httpResponse);
 }
