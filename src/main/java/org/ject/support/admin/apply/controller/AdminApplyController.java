@@ -4,9 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.service.AdminApplyService;
 import org.ject.support.domain.apply.domain.ApplyStatus;
@@ -49,8 +49,9 @@ public class AdminApplyController {
     @Operation(
             summary = "제출된 지원서 상세 조회",
             description = "전달한 ID에 해당하는 제출된 지원서의 상세 정보를 조회합니다.")
-    public SubmittedApplyDetailResponse findSubmittedApplyDetail(@PathVariable("applyId") final Long applyId) {
-        return AdminApplyService.findSubmittedApplyDetail(applyId);
+    public AdminApplyDetailResponse findApplyDetail(@PathVariable final Long applyId,
+                                                    @RequestParam(required = false) final ApplyStatus applyStatus) {
+        return AdminApplyService.findSubmittedApplyDetail(applyId, applyStatus);
     }
 
     @PutMapping("/{applyId}")
