@@ -70,11 +70,8 @@ public class JwtCookieProvider {
                 .httpOnly(true)
                 .secure(true);
 
-        // SameSite 설정은 생성 시와 동일하게 맞춰주는 것이 안전합니다
         if (isDevOrLocal()) {
             builder.sameSite("None");
-        } else {
-            builder.sameSite("Lax");
         }
 
         return builder.build();
