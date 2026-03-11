@@ -8,8 +8,8 @@ import static org.mockito.Mockito.verify;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
-import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.base.UnitTestSupport;
@@ -38,7 +38,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
-class SubmittedApplyServiceTest extends UnitTestSupport {
+class AdminApplyServiceTest extends UnitTestSupport {
 
     @InjectMocks
     private AdminApplyService submittedApplyService;
@@ -337,11 +337,11 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
     void 존재하지_않는_제출된_지원서를_상세조회할_경우_예외가_발생() {
         // given
         var applyId = submittedApply.getId() + 1L;
-        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
+        given(adminApplyQueryRepository.findApplyByIdByStatus(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.findSubmittedApplyDetail(applyId))
+        assertThatThrownBy(() -> submittedApplyService.findApply(applyId, ApplyStatus.SUBMITTED))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
@@ -361,42 +361,164 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .recruit(submittedApply.getRecruit())
                 .build();
 
-        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
+        given(adminApplyQueryRepository.findApplyByIdByStatus(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.of(apply2));
 
         // when
-        SubmittedApplyDetailResponse actual = submittedApplyService.findSubmittedApplyDetail(applyId);
+        AdminApplyDetailResponse actual = submittedApplyService.findApply(applyId, ApplyStatus.SUBMITTED);
 
         // then
-        assertThat(actual.applyId()).isEqualTo(applyId);
-        // assertThat(actual.applicationFormResponse().answers()).isEmpty();  // 빈 Map 확인
-        // assertThat(actual.applicationFormResponse().portfolios()).isEmpty();
+        assertThat(actual.applyResponse().applyId()).isEqualTo(applyId);
     }
 
     @Test
     void 제출된_지원서를_상세조회() {
         // given
-        given(applyRepository.findByIdAndStatusWithMember(
+        given(adminApplyQueryRepository.findApplyByIdByStatus(
                 submittedApply.getId(),
                 ApplyStatus.SUBMITTED
         )).willReturn(Optional.of(submittedApply));
 
         // when
-        SubmittedApplyDetailResponse actual = submittedApplyService.findSubmittedApplyDetail(submittedApply.getId());
+        AdminApplyDetailResponse actual = submittedApplyService.findApply(submittedApply.getId(), ApplyStatus.SUBMITTED);
 
         // then
-        verify(applyRepository).findByIdAndStatusWithMember(submittedApply.getId(), ApplyStatus.SUBMITTED);
-        assertThat(actual.applyId()).isEqualTo(submittedApply.getId());
-        assertThat(actual.name()).isEqualTo("김젝트");
-        assertThat(actual.phoneNumber()).isEqualTo("010-1234-5678");
-        assertThat(actual.email()).isEqualTo("test@mail.com");
-        assertThat(actual.jobFamily()).isEqualTo(JobFamily.BE);
-        assertThat(actual.careerDetails()).isEqualTo("대학생(재학/휴학)");
+        verify(adminApplyQueryRepository).findApplyByIdByStatus(submittedApply.getId(), ApplyStatus.SUBMITTED);
+        assertThat(actual.applyResponse().applyId()).isEqualTo(submittedApply.getId());
+        assertThat(actual.applyResponse().name()).isEqualTo("김젝트");
+        assertThat(actual.applyResponse().phoneNumber()).isEqualTo("010-1234-5678");
+        assertThat(actual.applyResponse().email()).isEqualTo("test@mail.com");
+        assertThat(actual.applyResponse().jobFamily()).isEqualTo(JobFamily.BE);
+        assertThat(actual.applyResponse().careerDetails()).isEqualTo("대학생(재학/휴학)");
         assertThat(actual.region()).isEqualTo("서울");
         assertThat(actual.experiencePeriod()).isEqualTo("경험 없음");
         assertThat(actual.interestedDomains()).containsExactly("AI", "Backend");
-        assertThat(actual.recruitType()).isEqualTo("REGULAR");
-        assertThat(actual.note()).isEqualTo("Test note");
+        assertThat(actual.applyResponse().recruitType()).isEqualTo("REGULAR");
+        assertThat(actual.applyResponse().note()).isEqualTo("Test note");
+    }
+
+    @Test
+    void 임시저장_상태의_지원서를_상세조회() {
+        // given
+        var tempApply = Apply.builder()
+                .id(10L)
+                .member(submittedApply.getMember())
+                .recruit(submittedApply.getRecruit())
+                .status(ApplyStatus.TEMP_SAVED)
+                .note("")
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        given(adminApplyQueryRepository.findApplyByIdByStatus(10L, ApplyStatus.TEMP_SAVED))
+                .willReturn(Optional.of(tempApply));
+
+        // when
+        AdminApplyDetailResponse actual = submittedApplyService.findApply(10L, ApplyStatus.TEMP_SAVED);
+
+        // then
+        verify(adminApplyQueryRepository).findApplyByIdByStatus(10L, ApplyStatus.TEMP_SAVED);
+        assertThat(actual.applyResponse().applyId()).isEqualTo(10L);
+        assertThat(actual.applyResponse().name()).isEqualTo("김젝트");
+    }
+
+    @Test
+    void 거절_상태의_지원서를_상세조회() {
+        // given
+        var rejectedApply = Apply.builder()
+                .id(20L)
+                .member(submittedApply.getMember())
+                .recruit(submittedApply.getRecruit())
+                .status(ApplyStatus.REJECTED)
+                .note("")
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        given(adminApplyQueryRepository.findApplyByIdByStatus(20L, ApplyStatus.REJECTED))
+                .willReturn(Optional.of(rejectedApply));
+
+        // when
+        AdminApplyDetailResponse actual = submittedApplyService.findApply(20L, ApplyStatus.REJECTED);
+
+        // then
+        verify(adminApplyQueryRepository).findApplyByIdByStatus(20L, ApplyStatus.REJECTED);
+        assertThat(actual.applyResponse().applyId()).isEqualTo(20L);
+    }
+
+    @Test
+    void 합류_상태의_지원서를_상세조회() {
+        // given
+        var joinedApply = Apply.builder()
+                .id(30L)
+                .member(submittedApply.getMember())
+                .recruit(submittedApply.getRecruit())
+                .status(ApplyStatus.JOINED)
+                .note("")
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        given(adminApplyQueryRepository.findApplyByIdByStatus(30L, ApplyStatus.JOINED))
+                .willReturn(Optional.of(joinedApply));
+
+        // when
+        AdminApplyDetailResponse actual = submittedApplyService.findApply(30L, ApplyStatus.JOINED);
+
+        // then
+        verify(adminApplyQueryRepository).findApplyByIdByStatus(30L, ApplyStatus.JOINED);
+        assertThat(actual.applyResponse().applyId()).isEqualTo(30L);
+    }
+
+    @Test
+    void status가_null이면_상태와_무관하게_지원서를_상세조회() {
+        // given
+        given(adminApplyQueryRepository.findApplyByIdByStatus(submittedApply.getId(), null))
+                .willReturn(Optional.of(submittedApply));
+
+        // when
+        AdminApplyDetailResponse actual = submittedApplyService.findApply(submittedApply.getId(), null);
+
+        // then
+        verify(adminApplyQueryRepository).findApplyByIdByStatus(submittedApply.getId(), null);
+        assertThat(actual.applyResponse().applyId()).isEqualTo(submittedApply.getId());
+        assertThat(actual.applyResponse().name()).isEqualTo("김젝트");
+    }
+
+    @Test
+    void status가_null이고_존재하지_않는_지원서를_상세조회할_경우_예외가_발생() {
+        // given
+        var applyId = 999L;
+        given(adminApplyQueryRepository.findApplyByIdByStatus(applyId, null))
+                .willReturn(Optional.empty());
+
+        // expected
+        assertThatThrownBy(() -> submittedApplyService.findApply(applyId, null))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
+    }
+
+    @Test
+    void 임시저장_상태의_존재하지_않는_지원서를_상세조회할_경우_예외가_발생() {
+        // given
+        var applyId = 999L;
+        given(adminApplyQueryRepository.findApplyByIdByStatus(applyId, ApplyStatus.TEMP_SAVED))
+                .willReturn(Optional.empty());
+
+        // expected
+        assertThatThrownBy(() -> submittedApplyService.findApply(applyId, ApplyStatus.TEMP_SAVED))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
+    }
+
+    @Test
+    void 거절_상태의_존재하지_않는_지원서를_상세조회할_경우_예외가_발생() {
+        // given
+        var applyId = 999L;
+        given(adminApplyQueryRepository.findApplyByIdByStatus(applyId, ApplyStatus.REJECTED))
+                .willReturn(Optional.empty());
+
+        // expected
+        assertThatThrownBy(() -> submittedApplyService.findApply(applyId, ApplyStatus.REJECTED))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
 
     @Test

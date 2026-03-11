@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
-import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.common.data.PageResponse;
@@ -56,9 +56,10 @@ public class AdminApplyService {
     }
 
     @Transactional(readOnly = true)
-    public SubmittedApplyDetailResponse findSubmittedApplyDetail(final Long applyId) {
-        return applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
-                .map(this::toSubmittedApplyDetailResponse)
+    public AdminApplyDetailResponse findApply(final Long applyId,
+                                              final ApplyStatus applyStatus) {
+        return adminApplyQueryRepository.findApplyByIdByStatus(applyId, applyStatus)
+                .map(AdminApplyDetailResponse::from)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
     }
 
@@ -115,14 +116,12 @@ public class AdminApplyService {
         return applies.size();
     }
 
-    private SubmittedApplyDetailResponse toSubmittedApplyDetailResponse(final Apply apply) {
-        // 지원서가 없을 수가 있나? 그리고 그렇다고 하더라도
+    private AdminApplyDetailResponse toSubmittedApplyDetailResponse(final Apply apply) {
         ApplicationForm submittedApplicationForm = apply.getApplicationForm();
         Map<String, String> content = extractContent(submittedApplicationForm);
         List<ApplyPortfolioDto> portfolios = extractPortfolios(submittedApplicationForm);
-        return SubmittedApplyDetailResponse.from(apply, content, portfolios);
+        return AdminApplyDetailResponse.from(apply);
     }
-
 
     private Map<String, String> extractContent(final ApplicationForm applicationForm) {
         return Optional.ofNullable(applicationForm)
