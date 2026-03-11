@@ -59,7 +59,7 @@ public class AdminApplyService {
     public AdminApplyDetailResponse findApply(final Long applyId,
                                               final ApplyStatus applyStatus) {
         return adminApplyQueryRepository.findApplyByIdByStatus(applyId, applyStatus)
-                .map(this::toSubmittedApplyDetailResponse)
+                .map(AdminApplyDetailResponse::from)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
     }
 
