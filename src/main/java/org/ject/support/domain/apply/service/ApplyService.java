@@ -7,6 +7,7 @@ import org.ject.support.common.util.PeriodAccessible;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
@@ -35,9 +36,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.JOINED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
 import static org.ject.support.domain.apply.exception.ApplyErrorCode.ALREADY_SUBMITTED;
 import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_FOUND_APPLY;
 
@@ -83,7 +84,7 @@ public class ApplyService implements ApplyUsecase {
         Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
-        Apply.Status applyStatus = apply.getStatus();
+        ApplyStatus applyStatus = apply.getStatus();
 
         // 2. 지원서 제출 여부 검증
         if (applyStatus.equals(SUBMITTED)) {

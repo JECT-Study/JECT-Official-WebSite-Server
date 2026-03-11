@@ -1,27 +1,29 @@
 package org.ject.support.admin.apply.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.admin.apply.dto.AdminApplyResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
+import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
-import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
-import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
-import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
-import org.ject.support.domain.apply.domain.Apply.Status;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
-import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberEditor;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.exception.QuestionErrorCode;
 import org.ject.support.domain.recruit.exception.QuestionException;
 import org.springframework.data.domain.Page;
@@ -29,13 +31,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
-public class SubmittedApplyService {
+public class AdminApplyService {
 
     private final ApplyRepository applyRepository;
     private final AdminApplyQueryRepository adminApplyQueryRepository;
@@ -43,14 +41,15 @@ public class SubmittedApplyService {
     private final Map2JsonSerializer map2JsonSerializer;
 
     @Transactional(readOnly = true)
-    public Page<SubmittedApplyResponse> findSubmittedApplies(final JobFamily jobFamily,
-                                                             final Long semesterId,
-                                                             final RecruitType recruitType,
-                                                             final Pageable pageable) {
-        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, recruitType, pageable);
+    public Page<AdminApplyResponse> findApplies(final ApplyStatus applyStatus,
+                                                final Long semesterId,
+                                                final JobFamily jobFamily,
+                                                final RecruitType recruitType,
+                                                final Pageable pageable) {
+        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(applyStatus, semesterId, jobFamily, recruitType, pageable);
 
-        List<SubmittedApplyResponse> content = applyPage.getContent().stream()
-                .map(SubmittedApplyResponse::from)
+        List<AdminApplyResponse> content = applyPage.getContent().stream()
+                .map(AdminApplyResponse::from)
                 .toList();
 
         return PageResponse.from(content, pageable, applyPage.getTotalElements());
@@ -58,21 +57,15 @@ public class SubmittedApplyService {
 
     @Transactional(readOnly = true)
     public SubmittedApplyDetailResponse findSubmittedApplyDetail(final Long applyId) {
-        return applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
+        return applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
                 .map(this::toSubmittedApplyDetailResponse)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
-    }
-
-    @Transactional(readOnly = true)
-    public SubmittedApplyCountResponse countSubmittedApply() {
-        Long count = applyRepository.countByStatus(Status.SUBMITTED);
-        return new SubmittedApplyCountResponse(count);
     }
 
     @Transactional
     public void updateSubmittedApply(final Long applyId,
                                      final SubmittedApplyEditRequest request) {
-        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
+        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
 
         Member member = apply.getMember();
@@ -99,7 +92,7 @@ public class SubmittedApplyService {
 
     @Transactional
     public void deleteSubmittedApply(final Long applyId) {
-        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED)
+        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
 
         apply.reject();
@@ -109,7 +102,7 @@ public class SubmittedApplyService {
     @Transactional
     public int deleteSubmittedApplies(final List<Long> applyIds) {
         final List<Long> distinctIds = applyIds.stream().distinct().toList();
-        final List<Apply> applies = applyRepository.findAllByIdAndStatusWithMember(distinctIds, Status.SUBMITTED);
+        final List<Apply> applies = applyRepository.findAllByIdAndStatusWithMember(distinctIds, ApplyStatus.SUBMITTED);
 
         if (applies.size() != distinctIds.size()) {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);
