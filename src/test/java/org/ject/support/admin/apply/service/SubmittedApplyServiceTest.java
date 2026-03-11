@@ -1,19 +1,26 @@
 package org.ject.support.admin.apply.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import org.ject.support.admin.apply.dto.AdminApplyResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
+import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
-import org.ject.support.admin.apply.dto.SubmittedApplyCountResponse;
-import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
-import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
-import org.ject.support.domain.apply.domain.Apply.Status;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
-import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
@@ -31,21 +38,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
 class SubmittedApplyServiceTest extends UnitTestSupport {
 
     @InjectMocks
-    private SubmittedApplyService submittedApplyService;
+    private AdminApplyService submittedApplyService;
 
     @Mock
     private ApplyRepository applyRepository;
@@ -95,7 +91,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .id(applyId)
                 .member(member)
                 .recruit(recruit)
-                .status(Apply.Status.SUBMITTED)
+                .status(ApplyStatus.SUBMITTED)
                 .note("Test note")
                 .applicationForm(ApplicationForm.builder().build())
                 .build();
@@ -105,15 +101,15 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
     void 제출된_지원서_단건_삭제_성공() {
         // given
         var applyId = submittedApply.getId();
-        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.of(submittedApply));
 
         // when
         submittedApplyService.deleteSubmittedApply(applyId);
 
         // then
-        verify(applyRepository).findByIdAndStatusWithMember(applyId, Status.SUBMITTED);
-        assertThat(submittedApply.getStatus()).isEqualTo(Status.REJECTED);
+        verify(applyRepository).findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED);
+        assertThat(submittedApply.getStatus()).isEqualTo(ApplyStatus.REJECTED);
         assertThat(submittedApply.getApplicationForm()).isNull();
         assertThat(submittedApply.getMember().getName()).isNull();
     }
@@ -122,7 +118,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
     void 제출된_지원서_단건_삭제시_존재하지_않으면_예외_발생() {
         // given
         var applyId = submittedApply.getId();
-        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.empty());
 
         // expected
@@ -142,7 +138,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .id(2L)
                 .member(member2)
                 .recruit(submittedApply.getRecruit())
-                .status(Status.SUBMITTED)
+                .status(ApplyStatus.SUBMITTED)
                 .applicationForm(ApplicationForm.builder().build())
                 .build();
 
@@ -150,27 +146,27 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .id(3L)
                 .member(member3)
                 .recruit(submittedApply.getRecruit())
-                .status(Status.SUBMITTED)
+                .status(ApplyStatus.SUBMITTED)
                 .applicationForm(ApplicationForm.builder().build())
                 .build();
 
         var applies = List.of(submittedApply, apply2, apply3);
 
-        given(applyRepository.findAllByIdAndStatusWithMember(applyIds, Status.SUBMITTED))
+        given(applyRepository.findAllByIdAndStatusWithMember(applyIds, ApplyStatus.SUBMITTED))
                 .willReturn(applies);
 
         // when
         int deleted = submittedApplyService.deleteSubmittedApplies(applyIds);
 
         // then
-        verify(applyRepository).findAllByIdAndStatusWithMember(applyIds, Status.SUBMITTED);
+        verify(applyRepository).findAllByIdAndStatusWithMember(applyIds, ApplyStatus.SUBMITTED);
         assertThat(deleted).isEqualTo(3);
-        assertThat(submittedApply.getStatus()).isEqualTo(Status.REJECTED);
+        assertThat(submittedApply.getStatus()).isEqualTo(ApplyStatus.REJECTED);
         assertThat(submittedApply.getApplicationForm()).isNull();
         assertThat(submittedApply.getMember().getName()).isNull();
-        assertThat(apply2.getStatus()).isEqualTo(Status.REJECTED);
+        assertThat(apply2.getStatus()).isEqualTo(ApplyStatus.REJECTED);
         assertThat(apply2.getApplicationForm()).isNull();
-        assertThat(apply3.getStatus()).isEqualTo(Status.REJECTED);
+        assertThat(apply3.getStatus()).isEqualTo(ApplyStatus.REJECTED);
         assertThat(apply3.getApplicationForm()).isNull();
     }
 
@@ -180,7 +176,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         var applyIds = List.of(1L, 2L, 3L);
         var applies = List.of(submittedApply); // 1개만 반환
 
-        given(applyRepository.findAllByIdAndStatusWithMember(applyIds, Status.SUBMITTED))
+        given(applyRepository.findAllByIdAndStatusWithMember(applyIds, ApplyStatus.SUBMITTED))
                 .willReturn(applies);
 
         // expected
@@ -194,7 +190,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         // given
         var applyIds = List.of(1L, 2L, 3L);
 
-        given(applyRepository.findAllByIdAndStatusWithMember(applyIds, Status.SUBMITTED))
+        given(applyRepository.findAllByIdAndStatusWithMember(applyIds, ApplyStatus.SUBMITTED))
                 .willReturn(List.of());
 
         // expected
@@ -209,7 +205,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         var applyIds = List.of(1L, 1L, 1L);
         var distinctIds = List.of(1L);
 
-        given(applyRepository.findAllByIdAndStatusWithMember(distinctIds, Status.SUBMITTED))
+        given(applyRepository.findAllByIdAndStatusWithMember(distinctIds, ApplyStatus.SUBMITTED))
                 .willReturn(List.of(submittedApply));
 
         // when
@@ -217,37 +213,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
 
         // then
         assertThat(deleted).isEqualTo(1);
-        verify(applyRepository).findAllByIdAndStatusWithMember(distinctIds, Status.SUBMITTED);
-    }
-
-    @Test
-    void 제출된_지원서_수_조회_성공() {
-        // given
-        Long expectedCount = 10L;
-        given(applyRepository.countByStatus(Status.SUBMITTED))
-                .willReturn(expectedCount);
-
-        // when
-        SubmittedApplyCountResponse response = submittedApplyService.countSubmittedApply();
-
-        // then
-        assertThat(response.count()).isEqualTo(expectedCount);
-        then(applyRepository).should(times(1)).countByStatus(Status.SUBMITTED);
-    }
-
-    @Test
-    void 제출된_지원서가_없을_때_0_반환() {
-        // given
-        Long expectedCount = 0L;
-        given(applyRepository.countByStatus(Status.SUBMITTED))
-                .willReturn(expectedCount);
-
-        // when
-        SubmittedApplyCountResponse response = submittedApplyService.countSubmittedApply();
-
-        // then
-        assertThat(response.count()).isZero();
-        then(applyRepository).should(times(1)).countByStatus(Status.SUBMITTED);
+        verify(applyRepository).findAllByIdAndStatusWithMember(distinctIds, ApplyStatus.SUBMITTED);
     }
 
     @Test
@@ -260,16 +226,16 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, null, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable))
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
+        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(adminApplyQueryRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, null, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
     }
 
     @Test
@@ -280,16 +246,16 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(adminApplyQueryRepository.findAppliesByStatus(null, Status.SUBMITTED, semesterId, null, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, null, null, pageable))
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(null, semesterId, null, pageable);
+        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, null, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(adminApplyQueryRepository).findAppliesByStatus(null, Status.SUBMITTED, semesterId, null, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, null, null, pageable);
     }
 
     @Test
@@ -300,16 +266,16 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         Long semesterId = null;
         var page = new PageImpl<Apply>(List.of(), pageable, 0L);
 
-        given(adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, null, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable))
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
+        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
 
         // then
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
-        verify(adminApplyQueryRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, null, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
     }
 
     @Test
@@ -324,25 +290,25 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .id(2L)
                 .member(member2)
                 .recruit(submittedApply.getRecruit())
-                .status(Status.SUBMITTED)
+                .status(ApplyStatus.SUBMITTED)
                 .applicationForm(ApplicationForm.builder().build())
                 .build();
 
         var applies = List.of(submittedApply, apply2);
         var page = new PageImpl<>(applies, pageable, 25L);
 
-        given(adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, null, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable))
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
+        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(25L);
         assertThat(result.getNumber()).isEqualTo(1);
         assertThat(result.getSize()).isEqualTo(10);
-        verify(adminApplyQueryRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, null, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
     }
 
     @Test
@@ -355,23 +321,23 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
 
-        given(adminApplyQueryRepository.findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, null, pageable))
+        given(adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable))
                 .willReturn(page);
 
         // when
-        Page<SubmittedApplyResponse> result = submittedApplyService.findSubmittedApplies(jobFamily, semesterId, null, pageable);
+        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(adminApplyQueryRepository).findAppliesByStatus(jobFamily, Status.SUBMITTED, semesterId, null, pageable);
+        verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
     }
 
     @Test
     void 존재하지_않는_제출된_지원서를_상세조회할_경우_예외가_발생() {
         // given
         var applyId = submittedApply.getId() + 1L;
-        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.empty());
 
         // expected
@@ -389,13 +355,13 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .build();
         var apply2 = Apply.builder()
                 .id(applyId)
-                .status(Status.SUBMITTED)
+                .status(ApplyStatus.SUBMITTED)
                 .applicationForm(null)
                 .member(member2)
                 .recruit(submittedApply.getRecruit())
                 .build();
 
-        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.of(apply2));
 
         // when
@@ -412,14 +378,14 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         // given
         given(applyRepository.findByIdAndStatusWithMember(
                 submittedApply.getId(),
-                Status.SUBMITTED
+                ApplyStatus.SUBMITTED
         )).willReturn(Optional.of(submittedApply));
 
         // when
         SubmittedApplyDetailResponse actual = submittedApplyService.findSubmittedApplyDetail(submittedApply.getId());
 
         // then
-        verify(applyRepository).findByIdAndStatusWithMember(submittedApply.getId(), Status.SUBMITTED);
+        verify(applyRepository).findByIdAndStatusWithMember(submittedApply.getId(), ApplyStatus.SUBMITTED);
         assertThat(actual.applyId()).isEqualTo(submittedApply.getId());
         assertThat(actual.name()).isEqualTo("김젝트");
         assertThat(actual.phoneNumber()).isEqualTo("010-1234-5678");
@@ -461,7 +427,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 newPortfolios
         );
 
-        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.of(submittedApply));
         given(map2JsonSerializer.serializeAsString(newAnswers))
                 .willReturn("{\"1\":\"수정된 답변1\",\"2\":\"수정된 답변2\"}");
@@ -470,7 +436,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         submittedApplyService.updateSubmittedApply(applyId, request);
 
         // then
-        verify(applyRepository).findByIdAndStatusWithMember(applyId, Status.SUBMITTED);
+        verify(applyRepository).findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED);
         verify(map2JsonSerializer).serializeAsString(newAnswers);
         assertThat(submittedApply.getMember().getName()).isEqualTo(newName);
         assertThat(submittedApply.getMember().getPhoneNumber()).isEqualTo(newPhoneNumber);
@@ -491,7 +457,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 List.of()
         );
 
-        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.empty());
 
         // expected
@@ -515,12 +481,115 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 List.of()
         );
 
-        given(applyRepository.findByIdAndStatusWithMember(applyId, Status.SUBMITTED))
+        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.of(submittedApply));
 
         // expected
         assertThatThrownBy(() -> submittedApplyService.updateSubmittedApply(applyId, request))
                 .isInstanceOf(QuestionException.class)
                 .hasFieldOrPropertyWithValue("errorCode", QuestionErrorCode.NOT_FOUND_QUESTION);
+    }
+
+    @Test
+    void 임시_저장된_지원서_목록_조회시_결과가_없으면_빈_페이지_반환() {
+        // given
+        var pageable = PageRequest.of(0, 10);
+        Long semesterId = null;
+        var page = new PageImpl<Apply>(List.of(), pageable, 0);
+
+        given(adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable))
+                .willReturn(page);
+
+        // when
+        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+
+        // then
+        verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        assertThat(result.getTotalElements()).isEqualTo(0);
+        assertThat(result.getContent()).isEmpty();
+    }
+
+    @Test
+    void 임시_저장된_지원서_목록_조회_성공() {
+        // given
+        var pageable = PageRequest.of(0, 10);
+        Long semesterId = null;
+
+        var m1 = Member.builder().name("김1").jobFamily(JobFamily.BE).build();
+        var m2 = Member.builder().name("김2").jobFamily(JobFamily.BE).build();
+        var semester = Semester.builder().name("1").build();
+        var recruit = Recruit.builder()
+                .semester(semester)
+                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.REGULAR)
+                .build();
+
+        var a1 = Apply.builder()
+                .id(1L)
+                .member(m1)
+                .recruit(recruit)
+                .status(ApplyStatus.TEMP_SAVED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        var a2 = Apply.builder()
+                .id(2L)
+                .member(m2)
+                .recruit(recruit)
+                .status(ApplyStatus.TEMP_SAVED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        var applies = List.of(a1, a2);
+        var page = new PageImpl<>(applies, pageable, applies.size());
+
+        given(adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable))
+                .willReturn(page);
+
+        // when
+        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+
+        // then
+        verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
+        assertThat(result.getContent().get(1).applyId()).isEqualTo(2L);
+    }
+
+    @Test
+    void 임시_저장된_지원서_목록을_semesterId로_필터링하여_조회() {
+        // given
+        var pageable = PageRequest.of(0, 10);
+        Long semesterId = 1L;
+
+        var member = Member.builder().name("김젝트").jobFamily(JobFamily.BE).build();
+        var semester = Semester.builder().name("1").build();
+        var recruit = Recruit.builder()
+                .semester(semester)
+                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.REGULAR)
+                .build();
+
+        var apply = Apply.builder()
+                .id(1L)
+                .member(member)
+                .recruit(recruit)
+                .status(ApplyStatus.TEMP_SAVED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        var applies = List.of(apply);
+        var page = new PageImpl<>(applies, pageable, applies.size());
+
+        given(adminApplyQueryRepository.findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable))
+                .willReturn(page);
+
+        // when
+        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+
+        // then
+        verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
     }
 }

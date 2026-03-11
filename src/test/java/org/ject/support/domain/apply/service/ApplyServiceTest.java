@@ -5,6 +5,7 @@ import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
@@ -40,9 +41,9 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.domain.apply.domain.Apply.Status.JOINED;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.JOINED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.PD;
 import static org.mockito.ArgumentMatchers.any;
@@ -626,7 +627,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 .build();
     }
 
-    private Apply getApply(Long id, Recruit recruit, Member applicant, ApplicationForm applicationForm, Apply.Status status) {
+    private Apply getApply(Long id, Recruit recruit, Member applicant, ApplicationForm applicationForm, ApplyStatus status) {
         return Apply.builder()
                 .id(id)
                 .recruit(recruit)

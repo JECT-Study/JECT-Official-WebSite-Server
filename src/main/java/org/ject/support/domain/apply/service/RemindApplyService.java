@@ -2,7 +2,7 @@ package org.ject.support.domain.apply.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.util.DateTimeUtil;
-import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
@@ -32,7 +32,7 @@ public class RemindApplyService implements RemindApplyUsecase {
         Recruit recruit = recruitRepository.findActiveRecruitById(recruitId, LocalDateTime.now());
 
         // 모집 기간 중 지원서 임시 저장한 지원자 ID 모두 조회
-        List<Long> applicantIds = applyRepository.findByRecruitAndStatus(recruit, Apply.Status.TEMP_SAVED)
+        List<Long> applicantIds = applyRepository.findByRecruitAndStatus(recruit, ApplyStatus.TEMP_SAVED)
                 .stream()
                 .map(apply -> apply.getMember().getId())
                 .toList();

@@ -3,6 +3,7 @@ package org.ject.support.domain.recruit.repository;
 import org.assertj.core.api.Assertions;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
@@ -71,7 +72,7 @@ class ApplicationFormRepositoryTest {
         Apply apply = applyRepository.save(Apply.builder()
                 .member(member)
                 .recruit(recruit)
-                .status(Apply.Status.JOINED)
+                .status(ApplyStatus.JOINED)
                 .build());
 
         applicationFormRepository.save(ApplicationForm.builder().

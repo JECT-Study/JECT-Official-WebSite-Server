@@ -47,7 +47,7 @@ public class Apply extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(50)", nullable = false)
-    private Status status;
+    private ApplyStatus status;
 
     @Column(columnDefinition = "varchar(500) default ''", nullable = false)
     @Builder.Default
@@ -57,7 +57,7 @@ public class Apply extends BaseTimeEntity {
         return Apply.builder()
                 .member(member)
                 .recruit(recruit)
-                .status(Status.JOINED)
+                .status(ApplyStatus.JOINED)
                 .build();
     }
 
@@ -69,20 +69,20 @@ public class Apply extends BaseTimeEntity {
         this.note = note != null ? note : "";
     }
 
-    public void updateStatus(Status status) {
+    public void updateStatus(ApplyStatus status) {
         this.status = status;
     }
 
     public boolean isNotTempSaved() {
-        return status.equals(Status.JOINED)
-                || status.equals(Status.SUBMITTED)
-                || (status.equals(Status.TEMP_SAVED) && applicationForm == null);
+        return status.equals(ApplyStatus.JOINED)
+                || status.equals(ApplyStatus.SUBMITTED)
+                || (status.equals(ApplyStatus.TEMP_SAVED) && applicationForm == null);
     }
 
     public boolean isNotSubmitted() {
-        return status.equals(Status.JOINED)
-                || status.equals(Status.TEMP_SAVED)
-                || (status.equals(Status.SUBMITTED) && applicationForm == null);
+        return status.equals(ApplyStatus.JOINED)
+                || status.equals(ApplyStatus.TEMP_SAVED)
+                || (status.equals(ApplyStatus.SUBMITTED) && applicationForm == null);
     }
 
     public void deleteApplicationForm() {
@@ -93,15 +93,15 @@ public class Apply extends BaseTimeEntity {
 
     public void reject() {
         this.applicationForm = null;
-        this.status = Status.REJECTED;
+        this.status = ApplyStatus.REJECTED;
     }
 
     public boolean isTempSaved() {
-        return status.equals(Status.TEMP_SAVED);
+        return status.equals(ApplyStatus.TEMP_SAVED);
     }
 
     public boolean isSubmitted() {
-        return status.equals(Status.SUBMITTED);
+        return status.equals(ApplyStatus.SUBMITTED);
     }
 
     public void submit(ApplicationForm applicationForm) {
@@ -114,10 +114,7 @@ public class Apply extends BaseTimeEntity {
         }
 
         this.applicationForm = applicationForm;
-        this.status = Status.SUBMITTED;
+        this.status = ApplyStatus.SUBMITTED;
     }
 
-    public enum Status {
-        JOINED, TEMP_SAVED, SUBMITTED, REJECTED
-    }
 }
