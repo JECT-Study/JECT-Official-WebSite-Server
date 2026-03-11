@@ -22,9 +22,7 @@ public record AdminApplyResponse(
                 apply.getMember().getPhoneNumber(),
                 apply.getMember().getEmail(),
                 apply.getMember().getJobFamily(),
-                Optional.ofNullable(apply.getMember().getCareerDetails())
-                        .map(CareerDetails::getDescription)
-                        .orElse(""),
+                Optional.ofNullable(apply.getMember().getCareerDetails()).map(CareerDetails::getDescription).orElse(""),
                 apply.getRecruit().getRecruitType().name(),
                 apply.getNote()
         );
