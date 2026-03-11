@@ -54,6 +54,7 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     /**
      * 로그아웃 시 쿠키를 만료시키는 메소드
+     * @param response HttpServletResponse
      */
     public void onLogoutSuccess(HttpServletResponse response) {
         jwtCookieProvider.deleteAuthCookies(response);
