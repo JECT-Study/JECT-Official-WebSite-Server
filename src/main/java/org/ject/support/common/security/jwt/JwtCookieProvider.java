@@ -1,9 +1,11 @@
 package org.ject.support.common.security.jwt;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +48,33 @@ public class JwtCookieProvider {
         // 개발/QA 환경이면 cross-site 허용
         if (isDevOrLocal()) {
             builder.sameSite("None");
+        }
+
+        return builder.build();
+    }
+
+    public void deleteAuthCookies(HttpServletResponse response) {
+        String[] cookieNames = {"accessToken", "refreshToken", "verificationToken"};
+
+        for (String name : cookieNames) {
+            ResponseCookie cookie = deleteCookie(name);
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+        }
+    }
+
+    private ResponseCookie deleteCookie(String cookieName) {
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(cookieName, "")
+                .domain(domain)
+                .path("/")
+                .maxAge(0) // 만료 시간을 0으로 설정하여 삭제
+                .httpOnly(true)
+                .secure(true);
+
+        // SameSite 설정은 생성 시와 동일하게 맞춰주는 것이 안전합니다
+        if (isDevOrLocal()) {
+            builder.sameSite("None");
+        } else {
+            builder.sameSite("Lax");
         }
 
         return builder.build();

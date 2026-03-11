@@ -41,4 +41,9 @@ public class AdminAuthController implements AdminAuthApiSpec {
         customSuccessHandler.onAuthenticationSuccess(httpRequest, httpResponse, authentication);
         return true;
     }
+
+    @PostMapping("/logout")
+    public void logoutAdmin(HttpServletResponse httpResponse) {
+        customSuccessHandler.onLogoutSuccess(httpResponse);
+    }
 }
