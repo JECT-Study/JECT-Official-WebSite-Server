@@ -8,8 +8,8 @@ import static org.mockito.Mockito.verify;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
-import org.ject.support.admin.apply.dto.SubmittedApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.base.UnitTestSupport;
@@ -38,7 +38,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
-class SubmittedApplyServiceTest extends UnitTestSupport {
+class AdminApplyServiceTest extends UnitTestSupport {
 
     @InjectMocks
     private AdminApplyService submittedApplyService;
@@ -341,7 +341,7 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.findSubmittedApplyDetail(applyId))
+        assertThatThrownBy(() -> submittedApplyService.findApply(applyId, ApplyStatus.SUBMITTED))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
@@ -365,10 +365,10 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.of(apply2));
 
         // when
-        SubmittedApplyDetailResponse actual = submittedApplyService.findSubmittedApplyDetail(applyId);
+        AdminApplyDetailResponse actual = submittedApplyService.findApply(applyId, ApplyStatus.SUBMITTED);
 
         // then
-        assertThat(actual.applyId()).isEqualTo(applyId);
+        assertThat(actual.applyResponse().applyId()).isEqualTo(applyId);
         // assertThat(actual.applicationFormResponse().answers()).isEmpty();  // 빈 Map 확인
         // assertThat(actual.applicationFormResponse().portfolios()).isEmpty();
     }
@@ -382,21 +382,21 @@ class SubmittedApplyServiceTest extends UnitTestSupport {
         )).willReturn(Optional.of(submittedApply));
 
         // when
-        SubmittedApplyDetailResponse actual = submittedApplyService.findSubmittedApplyDetail(submittedApply.getId());
+        AdminApplyDetailResponse actual = submittedApplyService.findApply(submittedApply.getId(), ApplyStatus.SUBMITTED);
 
         // then
         verify(applyRepository).findByIdAndStatusWithMember(submittedApply.getId(), ApplyStatus.SUBMITTED);
-        assertThat(actual.applyId()).isEqualTo(submittedApply.getId());
-        assertThat(actual.name()).isEqualTo("김젝트");
-        assertThat(actual.phoneNumber()).isEqualTo("010-1234-5678");
-        assertThat(actual.email()).isEqualTo("test@mail.com");
-        assertThat(actual.jobFamily()).isEqualTo(JobFamily.BE);
-        assertThat(actual.careerDetails()).isEqualTo("대학생(재학/휴학)");
+        assertThat(actual.applyResponse().applyId()).isEqualTo(submittedApply.getId());
+        assertThat(actual.applyResponse().name()).isEqualTo("김젝트");
+        assertThat(actual.applyResponse().phoneNumber()).isEqualTo("010-1234-5678");
+        assertThat(actual.applyResponse().email()).isEqualTo("test@mail.com");
+        assertThat(actual.applyResponse().jobFamily()).isEqualTo(JobFamily.BE);
+        assertThat(actual.applyResponse().careerDetails()).isEqualTo("대학생(재학/휴학)");
         assertThat(actual.region()).isEqualTo("서울");
         assertThat(actual.experiencePeriod()).isEqualTo("경험 없음");
         assertThat(actual.interestedDomains()).containsExactly("AI", "Backend");
-        assertThat(actual.recruitType()).isEqualTo("REGULAR");
-        assertThat(actual.note()).isEqualTo("Test note");
+        assertThat(actual.applyResponse().recruitType()).isEqualTo("REGULAR");
+        assertThat(actual.applyResponse().note()).isEqualTo("Test note");
     }
 
     @Test
