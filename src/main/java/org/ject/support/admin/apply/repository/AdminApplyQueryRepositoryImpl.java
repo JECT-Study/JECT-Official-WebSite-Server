@@ -69,7 +69,7 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
     }
 
     @Override
-    public Optional<Apply> findApplyById(final Long applyId, final ApplyStatus status) {
+    public Optional<Apply> findApplyByIdByStatus(final Long applyId, final ApplyStatus status) {
         Apply result = queryFactory
                 .selectFrom(apply)
                 .distinct()
