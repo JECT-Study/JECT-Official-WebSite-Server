@@ -105,7 +105,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.of(submittedApply));
 
         // when
-        submittedApplyService.deleteSubmittedApply(applyId);
+        submittedApplyService.deleteApply(applyId);
 
         // then
         verify(applyRepository).findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED);
@@ -122,7 +122,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.deleteSubmittedApply(applyId))
+        assertThatThrownBy(() -> submittedApplyService.deleteApply(applyId))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
@@ -156,7 +156,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(applies);
 
         // when
-        int deleted = submittedApplyService.deleteSubmittedApplies(applyIds);
+        int deleted = submittedApplyService.deleteApplies(applyIds);
 
         // then
         verify(applyRepository).findAllByIdAndStatusWithMember(applyIds, ApplyStatus.SUBMITTED);
@@ -180,7 +180,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(applies);
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.deleteSubmittedApplies(applyIds))
+        assertThatThrownBy(() -> submittedApplyService.deleteApplies(applyIds))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
@@ -194,7 +194,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(List.of());
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.deleteSubmittedApplies(applyIds))
+        assertThatThrownBy(() -> submittedApplyService.deleteApplies(applyIds))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
@@ -209,7 +209,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(List.of(submittedApply));
 
         // when
-        int deleted = submittedApplyService.deleteSubmittedApplies(applyIds);
+        int deleted = submittedApplyService.deleteApplies(applyIds);
 
         // then
         assertThat(deleted).isEqualTo(1);
@@ -368,7 +368,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         AdminApplyDetailResponse actual = submittedApplyService.findApply(applyId, ApplyStatus.SUBMITTED);
 
         // then
-        assertThat(actual.applyResponse().applyId()).isEqualTo(applyId);
+        assertThat(actual.applyId()).isEqualTo(applyId);
     }
 
     @Test
@@ -384,17 +384,17 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         // then
         verify(adminApplyQueryRepository).findApplyByIdByStatus(submittedApply.getId(), ApplyStatus.SUBMITTED);
-        assertThat(actual.applyResponse().applyId()).isEqualTo(submittedApply.getId());
-        assertThat(actual.applyResponse().name()).isEqualTo("김젝트");
-        assertThat(actual.applyResponse().phoneNumber()).isEqualTo("010-1234-5678");
-        assertThat(actual.applyResponse().email()).isEqualTo("test@mail.com");
-        assertThat(actual.applyResponse().jobFamily()).isEqualTo(JobFamily.BE);
-        assertThat(actual.applyResponse().careerDetails()).isEqualTo("대학생(재학/휴학)");
+        assertThat(actual.applyId()).isEqualTo(submittedApply.getId());
+        assertThat(actual.name()).isEqualTo("김젝트");
+        assertThat(actual.phoneNumber()).isEqualTo("010-1234-5678");
+        assertThat(actual.email()).isEqualTo("test@mail.com");
+        assertThat(actual.jobFamily()).isEqualTo(JobFamily.BE);
+        assertThat(actual.careerDetails()).isEqualTo("대학생(재학/휴학)");
         assertThat(actual.region()).isEqualTo("서울");
         assertThat(actual.experiencePeriod()).isEqualTo("경험 없음");
         assertThat(actual.interestedDomains()).containsExactly("AI", "Backend");
-        assertThat(actual.applyResponse().recruitType()).isEqualTo("REGULAR");
-        assertThat(actual.applyResponse().note()).isEqualTo("Test note");
+        assertThat(actual.recruitType()).isEqualTo("REGULAR");
+        assertThat(actual.note()).isEqualTo("Test note");
     }
 
     @Test
@@ -417,8 +417,8 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         // then
         verify(adminApplyQueryRepository).findApplyByIdByStatus(10L, ApplyStatus.TEMP_SAVED);
-        assertThat(actual.applyResponse().applyId()).isEqualTo(10L);
-        assertThat(actual.applyResponse().name()).isEqualTo("김젝트");
+        assertThat(actual.applyId()).isEqualTo(10L);
+        assertThat(actual.name()).isEqualTo("김젝트");
     }
 
     @Test
@@ -441,7 +441,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         // then
         verify(adminApplyQueryRepository).findApplyByIdByStatus(20L, ApplyStatus.REJECTED);
-        assertThat(actual.applyResponse().applyId()).isEqualTo(20L);
+        assertThat(actual.applyId()).isEqualTo(20L);
     }
 
     @Test
@@ -464,7 +464,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         // then
         verify(adminApplyQueryRepository).findApplyByIdByStatus(30L, ApplyStatus.JOINED);
-        assertThat(actual.applyResponse().applyId()).isEqualTo(30L);
+        assertThat(actual.applyId()).isEqualTo(30L);
     }
 
     @Test
@@ -478,8 +478,8 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         // then
         verify(adminApplyQueryRepository).findApplyByIdByStatus(submittedApply.getId(), null);
-        assertThat(actual.applyResponse().applyId()).isEqualTo(submittedApply.getId());
-        assertThat(actual.applyResponse().name()).isEqualTo("김젝트");
+        assertThat(actual.applyId()).isEqualTo(submittedApply.getId());
+        assertThat(actual.name()).isEqualTo("김젝트");
     }
 
     @Test
@@ -627,7 +627,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         // then
         verify(adminApplyQueryRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
-        assertThat(result.getTotalElements()).isEqualTo(0);
+        assertThat(result.getTotalElements()).isZero();
         assertThat(result.getContent()).isEmpty();
     }
 
