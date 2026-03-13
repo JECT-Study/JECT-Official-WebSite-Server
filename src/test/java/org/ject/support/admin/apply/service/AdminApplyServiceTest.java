@@ -109,6 +109,28 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
+    void 임시저장_지원서_단건_삭제_성공() {
+        // given
+        var tempApply = Apply.builder()
+                .id(2L)
+                .member(submittedApply.getMember())
+                .recruit(submittedApply.getRecruit())
+                .status(ApplyStatus.TEMP_SAVED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+
+        given(adminApplyRepository.findByIdWithMember(tempApply.getId()))
+                .willReturn(Optional.of(tempApply));
+
+        // when
+        submittedApplyService.deleteApply(tempApply.getId());
+
+        // then
+        verify(adminApplyRepository).findByIdWithMember(tempApply.getId());
+        verify(adminApplyRepository).delete(tempApply);
+    }
+
+    @Test
     void 제출된_지원서_단건_삭제시_존재하지_않으면_예외_발생() {
         // given
         var applyId = submittedApply.getId();
