@@ -708,6 +708,6 @@ class AdminApplyServiceTest extends UnitTestSupport {
         verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
+        assertThat(result.getContent().getFirst().applyId()).isEqualTo(1L);
     }
 }
