@@ -91,8 +91,7 @@ public class AdminApplyService {
     public void deleteApply(final Long applyId) {
         Apply apply = adminApplyRepository.findByIdWithMember(applyId)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
-        apply.reject();
-        apply.getMember().deleteProfile();
+        adminApplyRepository.delete(apply);
     }
 
     @Transactional
@@ -104,13 +103,9 @@ public class AdminApplyService {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);
         }
 
-        applies.forEach(apply -> {
-            apply.reject();
-            apply.getMember().deleteProfile();
-        });
+        adminApplyRepository.deleteAll(applies);
         return applies.size();
     }
-
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
         answers.keySet().stream()

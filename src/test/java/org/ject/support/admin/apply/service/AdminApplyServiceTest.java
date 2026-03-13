@@ -105,9 +105,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         // then
         verify(adminApplyRepository).findByIdWithMember(applyId);
-        assertThat(submittedApply.getStatus()).isEqualTo(ApplyStatus.REJECTED);
-        assertThat(submittedApply.getApplicationForm()).isNull();
-        assertThat(submittedApply.getMember().getName()).isNull();
+        verify(adminApplyRepository).delete(submittedApply);
     }
 
     @Test
@@ -157,13 +155,9 @@ class AdminApplyServiceTest extends UnitTestSupport {
         // then
         verify(adminApplyRepository).findAllByIdWithMember(applyIds);
         assertThat(deleted).isEqualTo(3);
-        assertThat(submittedApply.getStatus()).isEqualTo(ApplyStatus.REJECTED);
-        assertThat(submittedApply.getApplicationForm()).isNull();
-        assertThat(submittedApply.getMember().getName()).isNull();
-        assertThat(apply2.getStatus()).isEqualTo(ApplyStatus.REJECTED);
-        assertThat(apply2.getApplicationForm()).isNull();
-        assertThat(apply3.getStatus()).isEqualTo(ApplyStatus.REJECTED);
-        assertThat(apply3.getApplicationForm()).isNull();
+        verify(adminApplyRepository).delete(submittedApply);
+        verify(adminApplyRepository).delete(apply2);
+        verify(adminApplyRepository).delete(apply3);
     }
 
     @Test

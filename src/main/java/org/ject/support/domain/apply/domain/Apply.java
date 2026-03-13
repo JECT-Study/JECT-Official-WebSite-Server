@@ -17,6 +17,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.base.BaseTimeEntity;
@@ -26,6 +28,8 @@ import org.ject.support.domain.recruit.domain.Recruit;
 @Entity
 @Getter
 @Builder
+@SQLDelete(sql = "UPDATE apply SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Apply extends BaseTimeEntity {
@@ -53,6 +57,10 @@ public class Apply extends BaseTimeEntity {
     @Builder.Default
     private String note = "";
 
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
+
     public static Apply createApply(Member member, Recruit recruit) {
         return Apply.builder()
                 .member(member)
@@ -63,10 +71,6 @@ public class Apply extends BaseTimeEntity {
 
     public void updateApplicationForm(ApplicationForm newApplicationForm) {
         this.applicationForm = newApplicationForm;
-    }
-
-    public void updateNote(String note) {
-        this.note = note != null ? note : "";
     }
 
     public void updateStatus(ApplyStatus status) {
