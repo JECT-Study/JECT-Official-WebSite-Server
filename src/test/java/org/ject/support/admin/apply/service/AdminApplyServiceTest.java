@@ -155,9 +155,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         // then
         verify(adminApplyRepository).findAllByIdWithMember(applyIds);
         assertThat(deleted).isEqualTo(3);
-        verify(adminApplyRepository).delete(submittedApply);
-        verify(adminApplyRepository).delete(apply2);
-        verify(adminApplyRepository).delete(apply3);
+        verify(adminApplyRepository).deleteAll(applies);
     }
 
     @Test
