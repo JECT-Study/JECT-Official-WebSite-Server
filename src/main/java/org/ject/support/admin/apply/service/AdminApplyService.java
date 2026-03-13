@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
-import org.ject.support.admin.apply.repository.AdminApplyRepository;
+import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.domain.apply.domain.Apply;
@@ -106,6 +106,7 @@ public class AdminApplyService {
         adminApplyRepository.deleteAll(applies);
         return applies.size();
     }
+
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
         answers.keySet().stream()
