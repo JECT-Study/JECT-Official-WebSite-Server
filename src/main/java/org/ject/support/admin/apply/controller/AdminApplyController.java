@@ -31,7 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Admin Apply", description = "[관리자] 지원서 관리 API")
 public class AdminApplyController {
 
-    private final AdminApplyService AdminApplyService;
+    private final AdminApplyService adminApplyService;
 
     @GetMapping
     @Operation(
@@ -41,17 +41,17 @@ public class AdminApplyController {
                                                 @RequestParam(required = false) final Long semesterId,
                                                 @RequestParam(required = false) final JobFamily jobFamily,
                                                 @RequestParam(required = false) final RecruitType recruitType,
-                                                @PageableDefault(size = 10, sort = "createdAt", direction = Direction.DESC) final Pageable pageable) {
-        return AdminApplyService.findApplies(applyStatus, semesterId, jobFamily, recruitType, pageable);
+                                                @PageableDefault(sort = "createdAt", direction = Direction.DESC) final Pageable pageable) {
+        return adminApplyService.findApplies(applyStatus, semesterId, jobFamily, recruitType, pageable);
     }
 
     @GetMapping("/{applyId}")
     @Operation(
             summary = "지원서 상세 조회",
-            description = "전달한 ID에 해당하는 제출된 지원서의 상세 정보를 조회합니다.")
+            description = "전달한 ID에 해당하는 지원서의 상세 정보를 조회합니다.")
     public AdminApplyDetailResponse findApply(@PathVariable final Long applyId,
                                               @RequestParam(required = false) final ApplyStatus applyStatus) {
-        return AdminApplyService.findApply(applyId, applyStatus);
+        return adminApplyService.findApply(applyId, applyStatus);
     }
 
     @PutMapping("/{applyId}")
@@ -60,22 +60,22 @@ public class AdminApplyController {
             description = "전달한 ID에 해당하는 제출된 지원서의 정보를 수정 합니다.")
     public void editSubmittedApply(@PathVariable("applyId") final Long applyId,
                                    @RequestBody @Valid final SubmittedApplyEditRequest request) {
-        AdminApplyService.updateSubmittedApply(applyId, request);
+        adminApplyService.updateSubmittedApply(applyId, request);
     }
 
     @DeleteMapping("/{applyId}")
     @Operation(
-            summary = "제출된 지원서 삭제",
-            description = "선택한 제출된 지원서를 삭제합니다.")
-    public void deleteSubmittedApply(@PathVariable("applyId") final Long applyId) {
-        AdminApplyService.deleteSubmittedApply(applyId);
+            summary = "지원서 삭제",
+            description = "전달한 ID에 해당하는 지원서를 삭제합니다.")
+    public void deleteApply(@PathVariable final Long applyId) {
+        adminApplyService.deleteApply(applyId);
     }
 
     @DeleteMapping
     @Operation(
-            summary = "제출된 지원서 다수 삭제",
-            description = "선택한 다수의 제출된 지원서들을 삭제합니다. 삭제한 수를 반환합니다.")
+            summary = "지원서 다수 삭제",
+            description = "선택한 다수의 지원서들을 삭제합니다. 삭제한 수를 반환합니다.")
     public int deleteSubmittedApplies(@RequestBody @Valid final SubmittedApplyBulkDeleteRequest request) {
-        return AdminApplyService.deleteSubmittedApplies(request.applyIds());
+        return adminApplyService.deleteApplies(request.applyIds());
     }
 }
