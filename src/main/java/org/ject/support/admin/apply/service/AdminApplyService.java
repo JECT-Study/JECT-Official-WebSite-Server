@@ -2,16 +2,13 @@ package org.ject.support.admin.apply.service;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
-import org.ject.support.admin.apply.repository.AdminApplyQueryRepository;
+import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
-import org.ject.support.common.util.String2MapSerializer;
-import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.Portfolio;
@@ -36,8 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminApplyService {
 
     private final ApplyRepository applyRepository;
-    private final AdminApplyQueryRepository adminApplyQueryRepository;
-    private final String2MapSerializer string2MapSerializer;
+    private final AdminApplyRepository adminApplyRepository;
     private final Map2JsonSerializer map2JsonSerializer;
 
     @Transactional(readOnly = true)
@@ -46,7 +42,7 @@ public class AdminApplyService {
                                                 final JobFamily jobFamily,
                                                 final RecruitType recruitType,
                                                 final Pageable pageable) {
-        Page<Apply> applyPage = adminApplyQueryRepository.findAppliesByStatus(applyStatus, semesterId, jobFamily, recruitType, pageable);
+        Page<Apply> applyPage = adminApplyRepository.findAppliesByStatus(applyStatus, semesterId, jobFamily, recruitType, pageable);
 
         List<AdminApplyResponse> content = applyPage.getContent().stream()
                 .map(AdminApplyResponse::from)
@@ -58,7 +54,7 @@ public class AdminApplyService {
     @Transactional(readOnly = true)
     public AdminApplyDetailResponse findApply(final Long applyId,
                                               final ApplyStatus applyStatus) {
-        return adminApplyQueryRepository.findApplyByIdByStatus(applyId, applyStatus)
+        return adminApplyRepository.findApplyByIdByStatus(applyId, applyStatus)
                 .map(AdminApplyDetailResponse::from)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
     }
@@ -92,52 +88,25 @@ public class AdminApplyService {
     }
 
     @Transactional
-    public void deleteSubmittedApply(final Long applyId) {
-        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
+    public void deleteApply(final Long applyId) {
+        Apply apply = adminApplyRepository.findByIdWithMember(applyId)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
-
-        apply.reject();
-        apply.getMember().deleteProfile();
+        adminApplyRepository.delete(apply);
     }
 
     @Transactional
-    public int deleteSubmittedApplies(final List<Long> applyIds) {
+    public int deleteApplies(final List<Long> applyIds) {
         final List<Long> distinctIds = applyIds.stream().distinct().toList();
-        final List<Apply> applies = applyRepository.findAllByIdAndStatusWithMember(distinctIds, ApplyStatus.SUBMITTED);
+        final List<Apply> applies = adminApplyRepository.findAllByIdWithMember(distinctIds);
 
         if (applies.size() != distinctIds.size()) {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);
         }
 
-        applies.forEach(apply -> {
-            apply.reject();
-            apply.getMember().deleteProfile();
-        });
+        adminApplyRepository.deleteAll(applies);
         return applies.size();
     }
 
-    private AdminApplyDetailResponse toSubmittedApplyDetailResponse(final Apply apply) {
-        ApplicationForm submittedApplicationForm = apply.getApplicationForm();
-        Map<String, String> content = extractContent(submittedApplicationForm);
-        List<ApplyPortfolioDto> portfolios = extractPortfolios(submittedApplicationForm);
-        return AdminApplyDetailResponse.from(apply);
-    }
-
-    private Map<String, String> extractContent(final ApplicationForm applicationForm) {
-        return Optional.ofNullable(applicationForm)
-                .map(ApplicationForm::getContent)
-                .map(string2MapSerializer::serializeAsMap)
-                .orElse(Map.of());
-    }
-
-    private List<ApplyPortfolioDto> extractPortfolios(final ApplicationForm applicationForm) {
-        return Optional.ofNullable(applicationForm)
-                .map(ApplicationForm::getPortfolios)
-                .orElse(List.of())
-                .stream()
-                .map(ApplyPortfolioDto::from)
-                .toList();
-    }
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
         answers.keySet().stream()
