@@ -93,16 +93,16 @@ class AdminAuthControllerTest {
     void 관리자_로그인에_성공하면_true를_반환한다() {
         // given
         String email = "admin@ject.org";
-        String pin = "ABC123";
-        AdminLoginRequest request = new AdminLoginRequest(email, pin);
-        when(adminAuthService.verifyAdminAuthCode(email, pin)).thenReturn(authentication);
+        String password = "Password123";
+        AdminLoginRequest request = new AdminLoginRequest(email, password);
+        when(adminAuthService.authenticateAdmin(email, password)).thenReturn(authentication);
 
         // when
         boolean result = adminAuthController.loginAdmin(request, httpServletRequest, httpServletResponse);
 
         // then
         assertTrue(result);
-        verify(adminAuthService).verifyAdminAuthCode(email, pin);
+        verify(adminAuthService).authenticateAdmin(email, password);
         verify(customSuccessHandler).onAuthenticationSuccess(httpServletRequest, httpServletResponse, authentication);
     }
 
@@ -110,18 +110,18 @@ class AdminAuthControllerTest {
     void 이메일_형식이_올바르지_않은_경우_유효성_검사에_실패한다() {
         // given
         Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
-        AdminLoginRequest request = new AdminLoginRequest("invalid-email", "ABC123");
+        AdminLoginRequest request = new AdminLoginRequest("invalid-email", "Password123");
 
         // when
         Set<ConstraintViolation<AdminLoginRequest>> violations = validator.validate(request);
 
         // then
         assertFalse(violations.isEmpty());
-        assertThat(violations).anyMatch(v -> v.getMessage().equals("유효하지 않은 이메일 형식입니다."));
+        assertThat(violations).anyMatch(v -> v.getMessage().equals("올바른 이메일 형식이 아닙니다."));
     }
 
     @Test
-    void PIN_번호_형식이_올바르지_않은_경우_유효성_검사에_실패한다() {
+    void 비밀번호_길이가_짧은_경우_유효성_검사에_실패한다() {
         // given
         Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
         AdminLoginRequest request = new AdminLoginRequest("admin@ject.org", "123");
@@ -131,7 +131,7 @@ class AdminAuthControllerTest {
 
         // then
         assertFalse(violations.isEmpty());
-        assertThat(violations).anyMatch(v -> v.getMessage().equals("PIN 번호는 영문 대소문자와 숫자를 포함한 6자리여야 합니다."));
+        assertThat(violations).anyMatch(v -> v.getMessage().equals("비밀번호는 8자 이상 입력해주세요."));
     }
 
     @Test

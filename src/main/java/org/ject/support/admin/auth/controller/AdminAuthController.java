@@ -47,7 +47,7 @@ public class AdminAuthController implements AdminAuthApiSpec {
     @PostMapping("/login")
     public boolean loginAdmin(@RequestBody @Valid AdminLoginRequest request,
                                 HttpServletRequest httpRequest, HttpServletResponse response) {
-        Authentication authentication = adminAuthService.verifyAdminAuthCode(request.email(), request.pin());
+        Authentication authentication = adminAuthService.authenticateAdmin(request.email(), request.password());
         customSuccessHandler.onAuthenticationSuccess(httpRequest, response, authentication);
         return true;
     }

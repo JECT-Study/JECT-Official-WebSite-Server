@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Component
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -21,6 +23,10 @@ public class AdminMemberComponent {
     public Member getMemberAdminByEmail(String email) {
         return memberRepository.findByEmailAndRole(email, Role.ADMIN)
                 .orElseThrow(() -> new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
+    }
+
+    public Optional<Member> findMemberAdminByEmail(String email) {
+        return memberRepository.findByEmailAndRole(email, Role.ADMIN);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

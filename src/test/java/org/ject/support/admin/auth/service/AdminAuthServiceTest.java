@@ -20,6 +20,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,6 +53,9 @@ class AdminAuthServiceTest extends UnitTestSupport {
 
     @Mock
     JwtTokenProvider jwtTokenProvider;
+
+    @Mock
+    PasswordEncoder passwordEncoder;
 
     @Mock
     private Authentication authentication;
@@ -219,5 +225,65 @@ class AdminAuthServiceTest extends UnitTestSupport {
         verify(adminMemberComponent).getMemberAdminByEmail(email);
         verify(jwtTokenProvider).createAuthenticationByMember(adminMember);
         verify(redisTemplate).delete(authCodeKey);
+    }
+
+    @Test
+    void 관리자_로그인_시_이메일이_존재하지_않으면_INVALID_ADMIN_CREDENTIALS_예외_발생() {
+        // given
+        String email = "not-found@test.com";
+        String password = "Password123!";
+        given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.empty());
+
+        // when, then
+        assertThatThrownBy(() -> adminAuthService.authenticateAdmin(email, password))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.INVALID_ADMIN_CREDENTIALS);
+    }
+
+    @Test
+    void 관리자_로그인_시_비밀번호가_일치하지_않으면_INVALID_ADMIN_CREDENTIALS_예외_발생() {
+        // given
+        String email = "admin@ject.org";
+        String password = "WrongPassword123";
+        Member adminMember = Member.builder()
+                .id(1L)
+                .email(email)
+                .pin("$2a$10$encodedPin")
+                .status(MemberStatus.ACTIVE)
+                .role(Role.ADMIN)
+                .build();
+
+        given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.of(adminMember));
+        given(passwordEncoder.matches(password, adminMember.getPin())).willReturn(false);
+
+        // when, then
+        assertThatThrownBy(() -> adminAuthService.authenticateAdmin(email, password))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.INVALID_ADMIN_CREDENTIALS);
+    }
+
+    @Test
+    void 관리자_로그인_시_LOCKED_상태면_LOCKED_ADMIN_예외_발생() {
+        // given
+        String email = "locked_admin@test.com";
+        String password = "Password123!";
+        Member adminMember = Member.builder()
+                .id(1L)
+                .email(email)
+                .pin("$2a$10$encodedPin")
+                .status(MemberStatus.LOCKED)
+                .role(Role.ADMIN)
+                .build();
+
+        given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.of(adminMember));
+        given(passwordEncoder.matches(password, adminMember.getPin())).willReturn(true);
+
+        // when, then
+        assertThatThrownBy(() -> adminAuthService.authenticateAdmin(email, password))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.LOCKED_ADMIN);
     }
 }

@@ -14,6 +14,7 @@ import org.ject.support.external.notification.event.AdminLoginNotificationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ public class AdminAuthService {
     private final AdminMemberComponent adminMemberComponent;
     private final DiscordRateLimiter discordRateLimiter;
     private final JwtTokenProvider jwtTokenProvider;
+    private final PasswordEncoder passwordEncoder;
 
     private static final String ADMIN_LOGIN_AUTH_CODE_KEY_PREFIX = "admin-login:";
     private static final String ADMIN_LOGIN_AUTH_CODE_FAIL_COUNT_KEY_PREFIX = "admin-login-fail-count:";
@@ -63,6 +65,20 @@ public class AdminAuthService {
 
         checkMemberStatus(member);
         verifyAuthCode(authCode, member);
+
+        return jwtTokenProvider.createAuthenticationByMember(member);
+    }
+
+    @Transactional
+    public Authentication authenticateAdmin(String email, String password) {
+        Member member = adminMemberComponent.findMemberAdminByEmail(email)
+                .orElseThrow(() -> new AdminException(AdminErrorCode.INVALID_ADMIN_CREDENTIALS));
+
+        if (!passwordEncoder.matches(password, member.getPin())) {
+            throw new AdminException(AdminErrorCode.INVALID_ADMIN_CREDENTIALS);
+        }
+
+        checkMemberStatus(member);
 
         return jwtTokenProvider.createAuthenticationByMember(member);
     }
