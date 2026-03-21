@@ -22,6 +22,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -232,7 +233,11 @@ class AdminAuthServiceTest extends UnitTestSupport {
         // given
         String email = "not-found@test.com";
         String password = "Password123!";
+        String failCountKey = "admin-login-password-fail-count:" + email;
         given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.empty());
+        given(redisTemplate.hasKey("admin-login-password-block:" + email)).willReturn(false);
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+        given(valueOperations.increment(failCountKey)).willReturn(1L);
 
         // when, then
         assertThatThrownBy(() -> adminAuthService.authenticateAdmin(email, password))
@@ -253,8 +258,12 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .status(MemberStatus.ACTIVE)
                 .role(Role.ADMIN)
                 .build();
+        String failCountKey = "admin-login-password-fail-count:" + email;
 
         given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.of(adminMember));
+        given(redisTemplate.hasKey("admin-login-password-block:" + email)).willReturn(false);
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+        given(valueOperations.increment(failCountKey)).willReturn(1L);
         given(passwordEncoder.matches(password, adminMember.getPin())).willReturn(false);
 
         // when, then
@@ -278,6 +287,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .build();
 
         given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.of(adminMember));
+        given(redisTemplate.hasKey("admin-login-password-block:" + email)).willReturn(false);
         given(passwordEncoder.matches(password, adminMember.getPin())).willReturn(true);
 
         // when, then
@@ -285,5 +295,39 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.LOCKED_ADMIN);
+    }
+
+    @Test
+    void 관리자_로그인_시도가_차단된_상태면_LOGIN_ATTEMPT_LIMITED_예외_발생() {
+        // given
+        String email = "admin@ject.org";
+        String password = "Password123!";
+        given(redisTemplate.hasKey("admin-login-password-block:" + email)).willReturn(true);
+
+        // when, then
+        assertThatThrownBy(() -> adminAuthService.authenticateAdmin(email, password))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.LOGIN_ATTEMPT_LIMITED);
+    }
+
+    @Test
+    void 관리자_로그인_실패_횟수가_5회_이상이면_LOGIN_ATTEMPT_LIMITED_예외_발생() {
+        // given
+        String email = "not-found@test.com";
+        String password = "Password123!";
+        String failCountKey = "admin-login-password-fail-count:" + email;
+        String blockKey = "admin-login-password-block:" + email;
+        given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.empty());
+        given(redisTemplate.hasKey(blockKey)).willReturn(false);
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+        given(valueOperations.increment(failCountKey)).willReturn(5L);
+
+        // when, then
+        assertThatThrownBy(() -> adminAuthService.authenticateAdmin(email, password))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.LOGIN_ATTEMPT_LIMITED);
+        verify(valueOperations).set(blockKey, "1", Duration.ofSeconds(60 * 60));
     }
 }

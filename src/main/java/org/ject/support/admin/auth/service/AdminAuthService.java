@@ -35,10 +35,14 @@ public class AdminAuthService {
 
     private static final String ADMIN_LOGIN_AUTH_CODE_KEY_PREFIX = "admin-login:";
     private static final String ADMIN_LOGIN_AUTH_CODE_FAIL_COUNT_KEY_PREFIX = "admin-login-fail-count:";
+    private static final String ADMIN_LOGIN_PASSWORD_FAIL_COUNT_KEY_PREFIX = "admin-login-password-fail-count:";
+    private static final String ADMIN_LOGIN_PASSWORD_BLOCK_KEY_PREFIX = "admin-login-password-block:";
     private static final int ADMIN_LOGIN_AUTH_CODE_LENGTH = 6;
     private static final long ADMIN_LOGIN_AUTH_CODE_EXPIRATION = 3 * 60;
     private static final long ADMIN_LOGIN_AUTH_CODE_FAIL_LOCK_TIME = 10 * 60;
     private static final int ADMIN_LOGIN_MAX_FAILURE_COUNT = 3;
+    private static final int ADMIN_LOGIN_PASSWORD_MAX_FAILURE_COUNT = 5;
+    private static final long ADMIN_LOGIN_PASSWORD_BLOCK_TIME = 60 * 60;
 
     public String sendAdminAuthCode(String email) {
         Member member = adminMemberComponent.getMemberAdminByEmail(email);
@@ -71,16 +75,49 @@ public class AdminAuthService {
 
     @Transactional
     public Authentication authenticateAdmin(String email, String password) {
+        validateLoginAttemptLimit(email);
+
         Member member = adminMemberComponent.findMemberAdminByEmail(email)
-                .orElseThrow(() -> new AdminException(AdminErrorCode.INVALID_ADMIN_CREDENTIALS));
+                .orElseThrow(() -> handleInvalidAdminCredentials(email));
 
         if (!passwordEncoder.matches(password, member.getPin())) {
-            throw new AdminException(AdminErrorCode.INVALID_ADMIN_CREDENTIALS);
+            throw handleInvalidAdminCredentials(email);
         }
 
         checkMemberStatus(member);
+        clearLoginFailState(email);
 
         return jwtTokenProvider.createAuthenticationByMember(member);
+    }
+
+    private AdminException handleInvalidAdminCredentials(String email) {
+        String failCountKey = ADMIN_LOGIN_PASSWORD_FAIL_COUNT_KEY_PREFIX + email;
+        Long failCount = redisTemplate.opsForValue().increment(failCountKey);
+
+        if (Long.valueOf(1L).equals(failCount)) {
+            redisTemplate.expire(failCountKey, Duration.ofSeconds(ADMIN_LOGIN_PASSWORD_BLOCK_TIME));
+        }
+
+        if (failCount != null && failCount >= ADMIN_LOGIN_PASSWORD_MAX_FAILURE_COUNT) {
+            String blockKey = ADMIN_LOGIN_PASSWORD_BLOCK_KEY_PREFIX + email;
+            redisTemplate.opsForValue().set(blockKey, "1", Duration.ofSeconds(ADMIN_LOGIN_PASSWORD_BLOCK_TIME));
+            throw new AdminException(AdminErrorCode.LOGIN_ATTEMPT_LIMITED);
+        }
+
+        return new AdminException(AdminErrorCode.INVALID_ADMIN_CREDENTIALS);
+    }
+
+    private void validateLoginAttemptLimit(String email) {
+        String blockKey = ADMIN_LOGIN_PASSWORD_BLOCK_KEY_PREFIX + email;
+
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(blockKey))) {
+            throw new AdminException(AdminErrorCode.LOGIN_ATTEMPT_LIMITED);
+        }
+    }
+
+    private void clearLoginFailState(String email) {
+        redisTemplate.delete(ADMIN_LOGIN_PASSWORD_FAIL_COUNT_KEY_PREFIX + email);
+        redisTemplate.delete(ADMIN_LOGIN_PASSWORD_BLOCK_KEY_PREFIX + email);
     }
 
     private void checkMemberStatus(Member member) {
