@@ -2,7 +2,6 @@ package org.ject.support.external.notification.listener;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.external.notification.sender.NotificationSender;
-import org.ject.support.external.notification.event.AdminLoginNotificationEvent;
 import org.ject.support.external.notification.event.SupporterTokenIssuedEvent;
 import org.ject.support.external.notification.executor.NotificationExecutorService;
 import org.springframework.context.event.EventListener;
@@ -14,16 +13,6 @@ public class NotificationEventListener {
 
     private final NotificationSender notificationSender;
     private final NotificationExecutorService notificationExecutorService;
-
-    @EventListener
-    public void handle(AdminLoginNotificationEvent event) {
-        notificationExecutorService.execute(
-                notificationSender.sendAdminLogin(
-                        event.email(),
-                        event.code()
-                )
-        );
-    }
 
     @EventListener
     public void handle(SupporterTokenIssuedEvent event) {

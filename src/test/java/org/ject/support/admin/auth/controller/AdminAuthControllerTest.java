@@ -5,12 +5,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
-import org.assertj.core.api.Assertions;
 import org.ject.support.common.security.CustomSuccessHandler;
-import org.ject.support.admin.auth.dto.AdminAuthSendRequest;
-import org.ject.support.admin.auth.dto.AdminAuthSendResponse;
 import org.ject.support.admin.auth.dto.AdminLoginRequest;
-import org.ject.support.admin.auth.dto.AdminVerifyRequest;
 import org.ject.support.admin.auth.service.AdminAuthService;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -26,7 +22,6 @@ import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -51,43 +46,6 @@ class AdminAuthControllerTest {
 
     @Mock
     private HttpServletResponse httpServletResponse;
-
-    @Test
-    void 관리자_로그인1차_인증에_성공할_경우_이메일을_반환한다() {
-        // given
-        String adminLoginEmail = "id@email.com";
-        AdminAuthSendRequest request = new AdminAuthSendRequest(adminLoginEmail);
-        given(adminAuthService.sendAdminAuthCode(request.email()))
-                .willReturn(adminLoginEmail);
-
-        // when
-        AdminAuthSendResponse result = adminAuthController.sendAdminAuthCode(request);
-
-        // then
-        verify(adminAuthService).sendAdminAuthCode(request.email());
-        Assertions.assertThat(result.email()).isEqualTo(adminLoginEmail);
-    }
-
-    @Test
-    void 관리자_로그인2차_인증에_성공할_경우_true를_반환한다() {
-        // given
-        String email = "test@ject.org";
-        String code = "123456";
-        AdminVerifyRequest request = new AdminVerifyRequest(email, code);
-        when(adminAuthService.verifyAdminAuthCode(email, code)).thenReturn(authentication);
-
-        // when
-        boolean result = adminAuthController.verifyAdminAuthCode(
-                request, httpServletRequest, httpServletResponse
-        );
-
-        // then
-        assertTrue(result);
-        verify(adminAuthService).verifyAdminAuthCode(email, code);
-        verify(customSuccessHandler).onAuthenticationSuccess(
-                httpServletRequest, httpServletResponse, authentication
-        );
-    }
 
     @Test
     void 관리자_로그인에_성공하면_true를_반환한다() {
