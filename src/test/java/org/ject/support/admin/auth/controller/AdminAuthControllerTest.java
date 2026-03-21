@@ -93,16 +93,7 @@ class AdminAuthControllerTest {
     }
 
     @Test
-    void 관리자_로그아웃에_성공할_경우_쿠키를_만료시킨다() {
-        // when
-        adminAuthController.logoutAdmin(httpServletResponse);
-
-        // then
-        verify(customSuccessHandler).onLogoutSuccess(httpServletResponse);
-    }
-
-    @Test
-    void 관리자_로그아웃에_성공할_경우_쿠키를_만료시킨다() {
+    void 관리자_로그아웃에_성공할_경우_onLogoutSuccess를_호출한다() {
         // when
         adminAuthController.logoutAdmin(httpServletResponse);
 
