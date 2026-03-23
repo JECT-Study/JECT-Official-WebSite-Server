@@ -18,7 +18,7 @@ public class RecruitQueryRepositoryImpl implements RecruitQueryRepository {
     private final JPAQueryFactory jpaQueryFactory;
 
     @Override
-    @Cacheable(value = "activeRecruit", key = "#jobFamily.name()", unless = "#result.isEmpty()")
+    @Cacheable(value = "activeRecruit", key = "#jobFamily.name()", unless = "#result == null")
     public Optional<Recruit> findActiveRecruitByJobFamily(final JobFamily jobFamily, final LocalDateTime now) {
         Recruit fetched = jpaQueryFactory.selectFrom(recruit)
                 .leftJoin(recruit.questions).fetchJoin()
