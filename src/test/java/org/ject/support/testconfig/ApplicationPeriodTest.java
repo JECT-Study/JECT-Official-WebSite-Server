@@ -11,6 +11,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+@org.springframework.test.context.TestPropertySource(properties = {"spring.cache.type=none"})
 public abstract class ApplicationPeriodTest {
     @MockitoBean
     protected RedisTemplate<String, String> redisTemplate;
