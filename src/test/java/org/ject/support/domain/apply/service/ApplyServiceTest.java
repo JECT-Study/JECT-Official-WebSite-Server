@@ -102,7 +102,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Apply apply = getApply(1L, recruit, applicant, applicationForm, TEMP_SAVED);
 
-        when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
+        when(recruitRepository.findActiveRecruitByJobFamily(any(), any())).thenReturn(Optional.of(recruit));
         when(applyRepository.findByMemberIdInActiveRecruitForUpdate(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
@@ -133,7 +133,7 @@ class ApplyServiceTest extends UnitTestSupport {
         ApplicationForm applicationForm = getApplicationForm(answers.toString());
         Apply apply = getApply(1L, recruit, applicant, applicationForm, TEMP_SAVED);
 
-        when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
+        when(recruitRepository.findActiveRecruitByJobFamily(any(), any())).thenReturn(Optional.of(recruit));
         when(applyRepository.findByMemberIdInActiveRecruitForUpdate(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
@@ -160,7 +160,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 new ApplyPortfolioDto("url", "name", "100", "1")
         );
 
-        when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
+        when(recruitRepository.findActiveRecruitByJobFamily(any(), any())).thenReturn(Optional.of(recruit));
         when(applyRepository.findByMemberIdInActiveRecruitForUpdate(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
@@ -189,7 +189,7 @@ class ApplyServiceTest extends UnitTestSupport {
                 "3", "답변 3",
                 "4", "답변 4");
 
-        when(recruitRepository.findActiveRecruits(any())).thenReturn(List.of(recruit));
+        when(recruitRepository.findActiveRecruitByJobFamily(any(), any())).thenReturn(Optional.of(recruit));
 
         // when, then
         assertThatThrownBy(() -> applyService.submitApplication(1L, BE, answers, List.of()))
@@ -545,7 +545,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
         given(applyRepository.existsByMemberIdInActiveRecruit(eq(memberId), any())).willReturn(false);
-        given(recruitRepository.findActiveRecruits(any())).willReturn(List.of(recruit));
+        given(recruitRepository.findActiveRecruitByJobFamily(any(), any())).willReturn(Optional.of(recruit));
 
         // when
         applyService.saveProfile(memberId, request);

@@ -224,12 +224,8 @@ public class ApplyService implements ApplyUsecase {
                 });
     }
 
-    //TODO 2025 02 20 17:07:14 : caching
-
     private Recruit getPeriodRecruit(final JobFamily jobFamily) {
-        return recruitRepository.findActiveRecruits(LocalDateTime.now()).stream()
-                .filter(recruit -> recruit.getJobFamily().equals(jobFamily))
-                .findAny()
+        return recruitRepository.findActiveRecruitByJobFamily(jobFamily, LocalDateTime.now())
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
 

@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.dto.Constants;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -14,10 +15,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 public abstract class ApplicationPeriodTest {
     @MockitoBean
     protected RedisTemplate<String, String> redisTemplate;
-    
-    @MockitoBean
+
+    @MockitoBean(answers = Answers.RETURNS_DEEP_STUBS)
     protected RedisConnectionFactory redisConnectionFactory;
-    
+
     @Mock
     protected ValueOperations<String, String> valueOperations;
 
@@ -35,3 +36,4 @@ public abstract class ApplicationPeriodTest {
         when(redisTemplate.getConnectionFactory()).thenReturn(redisConnectionFactory);
     }
 }
+
