@@ -21,8 +21,9 @@ public class RecruitQueryRepositoryImpl implements RecruitQueryRepository {
     @Cacheable(value = "activeRecruit", key = "#jobFamily.name()", unless = "#result == null")
     public Optional<Recruit> findActiveRecruitByJobFamily(final JobFamily jobFamily, final LocalDateTime now) {
         Recruit fetched = jpaQueryFactory.selectFrom(recruit)
+                .leftJoin(recruit.questions).fetchJoin()
                 .where(recruit.jobFamily.eq(jobFamily), recruit.startDate.before(now).and(recruit.endDate.after(now)))
-                .fetchFirst();
+                .fetchOne();
         return Optional.ofNullable(fetched);
     }
 }
