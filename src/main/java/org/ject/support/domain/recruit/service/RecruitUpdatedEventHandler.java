@@ -1,6 +1,7 @@
 package org.ject.support.domain.recruit.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
@@ -17,10 +18,10 @@ public class RecruitUpdatedEventHandler {
     private final RecruitRepository recruitRepository;
     private final RecruitFlagService recruitFlagService;
     private final RecruitScheduleService recruitScheduleService;
-
     /**
      * 모집 수정 시 호출됨
      */
+    @CacheEvict(value = "activeRecruit", key = "#event.jobFamily().name()")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleRecruitUpdated(RecruitUpdatedEvent event) {
         // 기존 스케줄 작업 제거
