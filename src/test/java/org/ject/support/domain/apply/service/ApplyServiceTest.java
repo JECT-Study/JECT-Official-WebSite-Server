@@ -103,7 +103,7 @@ class ApplyServiceTest extends UnitTestSupport {
         Apply apply = getApply(1L, recruit, applicant, applicationForm, TEMP_SAVED);
 
         when(recruitRepository.findActiveRecruitByJobFamily(any(), any())).thenReturn(Optional.of(recruit));
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruitForUpdate(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
         // when
@@ -134,7 +134,7 @@ class ApplyServiceTest extends UnitTestSupport {
         Apply apply = getApply(1L, recruit, applicant, applicationForm, TEMP_SAVED);
 
         when(recruitRepository.findActiveRecruitByJobFamily(any(), any())).thenReturn(Optional.of(recruit));
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruitForUpdate(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
         // expected
@@ -161,7 +161,7 @@ class ApplyServiceTest extends UnitTestSupport {
         );
 
         when(recruitRepository.findActiveRecruitByJobFamily(any(), any())).thenReturn(Optional.of(recruit));
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdInActiveRecruitForUpdate(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
         // when

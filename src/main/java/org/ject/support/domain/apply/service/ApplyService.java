@@ -149,7 +149,7 @@ public class ApplyService implements ApplyUsecase {
         validateQuestions(answers, recruit);
 
         // 3. 지원 정보 조회
-        Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
+        Apply apply = applyRepository.findByMemberIdInActiveRecruitForUpdate(memberId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
         String content = map2JsonSerializer.serializeAsString(answers);
