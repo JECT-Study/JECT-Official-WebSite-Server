@@ -36,7 +36,7 @@ public class CacheCircuitBreakerAspect {
     private final RedisCacheCircuitBreakerProvider circuitBreakerProvider;
 
     /**
-     * @Cacheable, @CachePut, @CacheEvict, @Caching 어노테이션이 사용된 메서드나 클래스를 가로챕니다.
+     * 스프링 캐시 어노테이션이 사용된 메서드나 클래스를 가로챕니다.
      */
     @Around("@annotation(org.springframework.cache.annotation.Cacheable) || " +
             "@annotation(org.springframework.cache.annotation.CachePut) || " +
@@ -114,25 +114,21 @@ public class CacheCircuitBreakerAspect {
         CacheConfig cacheConfig = AnnotatedElementUtils.findMergedAnnotation(targetClass, CacheConfig.class);
         String[] defaultNames = (cacheConfig != null) ? cacheConfig.cacheNames() : new String[0];
 
-        // @Cacheable 추출
         Cacheable mCacheable = AnnotatedElementUtils.findMergedAnnotation(method, Cacheable.class);
         Cacheable cCacheable = (mCacheable == null) ? AnnotatedElementUtils.findMergedAnnotation(targetClass, Cacheable.class) : null;
         if (mCacheable != null) names.addAll(resolveNames(mCacheable.cacheNames(), mCacheable.value(), defaultNames));
         if (cCacheable != null) names.addAll(resolveNames(cCacheable.cacheNames(), cCacheable.value(), defaultNames));
 
-        // @CachePut 추출
         CachePut mCachePut = AnnotatedElementUtils.findMergedAnnotation(method, CachePut.class);
         CachePut cCachePut = (mCachePut == null) ? AnnotatedElementUtils.findMergedAnnotation(targetClass, CachePut.class) : null;
         if (mCachePut != null) names.addAll(resolveNames(mCachePut.cacheNames(), mCachePut.value(), defaultNames));
         if (cCachePut != null) names.addAll(resolveNames(cCachePut.cacheNames(), cCachePut.value(), defaultNames));
 
-        // @CacheEvict 추출
         CacheEvict mCacheEvict = AnnotatedElementUtils.findMergedAnnotation(method, CacheEvict.class);
         CacheEvict cCacheEvict = (mCacheEvict == null) ? AnnotatedElementUtils.findMergedAnnotation(targetClass, CacheEvict.class) : null;
         if (mCacheEvict != null) names.addAll(resolveNames(mCacheEvict.cacheNames(), mCacheEvict.value(), defaultNames));
         if (cCacheEvict != null) names.addAll(resolveNames(cCacheEvict.cacheNames(), cCacheEvict.value(), defaultNames));
 
-        // @Caching 추출 (복합 어노테이션)
         Caching mCaching = AnnotatedElementUtils.findMergedAnnotation(method, Caching.class);
         Caching cCaching = (mCaching == null) ? AnnotatedElementUtils.findMergedAnnotation(targetClass, Caching.class) : null;
         processCaching(mCaching, names, defaultNames);
@@ -158,6 +154,5 @@ public class CacheCircuitBreakerAspect {
     }
 
     // 각 캐시별 서킷 브레이커 실행 상태를 담는 불변 객체
-    private record CircuitBreakerExecution(String cacheName, CircuitBreaker circuitBreaker) {
-    }
+    private record CircuitBreakerExecution(String cacheName, CircuitBreaker circuitBreaker) {}
 }
