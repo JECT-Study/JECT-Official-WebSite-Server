@@ -20,5 +20,11 @@ public class RedisCacheCircuitBreakerProvider {
                 RedisCacheCircuitBreakerConfig.REDIS_CACHE_CONFIG_NAME
         );
     }
+
+    public void resetAll() {
+        // 모든 서킷 브레이커의 상태와 메트릭을 초기화하여 테스트 간 격리 등을 지원
+        circuitBreakerRegistry.getAllCircuitBreakers()
+                .forEach(CircuitBreaker::reset);
+    }
 }
 

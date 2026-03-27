@@ -90,6 +90,7 @@ class CacheFallbackIntegrationTest {
     @AfterEach
     void restoreRedis() {
         RedisTestContainersConfig.start();
+        circuitBreakerProvider.resetAll(); // 테스트 간 격리를 위해 서킷 브레이커 메트릭 초기화
     }
 
     @Test
@@ -127,6 +128,7 @@ class CacheFallbackIntegrationTest {
         // 서킷 브레이커에 실패가 기록되지 않았어야 함
         CircuitBreaker breaker = circuitBreakerProvider.get("question");
         long failedCallsBefore = breaker.getMetrics().getNumberOfFailedCalls();
+        assertThat(failedCallsBefore).isZero(); // 이전 테스트의 영향 없이 0이어야 함
         
         // handleCacheGetError 호출 후에도 실패 횟수가 그대로인지 확인 (이미 위에서 exception이 던져졌으므로 기록 안 됨)
         assertThat(breaker.getMetrics().getNumberOfFailedCalls()).isEqualTo(failedCallsBefore);
