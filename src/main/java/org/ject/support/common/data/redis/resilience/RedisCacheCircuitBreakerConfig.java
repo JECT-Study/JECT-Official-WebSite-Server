@@ -9,28 +9,27 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RedisCacheCircuitBreakerConfig {
 
-    // Shared named config template applied to each cache-specific breaker instance.
+    // 각 캐시별 서킷 브레이커 인스턴스에 적용될 공통 설정 템플릿 이름
     public static final String REDIS_CACHE_CONFIG_NAME = "redis-cache";
 
     @Bean
     public CircuitBreakerRegistry circuitBreakerRegistry() {
-        // Circuit breaker policy tuned for quick detection and short recovery probing.
         CircuitBreakerConfig config = CircuitBreakerConfig.custom()
-                // OPEN when failure rate >= 50% in current sliding window.
+                // 실패율이 50% 이상일 때 서킷을 OPEN
                 .failureRateThreshold(50)
-                // Avoid opening on tiny sample size.
+                // 너무 적은 수로 서킷 OPEN 방지하기 위해 최소 호출 횟수를 5회로 제한
                 .minimumNumberOfCalls(5)
-                // Count last 10 calls per cache breaker.
+                // 캐시별 서킷 브레이커에서 최근 10개의 호출 계산
                 .slidingWindowSize(10)
-                // Stay OPEN for 10s before moving to HALF_OPEN.
+                // OPEN 상태에서 10초 동안 대기한 후 HALF_OPEN 상태로 전환합니다.
                 .waitDurationInOpenState(Duration.ofSeconds(10))
-                // Allow limited trial calls while HALF_OPEN.
+                // HALF_OPEN 상태에서 재시도할 호출 횟수를 3회로 제한
                 .permittedNumberOfCallsInHalfOpenState(3)
-                // Only redis-related failures contribute to breaker metrics.
+                // 레디스 관련 장애만 서킷 브레이커 지표에 기록
                 .recordException(RedisCacheExceptionClassifier::isRedisRelated)
                 .build();
 
-        // Start with default registry, then add our named redis profile.
+        // 기본 레지스트리에 레디스 전용 프로필 설정을 추가
         CircuitBreakerRegistry registry = CircuitBreakerRegistry.ofDefaults();
         registry.addConfiguration(REDIS_CACHE_CONFIG_NAME, config);
         return registry;
