@@ -3,10 +3,8 @@ package org.ject.support.common.data.redis.resilience;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,13 +13,10 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.aop.support.AopUtils;
-import org.springframework.cache.annotation.CacheConfig;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
+import org.springframework.cache.annotation.AnnotationCacheOperationSource;
+import org.springframework.cache.interceptor.CacheOperation;
+import org.springframework.cache.interceptor.CacheOperationSource;
 import org.springframework.core.Ordered;
-import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -34,6 +29,9 @@ public class CacheCircuitBreakerAspect {
 
     // 캐시 이름별로 서킷 브레이커 인스턴스를 관리하고 반환하는 프로바이더
     private final RedisCacheCircuitBreakerProvider circuitBreakerProvider;
+
+    // 스프링의 캐시 추상화 인프라를 활용하여 메서드/클래스의 캐시 설정을 분석
+    private final CacheOperationSource cacheOperationSource = new AnnotationCacheOperationSource();
 
     /**
      * 스프링 캐시 어노테이션이 사용된 메서드나 클래스를 가로챕니다.
@@ -48,11 +46,13 @@ public class CacheCircuitBreakerAspect {
             "@within(org.springframework.cache.annotation.Caching)")
     public Object aroundCacheCall(final ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
+        // 실제 호출 대상 클래스를 확보합니다. (Spring의 어노테이션 탐색 규칙에 필요)
+        Class<?> targetClass = joinPoint.getTarget().getClass();
         // 실제 대상 객체의 메서드를 찾아 인터페이스나 상속 관계에서의 어노테이션까지 감지할 수 있게 합니다.
-        Method method = AopUtils.getMostSpecificMethod(signature.getMethod(), joinPoint.getTarget().getClass());
+        Method method = AopUtils.getMostSpecificMethod(signature.getMethod(), targetClass);
 
         // 메서드 및 클래스 레벨에서 참조하는 모든 캐시 이름을 추출
-        List<String> cacheNames = extractCacheNames(method);
+        List<String> cacheNames = extractCacheNames(method, targetClass);
         // 이번 요청에서 실행 권한을 획득한 서킷 브레이커들을 추적
         List<CircuitBreakerExecution> grantedBreakers = new ArrayList<>(cacheNames.size());
         // 참조하는 캐시 중 하나라도 OPEN 상태면 이번 호출은 캐시를 우회
@@ -105,52 +105,20 @@ public class CacheCircuitBreakerAspect {
         }
     }
 
-    // @Caching을 포함하여 메서드 및 클래스 레벨에 선언된 모든 캐시 관련 어노테이션에서 캐시 이름을 추출
-    private List<String> extractCacheNames(final Method method) {
-        Set<String> names = new HashSet<>();
-        Class<?> targetClass = method.getDeclaringClass();
+    // CacheOperationSource를 활용하여 메서드 및 클래스 레벨에 선언된 모든 캐시 이름을 추출
+    private List<String> extractCacheNames(final Method method, final Class<?> targetClass) {
+        // 스프링 인프라가 메서드, 클래스, 인터페이스에서 적용된 모든 캐시 작업을 탐색
+        Collection<CacheOperation> operations = cacheOperationSource.getCacheOperations(method, targetClass);
 
-        // 클래스 레벨의 @CacheConfig를 통해 기본 캐시 이름을 확보합니다.
-        CacheConfig cacheConfig = AnnotatedElementUtils.findMergedAnnotation(targetClass, CacheConfig.class);
-        String[] defaultNames = (cacheConfig != null) ? cacheConfig.cacheNames() : new String[0];
+        if (operations == null || operations.isEmpty()) {
+            return List.of();
+        }
 
-        Cacheable mCacheable = AnnotatedElementUtils.findMergedAnnotation(method, Cacheable.class);
-        Cacheable cCacheable = (mCacheable == null) ? AnnotatedElementUtils.findMergedAnnotation(targetClass, Cacheable.class) : null;
-        if (mCacheable != null) names.addAll(resolveNames(mCacheable.cacheNames(), mCacheable.value(), defaultNames));
-        if (cCacheable != null) names.addAll(resolveNames(cCacheable.cacheNames(), cCacheable.value(), defaultNames));
-
-        CachePut mCachePut = AnnotatedElementUtils.findMergedAnnotation(method, CachePut.class);
-        CachePut cCachePut = (mCachePut == null) ? AnnotatedElementUtils.findMergedAnnotation(targetClass, CachePut.class) : null;
-        if (mCachePut != null) names.addAll(resolveNames(mCachePut.cacheNames(), mCachePut.value(), defaultNames));
-        if (cCachePut != null) names.addAll(resolveNames(cCachePut.cacheNames(), cCachePut.value(), defaultNames));
-
-        CacheEvict mCacheEvict = AnnotatedElementUtils.findMergedAnnotation(method, CacheEvict.class);
-        CacheEvict cCacheEvict = (mCacheEvict == null) ? AnnotatedElementUtils.findMergedAnnotation(targetClass, CacheEvict.class) : null;
-        if (mCacheEvict != null) names.addAll(resolveNames(mCacheEvict.cacheNames(), mCacheEvict.value(), defaultNames));
-        if (cCacheEvict != null) names.addAll(resolveNames(cCacheEvict.cacheNames(), cCacheEvict.value(), defaultNames));
-
-        Caching mCaching = AnnotatedElementUtils.findMergedAnnotation(method, Caching.class);
-        Caching cCaching = (mCaching == null) ? AnnotatedElementUtils.findMergedAnnotation(targetClass, Caching.class) : null;
-        processCaching(mCaching, names, defaultNames);
-        processCaching(cCaching, names, defaultNames);
-
-        return names.stream()
+        return operations.stream()
+                .flatMap(operation -> operation.getCacheNames().stream())
                 .filter(name -> name != null && !name.isEmpty())
                 .distinct()
                 .toList();
-    }
-
-    private void processCaching(final Caching caching, final Set<String> names, final String[] defaultNames) {
-        if (caching == null) return;
-        for (Cacheable c : caching.cacheable()) names.addAll(resolveNames(c.cacheNames(), c.value(), defaultNames));
-        for (CachePut p : caching.put()) names.addAll(resolveNames(p.cacheNames(), p.value(), defaultNames));
-        for (CacheEvict e : caching.evict()) names.addAll(resolveNames(e.cacheNames(), e.value(), defaultNames));
-    }
-
-    private List<String> resolveNames(final String[] cacheNames, final String[] value, final String[] defaultNames) {
-        if (cacheNames.length > 0) return Arrays.asList(cacheNames);
-        if (value.length > 0) return Arrays.asList(value);
-        return Arrays.asList(defaultNames);
     }
 
     // 각 캐시별 서킷 브레이커 실행 상태를 담는 불변 객체
