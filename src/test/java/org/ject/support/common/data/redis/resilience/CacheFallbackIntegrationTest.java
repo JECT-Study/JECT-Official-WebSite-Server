@@ -28,7 +28,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.serializer.SerializationException;
+import org.springframework.transaction.annotation.Transactional;
 
+@Transactional
 @IntegrationTest
 class CacheFallbackIntegrationTest {
 
@@ -52,12 +54,13 @@ class CacheFallbackIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        String uniqueSuffix = String.valueOf(System.currentTimeMillis());
         List<Question> questions = List.of(
                 Question.builder().sequence(1).inputType(TEXT).isRequired(true).title("title1").label("label").build()
         );
 
         Semester savedSemester = semesterRepository.save(Semester.builder()
-                .name("1기")
+                .name("1기" + uniqueSuffix)
                 .isRecruiting(true)
                 .build());
 
@@ -75,8 +78,8 @@ class CacheFallbackIntegrationTest {
         recruitRepository.save(recruit);
 
         Member member = Member.builder()
-                .email("test@gmail.com")
-                .semesterId(1L)
+                .email("test" + uniqueSuffix + "@gmail.com")
+                .semesterId(savedSemester.getId())
                 .jobFamily(JobFamily.BE)
                 .name("김젝트")
                 .role(Role.SEMESTER)
