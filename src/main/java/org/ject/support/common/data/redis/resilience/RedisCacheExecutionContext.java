@@ -13,10 +13,18 @@ public class RedisCacheExecutionContext {
     private static final ThreadLocal<Deque<Boolean>> BYPASS_STACK = ThreadLocal.withInitial(ArrayDeque::new);
     // 요청별 레디스 장애가 발생한 캐시 이름들의 집합 (레벨별 독립 Set 관리)
     private static final ThreadLocal<Deque<Set<String>>> FAILED_CACHES_STACK = ThreadLocal.withInitial(ArrayDeque::new);
+    // 쓰기 작업(put, evict, clear) 시 엄격한 예외 처리를 적용할지 여부 (기본값: true)
+    private static final ThreadLocal<Deque<Boolean>> STRICT_WRITE_STACK = ThreadLocal.withInitial(ArrayDeque::new);
 
-    // 캐시 호출 시작 시 현재 상태(우회 여부)와 새로운 실패 집합을 스택에 추가
-    public static void pushContext(final boolean bypassEnabled) {
+    /**
+     * 캐시 호출 시작 시 현재 상태를 스택에 추가합니다.
+     *
+     * @param bypassEnabled 서킷 브레이커에 의해 레디스 호출을 건너뛸지 여부
+     * @param strictWrite   쓰기 작업 실패 시 예외를 던질지 여부 (false면 swallow)
+     */
+    public static void pushContext(final boolean bypassEnabled, final boolean strictWrite) {
         BYPASS_STACK.get().push(bypassEnabled);
+        STRICT_WRITE_STACK.get().push(strictWrite);
         FAILED_CACHES_STACK.get().push(new HashSet<>());
     }
 
@@ -25,6 +33,10 @@ public class RedisCacheExecutionContext {
         Deque<Boolean> stack = BYPASS_STACK.get();
         if (!stack.isEmpty()) {
             stack.pop();
+        }
+        Deque<Boolean> strictStack = STRICT_WRITE_STACK.get();
+        if (!strictStack.isEmpty()) {
+            strictStack.pop();
         }
         Deque<Set<String>> failedStack = FAILED_CACHES_STACK.get();
         if (!failedStack.isEmpty()) {
@@ -52,6 +64,12 @@ public class RedisCacheExecutionContext {
         return !stack.isEmpty() && stack.peek().contains(cacheName);
     }
 
+    // 쓰기 작업 실패 시 엄격한 처리(re-throw)가 필요한지 확인 (기본값은 true)
+    public static boolean isStrictWriteEnabled() {
+        Boolean strict = STRICT_WRITE_STACK.get().peek();
+        return strict == null || strict;
+    }
+
     // 현재 활성화된 실행 컨텍스트(스택에 쌓인 호출)가 있는지 확인
     public static boolean hasContext() {
         return !BYPASS_STACK.get().isEmpty();
@@ -61,6 +79,7 @@ public class RedisCacheExecutionContext {
     public static void clear() {
         BYPASS_STACK.remove();
         FAILED_CACHES_STACK.remove();
+        STRICT_WRITE_STACK.remove();
     }
 }
 

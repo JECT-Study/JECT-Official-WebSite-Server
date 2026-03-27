@@ -16,6 +16,7 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.cache.annotation.AnnotationCacheOperationSource;
 import org.springframework.cache.interceptor.CacheOperation;
 import org.springframework.cache.interceptor.CacheOperationSource;
+import org.springframework.cache.interceptor.CacheableOperation;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -52,7 +53,13 @@ public class CacheCircuitBreakerAspect {
         Method method = AopUtils.getMostSpecificMethod(signature.getMethod(), targetClass);
 
         // 메서드 및 클래스 레벨에서 참조하는 모든 캐시 이름을 추출
-        List<String> cacheNames = extractCacheNames(method, targetClass);
+        Collection<CacheOperation> operations = cacheOperationSource.getCacheOperations(method, targetClass);
+        List<String> cacheNames = extractCacheNames(operations);
+        
+        // 쓰기 작업(put, evict)이 포함되어 있다면 엄격한 모드로 실행 (실패 시 예외 throw)
+        // @Cacheable만 있는 경우(read-only)에는 가용성을 위해 put 실패를 허용(swallow)
+        boolean strictWrite = isStrictWriteRequired(operations);
+
         // 이번 요청에서 실행 권한을 획득한 서킷 브레이커들을 추적
         List<CircuitBreakerExecution> grantedBreakers = new ArrayList<>(cacheNames.size());
         // 참조하는 캐시 중 하나라도 OPEN 상태면 이번 호출은 캐시를 우회
@@ -73,7 +80,7 @@ public class CacheCircuitBreakerAspect {
         }
 
         // ThreadLocal 우회 설정을 스택에 쌓아 중첩된 호출에서도 상태를 유지
-        RedisCacheExecutionContext.pushContext(bypassEnabled);
+        RedisCacheExecutionContext.pushContext(bypassEnabled, strictWrite);
 
         try {
             // 메서드 실행을 계속,  우회가 활성화된 경우 캐시 레이어는 패스
@@ -106,10 +113,7 @@ public class CacheCircuitBreakerAspect {
     }
 
     // CacheOperationSource를 활용하여 메서드 및 클래스 레벨에 선언된 모든 캐시 이름을 추출
-    private List<String> extractCacheNames(final Method method, final Class<?> targetClass) {
-        // 스프링 인프라가 메서드, 클래스, 인터페이스에서 적용된 모든 캐시 작업을 탐색
-        Collection<CacheOperation> operations = cacheOperationSource.getCacheOperations(method, targetClass);
-
+    private List<String> extractCacheNames(final Collection<CacheOperation> operations) {
         if (operations == null || operations.isEmpty()) {
             return List.of();
         }
@@ -119,6 +123,16 @@ public class CacheCircuitBreakerAspect {
                 .filter(name -> name != null && !name.isEmpty())
                 .distinct()
                 .toList();
+    }
+
+    // 모든 작업이 @Cacheable인 경우(단순 조회 목적)가 아니라면 엄격한 예외 처리가 필요하다고 판단
+    private boolean isStrictWriteRequired(final Collection<CacheOperation> operations) {
+        if (operations == null || operations.isEmpty()) {
+            return true;
+        }
+
+        // 하나라도 @CachePut이나 @CacheEvict가 섞여 있다면 정합성을 위해 strict 모드 활성화
+        return operations.stream().anyMatch(op -> !(op instanceof CacheableOperation));
     }
 
     // 각 캐시별 서킷 브레이커 실행 상태를 담는 불변 객체
