@@ -29,7 +29,6 @@ public class RedisCacheCircuitBreakerConfig {
                 .recordException(RedisCacheExceptionClassifier::isRedisRelated)
                 .build();
 
-        // 기본 레지스트리에 레디스 전용 프로필 설정을 추가
         CircuitBreakerRegistry registry = CircuitBreakerRegistry.ofDefaults();
         registry.addConfiguration(REDIS_CACHE_CONFIG_NAME, config);
         return registry;
