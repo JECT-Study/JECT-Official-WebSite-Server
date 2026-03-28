@@ -57,8 +57,7 @@ public class ResilientCacheErrorHandler implements CacheErrorHandler {
             throw exception;
         }
 
-        // 쓰기 작업(put, evict, clear) 중 레디스 장애 발생 시,
-        // 데이터 정합성을 위해 엄격한 모드가 활성화되어 있다면 예외를 다시 던짐
+        // 쓰기 작업(put, evict, clear) 중 레디스 장애 발생 시, 예외를 다시 던짐
         if (RedisCacheExecutionContext.isStrictWriteEnabled() &&
                 ("put".equals(operation) || "evict".equals(operation) || "clear".equals(operation))) {
             log.error("Redis cache write operation failed. Operation: {}, Cache: {}, Key: {}, Message: {}",
@@ -66,7 +65,7 @@ public class ResilientCacheErrorHandler implements CacheErrorHandler {
             throw exception;
         }
 
-        // 조회(get) 경로에서는 레디스 장애 시 DB 폴백을 위해 예외를 삼키고,
+        // 조회 경로에서는 레디스 장애 시 DB 폴백을 위해 예외를 삼키고,
         // Aspect에서 잘못된 성공을 기록하지 않도록 이 캐시를 실패 상태로 마킹
         RedisCacheExecutionContext.markFailure(cache.getName());
 
