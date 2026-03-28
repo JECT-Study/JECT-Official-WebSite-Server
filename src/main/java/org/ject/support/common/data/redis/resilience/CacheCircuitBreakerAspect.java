@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.cache.annotation.AnnotationCacheOperationSource;
@@ -28,16 +29,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class CacheCircuitBreakerAspect {
 
-    // 캐시 이름별로 서킷 브레이커 인스턴스를 관리하고 반환하는 프로바이더
     private final RedisCacheCircuitBreakerProvider circuitBreakerProvider;
 
-    // 스프링의 캐시 추상화 인프라를 활용하여 메서드/클래스의 캐시 설정을 분석
     private final CacheOperationSource cacheOperationSource = new AnnotationCacheOperationSource();
 
-    /**
-     * 스프링 캐시 어노테이션이 사용된 메서드나 클래스를 가로챕니다.
-     */
-    @Around("@annotation(org.springframework.cache.annotation.Cacheable) || " +
+    @Pointcut("@annotation(org.springframework.cache.annotation.Cacheable) || " +
             "@annotation(org.springframework.cache.annotation.CachePut) || " +
             "@annotation(org.springframework.cache.annotation.CacheEvict) || " +
             "@annotation(org.springframework.cache.annotation.Caching) || " +
@@ -45,6 +41,9 @@ public class CacheCircuitBreakerAspect {
             "@within(org.springframework.cache.annotation.CachePut) || " +
             "@within(org.springframework.cache.annotation.CacheEvict) || " +
             "@within(org.springframework.cache.annotation.Caching)")
+    public void cacheOperation() {}
+
+    @Around("cacheOperation()")
     public Object aroundCacheCall(final ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
         // 실제 호출 대상 클래스를 확보합니다. (Spring의 어노테이션 탐색 규칙에 필요)
