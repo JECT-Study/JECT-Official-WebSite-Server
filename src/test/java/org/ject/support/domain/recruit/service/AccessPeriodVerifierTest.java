@@ -6,8 +6,10 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.ject.support.base.UnitTestSupport;
+import org.ject.support.common.data.redis.resilience.RedisCacheCircuitBreakerProvider;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.util.PeriodAccessible;
 import org.ject.support.domain.member.JobFamily;
@@ -35,9 +37,17 @@ class AccessPeriodVerifierTest extends UnitTestSupport {
     @Mock
     ValueOperations<String, String> valueOperations;
 
+    @Mock
+    RedisCacheCircuitBreakerProvider circuitBreakerProvider;
+
+    @Mock
+    CircuitBreaker circuitBreaker;
+
     @BeforeEach
     void setUp() {
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        lenient().when(circuitBreakerProvider.get(anyString())).thenReturn(circuitBreaker);
+        lenient().when(circuitBreaker.tryAcquirePermission()).thenReturn(true);
     }
 
     @Test
