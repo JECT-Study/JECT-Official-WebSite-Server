@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class RedisCacheCircuitBreakerProvider {
 
-    // 이름 기반의 서킷 브레이커 인스턴스를 관리하고 재사용하는 전역 레지스트리
     private final CircuitBreakerRegistry circuitBreakerRegistry;
 
     public CircuitBreaker get(final String cacheName) {
