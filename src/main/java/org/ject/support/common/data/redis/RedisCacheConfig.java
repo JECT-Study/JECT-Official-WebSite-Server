@@ -43,7 +43,7 @@ public class RedisCacheConfig implements CachingConfigurer {
 
     @Override
     public CacheErrorHandler errorHandler() {
-        // Redis 관련 캐시 예외는 삼키고 비즈니스 로직이 DB 폴백을 수행하도록 한다.
+        // Redis 관련 캐시 예외는 삼키고 비즈니스 로직이 DB 폴백 수행
         return resilientCacheErrorHandler;
     }
 
