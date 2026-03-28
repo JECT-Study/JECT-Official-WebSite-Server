@@ -46,35 +46,30 @@ public class CacheCircuitBreakerAspect {
     @Around("cacheOperation()")
     public Object aroundCacheCall(final ProceedingJoinPoint joinPoint) throws Throwable {
         MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-        // 실제 호출 대상 클래스를 확보합니다. (Spring의 어노테이션 탐색 규칙에 필요)
         Class<?> targetClass = joinPoint.getTarget().getClass();
-        // 실제 대상 객체의 메서드를 찾아 인터페이스나 상속 관계에서의 어노테이션까지 감지할 수 있게 합니다.
         Method method = AopUtils.getMostSpecificMethod(signature.getMethod(), targetClass);
 
         // 메서드 및 클래스 레벨에서 참조하는 모든 캐시 이름을 추출
         Collection<CacheOperation> operations = cacheOperationSource.getCacheOperations(method, targetClass);
         List<String> cacheNames = extractCacheNames(operations);
         
-        // 쓰기 작업(put, evict)이 포함되어 있다면 엄격한 모드로 실행 (실패 시 예외 throw)
-        // @Cacheable만 있는 경우(read-only)에는 가용성을 위해 put 실패를 허용(swallow)
+        // 읽기 작업인 경우 swallow exception, 쓰기 작업인 경우 실패 시 throw exception
         boolean strictWrite = isStrictWriteRequired(operations);
 
-        // 이번 요청에서 실행 권한을 획득한 서킷 브레이커들을 추적
-        List<CircuitBreakerExecution> grantedBreakers = new ArrayList<>(cacheNames.size());
-        // 참조하는 캐시 중 하나라도 OPEN 상태면 이번 호출은 캐시를 우회
-        boolean bypassEnabled = false;
 
         // 캐시별 서킷 브레이커로부터 실행 권한을 획득 시도
+        List<CircuitBreakerExecution> grantedBreakers = new ArrayList<>(cacheNames.size());
+        boolean bypassEnabled = false;
         for (String cacheName : cacheNames) {
             CircuitBreaker circuitBreaker = circuitBreakerProvider.get(cacheName);
-            // 레디스 호출 방지를 위해 OPEN 상태는 즉시 권한을 거부(Fail-fast)
+            // 레디스 호출 방지를 위해 OPEN 상태는 즉시 권한을 거부
             if (!circuitBreaker.tryAcquirePermission()) {
                 bypassEnabled = true;
                 log.debug("Cache circuit is open. cache={}, method={}", cacheName, method.getName());
                 continue;
             }
 
-            // 메서드 실행 후 성공 여부를 기록하기 위해 획득한 서킷 브레이커를 보관합니다.
+            // 메서드 실행 후 성공 여부를 기록하기 위해 획득한 서킷 브레이커를 보관
             grantedBreakers.add(new CircuitBreakerExecution(cacheName, circuitBreaker));
         }
 
@@ -82,7 +77,7 @@ public class CacheCircuitBreakerAspect {
         RedisCacheExecutionContext.pushContext(bypassEnabled, strictWrite);
 
         try {
-            // 메서드 실행을 계속,  우회가 활성화된 경우 캐시 레이어는 패스
+            // 메서드 실행을 계속, 우회가 활성화된 경우 캐시 레이어는 패스
             Object result = joinPoint.proceed();
             // 실제 레디스 캐시를 사용한 경우(우회되지 않은 경우)에만 성공을 기록
             if (!bypassEnabled) {
