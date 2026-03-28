@@ -7,7 +7,7 @@ import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.RedisSystemException;
 
 @UtilityClass
-public final class RedisCacheExceptionClassifier {
+public class RedisCacheExceptionClassifier {
 
     // 예외의 cause chain을 탐색하여 레디스 인프라 장애인지 판단
     public static boolean isRedisRelated(final Throwable throwable) {
