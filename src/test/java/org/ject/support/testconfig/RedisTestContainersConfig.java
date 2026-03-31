@@ -1,7 +1,7 @@
 package org.ject.support.testconfig;
 
 import java.time.Duration;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -10,11 +10,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import lombok.extern.slf4j.Slf4j;
 
 @Profile("test")
 @TestConfiguration
@@ -62,5 +58,25 @@ public class RedisTestContainersConfig implements DisposableBean {
         if(redisContainer.isRunning()) {
             redisContainer.stop();
         }
+    }
+
+    public static void stop() {
+        if (redisContainer.isRunning()) {
+            redisContainer.stop();
+        }
+    }
+
+    public static void start() {
+        if (!redisContainer.isRunning()) {
+            redisContainer.start();
+        }
+    }
+
+    public static String getHost() {
+        return redisContainer.getHost();
+    }
+
+    public static Integer getMappedPort() {
+        return redisContainer.getMappedPort(REDIS_PORT);
     }
 }
