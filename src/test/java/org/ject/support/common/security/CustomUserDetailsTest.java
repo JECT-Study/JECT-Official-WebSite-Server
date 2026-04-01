@@ -3,6 +3,7 @@ package org.ject.support.common.security;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Permission;
 import org.ject.support.domain.member.Role;
+import org.ject.support.domain.member.RolePermissions;
 import org.ject.support.domain.member.entity.Member;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,8 +20,7 @@ class CustomUserDetailsTest {
     private final Long TEST_MEMBER_ID = 1L;
 
     @Test
-    @DisplayName("Member 객체로 CustomUserDetails 생성 시 권한에 ROLE_ 접두사가 추가되는지 확인")
-    void getAuthorities_FromMember_ShouldAddRolePrefix() {
+    void Member_객체로_CustomUserDetails_생성_시_권한에_ROLE_접두사가_추가되는지_확인() {
         // given
         Member member = Member.builder()
                 .id(TEST_MEMBER_ID)
@@ -44,8 +44,7 @@ class CustomUserDetailsTest {
     }
 
     @Test
-    @DisplayName("파라미터로 CustomUserDetails 생성 시 권한에 ROLE_ 접두사가 추가되는지 확인")
-    void getAuthorities_FromParameters_ShouldAddRolePrefix() {
+    void 파라미터로_CustomUserDetails_생성_시_권한에_ROLE_접두사가_추가되는지_확인() {
         // given
         Role role = Role.SEMESTER;
 
@@ -62,8 +61,7 @@ class CustomUserDetailsTest {
     }
 
     @Test
-    @DisplayName("ADMIN 역할로 CustomUserDetails 생성 시 모든 Permission 이 authority 에 포함되는지 확인")
-    void getAuthorities_AdminRole_ShouldContainAllPermissions() {
+    void ADMIN_역할로_CustomUserDetails_생성_시_모든_Permission_이_authority_에_포함되는지_확인() {
         // given
         Role role = Role.ADMIN;
 
@@ -78,15 +76,14 @@ class CustomUserDetailsTest {
         assertThat(authorities).isNotEmpty();
         assertThat(authorityNames.get(0)).isEqualTo("ROLE_ADMIN");
         assertThat(authorityNames).containsAll(
-                Role.ADMIN.getPermissions().stream()
+                RolePermissions.getPermissions(Role.ADMIN).stream()
                         .map(Permission::name)
                         .toList()
         );
     }
 
     @Test
-    @DisplayName("SUPPORTER 역할로 CustomUserDetails 생성 시 role 과 permission authority 가 함께 반환되는지 확인")
-    void getAuthorities_SupporterRole_ShouldContainRoleAndPermissions() {
+    void SUPPORTER_역할로_CustomUserDetails_생성_시_role_과_permission_authority_가_함께_반환되는지_확인() {
         // given
         Role role = Role.SUPPORTER;
 

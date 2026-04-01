@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -19,14 +20,15 @@ import java.util.Optional;
 public class AdminMemberComponent {
 
     private final MemberRepository memberRepository;
+    private static final Set<Role> BACKOFFICE_ROLES = Role.backofficeRoles();
 
     public Member getRequiredBackofficeMemberByEmail(String email) {
-        return memberRepository.findByEmailAndRoleIn(email, Role.BACKOFFICE_ROLES)
+        return memberRepository.findByEmailAndRoleIn(email, BACKOFFICE_ROLES)
                 .orElseThrow(() -> new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
     }
 
     public Optional<Member> findBackofficeMemberByEmail(String email) {
-        return memberRepository.findByEmailAndRoleIn(email, Role.BACKOFFICE_ROLES);
+        return memberRepository.findByEmailAndRoleIn(email, BACKOFFICE_ROLES);
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
