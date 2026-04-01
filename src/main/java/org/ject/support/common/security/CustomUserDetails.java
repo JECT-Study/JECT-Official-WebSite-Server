@@ -3,6 +3,7 @@ package org.ject.support.common.security;
 import java.util.ArrayList;
 import java.util.Collection;
 import lombok.Getter;
+import org.ject.support.domain.member.Permission;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.springframework.security.core.GrantedAuthority;
@@ -31,6 +32,10 @@ public class CustomUserDetails implements UserDetails {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<GrantedAuthority> collection = new ArrayList<>();
         collection.add((GrantedAuthority)() -> "ROLE_" + role);
+        role.getPermissions().stream()
+                .map(Permission::name)
+                .map(permission -> (GrantedAuthority)() -> permission)
+                .forEach(collection::add);
         return collection;
     }
 

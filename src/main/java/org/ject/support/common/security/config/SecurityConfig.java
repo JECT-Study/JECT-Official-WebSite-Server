@@ -8,7 +8,6 @@ import org.ject.support.common.security.jwt.JwtExceptionHandlerFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -50,6 +49,8 @@ public class SecurityConfig {
     public static RoleHierarchy roleHierarchy() {
         return RoleHierarchyImpl.fromHierarchy("""
                 ROLE_ADMIN > ROLE_SEMESTER
+                ROLE_OPERATIONS > ROLE_SEMESTER
+                ROLE_SUPPORTER > ROLE_SEMESTER
                 ROLE_SEMESTER > ROLE_APPLY
                 ROLE_APPLY > ROLE_VERIFICATION
                 """);
@@ -72,9 +73,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/admin-auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/admin/**")
-                            .hasAnyRole("ADMIN", "SUPPORTER")
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN", "OPERATIONS", "SUPPORTER")
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
