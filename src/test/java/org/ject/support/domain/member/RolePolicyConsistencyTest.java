@@ -9,6 +9,7 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RolePolicyConsistencyTest {
 
@@ -18,5 +19,11 @@ class RolePolicyConsistencyTest {
 
         assertThat(RolePermissions.getDefinedRoles()).isEqualTo(allRoles);
         assertThat(RoleHierarchySpec.getDefinedRoles()).isEqualTo(allRoles);
+    }
+
+    @Test
+    void RolePermissions_에서_반환한_권한_목록은_외부에서_수정할_수_없다() {
+        assertThatThrownBy(() -> RolePermissions.getPermissions(Role.ADMIN).clear())
+                .isInstanceOf(UnsupportedOperationException.class);
     }
 }

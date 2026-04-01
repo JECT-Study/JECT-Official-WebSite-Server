@@ -5,6 +5,7 @@ import org.ject.support.common.security.jwt.JwtAccessDeniedHandler;
 import org.ject.support.common.security.jwt.JwtAuthenticationEntryPoint;
 import org.ject.support.common.security.jwt.JwtAuthenticationFilter;
 import org.ject.support.common.security.jwt.JwtExceptionHandlerFilter;
+import org.ject.support.domain.member.Role;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +32,9 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private static final long MAX_AGE_SEC = 3600;
+    private static final String[] BACKOFFICE_ROLE_NAMES = Role.backofficeRoles().stream()
+            .map(Role::name)
+            .toArray(String[]::new);
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -67,7 +71,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/admin-auth/**").permitAll()
-                        .requestMatchers("/admin/**").hasAnyRole("ADMIN", "OPERATIONS", "SUPPORTER")
+                        .requestMatchers("/admin/**").hasAnyRole(BACKOFFICE_ROLE_NAMES)
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
