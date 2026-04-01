@@ -65,7 +65,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .build();
 
         given(redisTemplate.hasKey(blockKey)).willReturn(false);
-        given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.of(adminMember));
+        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(adminMember));
         given(passwordEncoder.matches(password, adminMember.getPin())).willReturn(true);
         given(jwtTokenProvider.createAuthenticationByMember(adminMember)).willReturn(authentication);
 
@@ -94,7 +94,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .build();
 
         given(redisTemplate.hasKey(blockKey)).willReturn(false);
-        given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.of(operationsMember));
+        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(operationsMember));
         given(passwordEncoder.matches(password, operationsMember.getPin())).willReturn(true);
         given(jwtTokenProvider.createAuthenticationByMember(operationsMember)).willReturn(authentication);
 
@@ -113,7 +113,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         String email = "not-found@test.com";
         String password = "Password123!";
         String failCountKey = "admin-login-password-fail-count:" + email;
-        given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.empty());
+        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.empty());
         given(redisTemplate.hasKey("admin-login-password-block:" + email)).willReturn(false);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.increment(failCountKey)).willReturn(1L);
@@ -139,7 +139,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .build();
         String failCountKey = "admin-login-password-fail-count:" + email;
 
-        given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.of(adminMember));
+        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(adminMember));
         given(redisTemplate.hasKey("admin-login-password-block:" + email)).willReturn(false);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.increment(failCountKey)).willReturn(1L);
@@ -165,7 +165,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .role(Role.ADMIN)
                 .build();
 
-        given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.of(adminMember));
+        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(adminMember));
         given(redisTemplate.hasKey("admin-login-password-block:" + email)).willReturn(false);
         given(passwordEncoder.matches(password, adminMember.getPin())).willReturn(true);
 
@@ -197,7 +197,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         String password = "Password123!";
         String failCountKey = "admin-login-password-fail-count:" + email;
         String blockKey = "admin-login-password-block:" + email;
-        given(adminMemberComponent.findMemberAdminByEmail(email)).willReturn(Optional.empty());
+        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.empty());
         given(redisTemplate.hasKey(blockKey)).willReturn(false);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.increment(failCountKey)).willReturn(5L);

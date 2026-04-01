@@ -36,7 +36,7 @@ public class AdminAuthService {
     public Authentication authenticateAdmin(String email, String password) {
         validateLoginAttemptLimit(email);
 
-        Member member = adminMemberComponent.findMemberAdminByEmail(email)
+        Member member = adminMemberComponent.findBackofficeMemberByEmail(email)
                 .orElseThrow(() -> handleInvalidAdminCredentials(email));
 
         if (!passwordEncoder.matches(password, member.getPin())) {

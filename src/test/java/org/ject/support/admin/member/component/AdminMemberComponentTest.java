@@ -34,7 +34,7 @@ class AdminMemberComponentTest extends UnitTestSupport {
         given(memberRepository.findByEmailAndRoleIn(notFoundEmail, Role.BACKOFFICE_ROLES)).willReturn(Optional.empty());
 
         // when, then
-        assertThatThrownBy(() -> adminMemberComponent.getMemberAdminByEmail(notFoundEmail))
+        assertThatThrownBy(() -> adminMemberComponent.getRequiredBackofficeMemberByEmail(notFoundEmail))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
@@ -54,7 +54,7 @@ class AdminMemberComponentTest extends UnitTestSupport {
         given(memberRepository.findByEmailAndRoleIn(email, Role.BACKOFFICE_ROLES)).willReturn(Optional.of(foundMember));
 
         // when
-        Member result = adminMemberComponent.getMemberAdminByEmail(email);
+        Member result = adminMemberComponent.getRequiredBackofficeMemberByEmail(email);
 
         // then
         verify(memberRepository).findByEmailAndRoleIn(email, Role.BACKOFFICE_ROLES);
