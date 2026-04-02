@@ -9,14 +9,14 @@ import static org.mockito.Mockito.verify;
 
 import java.util.List;
 import java.util.Optional;
-import org.ject.support.base.UnitTestSupport;
 import org.ject.support.admin.member.dto.MemberEditRequest;
 import org.ject.support.admin.member.dto.MemberRegisterRequest;
-import org.ject.support.admin.member.dto.MemberResponse;
-import org.ject.support.domain.member.dto.MemberProjection;
+import org.ject.support.admin.member.repository.AdminMemberRepository;
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
+import org.ject.support.domain.member.dto.MemberProjection;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.TeamMember;
 import org.ject.support.domain.member.exception.MemberErrorCode;
@@ -31,10 +31,13 @@ import org.mockito.Mock;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 
-class MemberManagementServiceTest extends UnitTestSupport {
+class AdminMemberServiceTest extends UnitTestSupport {
 
     @InjectMocks
-    private MemberManagementService memberManagementService;
+    private AdminMemberService adminMemberService;
+
+    @Mock
+    private AdminMemberRepository adminMemberRepository;
 
     @Mock
     private MemberRepository memberRepository;
@@ -63,16 +66,16 @@ class MemberManagementServiceTest extends UnitTestSupport {
         );
         var expectedPage = new PageImpl<>(memberList, pageable, 2);
 
-        given(memberRepository.findMembers(role, jobFamily, semesterId, pageable))
+        given(adminMemberRepository.findMembers(role, jobFamily, semesterId, pageable))
                 .willReturn(expectedPage);
 
         // when
-        var result = memberManagementService.findMembers(role, jobFamily, semesterId, pageable);
+        var result = adminMemberService.findMembers(role, jobFamily, semesterId, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(2);
-        verify(memberRepository).findMembers(role, jobFamily, semesterId, pageable);
+        verify(adminMemberRepository).findMembers(role, jobFamily, semesterId, pageable);
     }
 
     @Test
@@ -86,15 +89,15 @@ class MemberManagementServiceTest extends UnitTestSupport {
         );
         var expectedPage = new PageImpl<>(memberList, pageable, 1);
 
-        given(memberRepository.findMembers(role, null, null, pageable))
+        given(adminMemberRepository.findMembers(role, null, null, pageable))
                 .willReturn(expectedPage);
 
         // when
-        var result = memberManagementService.findMembers(role, null, null, pageable);
+        var result = adminMemberService.findMembers(role, null, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        verify(memberRepository).findMembers(role, null, null, pageable);
+        verify(adminMemberRepository).findMembers(role, null, null, pageable);
     }
 
     @Test
@@ -118,11 +121,11 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 .name("1기")
                 .build();
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(adminMemberRepository.findById(memberId)).willReturn(Optional.of(member));
         given(semesterRepository.findById(semesterId)).willReturn(Optional.of(semester));
 
         // when
-        var result = memberManagementService.findMemberDetail(memberId);
+        var result = adminMemberService.findMemberDetail(memberId);
 
         // then
         assertThat(result.id()).isEqualTo(memberId);
@@ -133,7 +136,7 @@ class MemberManagementServiceTest extends UnitTestSupport {
         assertThat(result.role()).isEqualTo(Role.SEMESTER);
         assertThat(result.semesterName()).isEqualTo("1");
 
-        verify(memberRepository).findById(memberId);
+        verify(adminMemberRepository).findById(memberId);
         verify(semesterRepository).findById(semesterId);
     }
 
@@ -142,15 +145,15 @@ class MemberManagementServiceTest extends UnitTestSupport {
         // given
         var memberId = 999L;
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+        given(adminMemberRepository.findById(memberId)).willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> memberManagementService.findMemberDetail(memberId))
+        assertThatThrownBy(() -> adminMemberService.findMemberDetail(memberId))
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
 
-        verify(memberRepository).findById(memberId);
+        verify(adminMemberRepository).findById(memberId);
     }
 
     @Test
@@ -165,16 +168,16 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 .semesterId(semesterId)
                 .build();
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(adminMemberRepository.findById(memberId)).willReturn(Optional.of(member));
         given(semesterRepository.findById(semesterId)).willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> memberManagementService.findMemberDetail(memberId))
+        assertThatThrownBy(() -> adminMemberService.findMemberDetail(memberId))
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER);
 
-        verify(memberRepository).findById(memberId);
+        verify(adminMemberRepository).findById(memberId);
         verify(semesterRepository).findById(semesterId);
     }
 
@@ -198,15 +201,15 @@ class MemberManagementServiceTest extends UnitTestSupport {
 
         given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
         given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
-        given(memberRepository.save(any(Member.class))).willReturn(any(Member.class));
+        given(adminMemberRepository.save(any(Member.class))).willReturn(any(Member.class));
 
         // when
-        memberManagementService.registerMember(request);
+        adminMemberService.registerMember(request);
 
         // then
         verify(memberRepository).existsByEmail(TEST_EMAIL);
         verify(semesterRepository).findByName("1기");
-        verify(memberRepository).save(any(Member.class));
+        verify(adminMemberRepository).save(any(Member.class));
     }
 
     @Test
@@ -225,7 +228,7 @@ class MemberManagementServiceTest extends UnitTestSupport {
         given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(true);
 
         // expected
-        assertThatThrownBy(() -> memberManagementService.registerMember(request))
+        assertThatThrownBy(() -> adminMemberService.registerMember(request))
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.ALREADY_EXIST_MEMBER);
@@ -261,15 +264,15 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 .name("1기")
                 .build();
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(adminMemberRepository.findById(memberId)).willReturn(Optional.of(member));
         given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
         given(teamMemberRepository.findByMemberId(memberId)).willReturn(List.of());
 
         // when
-        memberManagementService.editMember(memberId, request);
+        adminMemberService.editMember(memberId, request);
 
         // then
-        verify(memberRepository).findById(memberId);
+        verify(adminMemberRepository).findById(memberId);
         verify(teamMemberRepository).findByMemberId(memberId);
         assertThat(member.getName()).isEqualTo(request.name());
         assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
@@ -318,12 +321,12 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 .jobFamily(JobFamily.BE)
                 .build();
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(adminMemberRepository.findById(memberId)).willReturn(Optional.of(member));
         given(semesterRepository.findByName("1기")).willReturn(Optional.of(semester));
         given(teamMemberRepository.findByMemberId(memberId)).willReturn(List.of(teamMember1, teamMember2));
 
         // when
-        memberManagementService.editMember(memberId, request);
+        adminMemberService.editMember(memberId, request);
 
         // then
         verify(teamMemberRepository).findByMemberId(memberId);
@@ -345,15 +348,15 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 .semesterName("2")
                 .build();
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+        given(adminMemberRepository.findById(memberId)).willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> memberManagementService.editMember(memberId, request))
+        assertThatThrownBy(() -> adminMemberService.editMember(memberId, request))
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
 
-        verify(memberRepository).findById(memberId);
+        verify(adminMemberRepository).findById(memberId);
     }
 
     @Test
@@ -366,15 +369,15 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 .email(TEST_EMAIL)
                 .build();
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        doNothing().when(memberRepository).delete(member);
+        given(adminMemberRepository.findById(memberId)).willReturn(Optional.of(member));
+        doNothing().when(adminMemberRepository).delete(member);
 
         // when
-        memberManagementService.deleteMember(memberId);
+        adminMemberService.deleteMember(memberId);
 
         // then
-        verify(memberRepository).findById(memberId);
-        verify(memberRepository).delete(member);
+        verify(adminMemberRepository).findById(memberId);
+        verify(adminMemberRepository).delete(member);
     }
 
     @Test
@@ -382,15 +385,15 @@ class MemberManagementServiceTest extends UnitTestSupport {
         // given
         var memberId = 999L;
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+        given(adminMemberRepository.findById(memberId)).willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> memberManagementService.deleteMember(memberId))
+        assertThatThrownBy(() -> adminMemberService.deleteMember(memberId))
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
 
-        verify(memberRepository).findById(memberId);
+        verify(adminMemberRepository).findById(memberId);
     }
 
     @Test
@@ -403,15 +406,15 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 Member.builder().id(3L).name("다젝트").email("member3@test.com").build()
         );
 
-        given(memberRepository.findAllById(memberIds)).willReturn(members);
-        doNothing().when(memberRepository).deleteAll(members);
+        given(adminMemberRepository.findAllById(memberIds)).willReturn(members);
+        doNothing().when(adminMemberRepository).deleteAll(members);
 
         // when
-        memberManagementService.deleteMembers(memberIds);
+        adminMemberService.deleteMembers(memberIds);
 
         // then
-        verify(memberRepository).findAllById(memberIds);
-        verify(memberRepository).deleteAll(members);
+        verify(adminMemberRepository).findAllById(memberIds);
+        verify(adminMemberRepository).deleteAll(members);
     }
 
     @Test
@@ -424,15 +427,15 @@ class MemberManagementServiceTest extends UnitTestSupport {
                 // 999L에 해당하는 회원은 없음
         );
 
-        given(memberRepository.findAllById(memberIds)).willReturn(members);
+        given(adminMemberRepository.findAllById(memberIds)).willReturn(members);
 
         // expected
-        assertThatThrownBy(() -> memberManagementService.deleteMembers(memberIds))
+        assertThatThrownBy(() -> adminMemberService.deleteMembers(memberIds))
                 .isInstanceOf(MemberException.class)
                 .extracting(e -> ((MemberException) e).getErrorCode())
                 .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
 
-        verify(memberRepository).findAllById(memberIds);
+        verify(adminMemberRepository).findAllById(memberIds);
     }
 
     @Test
@@ -441,13 +444,13 @@ class MemberManagementServiceTest extends UnitTestSupport {
         List<Long> emptyMemberIds = List.of();
         List<Member> emptyMembers = List.of();
 
-        given(memberRepository.findAllById(emptyMemberIds)).willReturn(emptyMembers);
+        given(adminMemberRepository.findAllById(emptyMemberIds)).willReturn(emptyMembers);
 
         // when
-        memberManagementService.deleteMembers(emptyMemberIds);
+        adminMemberService.deleteMembers(emptyMemberIds);
 
         // then
-        verify(memberRepository).findAllById(emptyMemberIds);
-        verify(memberRepository).deleteAll(emptyMembers);
+        verify(adminMemberRepository).findAllById(emptyMemberIds);
+        verify(adminMemberRepository).deleteAll(emptyMembers);
     }
 }

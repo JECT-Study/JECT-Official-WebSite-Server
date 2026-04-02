@@ -16,16 +16,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import org.ject.support.admin.member.dto.MemberBulkDeleteRequest;
+import org.ject.support.admin.member.dto.MemberDetailResponse;
+import org.ject.support.admin.member.dto.MemberEditRequest;
+import org.ject.support.admin.member.dto.MemberRegisterRequest;
+import org.ject.support.admin.member.dto.MemberResponse;
+import org.ject.support.admin.member.service.AdminMemberService;
 import org.ject.support.base.UnitTestSupport;
-import org.ject.support.admin.member.service.MemberManagementService;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
-import org.ject.support.admin.member.dto.MemberBulkDeleteRequest;
-import org.ject.support.admin.member.dto.MemberDetailResponse;
-import org.ject.support.admin.member.dto.MemberRegisterRequest;
-import org.ject.support.admin.member.dto.MemberResponse;
-import org.ject.support.admin.member.dto.MemberEditRequest;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,13 +40,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-class MemberManagementControllerTest extends UnitTestSupport {
+class AdminMemberControllerTest extends UnitTestSupport {
 
     @InjectMocks
-    private MemberManagementController memberManagementController;
+    private AdminMemberController memberManagementController;
 
     @Mock
-    private MemberManagementService memberManagementService;
+    private AdminMemberService memberManagementService;
 
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;

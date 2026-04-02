@@ -4,13 +4,14 @@ import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_E
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.data.PageResponse;
-import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.member.Role;
 import org.ject.support.admin.member.dto.MemberDetailResponse;
 import org.ject.support.admin.member.dto.MemberEditRequest;
 import org.ject.support.admin.member.dto.MemberRegisterRequest;
 import org.ject.support.admin.member.dto.MemberResponse;
+import org.ject.support.admin.member.repository.AdminMemberRepository;
+import org.ject.support.common.data.PageResponse;
+import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberProjection;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberEditor;
@@ -29,9 +30,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class MemberManagementService {
+public class AdminMemberService {
 
     private final MemberRepository memberRepository;
+    private final AdminMemberRepository adminMemberRepository;
     private final SemesterRepository semesterRepository;
     private final TeamMemberRepository teamMemberRepository;
 
@@ -42,7 +44,7 @@ public class MemberManagementService {
             final Long semesterId,
             final Pageable pageable
     ) {
-        Page<MemberProjection> projections = memberRepository.findMembers(role, jobFamily, semesterId, pageable);
+        Page<MemberProjection> projections = adminMemberRepository.findMembers(role, jobFamily, semesterId, pageable);
         List<MemberResponse> content = projections.getContent().stream()
                 .map(MemberResponse::from)
                 .toList();
@@ -51,7 +53,7 @@ public class MemberManagementService {
 
     @Transactional(readOnly = true)
     public MemberDetailResponse findMemberDetail(final Long memberId) {
-        final Member member = memberRepository.findById(memberId)
+        final Member member = adminMemberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
         final Long semesterId = member.getSemesterId();
         final Semester semester = semesterRepository.findById(semesterId)
@@ -69,13 +71,13 @@ public class MemberManagementService {
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_SEMESTER_OF_MEMBER));
 
         final Member member = request.toEntity(semester);
-        memberRepository.save(member);
+        adminMemberRepository.save(member);
     }
 
     @Transactional
     public void editMember(final Long memberId,
                            final MemberEditRequest request) {
-        final Member member = memberRepository.findById(memberId)
+        final Member member = adminMemberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
 
         validateEmailUniqueness(request.email(), member);
@@ -99,7 +101,9 @@ public class MemberManagementService {
 
         member.edit(editor);
 
-        // TeamMember.jobFamily 동기화 (프로젝트 조회 일관성 유지)
+        /**
+         * @deprecated TeamMember.jobFamily 동기화 (프로젝트 조회 일관성 유지)
+         */
         if (request.jobFamily() != null) {
             syncTeamMemberJobFamily(memberId, request.jobFamily());
         }
@@ -107,9 +111,9 @@ public class MemberManagementService {
 
     /**
      * 멤버의 직군 변경 시 해당 멤버가 속한 모든 TeamMember의 jobFamily를 동기화합니다.
-     * 단, 향후 기수별 직군 분리가 완료되면 이 로직은 제거될 수 있습니다.
+     * @deprecated 단, 향후 기수별 직군 분리가 완료되면 이 로직은 제거될 수 있습니다.
      */
-    @Deprecated
+    @Deprecated(since = "2024-01-01", forRemoval = true)
     private void syncTeamMemberJobFamily(final Long memberId, final JobFamily jobFamily) {
         List<TeamMember> teamMembers = teamMemberRepository.findByMemberId(memberId);
         teamMembers.forEach(teamMember -> teamMember.updateJobFamily(jobFamily));
@@ -117,9 +121,9 @@ public class MemberManagementService {
 
     @Transactional
     public void deleteMember(final Long memberId) {
-        Member member = memberRepository.findById(memberId)
+        Member member = adminMemberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-        memberRepository.delete(member);
+        adminMemberRepository.delete(member);
     }
 
     @Transactional
@@ -127,14 +131,15 @@ public class MemberManagementService {
         List<Long> distinctMemberIds = memberIds.stream()
                 .distinct()
                 .toList();
-        List<Member> members = memberRepository.findAllById(distinctMemberIds);
+        List<Member> members = adminMemberRepository.findAllById(distinctMemberIds);
 
         if (members.size() != distinctMemberIds.size()) {
             throw new MemberException(MemberErrorCode.NOT_FOUND_MEMBER);
         }
-        memberRepository.deleteAll(members);
+        
+        adminMemberRepository.deleteAllByIds(distinctMemberIds);
 
-        return members.size();
+        return distinctMemberIds.size();
     }
 
     private void validateEmailUniqueness(final String newEmail, final Member currentMember) {
