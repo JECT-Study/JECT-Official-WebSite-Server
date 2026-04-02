@@ -101,9 +101,7 @@ public class AdminMemberService {
 
         member.edit(editor);
 
-        /**
-         * @deprecated TeamMember.jobFamily 동기화 (프로젝트 조회 일관성 유지)
-         */
+        // TeamMember.jobFamily 동기화 (프로젝트 조회 일관성 유지)
         if (request.jobFamily() != null) {
             syncTeamMemberJobFamily(memberId, request.jobFamily());
         }
@@ -113,7 +111,7 @@ public class AdminMemberService {
      * 멤버의 직군 변경 시 해당 멤버가 속한 모든 TeamMember의 jobFamily를 동기화합니다.
      * @deprecated 단, 향후 기수별 직군 분리가 완료되면 이 로직은 제거될 수 있습니다.
      */
-    @Deprecated(since = "2024-01-01", forRemoval = true)
+    @Deprecated
     private void syncTeamMemberJobFamily(final Long memberId, final JobFamily jobFamily) {
         List<TeamMember> teamMembers = teamMemberRepository.findByMemberId(memberId);
         teamMembers.forEach(teamMember -> teamMember.updateJobFamily(jobFamily));
