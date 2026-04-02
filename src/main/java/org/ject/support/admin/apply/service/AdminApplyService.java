@@ -62,7 +62,7 @@ public class AdminApplyService {
     @Transactional
     public void updateSubmittedApply(final Long applyId,
                                      final SubmittedApplyEditRequest request) {
-        Apply apply = applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
+        Apply apply = adminApplyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
 
         Member member = apply.getMember();
@@ -97,14 +97,13 @@ public class AdminApplyService {
     @Transactional
     public int deleteApplies(final List<Long> applyIds) {
         final List<Long> distinctIds = applyIds.stream().distinct().toList();
-        final List<Apply> applies = adminApplyRepository.findAllByIdWithMember(distinctIds);
 
-        if (applies.size() != distinctIds.size()) {
+        if (applyIds.size() != distinctIds.size()) {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);
         }
 
-        adminApplyRepository.deleteAll(applies);
-        return applies.size();
+        adminApplyRepository.deleteAllByIds(applyIds);
+        return applyIds.size();
     }
 
 
