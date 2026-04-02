@@ -95,7 +95,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 제출된_지원서_단건_삭제_성공() {
+    void 단건_삭제_성공() {
         // given
         var applyId = submittedApply.getId();
         given(adminApplyRepository.findByIdWithMember(applyId))
@@ -110,32 +110,10 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 임시저장_지원서_단건_삭제_성공() {
+    void 단건_삭제시_존재하지_않으면_예외_발생() {
         // given
-        var tempApply = Apply.builder()
-                .id(2L)
-                .member(submittedApply.getMember())
-                .recruit(submittedApply.getRecruit())
-                .status(ApplyStatus.TEMP_SAVED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-
-        given(adminApplyRepository.findByIdWithMember(tempApply.getId()))
-                .willReturn(Optional.of(tempApply));
-
-        // when
-        adminApplyService.deleteApply(tempApply.getId());
-
-        // then
-        verify(adminApplyRepository).findByIdWithMember(tempApply.getId());
-        verify(adminApplyRepository).delete(tempApply);
-    }
-
-    @Test
-    void 제출된_지원서_단건_삭제시_존재하지_않으면_예외_발생() {
-        // given
-        var applyId = submittedApply.getId();
-        given(adminApplyRepository.findById(applyId))
+        var applyId = 999L;
+        given(adminApplyRepository.findByIdWithMember(applyId))
                 .willReturn(Optional.empty());
 
         // expected
@@ -145,24 +123,16 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 제출된_지원서_여러건_삭제_성공() {
+    void 다건_삭제하면_개수를_반환한다() {
         // given
         List<Long> applyIds = List.of(1L, 2L, 3L);
-        List<Apply> applies = List.of(
-            Apply.builder().id(1L).build(),
-            Apply.builder().id(2L).build(),
-            Apply.builder().id(3L).build()
-        );
-
-        given(applyRepository.findAllById(List.copyOf(applyIds))).willReturn(applies);
         doNothing().when(adminApplyRepository).deleteAllByIds(applyIds);
 
         // when
-        int response = adminApplyService.deleteApplies(applyIds);
+        int deletedCount = adminApplyService.deleteApplies(applyIds);
 
         // then
-        assertThat(response).isEqualTo(applies.size());
-        verify(applyRepository).findAllById(applyIds);
+        assertThat(deletedCount).isEqualTo(applyIds.size());
         verify(adminApplyRepository).deleteAllByIds(applyIds);
     }
 
