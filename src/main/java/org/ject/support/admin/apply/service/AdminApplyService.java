@@ -96,12 +96,6 @@ public class AdminApplyService {
 
     @Transactional
     public int deleteApplies(final List<Long> applyIds) {
-        final List<Long> distinctIds = applyIds.stream().distinct().toList();
-
-        if (applyIds.size() != distinctIds.size()) {
-            throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);
-        }
-
         adminApplyRepository.deleteAllByIds(applyIds);
         return applyIds.size();
     }

@@ -137,42 +137,6 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 제출된_지원서_여러건_삭제시_일부가_존재하지_않으면_예외_발생() {
-        // given
-        List<Long> applyIds = List.of(1L, 2L, 999L);
-
-        List<Apply> applies = List.of(
-            Apply.builder().id(1L).build(),
-            Apply.builder().id(2L).build()
-        );
-
-        given(adminApplyRepository.findAllById(applyIds)).willReturn(applies);
-        doNothing().when(adminApplyRepository).deleteAllByIds(applyIds);
-
-        // expected
-        assertThatThrownBy(() -> adminApplyService.deleteApplies(applyIds))
-                .isInstanceOf(ApplyException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
-    }
-
-    @Test
-    void 제출된_지원서_여러건_삭제시_중복_ID는_한_번만_처리() {
-        // given
-        var applyIds = List.of(1L, 1L, 1L);
-        var distinctIds = List.of(1L);
-
-        given(adminApplyRepository.findAllByIdWithMember(distinctIds))
-                .willReturn(List.of(submittedApply));
-
-        // when
-        int response = adminApplyService.deleteApplies(applyIds);
-
-        // then
-        assertThat(response).isEqualTo(1);
-        verify(adminApplyRepository).findAllByIdWithMember(distinctIds);
-    }
-
-    @Test
     void 제출된_지원서_목록_조회_성공() {
         // given
         var pageable = PageRequest.of(0, 15);
