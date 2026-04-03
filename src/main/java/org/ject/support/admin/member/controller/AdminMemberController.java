@@ -53,16 +53,17 @@ public class AdminMemberController {
     }
 
     @Operation(
-            summary = "구성원 정보 수정",
-            description = "기입한 정보로 선택된 구성원을 수정합니다.")
+            summary = "구성원 추가",
+            description = "기입한 정보로 구성원을 추가합니다.")
     @PostMapping
     public void registerMember(@RequestBody @Valid final MemberRegisterRequest request) {
         adminMemberService.registerMember(request);
     }
 
+
     @Operation(
-            summary = "구성원 추가",
-            description = "기입한 정보로 구성원을 추가합니다.")
+            summary = "구성원 정보 수정",
+            description = "기입한 정보로 선택된 구성원을 수정합니다.")
     @PutMapping("/{memberId}")
     public void editMember(@PathVariable final Long memberId,
                            @RequestBody @Valid final MemberEditRequest request) {
