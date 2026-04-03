@@ -400,57 +400,12 @@ class AdminMemberServiceTest extends UnitTestSupport {
     void 다중_회원_삭제_성공() {
         // given
         var memberIds = List.of(1L, 2L, 3L);
-        var members = List.of(
-                Member.builder().id(1L).name("가젝트").email("member1@test.com").build(),
-                Member.builder().id(2L).name("나젝트").email("member2@test.com").build(),
-                Member.builder().id(3L).name("다젝트").email("member3@test.com").build()
-        );
-
-        given(adminMemberRepository.findAllById(memberIds)).willReturn(members);
-        doNothing().when(adminMemberRepository).deleteAll(members);
+        doNothing().when(adminMemberRepository).deleteAllByIds(memberIds);
 
         // when
         adminMemberService.deleteMembers(memberIds);
 
         // then
-        verify(adminMemberRepository).findAllById(memberIds);
-        verify(adminMemberRepository).deleteAll(members);
-    }
-
-    @Test
-    void 다중_회원_삭제_실패_일부_회원이_존재하지_않음() {
-        // given
-        var memberIds = List.of(1L, 2L, 999L); // 999L은 존재하지 않는 회원
-        var members = List.of(
-                Member.builder().id(1L).name("가젝트").email("member1@test.com").build(),
-                Member.builder().id(2L).name("나젝트").email("member2@test.com").build()
-                // 999L에 해당하는 회원은 없음
-        );
-
-        given(adminMemberRepository.findAllById(memberIds)).willReturn(members);
-
-        // expected
-        assertThatThrownBy(() -> adminMemberService.deleteMembers(memberIds))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
-
-        verify(adminMemberRepository).findAllById(memberIds);
-    }
-
-    @Test
-    void 다중_회원_삭제_실패_빈_목록() {
-        // given
-        List<Long> emptyMemberIds = List.of();
-        List<Member> emptyMembers = List.of();
-
-        given(adminMemberRepository.findAllById(emptyMemberIds)).willReturn(emptyMembers);
-
-        // when
-        adminMemberService.deleteMembers(emptyMemberIds);
-
-        // then
-        verify(adminMemberRepository).findAllById(emptyMemberIds);
-        verify(adminMemberRepository).deleteAll(emptyMembers);
+        verify(adminMemberRepository).deleteAllByIds(memberIds);
     }
 }

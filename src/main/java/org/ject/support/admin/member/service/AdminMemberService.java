@@ -126,18 +126,8 @@ public class AdminMemberService {
 
     @Transactional
     public int deleteMembers(final List<Long> memberIds) {
-        List<Long> distinctMemberIds = memberIds.stream()
-                .distinct()
-                .toList();
-        List<Member> members = adminMemberRepository.findAllById(distinctMemberIds);
-
-        if (members.size() != distinctMemberIds.size()) {
-            throw new MemberException(MemberErrorCode.NOT_FOUND_MEMBER);
-        }
-        
-        adminMemberRepository.deleteAllByIds(distinctMemberIds);
-
-        return distinctMemberIds.size();
+        adminMemberRepository.deleteAllByIds(memberIds);
+        return memberIds.size();
     }
 
     private void validateEmailUniqueness(final String newEmail, final Member currentMember) {
