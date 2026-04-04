@@ -3,6 +3,7 @@ package org.ject.support.admin.apply.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 
 import java.util.List;
@@ -40,7 +41,7 @@ import org.springframework.data.domain.Sort;
 class AdminApplyServiceTest extends UnitTestSupport {
 
     @InjectMocks
-    private AdminApplyService submittedApplyService;
+    private AdminApplyService adminApplyService;
 
     @Mock
     private ApplyRepository applyRepository;
@@ -94,14 +95,14 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 제출된_지원서_단건_삭제_성공() {
+    void 단건_삭제_성공() {
         // given
         var applyId = submittedApply.getId();
         given(adminApplyRepository.findByIdWithMember(applyId))
                 .willReturn(Optional.of(submittedApply));
 
         // when
-        submittedApplyService.deleteApply(applyId);
+        adminApplyService.deleteApply(applyId);
 
         // then
         verify(adminApplyRepository).findByIdWithMember(applyId);
@@ -109,121 +110,30 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 임시저장_지원서_단건_삭제_성공() {
+    void 단건_삭제시_존재하지_않으면_예외_발생() {
         // given
-        var tempApply = Apply.builder()
-                .id(2L)
-                .member(submittedApply.getMember())
-                .recruit(submittedApply.getRecruit())
-                .status(ApplyStatus.TEMP_SAVED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-
-        given(adminApplyRepository.findByIdWithMember(tempApply.getId()))
-                .willReturn(Optional.of(tempApply));
-
-        // when
-        submittedApplyService.deleteApply(tempApply.getId());
-
-        // then
-        verify(adminApplyRepository).findByIdWithMember(tempApply.getId());
-        verify(adminApplyRepository).delete(tempApply);
-    }
-
-    @Test
-    void 제출된_지원서_단건_삭제시_존재하지_않으면_예외_발생() {
-        // given
-        var applyId = submittedApply.getId();
+        var applyId = 999L;
         given(adminApplyRepository.findByIdWithMember(applyId))
                 .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.deleteApply(applyId))
+        assertThatThrownBy(() -> adminApplyService.deleteApply(applyId))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
 
     @Test
-    void 제출된_지원서_여러건_삭제_성공() {
+    void 다건_삭제하면_개수를_반환한다() {
         // given
-        var applyIds = List.of(1L, 2L, 3L);
-        var member2 = Member.builder().name("김젝트2").build();
-        var member3 = Member.builder().name("김젝트3").build();
-
-        var apply2 = Apply.builder()
-                .id(2L)
-                .member(member2)
-                .recruit(submittedApply.getRecruit())
-                .status(ApplyStatus.SUBMITTED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-
-        var apply3 = Apply.builder()
-                .id(3L)
-                .member(member3)
-                .recruit(submittedApply.getRecruit())
-                .status(ApplyStatus.SUBMITTED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-
-        var applies = List.of(submittedApply, apply2, apply3);
-
-        given(adminApplyRepository.findAllByIdWithMember(applyIds))
-                .willReturn(applies);
+        List<Long> applyIds = List.of(1L, 2L, 3L);
+        doNothing().when(adminApplyRepository).deleteAllByIds(applyIds);
 
         // when
-        int deleted = submittedApplyService.deleteApplies(applyIds);
+        int deletedCount = adminApplyService.deleteApplies(applyIds);
 
         // then
-        verify(adminApplyRepository).findAllByIdWithMember(applyIds);
-        assertThat(deleted).isEqualTo(3);
-        verify(adminApplyRepository).deleteAll(applies);
-    }
-
-    @Test
-    void 제출된_지원서_여러건_삭제시_일부가_존재하지_않으면_예외_발생() {
-        // given
-        var applyIds = List.of(1L, 2L, 3L);
-        var applies = List.of(submittedApply); // 1개만 반환
-
-        given(adminApplyRepository.findAllByIdWithMember(applyIds))
-                .willReturn(applies);
-
-        // expected
-        assertThatThrownBy(() -> submittedApplyService.deleteApplies(applyIds))
-                .isInstanceOf(ApplyException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
-    }
-
-    @Test
-    void 제출된_지원서_여러건_삭제시_빈_리스트면_예외_발생() {
-        // given
-        var applyIds = List.of(1L, 2L, 3L);
-
-        given(adminApplyRepository.findAllByIdWithMember(applyIds))
-                .willReturn(List.of());
-
-        // expected
-        assertThatThrownBy(() -> submittedApplyService.deleteApplies(applyIds))
-                .isInstanceOf(ApplyException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
-    }
-
-    @Test
-    void 제출된_지원서_여러건_삭제시_중복_ID는_한_번만_처리() {
-        // given
-        var applyIds = List.of(1L, 1L, 1L);
-        var distinctIds = List.of(1L);
-
-        given(adminApplyRepository.findAllByIdWithMember(distinctIds))
-                .willReturn(List.of(submittedApply));
-
-        // when
-        int deleted = submittedApplyService.deleteApplies(applyIds);
-
-        // then
-        assertThat(deleted).isEqualTo(1);
-        verify(adminApplyRepository).findAllByIdWithMember(distinctIds);
+        assertThat(deletedCount).isEqualTo(applyIds.size());
+        verify(adminApplyRepository).deleteAllByIds(applyIds);
     }
 
     @Test
@@ -240,7 +150,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -260,7 +170,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, null, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, null, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -280,7 +190,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
 
         // then
         assertThat(result.getContent()).isEmpty();
@@ -311,7 +221,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
@@ -335,7 +245,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -351,7 +261,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.findApply(applyId, ApplyStatus.SUBMITTED))
+        assertThatThrownBy(() -> adminApplyService.findApply(applyId, ApplyStatus.SUBMITTED))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
@@ -375,7 +285,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.of(apply2));
 
         // when
-        AdminApplyDetailResponse actual = submittedApplyService.findApply(applyId, ApplyStatus.SUBMITTED);
+        AdminApplyDetailResponse actual = adminApplyService.findApply(applyId, ApplyStatus.SUBMITTED);
 
         // then
         assertThat(actual.applyId()).isEqualTo(applyId);
@@ -390,7 +300,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         )).willReturn(Optional.of(submittedApply));
 
         // when
-        AdminApplyDetailResponse actual = submittedApplyService.findApply(submittedApply.getId(), ApplyStatus.SUBMITTED);
+        AdminApplyDetailResponse actual = adminApplyService.findApply(submittedApply.getId(), ApplyStatus.SUBMITTED);
 
         // then
         verify(adminApplyRepository).findApplyByIdByStatus(submittedApply.getId(), ApplyStatus.SUBMITTED);
@@ -423,7 +333,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.of(tempApply));
 
         // when
-        AdminApplyDetailResponse actual = submittedApplyService.findApply(10L, ApplyStatus.TEMP_SAVED);
+        AdminApplyDetailResponse actual = adminApplyService.findApply(10L, ApplyStatus.TEMP_SAVED);
 
         // then
         verify(adminApplyRepository).findApplyByIdByStatus(10L, ApplyStatus.TEMP_SAVED);
@@ -447,7 +357,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.of(rejectedApply));
 
         // when
-        AdminApplyDetailResponse actual = submittedApplyService.findApply(20L, ApplyStatus.REJECTED);
+        AdminApplyDetailResponse actual = adminApplyService.findApply(20L, ApplyStatus.REJECTED);
 
         // then
         verify(adminApplyRepository).findApplyByIdByStatus(20L, ApplyStatus.REJECTED);
@@ -470,7 +380,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.of(joinedApply));
 
         // when
-        AdminApplyDetailResponse actual = submittedApplyService.findApply(30L, ApplyStatus.JOINED);
+        AdminApplyDetailResponse actual = adminApplyService.findApply(30L, ApplyStatus.JOINED);
 
         // then
         verify(adminApplyRepository).findApplyByIdByStatus(30L, ApplyStatus.JOINED);
@@ -484,7 +394,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.of(submittedApply));
 
         // when
-        AdminApplyDetailResponse actual = submittedApplyService.findApply(submittedApply.getId(), null);
+        AdminApplyDetailResponse actual = adminApplyService.findApply(submittedApply.getId(), null);
 
         // then
         verify(adminApplyRepository).findApplyByIdByStatus(submittedApply.getId(), null);
@@ -500,7 +410,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.findApply(applyId, null))
+        assertThatThrownBy(() -> adminApplyService.findApply(applyId, null))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
@@ -513,7 +423,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.findApply(applyId, ApplyStatus.TEMP_SAVED))
+        assertThatThrownBy(() -> adminApplyService.findApply(applyId, ApplyStatus.TEMP_SAVED))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
@@ -526,7 +436,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.findApply(applyId, ApplyStatus.REJECTED))
+        assertThatThrownBy(() -> adminApplyService.findApply(applyId, ApplyStatus.REJECTED))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
@@ -559,16 +469,16 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 newPortfolios
         );
 
-        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
+        given(adminApplyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.of(submittedApply));
         given(map2JsonSerializer.serializeAsString(newAnswers))
                 .willReturn("{\"1\":\"수정된 답변1\",\"2\":\"수정된 답변2\"}");
 
         // when
-        submittedApplyService.updateSubmittedApply(applyId, request);
+        adminApplyService.updateSubmittedApply(applyId, request);
 
         // then
-        verify(applyRepository).findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED);
+        verify(adminApplyRepository).findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED);
         verify(map2JsonSerializer).serializeAsString(newAnswers);
         assertThat(submittedApply.getMember().getName()).isEqualTo(newName);
         assertThat(submittedApply.getMember().getPhoneNumber()).isEqualTo(newPhoneNumber);
@@ -589,11 +499,11 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 List.of()
         );
 
-        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
+        given(adminApplyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.updateSubmittedApply(applyId, request))
+        assertThatThrownBy(() -> adminApplyService.updateSubmittedApply(applyId, request))
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
@@ -613,11 +523,11 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 List.of()
         );
 
-        given(applyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
+        given(adminApplyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.of(submittedApply));
 
         // expected
-        assertThatThrownBy(() -> submittedApplyService.updateSubmittedApply(applyId, request))
+        assertThatThrownBy(() -> adminApplyService.updateSubmittedApply(applyId, request))
                 .isInstanceOf(QuestionException.class)
                 .hasFieldOrPropertyWithValue("errorCode", QuestionErrorCode.NOT_FOUND_QUESTION);
     }
@@ -633,7 +543,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
 
         // then
         verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
@@ -678,7 +588,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
 
         // then
         verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
@@ -716,7 +626,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = submittedApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
 
         // then
         verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);

@@ -65,7 +65,7 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
                         eqRecruitType(recruitType)
                 ).fetchOne();
 
-        return PageResponse.from(content, pageable, total);
+        return PageResponse.from(content, pageable, total != null ? total : 0L);
     }
 
     @Override

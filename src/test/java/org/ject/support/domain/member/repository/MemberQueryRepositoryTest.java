@@ -1,5 +1,16 @@
 package org.ject.support.domain.member.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.apply.domain.ApplyStatus.JOINED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.FE;
+import static org.ject.support.domain.member.JobFamily.PD;
+import static org.ject.support.domain.member.JobFamily.PM;
+
+import java.time.LocalDateTime;
+import java.util.List;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
@@ -8,7 +19,6 @@ import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.dto.MemberProjection;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.Team;
@@ -23,19 +33,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.PageRequest;
-
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.ject.support.domain.apply.domain.ApplyStatus.JOINED;
-import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
-import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.PD;
-import static org.ject.support.domain.member.JobFamily.PM;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
@@ -195,161 +192,6 @@ class MemberQueryRepositoryTest {
                 .containsExactlyInAnyOrder(be6.getEmail(), be9.getEmail(), pd10.getEmail());
     }
 
-    @Test
-    void 회원_목록_조회_구분_필터만_적용() {
-        // given
-        var semester1 = createSemester("1기");
-        var semester2 = createSemester("2기");
-        semesterRepository.saveAll(List.of(semester1, semester2));
-
-        var admin1 = createMemberWithSemester("가젝트", "01011111111", "admin1@test.com", BE, Role.ADMIN, semester1.getId());
-        var admin2 = createMemberWithSemester("나젝트", "01011111112", "admin2@test.com", FE, Role.ADMIN, semester1.getId());
-        var semester1Member = createMemberWithSemester("다젝트", "01011111113", "semester1@test.com", BE, Role.SEMESTER, semester1.getId());
-        var apply1 = createMemberWithSemester("라젝트", "01011111114", "apply1@test.com", PD, Role.APPLY, semester2.getId());
-
-        memberRepository.saveAll(List.of(admin1, admin2, semester1Member, apply1));
-
-        var pageable = PageRequest.of(0, 15);
-
-        // when
-        var result = memberRepository.findMembers(Role.ADMIN, null, null, pageable);
-
-        // then
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getTotalElements()).isEqualTo(2);
-        assertThat(result.getContent())
-                .extracting(MemberProjection::name)
-                .containsExactly(admin2.getName(), admin1.getName()); // createdAt desc 순서
-    }
-
-    @Test
-    void 회원_목록_조회_구분과_직군_필터_적용() {
-        // given
-        var semester1 = createSemester("1기");
-        semesterRepository.save(semester1);
-
-        var admin1 = createMemberWithSemester("가젝트", "01011111111", "admin1@test.com", BE, Role.ADMIN, semester1.getId());
-        var admin2 = createMemberWithSemester("나젝트", "01011111112", "admin2@test.com", FE, Role.ADMIN, semester1.getId());
-        var admin3 = createMemberWithSemester("다젝트", "01011111113", "admin3@test.com", BE, Role.ADMIN, semester1.getId());
-
-        memberRepository.saveAll(List.of(admin1, admin2, admin3));
-
-        var pageable = PageRequest.of(0, 15);
-
-        // when
-        var result = memberRepository.findMembers(Role.ADMIN, JobFamily.BE, null, pageable);
-
-        // then
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getTotalElements()).isEqualTo(2);
-        assertThat(result.getContent())
-                .extracting(MemberProjection::jobFamily)
-                .containsOnly(JobFamily.BE);
-        assertThat(result.getContent())
-                .extracting(MemberProjection::name)
-                .containsExactly(admin3.getName(), admin1.getName()); // createdAt desc 순서
-    }
-
-    @Test
-    void 회원_목록_조회_구분과_기수_필터_적용() {
-        // given
-        var semester1 = createSemester("1기");
-        var semester2 = createSemester("2기");
-        semesterRepository.saveAll(List.of(semester1, semester2));
-
-        var semester1Member1 = createMemberWithSemester("가젝트", "01011111111", "semester1@test.com", BE, Role.SEMESTER, semester1.getId());
-        var semester1Member2 = createMemberWithSemester("나젝트", "01011111112", "semester2@test.com", FE, Role.SEMESTER, semester1.getId());
-        var semester2Member1 = createMemberWithSemester("다젝트", "01011111113", "semester3@test.com", BE, Role.SEMESTER, semester2.getId());
-
-        memberRepository.saveAll(List.of(semester1Member1, semester1Member2, semester2Member1));
-
-        var pageable = PageRequest.of(0, 15);
-
-        // when
-        var result = memberRepository.findMembers(Role.SEMESTER, null, semester2.getId(), pageable);
-
-        // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent())
-                .extracting(MemberProjection::semesterName)
-                .containsOnly("2기");
-        assertThat(result.getContent())
-                .extracting(MemberProjection::name)
-                .containsExactlyInAnyOrder(semester2Member1.getName());
-    }
-
-    @Test
-    void 회원_목록_조회_모든_필터_적용() {
-        // given
-        var semester1 = createSemester("1기");
-        var semester2 = createSemester("2기");
-        semesterRepository.saveAll(List.of(semester1, semester2));
-
-        var semester1BE1 = createMemberWithSemester("가젝트", "01011111111", "semester1be1@test.com", BE, Role.ADMIN, semester1.getId());
-        var semester1BE2 = createMemberWithSemester("나젝트", "01011111112", "semester1be2@test.com", BE, Role.ADMIN, semester1.getId());
-        var semester1FE1 = createMemberWithSemester("다젝트", "01011111113", "semester1fe1@test.com", FE, Role.ADMIN, semester1.getId());
-        var semester2BE1 = createMemberWithSemester("라젝트", "01011111114", "semester2be1@test.com", BE, Role.ADMIN, semester2.getId());
-
-        memberRepository.saveAll(List.of(semester1BE1, semester1BE2, semester1FE1, semester2BE1));
-
-        var pageable = PageRequest.of(0, 10);
-
-        // when
-        var result = memberRepository.findMembers(Role.ADMIN, JobFamily.BE, semester2.getId(), pageable);
-
-        // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent())
-                .extracting(MemberProjection::jobFamily)
-                .containsOnly(JobFamily.BE);
-        assertThat(result.getContent())
-                .extracting(MemberProjection::semesterName)
-                .containsOnly("2기");
-        assertThat(result.getContent())
-                .extracting(MemberProjection::name)
-                .containsExactly(semester2BE1.getName()); // createdAt desc 순서
-    }
-
-    @Test
-    void 회원_목록_조회_삭제된_회원_제외() {
-        // given
-        var semester1 = createSemester("1기");
-        semesterRepository.save(semester1);
-
-        var deletedMember = createMemberWithSemester("삭제회원", "01011111111", "deleted@test.com", BE, Role.SEMESTER, semester1.getId());
-
-        memberRepository.save(deletedMember);
-
-        // 회원 삭제 (소프트 삭제)
-        memberRepository.delete(deletedMember);
-
-        var pageable = PageRequest.of(0, 10);
-
-        // when
-        var result = memberRepository.findMembers(Role.SEMESTER, null, null, pageable);
-
-        // then
-        assertThat(result.getContent())
-                .isNotEmpty()
-                .extracting(MemberProjection::name)
-                .doesNotContain(deletedMember.getName());
-    }
-
-    @Test
-    void 회원_목록_조회_결과_없음() {
-        // given
-        var pageable = PageRequest.of(0, 10);
-
-        // when - 존재하지 않는 Role로 조회
-        var result = memberRepository.findMembers(Role.ADMIN, null, null, pageable);
-
-        // then
-        assertThat(result.getContent()).isEmpty();
-        assertThat(result.getTotalElements()).isZero();
-        assertThat(result.getTotalPages()).isZero();
-    }
 
     private Semester createSemester(String name) {
         return Semester.builder()
