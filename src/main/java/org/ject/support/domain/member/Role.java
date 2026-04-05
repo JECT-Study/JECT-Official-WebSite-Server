@@ -6,15 +6,21 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public enum Role {
-    ADMIN,        // 관리자
-    OPERATIONS,   // 운영팀
-    SUPPORTER,    // 서포터즈
-    SEMESTER,     // 동아리 원
-    APPLY,        // 지원자
-    VERIFICATION; // 임시
+    ADMIN(true),         // 관리자
+    OPERATIONS(true),    // 운영팀
+    SUPPORTER(true),     // 서포터즈
+    SEMESTER(false),     // 동아리 원
+    APPLY(false),        // 지원자
+    VERIFICATION(false); // 임시
+
+    private final boolean backoffice;
+
+    Role(boolean backoffice) {
+        this.backoffice = backoffice;
+    }
 
     public boolean isBackoffice() {
-        return this == ADMIN || this == OPERATIONS || this == SUPPORTER;
+        return backoffice;
     }
 
     public static Set<Role> backofficeRoles() {
