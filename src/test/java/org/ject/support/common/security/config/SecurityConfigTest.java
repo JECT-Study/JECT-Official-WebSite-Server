@@ -36,10 +36,12 @@ class SecurityConfigTest extends ApplicationPeriodTest {
         SimpleGrantedAuthority tempAuthority = new SimpleGrantedAuthority("ROLE_APPLY");
         SimpleGrantedAuthority userAuthority = new SimpleGrantedAuthority("ROLE_SEMESTER");
         SimpleGrantedAuthority adminAuthority = new SimpleGrantedAuthority("ROLE_ADMIN");
+        SimpleGrantedAuthority operationsAuthority = new SimpleGrantedAuthority("ROLE_OPERATIONS");
+        SimpleGrantedAuthority supporterAuthority = new SimpleGrantedAuthority("ROLE_SUPPORTER");
         SimpleGrantedAuthority verificationAuthority = new SimpleGrantedAuthority("ROLE_VERIFICATION");
 
         // when & then
-        // ADMIN > SEMESTER > APPLY 계층 구조 확인
+        // ADMIN > SEMESTER > APPLY > VERIFICATION 계층 구조 확인
         List<String> adminAuthorities = roleHierarchy.getReachableGrantedAuthorities(
                 java.util.Collections.singleton(adminAuthority))
                 .stream()
@@ -47,9 +49,38 @@ class SecurityConfigTest extends ApplicationPeriodTest {
                 .toList();
         
         assertThat(adminAuthorities).contains(
-                adminAuthority.getAuthority(), 
-                userAuthority.getAuthority(), 
-                tempAuthority.getAuthority());
+                adminAuthority.getAuthority(),
+                userAuthority.getAuthority(),
+                tempAuthority.getAuthority(),
+                verificationAuthority.getAuthority());
+
+        // OPERATIONS > SEMESTER > APPLY > VERIFICATION 계층 구조 확인
+        List<String> operationsAuthorities = roleHierarchy.getReachableGrantedAuthorities(
+                java.util.Collections.singleton(operationsAuthority))
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        assertThat(operationsAuthorities).contains(
+                operationsAuthority.getAuthority(),
+                userAuthority.getAuthority(),
+                tempAuthority.getAuthority(),
+                verificationAuthority.getAuthority()
+        );
+
+        // SUPPORTER > SEMESTER > APPLY > VERIFICATION 계층 구조 확인
+        List<String> supporterAuthorities = roleHierarchy.getReachableGrantedAuthorities(
+                java.util.Collections.singleton(supporterAuthority))
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        assertThat(supporterAuthorities).contains(
+                supporterAuthority.getAuthority(),
+                userAuthority.getAuthority(),
+                tempAuthority.getAuthority(),
+                verificationAuthority.getAuthority()
+        );
 
         // SEMESTER > APPLY 계층 구조 확인
         List<String> userAuthorities = roleHierarchy.getReachableGrantedAuthorities(
@@ -59,8 +90,8 @@ class SecurityConfigTest extends ApplicationPeriodTest {
                 .toList();
                 
         assertThat(userAuthorities)
-                .contains(userAuthority.getAuthority(), tempAuthority.getAuthority())
-                .doesNotContain(adminAuthority.getAuthority());
+                .contains(userAuthority.getAuthority(), tempAuthority.getAuthority(), verificationAuthority.getAuthority())
+                .doesNotContain(adminAuthority.getAuthority(), operationsAuthority.getAuthority(), supporterAuthority.getAuthority());
 
         // APPLY > VERIFICATION 계층 구조 확인
         List<String> tempAuthorities = roleHierarchy.getReachableGrantedAuthorities(
@@ -71,7 +102,12 @@ class SecurityConfigTest extends ApplicationPeriodTest {
                 
         assertThat(tempAuthorities)
                 .contains(tempAuthority.getAuthority(), verificationAuthority.getAuthority())
-                .doesNotContain(adminAuthority.getAuthority(), userAuthority.getAuthority());
+                .doesNotContain(
+                        adminAuthority.getAuthority(),
+                        operationsAuthority.getAuthority(),
+                        supporterAuthority.getAuthority(),
+                        userAuthority.getAuthority()
+                );
     }
 
     @Test

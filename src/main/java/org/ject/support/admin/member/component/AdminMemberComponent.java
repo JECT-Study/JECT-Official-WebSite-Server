@@ -20,13 +20,13 @@ public class AdminMemberComponent {
 
     private final MemberRepository memberRepository;
 
-    public Member getMemberAdminByEmail(String email) {
-        return memberRepository.findByEmailAndRole(email, Role.ADMIN)
+    public Member getRequiredBackofficeMemberByEmail(String email) {
+        return memberRepository.findByEmailAndRoleIn(email, Role.backofficeRoles())
                 .orElseThrow(() -> new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
     }
 
-    public Optional<Member> findMemberAdminByEmail(String email) {
-        return memberRepository.findByEmailAndRole(email, Role.ADMIN);
+    public Optional<Member> findBackofficeMemberByEmail(String email) {
+        return memberRepository.findByEmailAndRoleIn(email, Role.backofficeRoles());
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

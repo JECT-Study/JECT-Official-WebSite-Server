@@ -1,8 +1,8 @@
 package org.ject.support.admin.member.component;
 
-import org.ject.support.base.UnitTestSupport;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
@@ -12,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,6 +20,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 class AdminMemberComponentTest extends UnitTestSupport {
+
+    private static final Set<Role> BACKOFFICE_ROLES = Role.backofficeRoles();
 
     @InjectMocks
     AdminMemberComponent adminMemberComponent;
@@ -30,12 +33,11 @@ class AdminMemberComponentTest extends UnitTestSupport {
     void 존재하지않는_이메일로_관리자계정의_정보를_조회할_경우_NOT_FOUND_ADMIN_예외가_발생() {
         // given
         String notFoundEmail = "not_found_admin@test.com";
-        Role adminRole = Role.ADMIN;
 
-        given(memberRepository.findByEmailAndRole(notFoundEmail, adminRole)).willReturn(Optional.empty());
+        given(memberRepository.findByEmailAndRoleIn(notFoundEmail, BACKOFFICE_ROLES)).willReturn(Optional.empty());
 
         // when, then
-        assertThatThrownBy(() -> adminMemberComponent.getMemberAdminByEmail(notFoundEmail))
+        assertThatThrownBy(() -> adminMemberComponent.getRequiredBackofficeMemberByEmail(notFoundEmail))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
@@ -45,23 +47,22 @@ class AdminMemberComponentTest extends UnitTestSupport {
     void 이메일로_관리자계정의_정보를_조회할_경우_Member_엔티티를_반환() {
         // given
         String email = "admin@test.com";
-        Role adminRole = Role.ADMIN;
         Member foundMember = Member.builder()
                 .id(1L)
                 .email(email)
                 .status(MemberStatus.ACTIVE)
-                .role(adminRole)
+                .role(Role.ADMIN)
                 .build();
 
-        given(memberRepository.findByEmailAndRole(email, adminRole)).willReturn(Optional.of(foundMember));
+        given(memberRepository.findByEmailAndRoleIn(email, BACKOFFICE_ROLES)).willReturn(Optional.of(foundMember));
 
         // when
-        Member result = adminMemberComponent.getMemberAdminByEmail(email);
+        Member result = adminMemberComponent.getRequiredBackofficeMemberByEmail(email);
 
         // then
-        verify(memberRepository).findByEmailAndRole(email, adminRole);
+        verify(memberRepository).findByEmailAndRoleIn(email, BACKOFFICE_ROLES);
         assertEquals(email, result.getEmail());
-        assertEquals(adminRole, result.getRole());
+        assertEquals(Role.ADMIN, result.getRole());
         assertEquals(MemberStatus.ACTIVE, result.getStatus());
     }
 
