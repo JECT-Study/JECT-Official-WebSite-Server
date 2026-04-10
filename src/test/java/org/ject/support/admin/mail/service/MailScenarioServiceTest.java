@@ -1,0 +1,302 @@
+package org.ject.support.admin.mail.service;
+
+import org.ject.support.admin.mail.domain.MailScenario;
+import org.ject.support.admin.mail.domain.MailScenarioRepository;
+import org.ject.support.admin.mail.domain.MailVariable;
+import org.ject.support.admin.mail.dto.MailScenarioRequest;
+import org.ject.support.admin.mail.dto.MailScenarioResponse;
+import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
+import org.ject.support.admin.mail.exception.MailErrorCode;
+import org.ject.support.admin.mail.exception.MailException;
+import org.ject.support.admin.mail.service.MailScenarioService;
+import org.ject.support.admin.mail.service.MailTemplateEngine;
+import org.ject.support.admin.mail.service.MailTemplateValidator;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.doThrow;
+
+@ExtendWith(MockitoExtension.class)
+class MailScenarioServiceTest {
+
+    @InjectMocks
+    private MailScenarioService mailScenarioService;
+
+    @Mock
+    private MailScenarioRepository mailScenarioRepository;
+
+    @Mock
+    private MailTemplateValidator mailTemplateValidator;
+
+    @Mock
+    private MailTemplateEngine mailTemplateEngine;
+
+    // ── getScenarioVariables ──────────────────────────────
+
+    @Test
+    @DisplayName("시나리오 ID로 요청하면 공통 및 개인 변수 목록을 분리하여 반환한다")
+    void getScenarioVariables() {
+        Long scenarioId = 1L;
+        Set<MailVariable> variables = Set.of(
+                MailVariable.RECRUIT_ALERT_APPLY_URL,
+                MailVariable.NAME
+        );
+        MailScenario scenario = MailScenario.builder()
+                .name("일반 구성원 - 불합격 통지")
+                .category("MEMBER")
+                .scenarioCode("MEMBER_REJECT_NOTICE")
+                .subjectTemplate("[JECT] ${RECRUIT_NAME} 결과 안내")
+                .bodyTemplate("안녕하세요 ${NAME}님, ${RECRUIT_ALERT_APPLY_URL}")
+                .active(true)
+                .variables(variables)
+                .build();
+
+        given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(scenario));
+
+        MailScenarioVariableResponse response = mailScenarioService.getScenarioVariables(scenarioId);
+
+        assertThat(response.name()).isEqualTo("일반 구성원 - 불합격 통지");
+        assertThat(response.commonVariables()).hasSize(1);
+        assertThat(response.personalVariables()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 시나리오 ID를 요청하면 예외가 발생한다")
+    void getScenarioVariables_NotFound() {
+        Long notFoundId = 999L;
+        given(mailScenarioRepository.findById(notFoundId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> mailScenarioService.getScenarioVariables(notFoundId))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.SCENARIO_NOT_FOUND);
+    }
+
+    // ── createScenario ────────────────────────────────────
+
+    @Test
+    @DisplayName("시나리오를 정상적으로 생성한다")
+    void createScenario() {
+        MailScenarioRequest request = new MailScenarioRequest(
+                "메이커스 1차 합격",
+                "MAKERS",
+                "MAKERS_FIRST_PASS",
+                "[JECT] ${RECRUIT_NAME} 1차 합격",
+                "${NAME}님 축하드립니다.",
+                true,
+                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+        );
+
+        MailScenario saved = MailScenario.builder()
+                .name(request.name())
+                .category(request.category())
+                .scenarioCode(request.scenarioCode())
+                .subjectTemplate(request.subjectTemplate())
+                .bodyTemplate(request.bodyTemplate())
+                .active(request.active())
+                .variables(request.variables())
+                .build();
+
+        given(mailScenarioRepository.existsByScenarioCode(request.scenarioCode())).willReturn(false);
+        given(mailScenarioRepository.save(any(MailScenario.class))).willReturn(saved);
+
+        MailScenarioResponse response = mailScenarioService.createScenario(request);
+
+        assertThat(response.name()).isEqualTo("메이커스 1차 합격");
+        assertThat(response.scenarioCode()).isEqualTo("MAKERS_FIRST_PASS");
+    }
+
+    @Test
+    @DisplayName("중복된 시나리오 코드는 생성할 수 없다")
+    void createScenario_DuplicateScenarioCode() {
+        MailScenarioRequest request = new MailScenarioRequest(
+                "중복 테스트",
+                "GENERAL",
+                "DUPLICATE_CODE",
+                "[JECT] ${RECRUIT_NAME}",
+                "${NAME}",
+                true,
+                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+        );
+        given(mailScenarioRepository.existsByScenarioCode("DUPLICATE_CODE")).willReturn(true);
+
+        assertThatThrownBy(() -> mailScenarioService.createScenario(request))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.DUPLICATE_SCENARIO_CODE);
+    }
+
+    @Test
+    @DisplayName("템플릿 문법이 잘못되면 시나리오 생성에 실패한다")
+    void createScenario_InvalidTemplateSyntax() {
+        MailScenarioRequest request = new MailScenarioRequest(
+                "문법 오류",
+                "GENERAL",
+                "INVALID_SYNTAX",
+                "[JECT] ${RECRUIT_NAME",
+                "${NAME}",
+                true,
+                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+        );
+        given(mailScenarioRepository.existsByScenarioCode("INVALID_SYNTAX")).willReturn(false);
+        doThrow(new MailException(MailErrorCode.INVALID_TEMPLATE_SYNTAX))
+                .when(mailTemplateValidator).validateSyntax(request.subjectTemplate());
+
+        assertThatThrownBy(() -> mailScenarioService.createScenario(request))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.INVALID_TEMPLATE_SYNTAX);
+    }
+
+    @Test
+    @DisplayName("허용되지 않은 변수가 포함되면 시나리오 생성에 실패한다")
+    void createScenario_UnsupportedTemplateVariable() {
+        MailScenarioRequest request = new MailScenarioRequest(
+                "변수 오류",
+                "GENERAL",
+                "UNSUPPORTED_VAR",
+                "[JECT] ${UNKNOWN_KEY}",
+                "${NAME}",
+                true,
+                Set.of(MailVariable.NAME)
+        );
+        given(mailScenarioRepository.existsByScenarioCode("UNSUPPORTED_VAR")).willReturn(false);
+        doThrow(new MailException(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE))
+                .when(mailTemplateValidator).validateAllowedPlaceholders(request.subjectTemplate(), request.variables());
+
+        assertThatThrownBy(() -> mailScenarioService.createScenario(request))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE);
+    }
+
+    // ── updateScenario ────────────────────────────────────
+
+    @Test
+    @DisplayName("시나리오를 정상적으로 수정한다")
+    void updateScenario() {
+        Long scenarioId = 1L;
+        MailScenario existing = MailScenario.builder()
+                .name("기존 시나리오")
+                .category("MEMBER")
+                .scenarioCode("MEMBER_OLD")
+                .subjectTemplate("[JECT] 기존 제목")
+                .bodyTemplate("기존 본문")
+                .active(true)
+                .variables(Set.of(MailVariable.NAME))
+                .build();
+        MailScenarioRequest request = new MailScenarioRequest(
+                "새 이름",
+                "MEMBER",
+                "MEMBER_NEW",
+                "[JECT] ${RECRUIT_NAME}",
+                "${NAME}",
+                false,
+                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+        );
+
+        given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(existing));
+        given(mailScenarioRepository.existsByScenarioCodeAndIdNot(request.scenarioCode(), scenarioId)).willReturn(false);
+
+        MailScenarioResponse response = mailScenarioService.updateScenario(scenarioId, request);
+
+        assertThat(response.name()).isEqualTo("새 이름");
+        assertThat(response.scenarioCode()).isEqualTo("MEMBER_NEW");
+        assertThat(response.active()).isFalse();
+    }
+
+    // ── deleteScenario ────────────────────────────────────
+
+    @Test
+    @DisplayName("시나리오를 정상적으로 삭제한다")
+    void deleteScenario() {
+        Long scenarioId = 1L;
+        MailScenario existing = MailScenario.builder()
+                .name("삭제 대상")
+                .category("GENERAL")
+                .scenarioCode("DELETE_ME")
+                .subjectTemplate("subject")
+                .bodyTemplate("body")
+                .active(true)
+                .variables(Set.of())
+                .build();
+        given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(existing));
+
+        mailScenarioService.deleteScenario(scenarioId);
+
+        then(mailScenarioRepository).should().delete(existing);
+    }
+
+    // ── renderScenario ────────────────────────────────────
+
+    @Test
+    @DisplayName("렌더링 시 필수 공통 변수를 검증하고 본문 템플릿을 치환한다")
+    void renderScenario() {
+        Long scenarioId = 1L;
+        MailScenario scenario = MailScenario.builder()
+                .name("불합격")
+                .category("MEMBER")
+                .scenarioCode("MEMBER_REJECT_NOTICE")
+                .subjectTemplate("[JECT] ${RECRUIT_NAME}")
+                .bodyTemplate("안녕하세요 ${NAME}님")
+                .active(true)
+                .variables(Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME))
+                .build();
+        given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(scenario));
+        given(mailTemplateEngine.render(anyString(), any())).willReturn("안녕하세요 젝트님");
+
+        String result = mailScenarioService.renderScenario(scenarioId, Map.of(
+                "NAME", "젝트",
+                "RECRUIT_NAME", "메이커스 5기"
+        ));
+
+        assertThat(result).isEqualTo("안녕하세요 젝트님");
+    }
+
+    @Test
+    @DisplayName("전체 시나리오 목록을 반환한다")
+    void getScenarios() {
+        List<MailScenario> scenarios = List.of(
+                MailScenario.builder()
+                        .name("시나리오 A")
+                        .category("GENERAL")
+                        .scenarioCode("CODE_A")
+                        .subjectTemplate("subject")
+                        .bodyTemplate("body")
+                        .active(true)
+                        .variables(Set.of())
+                        .build(),
+                MailScenario.builder()
+                        .name("시나리오 B")
+                        .category("GENERAL")
+                        .scenarioCode("CODE_B")
+                        .subjectTemplate("subject")
+                        .bodyTemplate("body")
+                        .active(true)
+                        .variables(Set.of())
+                        .build()
+        );
+        given(mailScenarioRepository.findAll()).willReturn(scenarios);
+
+        List<MailScenarioResponse> result = mailScenarioService.getScenarios();
+
+        assertThat(result).hasSize(2);
+        assertThat(result).extracting(MailScenarioResponse::scenarioCode)
+                .containsExactlyInAnyOrder("CODE_A", "CODE_B");
+    }
+}
