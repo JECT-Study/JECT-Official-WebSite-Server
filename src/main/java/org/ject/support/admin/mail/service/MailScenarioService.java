@@ -45,13 +45,13 @@ public class MailScenarioService {
         // 2. 공통 변수만 추출해 응답 형태로 변환합니다.
         List<MailScenarioVariableResponse.VariableResponse> commonVariables = variables.stream()
                 .filter(MailVariable::isCommon)
-                .map(v -> new MailScenarioVariableResponse.VariableResponse(v.name(), v.getLabel()))
+                .map(v -> new MailScenarioVariableResponse.VariableResponse(v.name(), v.getLabel(), v.getInputType()))
                 .toList();
 
         // 3. 개인 변수만 추출해 응답 형태로 변환합니다.
         List<MailScenarioVariableResponse.VariableResponse> personalVariables = variables.stream()
                 .filter(v -> !v.isCommon())
-                .map(v -> new MailScenarioVariableResponse.VariableResponse(v.name(), v.getLabel()))
+                .map(v -> new MailScenarioVariableResponse.VariableResponse(v.name(), v.getLabel(), v.getInputType()))
                 .toList();
 
         // 4. 최종 변수 목록 응답을 반환합니다.
@@ -73,6 +73,7 @@ public class MailScenarioService {
         MailScenario scenario = MailScenario.builder()
                 .name(request.name())
                 .category(request.category())
+                .type(request.type())
                 .scenarioCode(request.scenarioCode())
                 .subjectTemplate(request.subjectTemplate())
                 .bodyTemplate(request.bodyTemplate())
@@ -99,6 +100,7 @@ public class MailScenarioService {
         scenario.update(
                 request.name(),
                 request.category(),
+                request.type(),
                 request.scenarioCode(),
                 request.subjectTemplate(),
                 request.bodyTemplate(),

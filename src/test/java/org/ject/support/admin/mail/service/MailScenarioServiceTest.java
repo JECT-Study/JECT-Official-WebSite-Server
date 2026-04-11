@@ -15,7 +15,9 @@ import java.util.Optional;
 import java.util.Set;
 import org.hibernate.exception.ConstraintViolationException;
 import org.ject.support.admin.mail.domain.MailScenario;
+import org.ject.support.admin.mail.domain.MailScenarioCategory;
 import org.ject.support.admin.mail.domain.MailScenarioRepository;
+import org.ject.support.admin.mail.domain.MailScenarioType;
 import org.ject.support.admin.mail.domain.MailVariable;
 import org.ject.support.admin.mail.dto.MailScenarioRequest;
 import org.ject.support.admin.mail.dto.MailScenarioResponse;
@@ -57,7 +59,8 @@ class MailScenarioServiceTest {
         );
         MailScenario scenario = MailScenario.builder()
                 .name("일반 구성원 - 불합격 통지")
-                .category("MEMBER")
+                .category(MailScenarioCategory.CLUB_MEMBER)
+                .type(MailScenarioType.REJECT)
                 .scenarioCode("MEMBER_REJECT_NOTICE")
                 .subjectTemplate("[JECT] ${RECRUIT_NAME} 결과 안내")
                 .bodyTemplate("안녕하세요 ${NAME}님, ${RECRUIT_ALERT_APPLY_URL}")
@@ -93,7 +96,8 @@ class MailScenarioServiceTest {
     void createScenario() {
         MailScenarioRequest request = new MailScenarioRequest(
                 "메이커스 1차 합격",
-                "MAKERS",
+                MailScenarioCategory.MAKERS,
+                MailScenarioType.FIRST_PASS,
                 "MAKERS_FIRST_PASS",
                 "[JECT] ${RECRUIT_NAME} 1차 합격",
                 "${NAME}님 축하드립니다.",
@@ -104,6 +108,7 @@ class MailScenarioServiceTest {
         MailScenario saved = MailScenario.builder()
                 .name(request.name())
                 .category(request.category())
+                .type(request.type())
                 .scenarioCode(request.scenarioCode())
                 .subjectTemplate(request.subjectTemplate())
                 .bodyTemplate(request.bodyTemplate())
@@ -125,7 +130,8 @@ class MailScenarioServiceTest {
     void createScenario_DuplicateScenarioCode() {
         MailScenarioRequest request = new MailScenarioRequest(
                 "중복 테스트",
-                "GENERAL",
+                MailScenarioCategory.GENERAL,
+                MailScenarioType.ETC,
                 "DUPLICATE_CODE",
                 "[JECT] ${RECRUIT_NAME}",
                 "${NAME}",
@@ -145,7 +151,8 @@ class MailScenarioServiceTest {
     void createScenario_InvalidTemplateSyntax() {
         MailScenarioRequest request = new MailScenarioRequest(
                 "문법 오류",
-                "GENERAL",
+                MailScenarioCategory.GENERAL,
+                MailScenarioType.ETC,
                 "INVALID_SYNTAX",
                 "[JECT] ${RECRUIT_NAME",
                 "${NAME}",
@@ -167,7 +174,8 @@ class MailScenarioServiceTest {
     void createScenario_UnsupportedTemplateVariable() {
         MailScenarioRequest request = new MailScenarioRequest(
                 "변수 오류",
-                "GENERAL",
+                MailScenarioCategory.GENERAL,
+                MailScenarioType.ETC,
                 "UNSUPPORTED_VAR",
                 "[JECT] ${UNKNOWN_KEY}",
                 "${NAME}",
@@ -189,7 +197,8 @@ class MailScenarioServiceTest {
     void createScenario_DuplicateScenarioCode_RaceCondition() {
         MailScenarioRequest request = new MailScenarioRequest(
                 "동시성 테스트",
-                "GENERAL",
+                MailScenarioCategory.GENERAL,
+                MailScenarioType.ETC,
                 "RACE_CODE",
                 "[JECT] ${RECRUIT_NAME}",
                 "${NAME}",
@@ -215,7 +224,8 @@ class MailScenarioServiceTest {
         Long scenarioId = 1L;
         MailScenario existing = MailScenario.builder()
                 .name("기존 시나리오")
-                .category("MEMBER")
+                .category(MailScenarioCategory.CLUB_MEMBER)
+                .type(MailScenarioType.ETC)
                 .scenarioCode("MEMBER_OLD")
                 .subjectTemplate("[JECT] 기존 제목")
                 .bodyTemplate("기존 본문")
@@ -224,7 +234,8 @@ class MailScenarioServiceTest {
                 .build();
         MailScenarioRequest request = new MailScenarioRequest(
                 "새 이름",
-                "MEMBER",
+                MailScenarioCategory.CLUB_MEMBER,
+                MailScenarioType.FINAL_PASS,
                 "MEMBER_NEW",
                 "[JECT] ${RECRUIT_NAME}",
                 "${NAME}",
@@ -249,7 +260,8 @@ class MailScenarioServiceTest {
         Long scenarioId = 1L;
         MailScenario existing = MailScenario.builder()
                 .name("기존 시나리오")
-                .category("MEMBER")
+                .category(MailScenarioCategory.CLUB_MEMBER)
+                .type(MailScenarioType.ETC)
                 .scenarioCode("MEMBER_OLD")
                 .subjectTemplate("[JECT] 기존 제목")
                 .bodyTemplate("기존 본문")
@@ -258,7 +270,8 @@ class MailScenarioServiceTest {
                 .build();
         MailScenarioRequest request = new MailScenarioRequest(
                 "새 이름",
-                "MEMBER",
+                MailScenarioCategory.CLUB_MEMBER,
+                MailScenarioType.FINAL_PASS,
                 "MEMBER_NEW",
                 "[JECT] ${RECRUIT_NAME}",
                 "${NAME}",
@@ -285,7 +298,8 @@ class MailScenarioServiceTest {
         Long scenarioId = 1L;
         MailScenario existing = MailScenario.builder()
                 .name("삭제 대상")
-                .category("GENERAL")
+                .category(MailScenarioCategory.GENERAL)
+                .type(MailScenarioType.ETC)
                 .scenarioCode("DELETE_ME")
                 .subjectTemplate("subject")
                 .bodyTemplate("body")
@@ -307,7 +321,8 @@ class MailScenarioServiceTest {
         Long scenarioId = 1L;
         MailScenario scenario = MailScenario.builder()
                 .name("불합격")
-                .category("MEMBER")
+                .category(MailScenarioCategory.CLUB_MEMBER)
+                .type(MailScenarioType.REJECT)
                 .scenarioCode("MEMBER_REJECT_NOTICE")
                 .subjectTemplate("[JECT] ${RECRUIT_NAME}")
                 .bodyTemplate("안녕하세요 ${NAME}님")
@@ -331,7 +346,8 @@ class MailScenarioServiceTest {
         List<MailScenario> scenarios = List.of(
                 MailScenario.builder()
                         .name("시나리오 A")
-                        .category("GENERAL")
+                        .category(MailScenarioCategory.GENERAL)
+                        .type(MailScenarioType.ETC)
                         .scenarioCode("CODE_A")
                         .subjectTemplate("subject")
                         .bodyTemplate("body")
@@ -340,7 +356,8 @@ class MailScenarioServiceTest {
                         .build(),
                 MailScenario.builder()
                         .name("시나리오 B")
-                        .category("GENERAL")
+                        .category(MailScenarioCategory.GENERAL)
+                        .type(MailScenarioType.ETC)
                         .scenarioCode("CODE_B")
                         .subjectTemplate("subject")
                         .bodyTemplate("body")

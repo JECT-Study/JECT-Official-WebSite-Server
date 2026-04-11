@@ -11,8 +11,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
+import org.ject.support.admin.mail.domain.MailScenarioCategory;
+import org.ject.support.admin.mail.domain.MailScenarioType;
 import org.ject.support.admin.mail.domain.MailVariable;
 import org.ject.support.admin.mail.dto.MailScenarioRequest;
 import org.ject.support.admin.mail.dto.MailScenarioResponse;
@@ -55,8 +58,8 @@ class AdminMailScenarioControllerTest {
     void getScenarios() throws Exception {
         // given
         MailScenarioResponse scenarioResponse = new MailScenarioResponse(
-                1L, "테스트 시나리오", "테스트 카테고리",
-                "TEST_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${NAME}", true,
+                1L, "테스트 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC,
+                "TEST_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${NAME}", true, LocalDateTime.now(),
                 List.of(new MailScenarioResponse.VariableResponse("VAR1", "라벨1")),
                 List.of(new MailScenarioResponse.VariableResponse("VAR2", "라벨2"))
         );
@@ -67,7 +70,8 @@ class AdminMailScenarioControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].id").value(scenarioResponse.id()))
                 .andExpect(jsonPath("$.data[0].name").value(scenarioResponse.name()))
-                .andExpect(jsonPath("$.data[0].category").value(scenarioResponse.category()));
+                .andExpect(jsonPath("$.data[0].category").value(scenarioResponse.category().name()))
+                .andExpect(jsonPath("$.data[0].type").value(scenarioResponse.type().name()));
     }
 
     @Test
@@ -75,12 +79,12 @@ class AdminMailScenarioControllerTest {
     void createScenario() throws Exception {
         // given
         MailScenarioRequest request = new MailScenarioRequest(
-                "새 시나리오", "테스트 카테고리", "NEW_SCENARIO",
+                "새 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC, "NEW_SCENARIO",
                 "[JECT] ${RECRUIT_NAME}", "${NAME}", true, Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
         );
         MailScenarioResponse response = new MailScenarioResponse(
-                1L, "새 시나리오", "테스트 카테고리",
-                "NEW_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${NAME}", true,
+                1L, "새 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC,
+                "NEW_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${NAME}", true, LocalDateTime.now(),
                 List.of(new MailScenarioResponse.VariableResponse("RECRUIT_NAME", "모집명")),
                 List.of(new MailScenarioResponse.VariableResponse("NAME", "이름"))
         );
@@ -92,7 +96,8 @@ class AdminMailScenarioControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.name").value("새 시나리오"))
-                .andExpect(jsonPath("$.data.category").value("테스트 카테고리"));
+                .andExpect(jsonPath("$.data.category").value(MailScenarioCategory.CLUB_MEMBER.name()))
+                .andExpect(jsonPath("$.data.type").value(MailScenarioType.ETC.name()));
     }
 
     @Test
@@ -101,12 +106,12 @@ class AdminMailScenarioControllerTest {
         // given
         Long scenarioId = 1L;
         MailScenarioRequest request = new MailScenarioRequest(
-                "수정 시나리오", "테스트 카테고리", "UPDATED_SCENARIO",
+                "수정 시나리오", MailScenarioCategory.MAKERS, MailScenarioType.FINAL_PASS, "UPDATED_SCENARIO",
                 "[JECT] ${RECRUIT_NAME}", "${NAME}", false, Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
         );
         MailScenarioResponse response = new MailScenarioResponse(
-                scenarioId, "수정 시나리오", "테스트 카테고리",
-                "UPDATED_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${NAME}", false,
+                scenarioId, "수정 시나리오", MailScenarioCategory.MAKERS, MailScenarioType.FINAL_PASS,
+                "UPDATED_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${NAME}", false, LocalDateTime.now(),
                 List.of(new MailScenarioResponse.VariableResponse("RECRUIT_NAME", "모집명")),
                 List.of(new MailScenarioResponse.VariableResponse("NAME", "이름"))
         );
@@ -118,7 +123,8 @@ class AdminMailScenarioControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.name").value("수정 시나리오"))
-                .andExpect(jsonPath("$.data.category").value("테스트 카테고리"));
+                .andExpect(jsonPath("$.data.category").value(MailScenarioCategory.MAKERS.name()))
+                .andExpect(jsonPath("$.data.type").value(MailScenarioType.FINAL_PASS.name()));
     }
 
     @Test
@@ -137,8 +143,8 @@ class AdminMailScenarioControllerTest {
         MailScenarioVariableResponse response = new MailScenarioVariableResponse(
                 scenarioId,
                 "일반 구성원 - 예비 합격 통지",
-                List.of(new MailScenarioVariableResponse.VariableResponse("RECRUIT_ALERT_APPLY_URL", "모집 알림 신청 URL")),
-                List.of(new MailScenarioVariableResponse.VariableResponse("NAME", "이름"))
+                List.of(new MailScenarioVariableResponse.VariableResponse("RECRUIT_ALERT_APPLY_URL", "모집 알림 신청 URL", "URL")),
+                List.of(new MailScenarioVariableResponse.VariableResponse("NAME", "이름", "TEXT"))
         );
 
         given(mailScenarioService.getScenarioVariables(scenarioId)).willReturn(response);
@@ -149,6 +155,8 @@ class AdminMailScenarioControllerTest {
                 .andExpect(jsonPath("$.data.scenarioId").value(scenarioId))
                 .andExpect(jsonPath("$.data.name").value("일반 구성원 - 예비 합격 통지"))
                 .andExpect(jsonPath("$.data.commonVariables[0].key").value("RECRUIT_ALERT_APPLY_URL"))
-                .andExpect(jsonPath("$.data.personalVariables[0].label").value("이름"));
+                .andExpect(jsonPath("$.data.commonVariables[0].inputType").value("URL"))
+                .andExpect(jsonPath("$.data.personalVariables[0].label").value("이름"))
+                .andExpect(jsonPath("$.data.personalVariables[0].inputType").value("TEXT"));
     }
 }

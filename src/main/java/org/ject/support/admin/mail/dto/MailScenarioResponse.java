@@ -1,9 +1,11 @@
 package org.ject.support.admin.mail.dto;
 
-import org.ject.support.admin.mail.domain.MailScenario;
-import org.ject.support.admin.mail.domain.MailVariable;
-
+import java.time.LocalDateTime;
 import java.util.List;
+import org.ject.support.admin.mail.domain.MailScenario;
+import org.ject.support.admin.mail.domain.MailScenarioCategory;
+import org.ject.support.admin.mail.domain.MailScenarioType;
+import org.ject.support.admin.mail.domain.MailVariable;
 
 /**
  * 메일 시나리오 조회 응답 DTO입니다.
@@ -11,11 +13,13 @@ import java.util.List;
 public record MailScenarioResponse(
         Long id,
         String name,
-        String category,
+        MailScenarioCategory category,
+        MailScenarioType type,
         String scenarioCode,
         String subjectTemplate,
         String bodyTemplate,
         boolean active,
+        LocalDateTime createdAt,
         List<VariableResponse> commonVariables,
         List<VariableResponse> personalVariables
 ) {
@@ -38,10 +42,12 @@ public record MailScenarioResponse(
                 scenario.getId(),
                 scenario.getName(),
                 scenario.getCategory(),
+                scenario.getType(),
                 scenario.getScenarioCode(),
                 scenario.getSubjectTemplate(),
                 scenario.getBodyTemplate(),
                 scenario.isActive(),
+                scenario.getCreatedAt(),
                 common,
                 personal
         );

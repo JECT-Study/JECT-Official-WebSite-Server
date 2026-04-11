@@ -16,7 +16,8 @@ public record MailScenarioVariableResponse(
      */
     public record VariableResponse(
             String key,
-            String label
+            String label,
+            String inputType
     ) {
     }
 }

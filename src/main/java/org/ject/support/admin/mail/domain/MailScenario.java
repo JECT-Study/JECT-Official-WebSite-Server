@@ -1,14 +1,23 @@
 package org.ject.support.admin.mail.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.ject.support.domain.base.BaseTimeEntity;
-
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * 메일 발송 시나리오 정보를 저장하는 엔티티입니다.
@@ -26,8 +35,13 @@ public class MailScenario extends BaseTimeEntity {
     @Column(nullable = false)
     private String name;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String category;
+    private MailScenarioCategory category;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MailScenarioType type;
 
     @Column(name = "scenario_code", nullable = false, unique = true)
     private String scenarioCode;
@@ -52,7 +66,8 @@ public class MailScenario extends BaseTimeEntity {
 
     @Builder
     public MailScenario(String name,
-                        String category,
+                        MailScenarioCategory category,
+                        MailScenarioType type,
                         String scenarioCode,
                         String subjectTemplate,
                         String bodyTemplate,
@@ -60,6 +75,7 @@ public class MailScenario extends BaseTimeEntity {
                         Set<MailVariable> variables) {
         this.name = name;
         this.category = category;
+        this.type = type;
         this.scenarioCode = scenarioCode;
         this.subjectTemplate = subjectTemplate;
         this.bodyTemplate = bodyTemplate;
@@ -71,7 +87,8 @@ public class MailScenario extends BaseTimeEntity {
      * 시나리오의 기본 정보와 템플릿/변수 구성을 갱신합니다.
      */
     public void update(String name,
-                       String category,
+                       MailScenarioCategory category,
+                       MailScenarioType type,
                        String scenarioCode,
                        String subjectTemplate,
                        String bodyTemplate,
@@ -79,6 +96,7 @@ public class MailScenario extends BaseTimeEntity {
                        Set<MailVariable> variables) {
         this.name = name;
         this.category = category;
+        this.type = type;
         this.scenarioCode = scenarioCode;
         this.subjectTemplate = subjectTemplate;
         this.bodyTemplate = bodyTemplate;
