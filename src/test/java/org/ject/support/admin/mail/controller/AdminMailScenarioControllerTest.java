@@ -1,7 +1,18 @@
 package org.ject.support.admin.mail.controller;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ject.support.admin.mail.controller.AdminMailScenarioController;
+import java.util.List;
+import java.util.Set;
 import org.ject.support.admin.mail.domain.MailVariable;
 import org.ject.support.admin.mail.dto.MailScenarioRequest;
 import org.ject.support.admin.mail.dto.MailScenarioResponse;
@@ -14,25 +25,18 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
-import java.util.List;
-import java.util.Set;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AdminMailScenarioController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("test")
+@TestPropertySource(properties = {
+        "security.cors.allowed-origins=http://localhost:8080",
+        "security.cors.allowed-origins-client=http://localhost:3000",
+        "security.cors.allowed-origins-client-dev=http://localhost:3000"
+})
 class AdminMailScenarioControllerTest {
 
     @Autowired
@@ -95,7 +99,7 @@ class AdminMailScenarioControllerTest {
         );
         given(mailScenarioService.createScenario(any(MailScenarioRequest.class))).willReturn(response);
 
-        // when & then
+        // w            hen & then
         mockMvc.perform(post("/admin/mails/scenarios")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
