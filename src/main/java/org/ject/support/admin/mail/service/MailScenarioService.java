@@ -1,6 +1,10 @@
 package org.ject.support.admin.mail.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
 import org.ject.support.admin.mail.domain.MailScenario;
 import org.ject.support.admin.mail.domain.MailScenarioRepository;
 import org.ject.support.admin.mail.domain.MailVariable;
@@ -9,12 +13,9 @@ import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * 메일 시나리오 조회/관리와 템플릿 검증을 담당하는 서비스입니다.
@@ -23,6 +24,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MailScenarioService {
+
+    private static final String SCENARIO_CODE_UNIQUE_CONSTRAINT = "uk_mail_scenario_scenario_code";
 
     private final MailScenarioRepository mailScenarioRepository;
     private final MailTemplateEngine mailTemplateEngine;
@@ -77,8 +80,12 @@ public class MailScenarioService {
                 .variables(request.variables())
                 .build();
 
-        // 3. 저장 후 응답 DTO로 변환해 반환합니다.
-        return MailScenarioResponse.from(mailScenarioRepository.save(scenario));
+        try {
+            // 3. flush 시점에 발생하는 unique 제약 위반을 서비스 계층에서 도메인 예외로 변환합니다.
+            return MailScenarioResponse.from(mailScenarioRepository.saveAndFlush(scenario));
+        } catch (DataIntegrityViolationException e) {
+            throw mapDuplicateScenarioCodeException(e);
+        }
     }
 
     @Transactional
@@ -99,8 +106,13 @@ public class MailScenarioService {
                 request.variables()
         );
 
-        // 4. 갱신 결과를 응답 DTO로 변환해 반환합니다.
-        return MailScenarioResponse.from(scenario);
+        try {
+            // 4. flush 시점에 unique 제약 위반이 나면 도메인 예외로 변환합니다.
+            MailScenario savedScenario = mailScenarioRepository.saveAndFlush(scenario);
+            return MailScenarioResponse.from(savedScenario);
+        } catch (DataIntegrityViolationException ex) {
+            throw mapDuplicateScenarioCodeException(ex);
+        }
     }
 
     @Transactional
@@ -151,5 +163,28 @@ public class MailScenarioService {
         // 2. 허용된 변수만 사용했는지 검증합니다.
         mailTemplateValidator.validateAllowedPlaceholders(subjectTemplate, allowedVariables);
         mailTemplateValidator.validateAllowedPlaceholders(bodyTemplate, allowedVariables);
+    }
+
+    private MailException mapDuplicateScenarioCodeException(DataIntegrityViolationException ex) {
+        if (isScenarioCodeUniqueConstraintViolation(ex)) {
+            return new MailException(MailErrorCode.DUPLICATE_SCENARIO_CODE);
+        }
+
+        throw ex;
+    }
+
+    private boolean isScenarioCodeUniqueConstraintViolation(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof ConstraintViolationException violationException) {
+                String constraintName = violationException.getConstraintName();
+                if (SCENARIO_CODE_UNIQUE_CONSTRAINT.equalsIgnoreCase(constraintName)) {
+                    return true;
+                }
+            }
+            current = current.getCause();
+        }
+
+        return false;
     }
 }

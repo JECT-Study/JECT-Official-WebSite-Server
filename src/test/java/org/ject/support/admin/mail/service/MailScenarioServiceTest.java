@@ -1,5 +1,19 @@
 package org.ject.support.admin.mail.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.doThrow;
+
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import org.hibernate.exception.ConstraintViolationException;
 import org.ject.support.admin.mail.domain.MailScenario;
 import org.ject.support.admin.mail.domain.MailScenarioRepository;
 import org.ject.support.admin.mail.domain.MailVariable;
@@ -8,28 +22,13 @@ import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
-import org.ject.support.admin.mail.service.MailScenarioService;
-import org.ject.support.admin.mail.service.MailTemplateEngine;
-import org.ject.support.admin.mail.service.MailTemplateValidator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.doThrow;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @ExtendWith(MockitoExtension.class)
 class MailScenarioServiceTest {
@@ -113,7 +112,7 @@ class MailScenarioServiceTest {
                 .build();
 
         given(mailScenarioRepository.existsByScenarioCode(request.scenarioCode())).willReturn(false);
-        given(mailScenarioRepository.save(any(MailScenario.class))).willReturn(saved);
+        given(mailScenarioRepository.saveAndFlush(any(MailScenario.class))).willReturn(saved);
 
         MailScenarioResponse response = mailScenarioService.createScenario(request);
 
@@ -185,6 +184,29 @@ class MailScenarioServiceTest {
                 .isEqualTo(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE);
     }
 
+    @Test
+    @DisplayName("동시 요청으로 DB unique 제약 위반이 발생하면 중복 코드 예외로 변환한다")
+    void createScenario_DuplicateScenarioCode_RaceCondition() {
+        MailScenarioRequest request = new MailScenarioRequest(
+                "동시성 테스트",
+                "GENERAL",
+                "RACE_CODE",
+                "[JECT] ${RECRUIT_NAME}",
+                "${NAME}",
+                true,
+                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+        );
+
+        given(mailScenarioRepository.existsByScenarioCode("RACE_CODE")).willReturn(false);
+        given(mailScenarioRepository.saveAndFlush(any(MailScenario.class)))
+                .willThrow(duplicateScenarioCodeViolation());
+
+        assertThatThrownBy(() -> mailScenarioService.createScenario(request))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.DUPLICATE_SCENARIO_CODE);
+    }
+
     // ── updateScenario ────────────────────────────────────
 
     @Test
@@ -212,12 +234,47 @@ class MailScenarioServiceTest {
 
         given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(existing));
         given(mailScenarioRepository.existsByScenarioCodeAndIdNot(request.scenarioCode(), scenarioId)).willReturn(false);
+        given(mailScenarioRepository.saveAndFlush(existing)).willReturn(existing);
 
         MailScenarioResponse response = mailScenarioService.updateScenario(scenarioId, request);
 
         assertThat(response.name()).isEqualTo("새 이름");
         assertThat(response.scenarioCode()).isEqualTo("MEMBER_NEW");
         assertThat(response.active()).isFalse();
+    }
+
+    @Test
+    @DisplayName("수정 시 DB unique 제약 위반이 발생하면 중복 코드 예외로 변환한다")
+    void updateScenario_DuplicateScenarioCode_RaceCondition() {
+        Long scenarioId = 1L;
+        MailScenario existing = MailScenario.builder()
+                .name("기존 시나리오")
+                .category("MEMBER")
+                .scenarioCode("MEMBER_OLD")
+                .subjectTemplate("[JECT] 기존 제목")
+                .bodyTemplate("기존 본문")
+                .active(true)
+                .variables(Set.of(MailVariable.NAME))
+                .build();
+        MailScenarioRequest request = new MailScenarioRequest(
+                "새 이름",
+                "MEMBER",
+                "MEMBER_NEW",
+                "[JECT] ${RECRUIT_NAME}",
+                "${NAME}",
+                false,
+                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+        );
+
+        given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(existing));
+        given(mailScenarioRepository.existsByScenarioCodeAndIdNot(request.scenarioCode(), scenarioId)).willReturn(false);
+        given(mailScenarioRepository.saveAndFlush(existing))
+                .willThrow(duplicateScenarioCodeViolation());
+
+        assertThatThrownBy(() -> mailScenarioService.updateScenario(scenarioId, request))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.DUPLICATE_SCENARIO_CODE);
     }
 
     // ── deleteScenario ────────────────────────────────────
@@ -298,5 +355,15 @@ class MailScenarioServiceTest {
         assertThat(result).hasSize(2);
         assertThat(result).extracting(MailScenarioResponse::scenarioCode)
                 .containsExactlyInAnyOrder("CODE_A", "CODE_B");
+    }
+
+    private DataIntegrityViolationException duplicateScenarioCodeViolation() {
+        ConstraintViolationException cause = new ConstraintViolationException(
+                "duplicate scenario code",
+                new SQLIntegrityConstraintViolationException("duplicate", "23000"),
+                "insert into mail_scenario ...",
+                "uk_mail_scenario_scenario_code"
+        );
+        return new DataIntegrityViolationException("constraint violated", cause);
     }
 }

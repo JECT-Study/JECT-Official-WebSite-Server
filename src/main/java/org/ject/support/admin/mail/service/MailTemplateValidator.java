@@ -1,15 +1,14 @@
 package org.ject.support.admin.mail.service;
 
-import org.ject.support.admin.mail.domain.MailVariable;
-import org.ject.support.admin.mail.exception.MailErrorCode;
-import org.ject.support.admin.mail.exception.MailException;
-import org.springframework.stereotype.Component;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.ject.support.admin.mail.domain.MailVariable;
+import org.ject.support.admin.mail.exception.MailErrorCode;
+import org.ject.support.admin.mail.exception.MailException;
+import org.springframework.stereotype.Component;
 
 @Component
 public class MailTemplateValidator {
@@ -41,11 +40,8 @@ public class MailTemplateValidator {
             }
 
             String key = template.substring(open + 2, close);
-            if (key.isBlank()
-                    || key.contains("${")
-                    || key.contains("{")
-                    || key.contains("}")
-                    || !PLACEHOLDER_KEY_PATTERN.matcher(key).matches()) {
+            // 정규식 [A-Za-z0-9_]+ 검사로 빈 값, 괄호, 띄어쓰기 포함 여부가 모두 걸러집니다.
+            if (!PLACEHOLDER_KEY_PATTERN.matcher(key).matches()) {
                 throw new MailException(MailErrorCode.INVALID_TEMPLATE_SYNTAX);
             }
 
@@ -57,6 +53,11 @@ public class MailTemplateValidator {
      * 템플릿에 사용된 플레이스홀더가 허용된 변수 집합에 포함되는지 검증합니다.
      */
     public void validateAllowedPlaceholders(String template, Set<MailVariable> allowedVariables) {
+        // 단독 호출 시에도 null 템플릿을 문법 오류로 일관 처리합니다.
+        if (template == null) {
+            throw new MailException(MailErrorCode.INVALID_TEMPLATE_SYNTAX);
+        }
+
         // 1. null 안전을 위해 허용 변수 집합을 기본값으로 정규화합니다.
         Set<MailVariable> safeAllowedVariables = allowedVariables != null ? allowedVariables : Set.of();
 

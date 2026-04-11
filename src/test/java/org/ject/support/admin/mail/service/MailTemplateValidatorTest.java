@@ -1,17 +1,15 @@
 package org.ject.support.admin.mail.service;
 
-import org.ject.support.admin.mail.domain.MailVariable;
-import org.ject.support.admin.mail.exception.MailErrorCode;
-import org.ject.support.admin.mail.exception.MailException;
-import org.ject.support.admin.mail.service.MailTemplateValidator;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Map;
 import java.util.Set;
-
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.ject.support.admin.mail.domain.MailVariable;
+import org.ject.support.admin.mail.exception.MailErrorCode;
+import org.ject.support.admin.mail.exception.MailException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 class MailTemplateValidatorTest {
 
@@ -52,6 +50,15 @@ class MailTemplateValidatorTest {
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE);
+    }
+
+    @Test
+    @DisplayName("허용 변수 검증 시 템플릿이 null이면 문법 오류를 발생시킨다")
+    void validateAllowedPlaceholders_NullTemplate() {
+        assertThatThrownBy(() -> validator.validateAllowedPlaceholders(null, Set.of(MailVariable.NAME)))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.INVALID_TEMPLATE_SYNTAX);
     }
 
     @Test
