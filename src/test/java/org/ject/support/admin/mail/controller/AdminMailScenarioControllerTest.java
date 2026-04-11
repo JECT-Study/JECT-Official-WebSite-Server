@@ -18,50 +18,37 @@ import org.ject.support.admin.mail.dto.MailScenarioRequest;
 import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
 import org.ject.support.admin.mail.service.MailScenarioService;
+import org.ject.support.common.response.ResponseWrapper;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-@WebMvcTest(AdminMailScenarioController.class)
-@AutoConfigureMockMvc(addFilters = false)
-@ActiveProfiles("test")
-@TestPropertySource(properties = {
-        "security.cors.allowed-origins=http://localhost:8080",
-        "security.cors.allowed-origins-client=http://localhost:3000",
-        "security.cors.allowed-origins-client-dev=http://localhost:3000"
-})
+@ExtendWith(MockitoExtension.class)
 class AdminMailScenarioControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
 
-    @MockitoBean
+    @Mock
     private MailScenarioService mailScenarioService;
 
-    @MockitoBean
-    private org.ject.support.common.security.jwt.JwtTokenProvider jwtTokenProvider;
+    @InjectMocks
+    private AdminMailScenarioController adminMailScenarioController;
 
-    @MockitoBean
-    private org.ject.support.common.security.jwt.JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-
-    @MockitoBean
-    private org.ject.support.common.security.jwt.JwtAccessDeniedHandler jwtAccessDeniedHandler;
-
-    @MockitoBean
-    private org.ject.support.common.security.jwt.JwtAuthenticationFilter jwtAuthenticationFilter;
-
-    @MockitoBean
-    private org.ject.support.common.security.jwt.JwtExceptionHandlerFilter jwtExceptionHandlerFilter;
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders.standaloneSetup(adminMailScenarioController)
+                .setControllerAdvice(new ResponseWrapper())
+                .build();
+    }
 
     @Test
     @DisplayName("시나리오 목록을 성공적으로 조회한다")
