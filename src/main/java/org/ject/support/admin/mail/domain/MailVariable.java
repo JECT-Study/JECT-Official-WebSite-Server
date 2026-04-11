@@ -27,7 +27,7 @@ public enum MailVariable {
 
     // 개인 변수 (DB Select)
     NAME("이름", false),
-    GENERATION("기수", false);
+    SEMESTER("기수", false);
 
     private final String label;
     private final boolean isCommon;
