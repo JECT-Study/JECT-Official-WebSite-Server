@@ -3,11 +3,14 @@ package org.ject.support.admin.mail.service;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.exception.ConstraintViolationException;
 import org.ject.support.admin.mail.domain.MailScenario;
 import org.ject.support.admin.mail.domain.MailScenarioRepository;
-import org.ject.support.admin.mail.domain.MailVariable;
+import org.ject.support.admin.mail.domain.MailScenarioVariable;
+import org.ject.support.admin.mail.domain.ReservedMailVariable;
 import org.ject.support.admin.mail.dto.MailScenarioRequest;
 import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
@@ -38,38 +41,34 @@ public class MailScenarioService {
     }
 
     public MailScenarioVariableResponse getScenarioVariables(Long scenarioId) {
-        // 1. 시나리오와 변수 집합을 조회합니다.
         MailScenario scenario = findScenarioById(scenarioId);
-        Set<MailVariable> variables = scenario.getVariables();
 
-        // 2. 공통 변수만 추출해 응답 형태로 변환합니다.
-        List<MailScenarioVariableResponse.VariableResponse> commonVariables = variables.stream()
-                .filter(MailVariable::isCommon)
-                .map(v -> new MailScenarioVariableResponse.VariableResponse(v.name(), v.getLabel(), v.getInputType()))
+        List<MailScenarioVariableResponse.CustomVariableResponse> customVariables = scenario.getCustomVariables().stream()
+                .map(v -> new MailScenarioVariableResponse.CustomVariableResponse(
+                        v.getKey(), v.getLabel(), v.getInputType().name(), v.isRequired(), v.getDescription()))
                 .toList();
 
-        // 3. 개인 변수만 추출해 응답 형태로 변환합니다.
-        List<MailScenarioVariableResponse.VariableResponse> personalVariables = variables.stream()
-                .filter(v -> !v.isCommon())
-                .map(v -> new MailScenarioVariableResponse.VariableResponse(v.name(), v.getLabel(), v.getInputType()))
+        List<String> personalVariables = Stream.of(ReservedMailVariable.values())
+                .map(Enum::name)
                 .toList();
 
-        // 4. 최종 변수 목록 응답을 반환합니다.
         return new MailScenarioVariableResponse(
                 scenario.getId(),
                 scenario.getName(),
-                commonVariables,
+                customVariables,
                 personalVariables
         );
     }
 
     @Transactional
     public MailScenarioResponse createScenario(MailScenarioRequest request) {
-        // 1. 생성 전 시나리오 코드 중복과 템플릿 유효성을 검증합니다.
-        validateScenarioCodeUniquenessForCreate(request.scenarioCode());
-        validateTemplates(request.variables(), request.subjectTemplate(), request.bodyTemplate());
+        Set<MailScenarioVariable> customVariables = request.customVariables().stream()
+                .map(MailScenarioRequest.CustomVariableRequest::toEntity)
+                .collect(Collectors.toSet());
 
-        // 2. 요청값으로 시나리오 엔티티를 생성합니다.
+        validateScenarioCodeUniquenessForCreate(request.scenarioCode());
+        validateTemplates(customVariables, request.subjectTemplate(), request.bodyTemplate());
+
         MailScenario scenario = MailScenario.builder()
                 .name(request.name())
                 .category(request.category())
@@ -78,7 +77,7 @@ public class MailScenarioService {
                 .subjectTemplate(request.subjectTemplate())
                 .bodyTemplate(request.bodyTemplate())
                 .active(request.active())
-                .variables(request.variables())
+                .customVariables(customVariables)
                 .build();
 
         try {
@@ -92,11 +91,14 @@ public class MailScenarioService {
     @Transactional
     public MailScenarioResponse updateScenario(Long scenarioId, MailScenarioRequest request) {
         MailScenario scenario = findScenarioById(scenarioId);
-        // 2. 자기 자신을 제외한 시나리오 코드 중복과 템플릿 유효성을 검증합니다.
-        validateScenarioCodeUniquenessForUpdate(scenarioId, request.scenarioCode());
-        validateTemplates(request.variables(), request.subjectTemplate(), request.bodyTemplate());
 
-        // 3. 도메인 메서드로 시나리오 값을 갱신합니다.
+        Set<MailScenarioVariable> customVariables = request.customVariables().stream()
+                .map(MailScenarioRequest.CustomVariableRequest::toEntity)
+                .collect(Collectors.toSet());
+
+        validateScenarioCodeUniquenessForUpdate(scenarioId, request.scenarioCode());
+        validateTemplates(customVariables, request.subjectTemplate(), request.bodyTemplate());
+
         scenario.update(
                 request.name(),
                 request.category(),
@@ -105,7 +107,7 @@ public class MailScenarioService {
                 request.subjectTemplate(),
                 request.bodyTemplate(),
                 request.active(),
-                request.variables()
+                customVariables
         );
 
         try {
@@ -133,11 +135,8 @@ public class MailScenarioService {
      */
     @Transactional(readOnly = true)
     public String renderScenario(Long scenarioId, Map<String, Object> variables) {
-        // 1. 시나리오를 조회합니다.
         MailScenario scenario = findScenarioById(scenarioId);
-        // 2. 필수 공통 변수가 모두 포함됐는지 검증합니다.
-        mailTemplateValidator.validateRequiredCommonVariables(scenario.getVariables(), variables);
-        // 3. 본문 템플릿을 렌더링해 반환합니다.
+        mailTemplateValidator.validateRequiredCommonVariables(scenario.getCustomVariables(), variables);
         return mailTemplateEngine.render(scenario.getBodyTemplate(), variables);
     }
 
@@ -157,14 +156,14 @@ public class MailScenarioService {
         }
     }
 
-    private void validateTemplates(Set<MailVariable> allowedVariables, String subjectTemplate, String bodyTemplate) {
+    private void validateTemplates(Set<MailScenarioVariable> customVariables, String subjectTemplate, String bodyTemplate) {
         // 1. 제목/본문 템플릿의 기본 문법을 검증합니다.
         mailTemplateValidator.validateSyntax(subjectTemplate);
         mailTemplateValidator.validateSyntax(bodyTemplate);
 
         // 2. 허용된 변수만 사용했는지 검증합니다.
-        mailTemplateValidator.validateAllowedPlaceholders(subjectTemplate, allowedVariables);
-        mailTemplateValidator.validateAllowedPlaceholders(bodyTemplate, allowedVariables);
+        mailTemplateValidator.validateAllowedPlaceholders(subjectTemplate, customVariables);
+        mailTemplateValidator.validateAllowedPlaceholders(bodyTemplate, customVariables);
     }
 
     private MailException mapDuplicateScenarioCodeException(DataIntegrityViolationException ex) {

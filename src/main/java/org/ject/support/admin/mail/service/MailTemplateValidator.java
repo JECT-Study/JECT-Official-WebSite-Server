@@ -5,7 +5,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.ject.support.admin.mail.domain.MailVariable;
+import org.ject.support.admin.mail.domain.MailScenarioVariable;
+import org.ject.support.admin.mail.domain.ReservedMailVariable;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
 import org.springframework.stereotype.Component;
@@ -50,21 +51,25 @@ public class MailTemplateValidator {
     }
 
     /**
-     * 템플릿에 사용된 플레이스홀더가 허용된 변수 집합에 포함되는지 검증합니다.
+     * 템플릿에 사용된 플레이스홀더가 예약된 변수이거나 커스텀 변수 집합에 포함되는지 검증합니다.
      */
-    public void validateAllowedPlaceholders(String template, Set<MailVariable> allowedVariables) {
+    public void validateAllowedPlaceholders(String template, Set<MailScenarioVariable> customVariables) {
         // 단독 호출 시에도 null 템플릿을 문법 오류로 일관 처리합니다.
         if (template == null) {
             throw new MailException(MailErrorCode.INVALID_TEMPLATE_SYNTAX);
         }
 
-        // 1. null 안전을 위해 허용 변수 집합을 기본값으로 정규화합니다.
-        Set<MailVariable> safeAllowedVariables = allowedVariables != null ? allowedVariables : Set.of();
+        // 1. 커스텀 변수 집합 정규화
+        Set<MailScenarioVariable> safeCustomVariables = customVariables != null ? customVariables : Set.of();
 
-        // 2. Enum 이름 기준 허용 키 집합을 생성합니다.
-        Set<String> allowedKeys = safeAllowedVariables.stream()
-                .map(Enum::name)
-                .collect(HashSet::new, HashSet::add, HashSet::addAll);
+        // 2. 예약어와 커스텀 변수를 합친 허용 키 집합 생성
+        Set<String> allowedKeys = new HashSet<>();
+        for (ReservedMailVariable rv : ReservedMailVariable.values()) {
+            allowedKeys.add(rv.name());
+        }
+        for (MailScenarioVariable cv : safeCustomVariables) {
+            allowedKeys.add(cv.getKey());
+        }
 
         // 3. 템플릿에서 추출한 키가 허용 목록에 없으면 예외를 발생시킵니다.
         for (String placeholderKey : extractPlaceholderKeys(template)) {
@@ -75,20 +80,20 @@ public class MailTemplateValidator {
     }
 
     /**
-     * 공통 변수로 지정된 항목이 실제 요청 변수 맵에 모두 채워졌는지 검증합니다.
+     * 커스텀 변수로 지정된 항목이 필수일 때 실제 입력값 변수 맵에 모두 채워졌는지 검증합니다.
      */
-    public void validateRequiredCommonVariables(Set<MailVariable> allowedVariables, Map<String, ?> variables) {
+    public void validateRequiredCommonVariables(Set<MailScenarioVariable> customVariables, Map<String, ?> variables) {
         // 1. null 안전을 위해 허용 변수/입력 변수 맵을 정규화합니다.
-        Set<MailVariable> safeAllowedVariables = allowedVariables != null ? allowedVariables : Set.of();
+        Set<MailScenarioVariable> safeCustomVariables = customVariables != null ? customVariables : Set.of();
         Map<String, ?> safeVariables = variables != null ? variables : Map.of();
 
-        // 2. 공통 변수만 순회하며 누락/공백 값을 검증합니다.
-        for (MailVariable variable : safeAllowedVariables) {
-            if (!variable.isCommon()) {
+        // 2. 커스텀 변수들만 순회하며 필수값 누락/공백 여부를 검증합니다.
+        for (MailScenarioVariable variable : safeCustomVariables) {
+            if (!variable.isRequired()) {
                 continue;
             }
 
-            Object value = safeVariables.get(variable.name());
+            Object value = safeVariables.get(variable.getKey());
             if (value == null) {
                 throw new MailException(MailErrorCode.MISSING_REQUIRED_COMMON_VARIABLE);
             }

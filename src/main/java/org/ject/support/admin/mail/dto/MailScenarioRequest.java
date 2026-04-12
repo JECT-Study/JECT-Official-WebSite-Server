@@ -3,10 +3,11 @@ package org.ject.support.admin.mail.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import java.util.Set;
+import java.util.List;
 import org.ject.support.admin.mail.domain.MailScenarioCategory;
 import org.ject.support.admin.mail.domain.MailScenarioType;
-import org.ject.support.admin.mail.domain.MailVariable;
+import org.ject.support.admin.mail.domain.MailScenarioVariable;
+import org.ject.support.admin.mail.domain.VariableInputType;
 
 /**
  * 메일 시나리오 생성/수정 요청 DTO입니다.
@@ -28,6 +29,23 @@ public record MailScenarioRequest(
         @NotNull(message = "활성화 여부는 필수입니다.")
         Boolean active,
         @NotNull(message = "변수 리스트는 null일 수 없습니다.")
-        Set<MailVariable> variables
+        List<CustomVariableRequest> customVariables
 ) {
+    public record CustomVariableRequest(
+            @NotBlank String key,
+            @NotBlank String label,
+            @NotNull VariableInputType inputType,
+            boolean required,
+            String description
+    ) {
+        public MailScenarioVariable toEntity() {
+            return MailScenarioVariable.builder()
+                    .key(key)
+                    .label(label)
+                    .inputType(inputType)
+                    .required(required)
+                    .description(description)
+                    .build();
+        }
+    }
 }

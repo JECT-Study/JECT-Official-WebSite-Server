@@ -8,16 +8,18 @@ import java.util.List;
 public record MailScenarioVariableResponse(
         Long scenarioId,
         String name,
-        List<VariableResponse> commonVariables,
-        List<VariableResponse> personalVariables
+        List<CustomVariableResponse> customVariables,
+        List<String> personalVariables
 ) {
     /**
-     * 변수 키/라벨 표현 DTO입니다.
+     * 커스텀 변수 표현 DTO입니다.
      */
-    public record VariableResponse(
+    public record CustomVariableResponse(
             String key,
             String label,
-            String inputType
+            String inputType,
+            boolean required,
+            String description
     ) {
     }
 }

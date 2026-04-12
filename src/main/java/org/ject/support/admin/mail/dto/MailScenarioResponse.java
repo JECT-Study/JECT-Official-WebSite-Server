@@ -5,7 +5,6 @@ import java.util.List;
 import org.ject.support.admin.mail.domain.MailScenario;
 import org.ject.support.admin.mail.domain.MailScenarioCategory;
 import org.ject.support.admin.mail.domain.MailScenarioType;
-import org.ject.support.admin.mail.domain.MailVariable;
 
 /**
  * 메일 시나리오 조회 응답 DTO입니다.
@@ -20,22 +19,27 @@ public record MailScenarioResponse(
         String bodyTemplate,
         boolean active,
         LocalDateTime createdAt,
-        List<VariableResponse> commonVariables,
-        List<VariableResponse> personalVariables
+        List<CustomVariableResponse> customVariables
 ) {
     /**
-     * 시나리오 변수 표현 DTO입니다.
+     * 커스텀 변수 표현 DTO입니다.
      */
-    public record VariableResponse(String key, String label) {}
+    public record CustomVariableResponse(
+            String key, 
+            String label, 
+            String inputType, 
+            boolean required, 
+            String description
+    ) {}
 
     public static MailScenarioResponse from(MailScenario scenario) {
-        List<VariableResponse> common = scenario.getVariables().stream()
-                .filter(MailVariable::isCommon)
-                .map(v -> new VariableResponse(v.name(), v.getLabel()))
-                .toList();
-        List<VariableResponse> personal = scenario.getVariables().stream()
-                .filter(v -> !v.isCommon())
-                .map(v -> new VariableResponse(v.name(), v.getLabel()))
+        List<CustomVariableResponse> customVars = scenario.getCustomVariables().stream()
+                .map(v -> new CustomVariableResponse(
+                        v.getKey(), 
+                        v.getLabel(), 
+                        v.getInputType().name(), 
+                        v.isRequired(), 
+                        v.getDescription()))
                 .toList();
 
         return new MailScenarioResponse(
@@ -48,8 +52,7 @@ public record MailScenarioResponse(
                 scenario.getBodyTemplate(),
                 scenario.isActive(),
                 scenario.getCreatedAt(),
-                common,
-                personal
+                customVars
         );
     }
 }

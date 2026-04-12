@@ -5,7 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Map;
 import java.util.Set;
-import org.ject.support.admin.mail.domain.MailVariable;
+import org.ject.support.admin.mail.domain.MailScenarioVariable;
+import org.ject.support.admin.mail.domain.VariableInputType;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
 import org.junit.jupiter.api.DisplayName;
@@ -45,7 +46,7 @@ class MailTemplateValidatorTest {
     void validateAllowedPlaceholders_Fail() {
         assertThatThrownBy(() -> validator.validateAllowedPlaceholders(
                 "안녕하세요 ${UNKNOWN_KEY}",
-                Set.of(MailVariable.NAME)
+                Set.of()
         ))
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
@@ -55,7 +56,7 @@ class MailTemplateValidatorTest {
     @Test
     @DisplayName("허용 변수 검증 시 템플릿이 null이면 문법 오류를 발생시킨다")
     void validateAllowedPlaceholders_NullTemplate() {
-        assertThatThrownBy(() -> validator.validateAllowedPlaceholders(null, Set.of(MailVariable.NAME)))
+        assertThatThrownBy(() -> validator.validateAllowedPlaceholders(null, Set.of()))
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.INVALID_TEMPLATE_SYNTAX);
@@ -65,7 +66,7 @@ class MailTemplateValidatorTest {
     @DisplayName("필수 공통 변수 누락 시 예외를 발생시킨다")
     void validateRequiredCommonVariables_Fail() {
         assertThatThrownBy(() -> validator.validateRequiredCommonVariables(
-                Set.of(MailVariable.RECRUIT_ALERT_APPLY_URL, MailVariable.NAME),
+                Set.of(MailScenarioVariable.builder().key("RECRUIT_ALERT_APPLY_URL").label("URL").inputType(VariableInputType.URL).required(true).build()),
                 Map.of("NAME", "젝트")
         ))
                 .isInstanceOf(MailException.class)
@@ -77,7 +78,7 @@ class MailTemplateValidatorTest {
     @DisplayName("필수 공통 변수가 모두 있으면 통과한다")
     void validateRequiredCommonVariables_Success() {
         assertThatCode(() -> validator.validateRequiredCommonVariables(
-                Set.of(MailVariable.RECRUIT_ALERT_APPLY_URL, MailVariable.NAME),
+                Set.of(MailScenarioVariable.builder().key("RECRUIT_ALERT_APPLY_URL").label("URL").inputType(VariableInputType.URL).required(true).build()),
                 Map.of("RECRUIT_ALERT_APPLY_URL", "https://ject.kr", "NAME", "젝트")
         )).doesNotThrowAnyException();
     }

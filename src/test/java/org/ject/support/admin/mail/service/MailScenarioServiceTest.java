@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.doThrow;
@@ -18,8 +19,10 @@ import org.ject.support.admin.mail.domain.MailScenario;
 import org.ject.support.admin.mail.domain.MailScenarioCategory;
 import org.ject.support.admin.mail.domain.MailScenarioRepository;
 import org.ject.support.admin.mail.domain.MailScenarioType;
-import org.ject.support.admin.mail.domain.MailVariable;
+import org.ject.support.admin.mail.domain.MailScenarioVariable;
+import org.ject.support.admin.mail.domain.VariableInputType;
 import org.ject.support.admin.mail.dto.MailScenarioRequest;
+import org.ject.support.admin.mail.dto.MailScenarioRequest.CustomVariableRequest;
 import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
 import org.ject.support.admin.mail.exception.MailErrorCode;
@@ -53,9 +56,8 @@ class MailScenarioServiceTest {
     @DisplayName("시나리오 ID로 요청하면 공통 및 개인 변수 목록을 분리하여 반환한다")
     void getScenarioVariables() {
         Long scenarioId = 1L;
-        Set<MailVariable> variables = Set.of(
-                MailVariable.RECRUIT_ALERT_APPLY_URL,
-                MailVariable.NAME
+        Set<MailScenarioVariable> variables = Set.of(
+                MailScenarioVariable.builder().key("RECRUIT_ALERT_APPLY_URL").label("지원 링크").inputType(VariableInputType.URL).required(true).build()
         );
         MailScenario scenario = MailScenario.builder()
                 .name("일반 구성원 - 불합격 통지")
@@ -63,9 +65,9 @@ class MailScenarioServiceTest {
                 .type(MailScenarioType.REJECT)
                 .scenarioCode("MEMBER_REJECT_NOTICE")
                 .subjectTemplate("[JECT] ${RECRUIT_NAME} 결과 안내")
-                .bodyTemplate("안녕하세요 ${NAME}님, ${RECRUIT_ALERT_APPLY_URL}")
+                .bodyTemplate("안녕하세요 ${name}님, ${RECRUIT_ALERT_APPLY_URL}")
                 .active(true)
-                .variables(variables)
+                .customVariables(variables)
                 .build();
 
         given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(scenario));
@@ -73,8 +75,8 @@ class MailScenarioServiceTest {
         MailScenarioVariableResponse response = mailScenarioService.getScenarioVariables(scenarioId);
 
         assertThat(response.name()).isEqualTo("일반 구성원 - 불합격 통지");
-        assertThat(response.commonVariables()).hasSize(1);
-        assertThat(response.personalVariables()).hasSize(1);
+        assertThat(response.customVariables()).hasSize(1);
+        assertThat(response.personalVariables()).isNotEmpty();
     }
 
     @Test
@@ -100,9 +102,9 @@ class MailScenarioServiceTest {
                 MailScenarioType.FIRST_PASS,
                 "MAKERS_FIRST_PASS",
                 "[JECT] ${RECRUIT_NAME} 1차 합격",
-                "${NAME}님 축하드립니다.",
+                "${name}님 축하드립니다.",
                 true,
-                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
         );
 
         MailScenario saved = MailScenario.builder()
@@ -113,7 +115,7 @@ class MailScenarioServiceTest {
                 .subjectTemplate(request.subjectTemplate())
                 .bodyTemplate(request.bodyTemplate())
                 .active(request.active())
-                .variables(request.variables())
+                .customVariables(Set.of(MailScenarioVariable.builder().key("RECRUIT_NAME").label("모집명").inputType(VariableInputType.TEXT).required(true).build()))
                 .build();
 
         given(mailScenarioRepository.existsByScenarioCode(request.scenarioCode())).willReturn(false);
@@ -134,9 +136,9 @@ class MailScenarioServiceTest {
                 MailScenarioType.ETC,
                 "DUPLICATE_CODE",
                 "[JECT] ${RECRUIT_NAME}",
-                "${NAME}",
+                "${name}",
                 true,
-                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
         );
         given(mailScenarioRepository.existsByScenarioCode("DUPLICATE_CODE")).willReturn(true);
 
@@ -155,9 +157,9 @@ class MailScenarioServiceTest {
                 MailScenarioType.ETC,
                 "INVALID_SYNTAX",
                 "[JECT] ${RECRUIT_NAME",
-                "${NAME}",
+                "${name}",
                 true,
-                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
         );
         given(mailScenarioRepository.existsByScenarioCode("INVALID_SYNTAX")).willReturn(false);
         doThrow(new MailException(MailErrorCode.INVALID_TEMPLATE_SYNTAX))
@@ -178,13 +180,13 @@ class MailScenarioServiceTest {
                 MailScenarioType.ETC,
                 "UNSUPPORTED_VAR",
                 "[JECT] ${UNKNOWN_KEY}",
-                "${NAME}",
+                "${name}",
                 true,
-                Set.of(MailVariable.NAME)
+                List.of()
         );
         given(mailScenarioRepository.existsByScenarioCode("UNSUPPORTED_VAR")).willReturn(false);
         doThrow(new MailException(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE))
-                .when(mailTemplateValidator).validateAllowedPlaceholders(request.subjectTemplate(), request.variables());
+                .when(mailTemplateValidator).validateAllowedPlaceholders(eq(request.subjectTemplate()), any());
 
         assertThatThrownBy(() -> mailScenarioService.createScenario(request))
                 .isInstanceOf(MailException.class)
@@ -201,9 +203,9 @@ class MailScenarioServiceTest {
                 MailScenarioType.ETC,
                 "RACE_CODE",
                 "[JECT] ${RECRUIT_NAME}",
-                "${NAME}",
+                "${name}",
                 true,
-                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
         );
 
         given(mailScenarioRepository.existsByScenarioCode("RACE_CODE")).willReturn(false);
@@ -230,7 +232,7 @@ class MailScenarioServiceTest {
                 .subjectTemplate("[JECT] 기존 제목")
                 .bodyTemplate("기존 본문")
                 .active(true)
-                .variables(Set.of(MailVariable.NAME))
+                .customVariables(Set.of())
                 .build();
         MailScenarioRequest request = new MailScenarioRequest(
                 "새 이름",
@@ -238,9 +240,9 @@ class MailScenarioServiceTest {
                 MailScenarioType.FINAL_PASS,
                 "MEMBER_NEW",
                 "[JECT] ${RECRUIT_NAME}",
-                "${NAME}",
+                "${name}",
                 false,
-                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
         );
 
         given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(existing));
@@ -266,7 +268,7 @@ class MailScenarioServiceTest {
                 .subjectTemplate("[JECT] 기존 제목")
                 .bodyTemplate("기존 본문")
                 .active(true)
-                .variables(Set.of(MailVariable.NAME))
+                .customVariables(Set.of())
                 .build();
         MailScenarioRequest request = new MailScenarioRequest(
                 "새 이름",
@@ -274,9 +276,9 @@ class MailScenarioServiceTest {
                 MailScenarioType.FINAL_PASS,
                 "MEMBER_NEW",
                 "[JECT] ${RECRUIT_NAME}",
-                "${NAME}",
+                "${name}",
                 false,
-                Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
         );
 
         given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(existing));
@@ -304,7 +306,7 @@ class MailScenarioServiceTest {
                 .subjectTemplate("subject")
                 .bodyTemplate("body")
                 .active(true)
-                .variables(Set.of())
+                .customVariables(Set.of())
                 .build();
         given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(existing));
 
@@ -325,9 +327,9 @@ class MailScenarioServiceTest {
                 .type(MailScenarioType.REJECT)
                 .scenarioCode("MEMBER_REJECT_NOTICE")
                 .subjectTemplate("[JECT] ${RECRUIT_NAME}")
-                .bodyTemplate("안녕하세요 ${NAME}님")
+                .bodyTemplate("안녕하세요 ${name}님")
                 .active(true)
-                .variables(Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME))
+                .customVariables(Set.of(MailScenarioVariable.builder().key("RECRUIT_NAME").label("모집명").inputType(VariableInputType.TEXT).required(true).build()))
                 .build();
         given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(scenario));
         given(mailTemplateEngine.render(anyString(), any())).willReturn("안녕하세요 젝트님");
@@ -352,7 +354,7 @@ class MailScenarioServiceTest {
                         .subjectTemplate("subject")
                         .bodyTemplate("body")
                         .active(true)
-                        .variables(Set.of())
+                        .customVariables(Set.of())
                         .build(),
                 MailScenario.builder()
                         .name("시나리오 B")
@@ -362,7 +364,7 @@ class MailScenarioServiceTest {
                         .subjectTemplate("subject")
                         .bodyTemplate("body")
                         .active(true)
-                        .variables(Set.of())
+                        .customVariables(Set.of())
                         .build()
         );
         given(mailScenarioRepository.findAll()).willReturn(scenarios);

@@ -60,9 +60,7 @@ public class MailScenario extends BaseTimeEntity {
             name = "mail_scenario_variables",
             joinColumns = @JoinColumn(name = "mail_scenario_id")
     )
-    @Enumerated(EnumType.STRING)
-    @Column(name = "variable")
-    private Set<MailVariable> variables = new HashSet<>();
+    private Set<MailScenarioVariable> customVariables = new HashSet<>();
 
     @Builder
     public MailScenario(String name,
@@ -72,7 +70,7 @@ public class MailScenario extends BaseTimeEntity {
                         String subjectTemplate,
                         String bodyTemplate,
                         Boolean active,
-                        Set<MailVariable> variables) {
+                        Set<MailScenarioVariable> customVariables) {
         this.name = name;
         this.category = category;
         this.type = type;
@@ -80,7 +78,7 @@ public class MailScenario extends BaseTimeEntity {
         this.subjectTemplate = subjectTemplate;
         this.bodyTemplate = bodyTemplate;
         this.active = active != null ? active : true;
-        this.variables = variables != null ? variables : new HashSet<>();
+        this.customVariables = customVariables != null ? customVariables : new HashSet<>();
     }
 
     /**
@@ -93,7 +91,7 @@ public class MailScenario extends BaseTimeEntity {
                        String subjectTemplate,
                        String bodyTemplate,
                        Boolean active,
-                       Set<MailVariable> variables) {
+                       Set<MailScenarioVariable> customVariables) {
         this.name = name;
         this.category = category;
         this.type = type;
@@ -101,6 +99,6 @@ public class MailScenario extends BaseTimeEntity {
         this.subjectTemplate = subjectTemplate;
         this.bodyTemplate = bodyTemplate;
         this.active = active != null ? active : this.active;
-        this.variables = variables != null ? variables : new HashSet<>();
+        this.customVariables = customVariables != null ? customVariables : new HashSet<>();
     }
 }
