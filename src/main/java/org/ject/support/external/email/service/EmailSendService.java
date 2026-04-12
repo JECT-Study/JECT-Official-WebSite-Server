@@ -16,4 +16,9 @@ public interface EmailSendService {
      * 대량 templated email 발송
      */
     void sendBulkTemplatedEmail(EmailTemplate sendGroupCode, List<String> toList, Map<String, String> params);
+
+    /**
+     * 단건 simple email 전송 (subject + html body)
+     */
+    void sendEmail(String to, String subject, String htmlBody);
 }
