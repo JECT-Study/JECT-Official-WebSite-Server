@@ -13,11 +13,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
 import org.ject.support.admin.mail.domain.MailScenarioCategory;
 import org.ject.support.admin.mail.domain.MailScenarioType;
-import org.ject.support.admin.mail.domain.MailVariable;
+import org.ject.support.admin.mail.domain.VariableInputType;
 import org.ject.support.admin.mail.dto.MailScenarioRequest;
+import org.ject.support.admin.mail.dto.MailScenarioRequest.CustomVariableRequest;
 import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
 import org.ject.support.admin.mail.service.MailScenarioService;
@@ -59,9 +59,8 @@ class AdminMailScenarioControllerTest {
         // given
         MailScenarioResponse scenarioResponse = new MailScenarioResponse(
                 1L, "테스트 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC,
-                "TEST_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${NAME}", true, LocalDateTime.now(),
-                List.of(new MailScenarioResponse.VariableResponse("VAR1", "라벨1")),
-                List.of(new MailScenarioResponse.VariableResponse("VAR2", "라벨2"))
+                "TEST_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${name}", true, LocalDateTime.now(),
+                List.of(new MailScenarioResponse.CustomVariableResponse("RECRUIT_NAME", "모집명", "TEXT", true, null))
         );
         given(mailScenarioService.getScenarios()).willReturn(List.of(scenarioResponse));
 
@@ -80,13 +79,13 @@ class AdminMailScenarioControllerTest {
         // given
         MailScenarioRequest request = new MailScenarioRequest(
                 "새 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC, "NEW_SCENARIO",
-                "[JECT] ${RECRUIT_NAME}", "${NAME}", true, Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+                "[JECT] ${RECRUIT_NAME}", "${name}", true, 
+                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
         );
         MailScenarioResponse response = new MailScenarioResponse(
                 1L, "새 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC,
-                "NEW_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${NAME}", true, LocalDateTime.now(),
-                List.of(new MailScenarioResponse.VariableResponse("RECRUIT_NAME", "모집명")),
-                List.of(new MailScenarioResponse.VariableResponse("NAME", "이름"))
+                "NEW_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${name}", true, LocalDateTime.now(),
+                List.of(new MailScenarioResponse.CustomVariableResponse("RECRUIT_NAME", "모집명", "TEXT", true, null))
         );
         given(mailScenarioService.createScenario(any(MailScenarioRequest.class))).willReturn(response);
 
@@ -107,13 +106,13 @@ class AdminMailScenarioControllerTest {
         Long scenarioId = 1L;
         MailScenarioRequest request = new MailScenarioRequest(
                 "수정 시나리오", MailScenarioCategory.MAKERS, MailScenarioType.FINAL_PASS, "UPDATED_SCENARIO",
-                "[JECT] ${RECRUIT_NAME}", "${NAME}", false, Set.of(MailVariable.NAME, MailVariable.RECRUIT_NAME)
+                "[JECT] ${RECRUIT_NAME}", "${name}", false, 
+                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
         );
         MailScenarioResponse response = new MailScenarioResponse(
                 scenarioId, "수정 시나리오", MailScenarioCategory.MAKERS, MailScenarioType.FINAL_PASS,
-                "UPDATED_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${NAME}", false, LocalDateTime.now(),
-                List.of(new MailScenarioResponse.VariableResponse("RECRUIT_NAME", "모집명")),
-                List.of(new MailScenarioResponse.VariableResponse("NAME", "이름"))
+                "UPDATED_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${name}", false, LocalDateTime.now(),
+                List.of(new MailScenarioResponse.CustomVariableResponse("RECRUIT_NAME", "모집명", "TEXT", true, null))
         );
         given(mailScenarioService.updateScenario(eq(scenarioId), any(MailScenarioRequest.class))).willReturn(response);
 
@@ -143,8 +142,8 @@ class AdminMailScenarioControllerTest {
         MailScenarioVariableResponse response = new MailScenarioVariableResponse(
                 scenarioId,
                 "일반 구성원 - 예비 합격 통지",
-                List.of(new MailScenarioVariableResponse.VariableResponse("RECRUIT_ALERT_APPLY_URL", "모집 알림 신청 URL", "URL")),
-                List.of(new MailScenarioVariableResponse.VariableResponse("NAME", "이름", "TEXT"))
+                List.of(new MailScenarioVariableResponse.CustomVariableResponse("RECRUIT_ALERT_APPLY_URL", "모집 알림 신청 URL", "URL", true, null)),
+                List.of("name", "semester")
         );
 
         given(mailScenarioService.getScenarioVariables(scenarioId)).willReturn(response);
@@ -154,9 +153,8 @@ class AdminMailScenarioControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.scenarioId").value(scenarioId))
                 .andExpect(jsonPath("$.data.name").value("일반 구성원 - 예비 합격 통지"))
-                .andExpect(jsonPath("$.data.commonVariables[0].key").value("RECRUIT_ALERT_APPLY_URL"))
-                .andExpect(jsonPath("$.data.commonVariables[0].inputType").value("URL"))
-                .andExpect(jsonPath("$.data.personalVariables[0].label").value("이름"))
-                .andExpect(jsonPath("$.data.personalVariables[0].inputType").value("TEXT"));
+                .andExpect(jsonPath("$.data.customVariables[0].key").value("RECRUIT_ALERT_APPLY_URL"))
+                .andExpect(jsonPath("$.data.customVariables[0].inputType").value("URL"))
+                .andExpect(jsonPath("$.data.personalVariables[0]").value("name"));
     }
 }
