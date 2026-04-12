@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum MailScenarioType {
 
-    TEMP_PASS("1차 합격"),
+    FIRST_PASS("1차 합격"),
     FINAL_PASS("최종 합격"),
     STANDBY_PASS("예비 합격"),
     REJECT("불합격"),

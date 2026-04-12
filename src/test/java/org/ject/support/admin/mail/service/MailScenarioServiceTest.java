@@ -122,7 +122,7 @@ class MailScenarioServiceTest {
         MailScenarioResponse response = mailScenarioService.createScenario(request);
 
         assertThat(response.name()).isEqualTo("메이커스 1차 합격");
-        assertThat(response.scenarioCode()).isEqualTo("MAKERS_FIRST_PASS");
+        assertThat(response.scenarioCode()).isEqualTo("MAKERS_TEMP_PASS");
     }
 
     @Test
