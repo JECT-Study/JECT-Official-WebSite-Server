@@ -29,7 +29,7 @@ import org.ject.support.domain.recruit.domain.Recruit;
 @Entity
 @Getter
 @Builder
-@SQLDelete(sql = "UPDATE apply SET is_deleted = true WHERE id = ? AND version = ?")
+@SQLDelete(sql = "UPDATE apply SET is_deleted = true, version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("is_deleted = false")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
