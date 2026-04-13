@@ -22,7 +22,7 @@ public class MailScenarioVariable {
     @Column(name = "variable_key", nullable = false)
     private String key;
 
-    @Column(name = "variable_label", nullable = false)
+    @Column(name = "label", nullable = false)
     private String label;
 
     @Enumerated(EnumType.STRING)
