@@ -29,6 +29,7 @@ import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -142,31 +143,36 @@ public class ApplyService implements ApplyUsecase {
                                   JobFamily jobFamily,
                                   Map<String, String> answers,
                                   List<ApplyPortfolioDto> portfolios) {
-        // 1. jobFamily를 통해 현재 기수 지원양식 id 조회
-        Recruit recruit = getPeriodRecruit(jobFamily);
+        try {
+            // 1. jobFamily를 통해 현재 기수 지원양식 id 조회
+            Recruit recruit = getPeriodRecruit(jobFamily);
 
-        // 2. 지원양식과 answers의 key를 비교해 올바른 질문 양식인지 점검
-        validateQuestions(answers, recruit);
+            // 2. 지원양식과 answers의 key를 비교해 올바른 질문 양식인지 점검
+            validateQuestions(answers, recruit);
 
-        // 3. 지원 정보 조회
-        Apply apply = applyRepository.findByMemberIdInActiveRecruitForUpdate(memberId, LocalDateTime.now())
-                .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
+            // 3. 지원 정보 조회 (낙관적 락 - @Version 기반 동시성 제어)
+            Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
+                    .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
-        String content = map2JsonSerializer.serializeAsString(answers);
-        List<Portfolio> newPortfolios = getNewPortfolios(portfolios);
+            String content = map2JsonSerializer.serializeAsString(answers);
+            List<Portfolio> newPortfolios = getNewPortfolios(portfolios);
 
-        // 4. ApplicationForm 준비
-        ApplicationForm applicationForm;
-        if (apply.isTempSaved()) {
-            applicationForm = apply.getApplicationForm();
-            applicationForm.updateContentAndPortfolios(content, newPortfolios);
-        } else {
-            applicationForm = createApplicationForm(apply, content, newPortfolios);
-            applicationFormRepository.save(applicationForm);
+            // 4. ApplicationForm 준비
+            ApplicationForm applicationForm;
+            if (apply.isTempSaved()) {
+                applicationForm = apply.getApplicationForm();
+                applicationForm.updateContentAndPortfolios(content, newPortfolios);
+            } else {
+                applicationForm = createApplicationForm(apply, content, newPortfolios);
+                applicationFormRepository.save(applicationForm);
+            }
+
+            // 5. Apply 엔티티에 제출 위임 (검증 및 상태 변경 포함)
+            apply.submit(applicationForm);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            log.warn("지원서 제출 중 낙관적 락 충돌 발생. memberId: {}", memberId);
+            throw new ApplyException(ALREADY_SUBMITTED);
         }
-
-        // 5. Apply 엔티티에 제출 위임 (검증 및 상태 변경 포함)
-        apply.submit(applicationForm);
     }
 
     @Override
