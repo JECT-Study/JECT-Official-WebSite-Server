@@ -20,7 +20,10 @@ import org.ject.support.admin.mail.dto.MailScenarioRequest;
 import org.ject.support.admin.mail.dto.MailScenarioRequest.CustomVariableRequest;
 import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
+import org.ject.support.admin.mail.exception.MailErrorCode;
+import org.ject.support.admin.mail.exception.MailException;
 import org.ject.support.admin.mail.service.MailScenarioService;
+import org.ject.support.common.exception.GlobalExceptionHandler;
 import org.ject.support.common.response.ResponseWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,7 +52,7 @@ class AdminMailScenarioControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(adminMailScenarioController)
-                .setControllerAdvice(new ResponseWrapper())
+                .setControllerAdvice(new GlobalExceptionHandler(), new ResponseWrapper())
                 .build();
     }
 
@@ -156,5 +159,59 @@ class AdminMailScenarioControllerTest {
                 .andExpect(jsonPath("$.data.customVariables[0].key").value("RECRUIT_ALERT_APPLY_URL"))
                 .andExpect(jsonPath("$.data.customVariables[0].inputType").value("URL"))
                 .andExpect(jsonPath("$.data.personalVariables[0]").value("name"));
+    }
+
+    @Test
+    @DisplayName("중복 시나리오 코드 생성 시 409 Conflict를 반환한다")
+    void createScenario_duplicateCode() throws Exception {
+        MailScenarioRequest request = new MailScenarioRequest(
+                "새 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC, "DUP_CODE",
+                "[JECT] ${RECRUIT_NAME}", "${name}", true, 
+                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
+        );
+        given(mailScenarioService.createScenario(any(MailScenarioRequest.class)))
+                .willThrow(new MailException(MailErrorCode.DUPLICATE_SCENARIO_CODE)); // MAIL-5, CONFLICT
+
+        mockMvc.perform(post("/admin/mails/scenarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value("MAIL-5"));
+    }
+
+    @Test
+    @DisplayName("허용되지 않은 템플릿 변수 사용 시 400 Bad Request를 반환한다")
+    void createScenario_unsupportedTemplateVariable() throws Exception {
+        MailScenarioRequest request = new MailScenarioRequest(
+                "새 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC, "NEW_SCENARIO",
+                "[JECT] ${UNKNOWN}", "${name}", true, 
+                List.of()
+        );
+        given(mailScenarioService.createScenario(any(MailScenarioRequest.class)))
+                .willThrow(new MailException(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE)); // MAIL-3, BAD_REQUEST
+
+        mockMvc.perform(post("/admin/mails/scenarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("MAIL-3"));
+    }
+
+    @Test
+    @DisplayName("잘못된 템플릿 문법 사용 시 400 Bad Request를 반환한다")
+    void createScenario_invalidTemplateSyntax() throws Exception {
+        MailScenarioRequest request = new MailScenarioRequest(
+                "새 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC, "NEW_SCENARIO",
+                "[JECT] ${UNCLOSED", "${name}", true, 
+                List.of()
+        );
+        given(mailScenarioService.createScenario(any(MailScenarioRequest.class)))
+                .willThrow(new MailException(MailErrorCode.INVALID_TEMPLATE_SYNTAX)); // MAIL-2, BAD_REQUEST
+
+        mockMvc.perform(post("/admin/mails/scenarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("MAIL-2"));
     }
 }
