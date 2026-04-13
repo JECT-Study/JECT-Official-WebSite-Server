@@ -169,6 +169,9 @@ public class ApplyService implements ApplyUsecase {
 
             // 5. Apply 엔티티에 제출 위임 (검증 및 상태 변경 포함)
             apply.submit(applicationForm);
+
+            // 명시적 flush를 통해 낙관적 락 충돌을 메서드 내부에서 감지하고 catch 블록으로 전달합니다.
+            applyRepository.flush();
         } catch (ObjectOptimisticLockingFailureException e) {
             log.warn("지원서 제출 중 낙관적 락 충돌 발생. memberId: {}", memberId);
             throw new ApplyException(ALREADY_SUBMITTED);
