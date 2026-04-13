@@ -8,13 +8,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.doThrow;
-
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import org.hibernate.exception.ConstraintViolationException;
 import org.ject.support.admin.mail.domain.MailScenario;
 import org.ject.support.admin.mail.domain.MailScenarioCategory;
 import org.ject.support.admin.mail.domain.MailScenarioRepository;
@@ -119,7 +116,7 @@ class MailScenarioServiceTest {
                 .build();
 
         given(mailScenarioRepository.existsByScenarioCode(request.scenarioCode())).willReturn(false);
-        given(mailScenarioRepository.saveAndFlush(any(MailScenario.class))).willReturn(saved);
+        given(mailScenarioRepository.save(any(MailScenario.class))).willReturn(saved);
 
         MailScenarioResponse response = mailScenarioService.createScenario(request);
 
@@ -194,30 +191,6 @@ class MailScenarioServiceTest {
                 .isEqualTo(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE);
     }
 
-    @Test
-    @DisplayName("동시 요청으로 DB unique 제약 위반이 발생하면 중복 코드 예외로 변환한다")
-    void createScenario_DuplicateScenarioCode_RaceCondition() {
-        MailScenarioRequest request = new MailScenarioRequest(
-                "동시성 테스트",
-                MailScenarioCategory.GENERAL,
-                MailScenarioType.ETC,
-                "RACE_CODE",
-                "[JECT] ${RECRUIT_NAME}",
-                "${name}",
-                true,
-                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
-        );
-
-        given(mailScenarioRepository.existsByScenarioCode("RACE_CODE")).willReturn(false);
-        given(mailScenarioRepository.saveAndFlush(any(MailScenario.class)))
-                .willThrow(duplicateScenarioCodeViolation());
-
-        assertThatThrownBy(() -> mailScenarioService.createScenario(request))
-                .isInstanceOf(MailException.class)
-                .extracting("errorCode")
-                .isEqualTo(MailErrorCode.DUPLICATE_SCENARIO_CODE);
-    }
-
     // ── updateScenario ────────────────────────────────────
 
     @Test
@@ -247,49 +220,12 @@ class MailScenarioServiceTest {
 
         given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(existing));
         given(mailScenarioRepository.existsByScenarioCodeAndIdNot(request.scenarioCode(), scenarioId)).willReturn(false);
-        given(mailScenarioRepository.saveAndFlush(existing)).willReturn(existing);
 
         MailScenarioResponse response = mailScenarioService.updateScenario(scenarioId, request);
 
         assertThat(response.name()).isEqualTo("새 이름");
         assertThat(response.scenarioCode()).isEqualTo("MEMBER_NEW");
         assertThat(response.active()).isFalse();
-    }
-
-    @Test
-    @DisplayName("수정 시 DB unique 제약 위반이 발생하면 중복 코드 예외로 변환한다")
-    void updateScenario_DuplicateScenarioCode_RaceCondition() {
-        Long scenarioId = 1L;
-        MailScenario existing = MailScenario.builder()
-                .name("기존 시나리오")
-                .category(MailScenarioCategory.CLUB_MEMBER)
-                .type(MailScenarioType.ETC)
-                .scenarioCode("MEMBER_OLD")
-                .subjectTemplate("[JECT] 기존 제목")
-                .bodyTemplate("기존 본문")
-                .active(true)
-                .customVariables(Set.of())
-                .build();
-        MailScenarioRequest request = new MailScenarioRequest(
-                "새 이름",
-                MailScenarioCategory.CLUB_MEMBER,
-                MailScenarioType.FINAL_PASS,
-                "MEMBER_NEW",
-                "[JECT] ${RECRUIT_NAME}",
-                "${name}",
-                false,
-                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
-        );
-
-        given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(existing));
-        given(mailScenarioRepository.existsByScenarioCodeAndIdNot(request.scenarioCode(), scenarioId)).willReturn(false);
-        given(mailScenarioRepository.saveAndFlush(existing))
-                .willThrow(duplicateScenarioCodeViolation());
-
-        assertThatThrownBy(() -> mailScenarioService.updateScenario(scenarioId, request))
-                .isInstanceOf(MailException.class)
-                .extracting("errorCode")
-                .isEqualTo(MailErrorCode.DUPLICATE_SCENARIO_CODE);
     }
 
     // ── deleteScenario ────────────────────────────────────
@@ -376,13 +312,4 @@ class MailScenarioServiceTest {
                 .containsExactlyInAnyOrder("CODE_A", "CODE_B");
     }
 
-    private DataIntegrityViolationException duplicateScenarioCodeViolation() {
-        ConstraintViolationException cause = new ConstraintViolationException(
-                "duplicate scenario code",
-                new SQLIntegrityConstraintViolationException("duplicate", "23000"),
-                "insert into mail_scenario ...",
-                "uk_mail_scenario_scenario_code"
-        );
-        return new DataIntegrityViolationException("constraint violated", cause);
-    }
 }

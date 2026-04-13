@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.exception.ConstraintViolationException;
 import org.ject.support.admin.mail.domain.MailScenario;
 import org.ject.support.admin.mail.domain.MailScenarioRepository;
 import org.ject.support.admin.mail.domain.MailScenarioVariable;
@@ -16,7 +15,6 @@ import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class MailScenarioService {
-
-    private static final String SCENARIO_CODE_UNIQUE_CONSTRAINT = "uk_mail_scenario_scenario_code";
 
     private final MailScenarioRepository mailScenarioRepository;
     private final MailTemplateEngine mailTemplateEngine;
@@ -80,12 +76,7 @@ public class MailScenarioService {
                 .customVariables(customVariables)
                 .build();
 
-        try {
-            // 3. flush 시점에 발생하는 unique 제약 위반을 서비스 계층에서 도메인 예외로 변환합니다.
-            return MailScenarioResponse.from(mailScenarioRepository.saveAndFlush(scenario));
-        } catch (DataIntegrityViolationException e) {
-            throw mapDuplicateScenarioCodeException(e);
-        }
+        return MailScenarioResponse.from(mailScenarioRepository.save(scenario));
     }
 
     @Transactional
@@ -110,13 +101,7 @@ public class MailScenarioService {
                 customVariables
         );
 
-        try {
-            // 4. flush 시점에 unique 제약 위반이 나면 도메인 예외로 변환합니다.
-            MailScenario savedScenario = mailScenarioRepository.saveAndFlush(scenario);
-            return MailScenarioResponse.from(savedScenario);
-        } catch (DataIntegrityViolationException ex) {
-            throw mapDuplicateScenarioCodeException(ex);
-        }
+        return MailScenarioResponse.from(scenario);
     }
 
     @Transactional
@@ -164,28 +149,5 @@ public class MailScenarioService {
         // 2. 허용된 변수만 사용했는지 검증합니다.
         mailTemplateValidator.validateAllowedPlaceholders(subjectTemplate, customVariables);
         mailTemplateValidator.validateAllowedPlaceholders(bodyTemplate, customVariables);
-    }
-
-    private MailException mapDuplicateScenarioCodeException(DataIntegrityViolationException ex) {
-        if (isScenarioCodeUniqueConstraintViolation(ex)) {
-            return new MailException(MailErrorCode.DUPLICATE_SCENARIO_CODE);
-        }
-
-        throw ex;
-    }
-
-    private boolean isScenarioCodeUniqueConstraintViolation(Throwable throwable) {
-        Throwable current = throwable;
-        while (current != null) {
-            if (current instanceof ConstraintViolationException violationException) {
-                String constraintName = violationException.getConstraintName();
-                if (SCENARIO_CODE_UNIQUE_CONSTRAINT.equalsIgnoreCase(constraintName)) {
-                    return true;
-                }
-            }
-            current = current.getCause();
-        }
-
-        return false;
     }
 }
