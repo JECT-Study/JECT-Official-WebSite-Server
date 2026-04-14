@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,7 +29,7 @@ import org.ject.support.domain.recruit.domain.Recruit;
 @Entity
 @Getter
 @Builder
-@SQLDelete(sql = "UPDATE apply SET is_deleted = true WHERE id = ?")
+@SQLDelete(sql = "UPDATE apply SET is_deleted = true, version = version + 1 WHERE id = ? AND version = ?")
 @SQLRestriction("is_deleted = false")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -60,6 +61,9 @@ public class Apply extends BaseTimeEntity {
     @Column(name = "is_deleted", nullable = false)
     @Builder.Default
     private Boolean isDeleted = false;
+
+    @Version
+    private Long version;
 
     public static Apply createApply(Member member, Recruit recruit) {
         return Apply.builder()
