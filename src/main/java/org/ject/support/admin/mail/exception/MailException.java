@@ -10,4 +10,8 @@ public class MailException extends BusinessException {
     public MailException(ErrorCode errorCode) {
         super(errorCode);
     }
+
+    public MailException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
+    }
 }

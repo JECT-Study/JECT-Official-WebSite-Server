@@ -42,13 +42,16 @@ class MailTemplateValidatorTest {
     }
 
     @Test
-    @DisplayName("허용 목록에 없는 placeholder는 예외를 발생시킨다")
-    void validateAllowedPlaceholders_Fail() {
+    @DisplayName("허용 목록에 없는 placeholder는 예외를 발생시키며 누락된 모든 키를 메시지에 포함한다")
+    void validateAllowedPlaceholders_Fail_WithMultipleKeys() {
         assertThatThrownBy(() -> validator.validateAllowedPlaceholders(
-                "안녕하세요 ${UNKNOWN_KEY}",
+                "안녕하세요 ${UNKNOWN_KEY_1}님, ${UNKNOWN_KEY_2}를 확인해주세요. ${name}님.",
                 Set.of()
         ))
                 .isInstanceOf(MailException.class)
+                .hasMessageContaining("허용되지 않은 템플릿 변수가 포함되어 있습니다")
+                .hasMessageContaining("UNKNOWN_KEY_1")
+                .hasMessageContaining("UNKNOWN_KEY_2")
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE);
     }
