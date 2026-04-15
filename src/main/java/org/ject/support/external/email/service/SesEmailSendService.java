@@ -10,10 +10,13 @@ import org.ject.support.external.infrastructure.SesRateLimiter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.sesv2.SesV2Client;
+import software.amazon.awssdk.services.sesv2.model.Body;
 import software.amazon.awssdk.services.sesv2.model.BulkEmailContent;
 import software.amazon.awssdk.services.sesv2.model.BulkEmailEntry;
+import software.amazon.awssdk.services.sesv2.model.Content;
 import software.amazon.awssdk.services.sesv2.model.Destination;
 import software.amazon.awssdk.services.sesv2.model.EmailContent;
+import software.amazon.awssdk.services.sesv2.model.Message;
 import software.amazon.awssdk.services.sesv2.model.MessageTag;
 import software.amazon.awssdk.services.sesv2.model.SendBulkEmailRequest;
 import software.amazon.awssdk.services.sesv2.model.SendEmailRequest;
@@ -32,6 +35,7 @@ import static org.ject.support.external.email.exception.EmailErrorCode.EMAIL_SEN
 public class SesEmailSendService implements EmailSendService {
 
     private static final String GROUP_CODE_TAG_NAME = "group_code";
+    private static final String DEFAULT_TAG = "MANUAL";
 
     private final Map2JsonSerializer map2JsonSerializer;
     private final SesV2Client sesV2Client;
@@ -96,6 +100,38 @@ public class SesEmailSendService implements EmailSendService {
 
                     sesV2Client.sendBulkEmail(sendBulkEmailRequest);
                 });
+    }
+
+    @Override
+    public void sendEmail(String to, String subject, String body) {
+        // 이메일 메시지 구성
+        Message message = Message.builder()
+                .subject(Content.builder().data(subject).build())
+                .body(Body.builder()
+                        .html(Content.builder().data(body).build())
+                        .build())
+                .build();
+
+        EmailContent emailContent = EmailContent.builder()
+                .simple(message)
+                .build();
+
+        // 기본 태그 설정
+        MessageTag messageTag = getMessageTag(DEFAULT_TAG);
+
+        SendEmailRequest emailRequest = SendEmailRequest.builder()
+                .destination(getDestination(to))
+                .content(emailContent)
+                .fromEmailAddress(from)
+                .emailTags(messageTag)
+                .build();
+
+        try {
+            sesV2Client.sendEmail(emailRequest);
+        } catch (Exception e) {
+            log.error("이메일 전송 실패 to={}", to, e);
+            throw new EmailException(EMAIL_SEND_FAILURE);
+        }
     }
 
     private Template getTemplate(String templateName, Map<String, String> parameter) {
