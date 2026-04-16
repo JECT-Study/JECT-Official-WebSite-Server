@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
     protected ErrorResponse handleBusinessException(BusinessException e) {
         ErrorCode errorCode = e.getErrorCode();
         logException(e, errorCode);
-        return ErrorResponse.of(errorCode);
+        return ErrorResponse.of(errorCode, List.of(e.getMessage()));
     }
 
     /**

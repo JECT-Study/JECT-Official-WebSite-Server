@@ -1,5 +1,12 @@
 package org.ject.support.external.email.service;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+
+import java.util.Map;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.external.email.domain.EmailTemplate;
@@ -14,14 +21,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.services.sesv2.SesV2Client;
 import software.amazon.awssdk.services.sesv2.model.SendEmailRequest;
 import software.amazon.awssdk.services.sesv2.model.SendEmailResponse;
-
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.verify;
 
 class SesEmailSendServiceTest extends UnitTestSupport {
 
@@ -91,5 +90,26 @@ class SesEmailSendServiceTest extends UnitTestSupport {
         // then
         verify(map2JsonSerializer).serializeAsString(anyMap());
         verify(sesV2Client).sendEmail(any(SendEmailRequest.class));
+    }
+
+    @Test
+    void 단건_본문_이메일_전송_성공_시_SES_Client_호출_검증() {
+        given(sesV2Client.sendEmail(any(SendEmailRequest.class)))
+                .willReturn(SendEmailResponse.builder().messageId("simple-1").build());
+
+        sesEmailSendService.sendEmail("user@recipient.com", "JECT 안내", "<h1>본문</h1>");
+
+        verify(sesV2Client).sendEmail(any(SendEmailRequest.class));
+    }
+
+    @Test
+    void 단건_본문_이메일_전송_실패_시_EMAIL_SEND_FAILURE_예외_발생() {
+        given(sesV2Client.sendEmail(any(SendEmailRequest.class)))
+                .willThrow(new RuntimeException("simple send fail"));
+
+        assertThatThrownBy(() -> sesEmailSendService.sendEmail("user@recipient.com", "JECT 안내", "<h1>본문</h1>"))
+                .isInstanceOf(EmailException.class)
+                .extracting(e -> ((EmailException) e).getErrorCode())
+                .isEqualTo(EmailErrorCode.EMAIL_SEND_FAILURE);
     }
 }
