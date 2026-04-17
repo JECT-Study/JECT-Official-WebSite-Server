@@ -143,6 +143,8 @@ class AdminAccountServiceTest extends UnitTestSupport {
         var member = Member.builder()
                 .id(memberId)
                 .email(TEST_EMAIL)
+                .name("김젝트")
+                .phoneNumber("01012345678")
                 .role(Role.OPERATIONS)
                 .semesterId(1L)
                 .build();
@@ -155,6 +157,10 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // then
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
         assertThat(member.getRole()).isEqualTo(Role.SUPPORTER);
+        assertThat(member.getEmail()).isEqualTo(TEST_EMAIL);
+        assertThat(member.getName()).isEqualTo("김젝트");
+        assertThat(member.getPhoneNumber()).isEqualTo("01012345678");
+        assertThat(member.getSemesterId()).isEqualTo(1L);
     }
 
     @Test

@@ -8,6 +8,7 @@ import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.entity.MemberEditor;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -37,7 +38,11 @@ public class AdminAccountService {
 
         final Member member = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
 
-        member.updateRole(request.role());
+        final MemberEditor editor = member.toEditor()
+                .role(request.role())
+                .build();
+
+        member.edit(editor);
     }
 
     private void validateBackofficeRole(final Role role) {
