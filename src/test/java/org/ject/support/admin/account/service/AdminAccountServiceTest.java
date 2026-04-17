@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
+import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
 import org.ject.support.base.UnitTestSupport;
@@ -19,6 +20,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
 
 class AdminAccountServiceTest extends UnitTestSupport {
 
@@ -128,5 +131,82 @@ class AdminAccountServiceTest extends UnitTestSupport {
         verify(memberRepository, never()).existsByEmail(anyString());
         verify(passwordEncoder, never()).encode(anyString());
         verify(memberRepository, never()).save(org.mockito.ArgumentMatchers.any(Member.class));
+    }
+
+    @Test
+    void 관리자_계정_권한_수정_성공() {
+        // given
+        var memberId = 1L;
+        var request = new AdminAccountRoleUpdateRequest(Role.SUPPORTER);
+        var member = Member.builder()
+                .id(memberId)
+                .email(TEST_EMAIL)
+                .role(Role.OPERATIONS)
+                .semesterId(1L)
+                .build();
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+
+        // when
+        adminAccountService.updateRole(memberId, request);
+
+        // then
+        verify(memberRepository).findById(memberId);
+        assertThat(member.getRole()).isEqualTo(Role.SUPPORTER);
+    }
+
+    @Test
+    void 관리자_계정_권한_수정_실패_관리자_계정_유형이_아닌_role() {
+        // given
+        var request = new AdminAccountRoleUpdateRequest(Role.SEMESTER);
+
+        // expected
+        assertThatThrownBy(() -> adminAccountService.updateRole(1L, request))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ROLE);
+
+        verify(memberRepository, never()).findById(org.mockito.ArgumentMatchers.anyLong());
+    }
+
+    @Test
+    void 관리자_계정_권한_수정_실패_존재하지_않는_관리자() {
+        // given
+        var memberId = 999L;
+        var request = new AdminAccountRoleUpdateRequest(Role.SUPPORTER);
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+
+        // expected
+        assertThatThrownBy(() -> adminAccountService.updateRole(memberId, request))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
+
+        verify(memberRepository).findById(memberId);
+    }
+
+    @Test
+    void 관리자_계정_권한_수정_실패_대상이_관리자_계정이_아님() {
+        // given
+        var memberId = 1L;
+        var request = new AdminAccountRoleUpdateRequest(Role.SUPPORTER);
+        var member = Member.builder()
+                .id(memberId)
+                .email(TEST_EMAIL)
+                .role(Role.SEMESTER)
+                .semesterId(1L)
+                .build();
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+
+        // expected
+        assertThatThrownBy(() -> adminAccountService.updateRole(memberId, request))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
+
+        verify(memberRepository).findById(memberId);
+        assertThat(member.getRole()).isEqualTo(Role.SEMESTER);
     }
 }

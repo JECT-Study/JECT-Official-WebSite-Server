@@ -155,6 +155,10 @@ public class Member extends BaseTimeEntity {
         this.role = Role.SEMESTER;
     }
 
+    public void updateRole(final Role role) {
+        this.role = role;
+    }
+
     public boolean isProfileComplete() {
         return this.name != null && this.phoneNumber != null;
     }
