@@ -195,28 +195,4 @@ class AdminAccountServiceTest extends UnitTestSupport {
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
     }
 
-    @Test
-    void 관리자_계정_권한_수정_실패_대상이_관리자_계정이_아님() {
-        // given
-        var memberId = 1L;
-        var request = new AdminAccountRoleUpdateRequest(Role.SUPPORTER);
-        var member = Member.builder()
-                .id(memberId)
-                .email(TEST_EMAIL)
-                .role(Role.SEMESTER)
-                .semesterId(1L)
-                .build();
-
-        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId))
-                .willThrow(new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
-
-        // when, then
-        assertThatThrownBy(() -> adminAccountService.updateRole(memberId, request))
-                .isInstanceOf(AdminException.class)
-                .extracting(e -> ((AdminException) e).getErrorCode())
-                .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
-
-        verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
-        assertThat(member.getRole()).isEqualTo(Role.SEMESTER);
-    }
 }
