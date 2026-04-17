@@ -1,0 +1,130 @@
+package org.ject.support.admin.account.controller;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
+import org.ject.support.admin.account.service.AdminAccountService;
+import org.ject.support.base.UnitTestSupport;
+import org.ject.support.common.exception.GlobalErrorCode;
+import org.ject.support.common.exception.GlobalExceptionHandler;
+import org.ject.support.domain.member.Role;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+class AdminAccountControllerTest extends UnitTestSupport {
+
+    @InjectMocks
+    private AdminAccountController adminAccountController;
+
+    @Mock
+    private AdminAccountService adminAccountService;
+
+    private MockMvc mockMvc;
+    private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+        objectMapper = new ObjectMapper();
+        mockMvc = MockMvcBuilders.standaloneSetup(adminAccountController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
+    }
+
+    @Test
+    void 관리자_계정_생성_성공() throws Exception {
+        // given
+        var request = new AdminAccountCreateRequest("admin@ject.kr", "password123", "김젝트", Role.OPERATIONS);
+
+        doNothing().when(adminAccountService).createAccount(any(AdminAccountCreateRequest.class));
+
+        // when, then
+        mockMvc.perform(post("/admin/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andDo(print());
+
+        verify(adminAccountService).createAccount(any(AdminAccountCreateRequest.class));
+    }
+
+    @Test
+    void 관리자_계정_생성은_ADMIN_권한만_허용한다() throws Exception {
+        // when
+        PreAuthorize preAuthorize = AdminAccountController.class
+                .getMethod("createAccount", AdminAccountCreateRequest.class)
+                .getAnnotation(PreAuthorize.class);
+
+        // when, then
+        assertThat(preAuthorize).isNotNull();
+        assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
+    }
+
+    @Test
+    void 관리자_계정_생성_실패_올바르지_않은_이메일_형식() throws Exception {
+        // given
+        var request = new AdminAccountCreateRequest("invalid-email", "password123", "김젝트", Role.OPERATIONS);
+
+        // when, then
+        mockMvc.perform(post("/admin/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
+                .andExpect(jsonPath("$.messages[0]").value("올바른 이메일 형식이 아닙니다."))
+                .andDo(print());
+    }
+
+    @Test
+    void 관리자_계정_생성_실패_이메일_길이_초과() throws Exception {
+        // given
+        var request = new AdminAccountCreateRequest(
+                "very-long-admin-email-test@ject.kr",
+                "password123",
+                "김젝트",
+                Role.OPERATIONS
+        );
+
+        // when, then
+        mockMvc.perform(post("/admin/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
+                .andExpect(jsonPath("$.messages[0]").value("이메일 길이는 최대 30자리 까지 가능합니다."))
+                .andDo(print());
+    }
+
+    @Test
+    void 관리자_계정_생성_실패_이름_길이_초과() throws Exception {
+        // given
+        var request = new AdminAccountCreateRequest(
+                "admin@ject.kr",
+                "password123",
+                "김젝트김젝트김젝트김젝트김젝트김젝트김젝트",
+                Role.OPERATIONS
+        );
+
+        // when, then
+        mockMvc.perform(post("/admin/accounts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
+                .andExpect(jsonPath("$.messages[0]").value("이름 길이는 최대 20자리 까지 가능합니다."))
+                .andDo(print());
+    }
+}
