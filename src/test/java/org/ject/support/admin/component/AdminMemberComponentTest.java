@@ -1,4 +1,4 @@
-package org.ject.support.admin.member.component;
+package org.ject.support.admin.component;
 
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
@@ -64,6 +64,43 @@ class AdminMemberComponentTest extends UnitTestSupport {
         assertEquals(email, result.getEmail());
         assertEquals(Role.ADMIN, result.getRole());
         assertEquals(MemberStatus.ACTIVE, result.getStatus());
+    }
+
+    @Test
+    void id로_관리자계정의_정보를_조회할_경우_Member_엔티티를_반환() {
+        // given
+        Long memberId = 1L;
+        Member foundMember = Member.builder()
+                .id(memberId)
+                .email("admin@test.com")
+                .status(MemberStatus.ACTIVE)
+                .role(Role.ADMIN)
+                .build();
+
+        given(memberRepository.findByIdAndRoleIn(memberId, BACKOFFICE_ROLES)).willReturn(Optional.of(foundMember));
+
+        // when
+        Member result = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
+
+        // then
+        verify(memberRepository).findByIdAndRoleIn(memberId, BACKOFFICE_ROLES);
+        assertEquals(memberId, result.getId());
+        assertEquals(Role.ADMIN, result.getRole());
+        assertEquals(MemberStatus.ACTIVE, result.getStatus());
+    }
+
+    @Test
+    void 존재하지않는_id로_관리자계정의_정보를_조회할_경우_NOT_FOUND_ADMIN_예외가_발생() {
+        // given
+        Long memberId = 999L;
+
+        given(memberRepository.findByIdAndRoleIn(memberId, BACKOFFICE_ROLES)).willReturn(Optional.empty());
+
+        // when, then
+        assertThatThrownBy(() -> adminMemberComponent.getRequiredBackofficeMemberById(memberId))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
     }
 
     @Test

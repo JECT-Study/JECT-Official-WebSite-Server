@@ -2,6 +2,7 @@ package org.ject.support.admin.account.service;
 
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
+import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
 import org.ject.support.base.UnitTestSupport;
@@ -13,8 +14,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.security.crypto.password.PasswordEncoder;
-
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -30,6 +29,9 @@ class AdminAccountServiceTest extends UnitTestSupport {
 
     @Mock
     private MemberRepository memberRepository;
+
+    @Mock
+    private AdminMemberComponent adminMemberComponent;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -145,13 +147,13 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .semesterId(1L)
                 .build();
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
 
         // when
         adminAccountService.updateRole(memberId, request);
 
         // then
-        verify(memberRepository).findById(memberId);
+        verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
         assertThat(member.getRole()).isEqualTo(Role.SUPPORTER);
     }
 
@@ -166,7 +168,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ROLE);
 
-        verify(memberRepository, never()).findById(org.mockito.ArgumentMatchers.anyLong());
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(org.mockito.ArgumentMatchers.anyLong());
     }
 
     @Test
@@ -175,7 +177,8 @@ class AdminAccountServiceTest extends UnitTestSupport {
         var memberId = 999L;
         var request = new AdminAccountRoleUpdateRequest(Role.SUPPORTER);
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId))
+                .willThrow(new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
 
         // when, then
         assertThatThrownBy(() -> adminAccountService.updateRole(memberId, request))
@@ -183,7 +186,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
 
-        verify(memberRepository).findById(memberId);
+        verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
     }
 
     @Test
@@ -198,7 +201,8 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .semesterId(1L)
                 .build();
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId))
+                .willThrow(new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
 
         // when, then
         assertThatThrownBy(() -> adminAccountService.updateRole(memberId, request))
@@ -206,7 +210,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
 
-        verify(memberRepository).findById(memberId);
+        verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
         assertThat(member.getRole()).isEqualTo(Role.SEMESTER);
     }
 }

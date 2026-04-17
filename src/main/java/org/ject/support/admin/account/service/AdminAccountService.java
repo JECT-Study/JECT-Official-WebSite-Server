@@ -3,6 +3,7 @@ package org.ject.support.admin.account.service;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
+import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
 import org.ject.support.domain.member.Role;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminAccountService {
 
     private final MemberRepository memberRepository;
+    private final AdminMemberComponent adminMemberComponent;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
@@ -33,9 +35,7 @@ public class AdminAccountService {
     public void updateRole(final Long memberId, final AdminAccountRoleUpdateRequest request) {
         validateBackofficeRole(request.role());
 
-        final Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
-        validateBackofficeAccount(member);
+        final Member member = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
 
         member.updateRole(request.role());
     }
@@ -43,12 +43,6 @@ public class AdminAccountService {
     private void validateBackofficeRole(final Role role) {
         if (!role.isBackoffice()) {
             throw new AdminException(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ROLE);
-        }
-    }
-
-    private void validateBackofficeAccount(final Member member) {
-        if (!member.getRole().isBackoffice()) {
-            throw new AdminException(AdminErrorCode.NOT_FOUND_ADMIN);
         }
     }
 
