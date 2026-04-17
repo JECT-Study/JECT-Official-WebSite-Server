@@ -1,12 +1,5 @@
 package org.ject.support.admin.account.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.exception.AdminErrorCode;
@@ -22,6 +15,13 @@ import org.mockito.Mock;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 class AdminAccountServiceTest extends UnitTestSupport {
 
@@ -160,7 +160,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // given
         var request = new AdminAccountRoleUpdateRequest(Role.SEMESTER);
 
-        // expected
+        // when, then
         assertThatThrownBy(() -> adminAccountService.updateRole(1L, request))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
@@ -177,7 +177,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
 
         given(memberRepository.findById(memberId)).willReturn(Optional.empty());
 
-        // expected
+        // when, then
         assertThatThrownBy(() -> adminAccountService.updateRole(memberId, request))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
@@ -200,7 +200,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
 
-        // expected
+        // when, then
         assertThatThrownBy(() -> adminAccountService.updateRole(memberId, request))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
