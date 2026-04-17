@@ -14,9 +14,11 @@ import org.mockito.Mock;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 class AdminMemberComponentTest extends UnitTestSupport {
@@ -64,6 +66,44 @@ class AdminMemberComponentTest extends UnitTestSupport {
         assertEquals(email, result.getEmail());
         assertEquals(Role.ADMIN, result.getRole());
         assertEquals(MemberStatus.ACTIVE, result.getStatus());
+    }
+
+    @Test
+    void 이메일로_관리자계정의_정보를_Optional로_조회할_경우_존재하면_Member를_반환() {
+        // given
+        String email = "admin@test.com";
+        Member foundMember = Member.builder()
+                .id(1L)
+                .email(email)
+                .status(MemberStatus.ACTIVE)
+                .role(Role.SUPPORTER)
+                .build();
+
+        given(memberRepository.findByEmailAndRoleIn(email, BACKOFFICE_ROLES)).willReturn(Optional.of(foundMember));
+
+        // when
+        Optional<Member> result = adminMemberComponent.findBackofficeMemberByEmail(email);
+
+        // then
+        verify(memberRepository).findByEmailAndRoleIn(email, BACKOFFICE_ROLES);
+        assertThat(result).isPresent();
+        assertThat(result.get().getEmail()).isEqualTo(email);
+        assertThat(result.get().getRole()).isEqualTo(Role.SUPPORTER);
+    }
+
+    @Test
+    void 이메일로_관리자계정의_정보를_Optional로_조회할_경우_없으면_빈_Optional을_반환() {
+        // given
+        String email = "not_found_admin@test.com";
+
+        given(memberRepository.findByEmailAndRoleIn(email, BACKOFFICE_ROLES)).willReturn(Optional.empty());
+
+        // when
+        Optional<Member> result = adminMemberComponent.findBackofficeMemberByEmail(email);
+
+        // then
+        verify(memberRepository).findByEmailAndRoleIn(email, BACKOFFICE_ROLES);
+        assertThat(result).isEmpty();
     }
 
     @Test
@@ -121,5 +161,23 @@ class AdminMemberComponentTest extends UnitTestSupport {
         // then
         verify(memberRepository).save(member);
         assertEquals(changeStatus, member.getStatus());
+    }
+
+    @Test
+    void 회원의_상태가_이미_같으면_저장하지_않는다() {
+        // given
+        Member member = Member.builder()
+                .id(1L)
+                .email("test@test.com")
+                .status(MemberStatus.ACTIVE)
+                .role(Role.ADMIN)
+                .build();
+
+        // when
+        adminMemberComponent.changeMemberStatus(member, MemberStatus.ACTIVE);
+
+        // then
+        verify(memberRepository, never()).save(member);
+        assertEquals(MemberStatus.ACTIVE, member.getStatus());
     }
 }

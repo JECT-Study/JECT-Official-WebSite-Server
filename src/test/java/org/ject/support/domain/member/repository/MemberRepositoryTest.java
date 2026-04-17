@@ -88,6 +88,40 @@ class MemberRepositoryTest {
         assertThat(found).isEmpty();
     }
 
+    @Test
+    void id와_역할목록으로_회원을_조회시_목록에_포함된_역할이면_회원을_반환한다() {
+        // given
+        Member member = createMember("운영진", "01011112222", "operations@example.com", JobFamily.PM, Role.OPERATIONS);
+        Member savedMember = memberRepository.save(member);
+
+        // when
+        Optional<Member> found = memberRepository.findByIdAndRoleIn(
+                savedMember.getId(),
+                List.of(Role.ADMIN, Role.OPERATIONS, Role.SUPPORTER)
+        );
+
+        // then
+        assertThat(found).isPresent();
+        assertThat(found.get().getId()).isEqualTo(savedMember.getId());
+        assertThat(found.get().getRole()).isEqualTo(Role.OPERATIONS);
+    }
+
+    @Test
+    void id와_역할목록으로_회원을_조회시_목록에_없는_역할이면_빈_Optional을_반환한다() {
+        // given
+        Member member = createMember("학회원", "01033334444", "member@example.com", JobFamily.BE, Role.SEMESTER);
+        Member savedMember = memberRepository.save(member);
+
+        // when
+        Optional<Member> found = memberRepository.findByIdAndRoleIn(
+                savedMember.getId(),
+                List.of(Role.ADMIN, Role.OPERATIONS, Role.SUPPORTER)
+        );
+
+        // then
+        assertThat(found).isEmpty();
+    }
+
     private Member createMember(String name, String phoneNumber, String email, JobFamily jobFamily, Role role) {
         return Member.builder()
                 .name(name)
