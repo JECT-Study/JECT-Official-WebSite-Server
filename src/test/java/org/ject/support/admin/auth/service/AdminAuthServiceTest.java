@@ -3,7 +3,7 @@ package org.ject.support.admin.auth.service;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
-import org.ject.support.admin.member.component.AdminMemberComponent;
+import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;

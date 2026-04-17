@@ -1,4 +1,4 @@
-package org.ject.support.admin.member.component;
+package org.ject.support.admin.component;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.exception.AdminErrorCode;
@@ -22,6 +22,11 @@ public class AdminMemberComponent {
 
     public Member getRequiredBackofficeMemberByEmail(String email) {
         return memberRepository.findByEmailAndRoleIn(email, Role.backofficeRoles())
+                .orElseThrow(() -> new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
+    }
+
+    public Member getRequiredBackofficeMemberById(Long id) {
+        return memberRepository.findByIdAndRoleIn(id, Role.backofficeRoles())
                 .orElseThrow(() -> new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
     }
 

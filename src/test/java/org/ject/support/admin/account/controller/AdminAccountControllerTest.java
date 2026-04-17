@@ -2,6 +2,7 @@ package org.ject.support.admin.account.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
+import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.account.service.AdminAccountService;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.exception.GlobalErrorCode;
@@ -18,8 +19,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -71,6 +74,50 @@ class AdminAccountControllerTest extends UnitTestSupport {
         // when, then
         assertThat(preAuthorize).isNotNull();
         assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
+    }
+
+    @Test
+    void 관리자_계정_권한_수정_성공() throws Exception {
+        // given
+        var memberId = 1L;
+        var request = new AdminAccountRoleUpdateRequest(Role.SUPPORTER);
+
+        doNothing().when(adminAccountService).updateRole(eq(memberId), any(AdminAccountRoleUpdateRequest.class));
+
+        // when, then
+        mockMvc.perform(patch("/admin/accounts/{memberId}/role", memberId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andDo(print());
+
+        verify(adminAccountService).updateRole(eq(memberId), any(AdminAccountRoleUpdateRequest.class));
+    }
+
+    @Test
+    void 관리자_계정_권한_수정은_ADMIN_권한만_허용한다() throws Exception {
+        // when
+        PreAuthorize preAuthorize = AdminAccountController.class
+                .getMethod("updateRole", Long.class, AdminAccountRoleUpdateRequest.class)
+                .getAnnotation(PreAuthorize.class);
+
+        // when, then
+        assertThat(preAuthorize).isNotNull();
+        assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
+    }
+
+    @Test
+    void 관리자_계정_권한_수정_실패_role_누락() throws Exception {
+        // given
+        var request = new AdminAccountRoleUpdateRequest(null);
+
+        // when, then
+        mockMvc.perform(patch("/admin/accounts/{memberId}/role", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
+                .andDo(print());
     }
 
     @Test
