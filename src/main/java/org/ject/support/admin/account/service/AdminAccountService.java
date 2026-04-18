@@ -1,11 +1,13 @@
 package org.ject.support.admin.account.service;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberEditor;
@@ -43,6 +45,14 @@ public class AdminAccountService {
                 .build();
 
         member.edit(editor);
+    }
+
+    @Transactional
+    public void updateActive(final Long memberId, final AdminAccountActiveUpdateRequest request) {
+        final Member member = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
+        final MemberStatus status = request.active() ? MemberStatus.ACTIVE : MemberStatus.LOCKED;
+
+        adminMemberComponent.changeMemberStatus(member, status);
     }
 
     private void validateBackofficeRole(final Role role) {

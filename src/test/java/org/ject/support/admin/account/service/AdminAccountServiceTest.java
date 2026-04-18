@@ -1,10 +1,12 @@
 package org.ject.support.admin.account.service;
 
+import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
@@ -18,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -195,4 +198,67 @@ class AdminAccountServiceTest extends UnitTestSupport {
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
     }
 
+    @Test
+    void 관리자_계정_비활성화_성공() {
+        // given
+        var memberId = 1L;
+        var request = new AdminAccountActiveUpdateRequest(false);
+        var member = Member.builder()
+                .id(memberId)
+                .email(TEST_EMAIL)
+                .role(Role.OPERATIONS)
+                .status(MemberStatus.ACTIVE)
+                .semesterId(1L)
+                .build();
+
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
+
+        // when
+        adminAccountService.updateActive(memberId, request);
+
+        // then
+        verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
+        verify(adminMemberComponent).changeMemberStatus(eq(member), eq(MemberStatus.LOCKED));
+    }
+
+    @Test
+    void 관리자_계정_활성화_성공() {
+        // given
+        var memberId = 1L;
+        var request = new AdminAccountActiveUpdateRequest(true);
+        var member = Member.builder()
+                .id(memberId)
+                .email(TEST_EMAIL)
+                .role(Role.OPERATIONS)
+                .status(MemberStatus.LOCKED)
+                .semesterId(1L)
+                .build();
+
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
+
+        // when
+        adminAccountService.updateActive(memberId, request);
+
+        // then
+        verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
+        verify(adminMemberComponent).changeMemberStatus(eq(member), eq(MemberStatus.ACTIVE));
+    }
+
+    @Test
+    void 관리자_계정_활성화_상태_수정_실패_존재하지_않는_관리자() {
+        // given
+        var memberId = 999L;
+        var request = new AdminAccountActiveUpdateRequest(false);
+
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId))
+                .willThrow(new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateActive(memberId, request))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
+
+        verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
+    }
 }

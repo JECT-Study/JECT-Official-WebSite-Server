@@ -1,6 +1,7 @@
 package org.ject.support.admin.account.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.account.service.AdminAccountService;
@@ -104,6 +105,50 @@ class AdminAccountControllerTest extends UnitTestSupport {
         // when, then
         assertThat(preAuthorize).isNotNull();
         assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
+    }
+
+    @Test
+    void 관리자_계정_활성화_상태_수정_성공() throws Exception {
+        // given
+        var memberId = 1L;
+        var request = new AdminAccountActiveUpdateRequest(false);
+
+        doNothing().when(adminAccountService).updateActive(eq(memberId), any(AdminAccountActiveUpdateRequest.class));
+
+        // when, then
+        mockMvc.perform(patch("/admin/accounts/{memberId}/active", memberId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andDo(print());
+
+        verify(adminAccountService).updateActive(eq(memberId), any(AdminAccountActiveUpdateRequest.class));
+    }
+
+    @Test
+    void 관리자_계정_활성화_상태_수정은_ADMIN_권한만_허용한다() throws Exception {
+        // when
+        PreAuthorize preAuthorize = AdminAccountController.class
+                .getMethod("updateActive", Long.class, AdminAccountActiveUpdateRequest.class)
+                .getAnnotation(PreAuthorize.class);
+
+        // when, then
+        assertThat(preAuthorize).isNotNull();
+        assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
+    }
+
+    @Test
+    void 관리자_계정_활성화_상태_수정_실패_active_누락() throws Exception {
+        // given
+        var request = new AdminAccountActiveUpdateRequest(null);
+
+        // when, then
+        mockMvc.perform(patch("/admin/accounts/{memberId}/active", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
+                .andDo(print());
     }
 
     @Test
