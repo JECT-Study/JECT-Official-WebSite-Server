@@ -1,6 +1,7 @@
 package org.ject.support.admin.account.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +50,7 @@ public class AdminAccountController {
     @Operation(
             summary = "관리자 계정 활성화 상태 수정",
             description = "관리자 계정을 활성화하거나 비활성화합니다.")
-    public void updateActive(@AuthPrincipal final Long requesterId,
+    public void updateActive(@Parameter(hidden = true) @AuthPrincipal final Long requesterId,
                              @PathVariable final Long memberId,
                              @RequestBody @Valid final AdminAccountActiveUpdateRequest request) {
         adminAccountService.updateActive(requesterId, memberId, request);
