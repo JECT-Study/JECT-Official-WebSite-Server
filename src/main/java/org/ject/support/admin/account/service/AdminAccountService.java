@@ -48,11 +48,23 @@ public class AdminAccountService {
     }
 
     @Transactional
-    public void updateActive(final Long memberId, final AdminAccountActiveUpdateRequest request) {
+    public void updateActive(final Long requesterId,
+                             final Long memberId,
+                             final AdminAccountActiveUpdateRequest request) {
+        validateNotLockingSelf(requesterId, memberId, request.active());
+
         final Member member = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
         final MemberStatus status = request.active() ? MemberStatus.ACTIVE : MemberStatus.LOCKED;
 
         adminMemberComponent.changeMemberStatus(member, status);
+    }
+
+    private void validateNotLockingSelf(final Long requesterId,
+                                        final Long memberId,
+                                        final boolean active) {
+        if (!active && requesterId.equals(memberId)) {
+            throw new AdminException(AdminErrorCode.CANNOT_LOCK_SELF);
+        }
     }
 
     private void validateBackofficeRole(final Role role) {

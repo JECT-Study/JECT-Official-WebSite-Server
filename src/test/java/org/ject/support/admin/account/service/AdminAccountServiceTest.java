@@ -201,6 +201,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
     @Test
     void 관리자_계정_비활성화_성공() {
         // given
+        var requesterId = 2L;
         var memberId = 1L;
         var request = new AdminAccountActiveUpdateRequest(false);
         var member = Member.builder()
@@ -214,7 +215,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
 
         // when
-        adminAccountService.updateActive(memberId, request);
+        adminAccountService.updateActive(requesterId, memberId, request);
 
         // then
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
@@ -224,6 +225,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
     @Test
     void 관리자_계정_활성화_성공() {
         // given
+        var requesterId = 2L;
         var memberId = 1L;
         var request = new AdminAccountActiveUpdateRequest(true);
         var member = Member.builder()
@@ -237,7 +239,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
 
         // when
-        adminAccountService.updateActive(memberId, request);
+        adminAccountService.updateActive(requesterId, memberId, request);
 
         // then
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
@@ -247,6 +249,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
     @Test
     void 관리자_계정_활성화_상태_수정_실패_존재하지_않는_관리자() {
         // given
+        var requesterId = 1L;
         var memberId = 999L;
         var request = new AdminAccountActiveUpdateRequest(false);
 
@@ -254,11 +257,27 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .willThrow(new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
 
         // when, then
-        assertThatThrownBy(() -> adminAccountService.updateActive(memberId, request))
+        assertThatThrownBy(() -> adminAccountService.updateActive(requesterId, memberId, request))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.NOT_FOUND_ADMIN);
 
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
+    }
+
+    @Test
+    void 관리자_계정_활성화_상태_수정_실패_본인_계정_비활성화() {
+        // given
+        var requesterId = 1L;
+        var memberId = 1L;
+        var request = new AdminAccountActiveUpdateRequest(false);
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateActive(requesterId, memberId, request))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.CANNOT_LOCK_SELF);
+
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(memberId);
     }
 }

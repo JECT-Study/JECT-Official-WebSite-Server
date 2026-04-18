@@ -8,6 +8,7 @@ import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.account.service.AdminAccountService;
+import org.ject.support.common.security.AuthPrincipal;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,8 +49,9 @@ public class AdminAccountController {
     @Operation(
             summary = "관리자 계정 활성화 상태 수정",
             description = "관리자 계정을 활성화하거나 비활성화합니다.")
-    public void updateActive(@PathVariable final Long memberId,
+    public void updateActive(@AuthPrincipal final Long requesterId,
+                             @PathVariable final Long memberId,
                              @RequestBody @Valid final AdminAccountActiveUpdateRequest request) {
-        adminAccountService.updateActive(memberId, request);
+        adminAccountService.updateActive(requesterId, memberId, request);
     }
 }
