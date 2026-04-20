@@ -1,12 +1,15 @@
 package org.ject.support.admin.account.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.account.service.AdminAccountService;
+import org.ject.support.common.security.AuthPrincipal;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -40,5 +43,16 @@ public class AdminAccountController {
     public void updateRole(@PathVariable final Long memberId,
                            @RequestBody @Valid final AdminAccountRoleUpdateRequest request) {
         adminAccountService.updateRole(memberId, request);
+    }
+
+    @PatchMapping("/{memberId}/active")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @Operation(
+            summary = "관리자 계정 활성화 상태 수정",
+            description = "관리자 계정을 활성화하거나 비활성화합니다.")
+    public void updateActive(@Parameter(hidden = true) @AuthPrincipal final Long requesterId,
+                             @PathVariable final Long memberId,
+                             @RequestBody @Valid final AdminAccountActiveUpdateRequest request) {
+        adminAccountService.updateActive(requesterId, memberId, request);
     }
 }

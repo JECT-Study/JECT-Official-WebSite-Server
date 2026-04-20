@@ -1,19 +1,25 @@
 package org.ject.support.admin.account.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.account.service.AdminAccountService;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.exception.GlobalErrorCode;
 import org.ject.support.common.exception.GlobalExceptionHandler;
+import org.ject.support.common.security.AuthenticatedMemberIdResolver;
+import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.member.Role;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -44,7 +50,13 @@ class AdminAccountControllerTest extends UnitTestSupport {
         objectMapper = new ObjectMapper();
         mockMvc = MockMvcBuilders.standaloneSetup(adminAccountController)
                 .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticatedMemberIdResolver())
                 .build();
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -104,6 +116,60 @@ class AdminAccountControllerTest extends UnitTestSupport {
         // when, then
         assertThat(preAuthorize).isNotNull();
         assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
+    }
+
+    @Test
+    void 관리자_계정_활성화_상태_수정_성공() throws Exception {
+        // given
+        var requesterId = 2L;
+        var memberId = 1L;
+        var request = new AdminAccountActiveUpdateRequest(false);
+        setAuthentication(requesterId);
+
+        doNothing().when(adminAccountService)
+                .updateActive(eq(requesterId), eq(memberId), any(AdminAccountActiveUpdateRequest.class));
+
+        // when, then
+        mockMvc.perform(patch("/admin/accounts/{memberId}/active", memberId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andDo(print());
+
+        verify(adminAccountService).updateActive(eq(requesterId), eq(memberId), any(AdminAccountActiveUpdateRequest.class));
+    }
+
+    @Test
+    void 관리자_계정_활성화_상태_수정은_ADMIN_권한만_허용한다() throws Exception {
+        // when
+        PreAuthorize preAuthorize = AdminAccountController.class
+                .getMethod("updateActive", Long.class, Long.class, AdminAccountActiveUpdateRequest.class)
+                .getAnnotation(PreAuthorize.class);
+
+        // when, then
+        assertThat(preAuthorize).isNotNull();
+        assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
+    }
+
+    @Test
+    void 관리자_계정_활성화_상태_수정_실패_active_누락() throws Exception {
+        // given
+        var request = new AdminAccountActiveUpdateRequest(null);
+        setAuthentication(2L);
+
+        // when, then
+        mockMvc.perform(patch("/admin/accounts/{memberId}/active", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
+                .andDo(print());
+    }
+
+    private void setAuthentication(final Long memberId) {
+        CustomUserDetails userDetails = new CustomUserDetails("admin@ject.kr", memberId, Role.ADMIN);
+        var authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     @Test

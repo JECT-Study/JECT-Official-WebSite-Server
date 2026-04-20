@@ -39,7 +39,9 @@ public class AdminMemberComponent {
         if (member.getStatus() == status)  {
             return;
         }
-        member.setStatus(status);
+        member.edit(member.toEditor()
+                .status(status)
+                .build());
         memberRepository.save(member);
     }
 }

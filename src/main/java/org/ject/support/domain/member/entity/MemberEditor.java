@@ -4,6 +4,7 @@ import lombok.Builder;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 
@@ -20,6 +21,7 @@ public record MemberEditor(
     ExperiencePeriod experiencePeriod,
     CareerDetails careerDetails,
     List<String> interestedDomains,
-    Role role
+    Role role,
+    MemberStatus status
 ) {
 }

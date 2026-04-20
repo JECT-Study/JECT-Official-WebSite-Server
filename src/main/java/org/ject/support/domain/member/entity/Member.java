@@ -17,7 +17,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.ject.support.common.util.StringListConverter;
@@ -91,7 +90,6 @@ public class Member extends BaseTimeEntity {
     @Builder.Default
     private Boolean isDeleted = false;
 
-    @Setter
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(45)", nullable = false)
     @Builder.Default
@@ -125,7 +123,8 @@ public class Member extends BaseTimeEntity {
                 .experiencePeriod(this.experiencePeriod)
                 .careerDetails(this.careerDetails)
                 .interestedDomains(this.interestedDomains)
-                .role(this.role);
+                .role(this.role)
+                .status(this.status);
     }
 
     public void edit(MemberEditor editor) {
@@ -139,6 +138,7 @@ public class Member extends BaseTimeEntity {
         this.careerDetails = editor.careerDetails();
         this.interestedDomains = editor.interestedDomains();
         this.role = editor.role();
+        this.status = editor.status();
     }
 
     public void deleteProfile() {
