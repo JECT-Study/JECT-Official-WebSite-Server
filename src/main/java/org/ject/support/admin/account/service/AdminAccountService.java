@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountUpdateRequest;
 import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
@@ -32,6 +33,27 @@ public class AdminAccountService {
 
         final String encodedPassword = passwordEncoder.encode(request.password());
         memberRepository.save(request.toEntity(encodedPassword));
+    }
+
+    @Transactional
+    public void updateAccount(final Long requesterId,
+                              final Long memberId,
+                              final AdminAccountUpdateRequest request) {
+        validateBackofficeRole(request.role());
+        validateNotLockingSelf(requesterId, memberId, request.active());
+
+        final Member member = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
+        validateEmailUniqueness(memberId, request.email());
+
+        final MemberStatus status = request.active() ? MemberStatus.ACTIVE : MemberStatus.LOCKED;
+        final MemberEditor editor = member.toEditor()
+                .email(request.email())
+                .name(request.normalizeName())
+                .role(request.role())
+                .status(status)
+                .build();
+
+        member.edit(editor);
     }
 
     @Transactional
@@ -77,5 +99,13 @@ public class AdminAccountService {
         if (memberRepository.existsByEmail(request.email())) {
             throw new AdminException(AdminErrorCode.DUPLICATE_ADMIN_EMAIL);
         }
+    }
+
+    private void validateEmailUniqueness(final Long memberId, final String email) {
+        memberRepository.findByEmail(email)
+                .filter(member -> !member.getId().equals(memberId))
+                .ifPresent(member -> {
+                    throw new AdminException(AdminErrorCode.DUPLICATE_ADMIN_EMAIL);
+                });
     }
 }

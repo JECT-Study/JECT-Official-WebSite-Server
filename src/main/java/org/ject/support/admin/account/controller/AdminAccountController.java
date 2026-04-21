@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountUpdateRequest;
 import org.ject.support.admin.account.service.AdminAccountService;
 import org.ject.support.common.security.AuthPrincipal;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -33,6 +34,17 @@ public class AdminAccountController {
             description = "관리자 계정 유형의 계정을 생성합니다.")
     public void createAccount(@RequestBody @Valid final AdminAccountCreateRequest request) {
         adminAccountService.createAccount(request);
+    }
+
+    @PatchMapping("/{memberId}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @Operation(
+            summary = "관리자 계정 정보 수정",
+            description = "관리자 계정의 이메일, 이름, 권한, 활성화 상태를 수정합니다.")
+    public void updateAccount(@Parameter(hidden = true) @AuthPrincipal final Long requesterId,
+                              @PathVariable final Long memberId,
+                              @RequestBody @Valid final AdminAccountUpdateRequest request) {
+        adminAccountService.updateAccount(requesterId, memberId, request);
     }
 
     @PatchMapping("/{memberId}/role")

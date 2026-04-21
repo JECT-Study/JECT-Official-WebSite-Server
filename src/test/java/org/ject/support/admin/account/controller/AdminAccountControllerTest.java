@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountUpdateRequest;
 import org.ject.support.admin.account.service.AdminAccountService;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.exception.GlobalErrorCode;
@@ -86,6 +87,86 @@ class AdminAccountControllerTest extends UnitTestSupport {
         // when, then
         assertThat(preAuthorize).isNotNull();
         assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
+    }
+
+    @Test
+    void 관리자_계정_정보_수정_성공() throws Exception {
+        // given
+        var requesterId = 2L;
+        var memberId = 1L;
+        var request = new AdminAccountUpdateRequest("updated@ject.kr", "이젝트", Role.SUPPORTER, false);
+        setAuthentication(requesterId);
+
+        doNothing().when(adminAccountService)
+                .updateAccount(eq(requesterId), eq(memberId), any(AdminAccountUpdateRequest.class));
+
+        // when, then
+        mockMvc.perform(patch("/admin/accounts/{memberId}", memberId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andDo(print());
+
+        verify(adminAccountService)
+                .updateAccount(eq(requesterId), eq(memberId), any(AdminAccountUpdateRequest.class));
+    }
+
+    @Test
+    void 관리자_계정_정보_수정은_ADMIN_권한만_허용한다() throws Exception {
+        // when
+        PreAuthorize preAuthorize = AdminAccountController.class
+                .getMethod("updateAccount", Long.class, Long.class, AdminAccountUpdateRequest.class)
+                .getAnnotation(PreAuthorize.class);
+
+        // when, then
+        assertThat(preAuthorize).isNotNull();
+        assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
+    }
+
+    @Test
+    void 관리자_계정_정보_수정_실패_올바르지_않은_이메일_형식() throws Exception {
+        // given
+        var request = new AdminAccountUpdateRequest("invalid-email", "김젝트", Role.OPERATIONS, true);
+        setAuthentication(2L);
+
+        // when, then
+        mockMvc.perform(patch("/admin/accounts/{memberId}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
+                .andExpect(jsonPath("$.messages[0]").value("올바른 이메일 형식이 아닙니다."))
+                .andDo(print());
+    }
+
+    @Test
+    void 관리자_계정_정보_수정_실패_role_누락() throws Exception {
+        // given
+        var request = new AdminAccountUpdateRequest("admin@ject.kr", "김젝트", null, true);
+        setAuthentication(2L);
+
+        // when, then
+        mockMvc.perform(patch("/admin/accounts/{memberId}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
+                .andDo(print());
+    }
+
+    @Test
+    void 관리자_계정_정보_수정_실패_active_누락() throws Exception {
+        // given
+        var request = new AdminAccountUpdateRequest("admin@ject.kr", "김젝트", Role.OPERATIONS, null);
+        setAuthentication(2L);
+
+        // when, then
+        mockMvc.perform(patch("/admin/accounts/{memberId}", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
+                .andDo(print());
     }
 
     @Test
