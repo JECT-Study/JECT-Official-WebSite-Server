@@ -41,6 +41,7 @@ public class AdminAccountService {
                               final AdminAccountUpdateRequest request) {
         validateBackofficeRole(request.role());
         validateNotLockingSelf(requesterId, memberId, request.active());
+        validateNotChangingOwnAdminRole(requesterId, memberId, request.role());
 
         final Member member = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
         validateEmailUniqueness(memberId, request.email());
@@ -86,6 +87,14 @@ public class AdminAccountService {
                                         final boolean active) {
         if (!active && requesterId.equals(memberId)) {
             throw new AdminException(AdminErrorCode.CANNOT_LOCK_SELF);
+        }
+    }
+
+    private void validateNotChangingOwnAdminRole(final Long requesterId,
+                                                final Long memberId,
+                                                final Role role) {
+        if (requesterId.equals(memberId) && role != Role.ADMIN) {
+            throw new AdminException(AdminErrorCode.CANNOT_CHANGE_OWN_ADMIN_ROLE);
         }
     }
 

@@ -268,6 +268,21 @@ class AdminAccountServiceTest extends UnitTestSupport {
     }
 
     @Test
+    void 관리자_계정_정보_수정_실패_본인_관리자_권한_제거() {
+        // given
+        var request = new AdminAccountUpdateRequest(TEST_EMAIL, "김젝트", Role.OPERATIONS, true);
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateAccount(1L, 1L, request))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.CANNOT_CHANGE_OWN_ADMIN_ROLE);
+
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(org.mockito.ArgumentMatchers.anyLong());
+        verify(memberRepository, never()).findByEmail(anyString());
+    }
+
+    @Test
     void 관리자_계정_권한_수정_성공() {
         // given
         var memberId = 1L;
