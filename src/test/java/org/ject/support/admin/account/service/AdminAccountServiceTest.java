@@ -3,6 +3,7 @@ package org.ject.support.admin.account.service;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountUpdateRequest;
 import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
@@ -16,6 +17,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -136,6 +139,147 @@ class AdminAccountServiceTest extends UnitTestSupport {
         verify(memberRepository, never()).existsByEmail(anyString());
         verify(passwordEncoder, never()).encode(anyString());
         verify(memberRepository, never()).save(org.mockito.ArgumentMatchers.any(Member.class));
+    }
+
+    @Test
+    void 관리자_계정_정보_수정_성공() {
+        // given
+        var requesterId = 2L;
+        var memberId = 1L;
+        var request = new AdminAccountUpdateRequest("updated@ject.kr", "이젝트", Role.SUPPORTER, false);
+        var member = Member.builder()
+                .id(memberId)
+                .email(TEST_EMAIL)
+                .name("김젝트")
+                .phoneNumber("01012345678")
+                .role(Role.OPERATIONS)
+                .status(MemberStatus.ACTIVE)
+                .semesterId(1L)
+                .build();
+
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
+        given(memberRepository.findByEmail("updated@ject.kr")).willReturn(Optional.empty());
+
+        // when
+        adminAccountService.updateAccount(requesterId, memberId, request);
+
+        // then
+        verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
+        verify(memberRepository).findByEmail("updated@ject.kr");
+        assertThat(member.getEmail()).isEqualTo("updated@ject.kr");
+        assertThat(member.getName()).isEqualTo("이젝트");
+        assertThat(member.getRole()).isEqualTo(Role.SUPPORTER);
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.LOCKED);
+        assertThat(member.getPhoneNumber()).isEqualTo("01012345678");
+        assertThat(member.getSemesterId()).isEqualTo(1L);
+    }
+
+    @Test
+    void 관리자_계정_정보_수정_시_빈_이름은_null로_저장한다() {
+        // given
+        var requesterId = 2L;
+        var memberId = 1L;
+        var request = new AdminAccountUpdateRequest(TEST_EMAIL, "   ", Role.ADMIN, true);
+        var member = Member.builder()
+                .id(memberId)
+                .email(TEST_EMAIL)
+                .name("김젝트")
+                .role(Role.OPERATIONS)
+                .status(MemberStatus.ACTIVE)
+                .semesterId(1L)
+                .build();
+
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
+        given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(member));
+
+        // when
+        adminAccountService.updateAccount(requesterId, memberId, request);
+
+        // then
+        assertThat(member.getName()).isNull();
+        assertThat(member.getEmail()).isEqualTo(TEST_EMAIL);
+        assertThat(member.getRole()).isEqualTo(Role.ADMIN);
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.ACTIVE);
+    }
+
+    @Test
+    void 관리자_계정_정보_수정_실패_이미_사용중인_이메일() {
+        // given
+        var requesterId = 2L;
+        var memberId = 1L;
+        var request = new AdminAccountUpdateRequest("duplicated@ject.kr", "김젝트", Role.ADMIN, true);
+        var member = Member.builder()
+                .id(memberId)
+                .email(TEST_EMAIL)
+                .role(Role.OPERATIONS)
+                .status(MemberStatus.ACTIVE)
+                .semesterId(1L)
+                .build();
+        var duplicatedMember = Member.builder()
+                .id(3L)
+                .email("duplicated@ject.kr")
+                .role(Role.SUPPORTER)
+                .status(MemberStatus.ACTIVE)
+                .semesterId(1L)
+                .build();
+
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
+        given(memberRepository.findByEmail("duplicated@ject.kr")).willReturn(Optional.of(duplicatedMember));
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateAccount(requesterId, memberId, request))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.DUPLICATE_ADMIN_EMAIL);
+
+        assertThat(member.getEmail()).isEqualTo(TEST_EMAIL);
+        assertThat(member.getRole()).isEqualTo(Role.OPERATIONS);
+        assertThat(member.getStatus()).isEqualTo(MemberStatus.ACTIVE);
+    }
+
+    @Test
+    void 관리자_계정_정보_수정_실패_관리자_계정_유형이_아닌_role() {
+        // given
+        var request = new AdminAccountUpdateRequest(TEST_EMAIL, "김젝트", Role.SEMESTER, true);
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateAccount(2L, 1L, request))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ROLE);
+
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(org.mockito.ArgumentMatchers.anyLong());
+        verify(memberRepository, never()).findByEmail(anyString());
+    }
+
+    @Test
+    void 관리자_계정_정보_수정_실패_본인_계정_비활성화() {
+        // given
+        var request = new AdminAccountUpdateRequest(TEST_EMAIL, "김젝트", Role.ADMIN, false);
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateAccount(1L, 1L, request))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.CANNOT_LOCK_SELF);
+
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(org.mockito.ArgumentMatchers.anyLong());
+        verify(memberRepository, never()).findByEmail(anyString());
+    }
+
+    @Test
+    void 관리자_계정_정보_수정_실패_본인_관리자_권한_제거() {
+        // given
+        var request = new AdminAccountUpdateRequest(TEST_EMAIL, "김젝트", Role.OPERATIONS, true);
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateAccount(1L, 1L, request))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.CANNOT_CHANGE_OWN_ADMIN_ROLE);
+
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(org.mockito.ArgumentMatchers.anyLong());
+        verify(memberRepository, never()).findByEmail(anyString());
     }
 
     @Test
