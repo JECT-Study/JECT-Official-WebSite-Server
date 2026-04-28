@@ -9,7 +9,7 @@ public enum RecruitType {
     MAKERS("메이커스 모집"),
     SUPPORTERS("운영 서포터즈 모집"),
 
-    // Legacy values remain until existing recruit_type data migrates to SEMESTER + recruitTypeDetail.
+    // TODO: 기존의 recruit_type 데이터가 SEMESTER 및 recruitTypeDetail로 마이그레이션될 때까지 기존 값은 유지
     REGULAR("정규 모집"),
     REGULAR_WAITLIST("정규 모집 - 추가합격"),
     BACKFILL("기존 기수 모집"),
