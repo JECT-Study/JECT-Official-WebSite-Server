@@ -21,4 +21,15 @@ class RecruitTypeTest {
                         RecruitType.MANUAL
                 );
     }
+
+    @Test
+    @DisplayName("모집 사유 값을 제공한다")
+    void provide_recruit_type_detail_values() {
+        assertThat(RecruitTypeDetail.values())
+                .contains(
+                        RecruitTypeDetail.REGULAR,
+                        RecruitTypeDetail.NEW,
+                        RecruitTypeDetail.REFILL
+                );
+    }
 }

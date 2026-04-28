@@ -58,6 +58,11 @@ public class Recruit extends BaseTimeEntity {
     @Builder.Default
     private RecruitType recruitType = RecruitType.REGULAR;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recruit_type_detail", columnDefinition = "varchar(45)", nullable = false)
+    @Builder.Default
+    private RecruitTypeDetail recruitTypeDetail = RecruitTypeDetail.REGULAR;
+
     @OneToMany(mappedBy = "recruit", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Question> questions = new ArrayList<>();

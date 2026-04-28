@@ -29,6 +29,21 @@ class RecruitTest {
     }
 
     @Test
+    @DisplayName("모집 사유는 기본값으로 정규 모집을 사용한다")
+    void default_recruit_type_detail_is_regular() {
+        // given
+        Recruit recruit = Recruit.builder()
+                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .jobFamily(JobFamily.BE)
+                .startDate(LocalDateTime.now())
+                .endDate(LocalDateTime.now().plusDays(1))
+                .build();
+
+        // then
+        assertThat(recruit.getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REGULAR);
+    }
+
+    @Test
     @DisplayName("is invalid question semesterId")
     void is_invalid_question_id() {
         // given
