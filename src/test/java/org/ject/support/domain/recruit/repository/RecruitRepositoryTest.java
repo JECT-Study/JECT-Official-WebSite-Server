@@ -63,8 +63,7 @@ class RecruitRepositoryTest {
     }
 
     @Test
-    @DisplayName("허용되지 않은 모집 유형과 모집 사유 조합은 저장할 수 없다")
-    void cannot_save_invalid_recruit_type_detail() {
+    void 허용되지_않은_모집_유형과_모집_사유_조합은_저장할_수_없다() {
         // given
         Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
         Recruit recruit = Recruit.builder()

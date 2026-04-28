@@ -33,8 +33,7 @@ class RecruitTest {
     }
 
     @Test
-    @DisplayName("모집 사유는 기본값으로 정규 모집을 사용한다")
-    void default_recruit_type_detail_is_regular() {
+    void 모집_사유는_기본값으로_정규_모집을_사용한다() {
         // given
         Recruit recruit = Recruit.builder()
                 .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
@@ -48,8 +47,7 @@ class RecruitTest {
     }
 
     @Test
-    @DisplayName("허용된 모집 유형과 모집 사유 조합은 검증을 통과한다")
-    void validate_recruit_type_detail() {
+    void 허용된_모집_유형과_모집_사유_조합은_검증을_통과한다() {
         // given
         Recruit recruit = recruit(RecruitType.MAKERS, RecruitTypeDetail.NEW);
 
@@ -59,8 +57,7 @@ class RecruitTest {
     }
 
     @Test
-    @DisplayName("허용되지 않은 모집 유형과 모집 사유 조합이면 예외가 발생한다")
-    void throw_exception_when_recruit_type_detail_is_invalid() {
+    void 허용되지_않은_모집_유형과_모집_사유_조합이면_예외가_발생한다() {
         // given
         Recruit recruit = recruit(RecruitType.SUPPORTERS, RecruitTypeDetail.REGULAR);
 
@@ -71,8 +68,7 @@ class RecruitTest {
     }
 
     @Test
-    @DisplayName("모집 유형이 null이면 예외가 발생한다")
-    void throw_exception_when_recruit_type_is_null() {
+    void 모집_유형이_null이면_예외가_발생한다() {
         // given
         Recruit recruit = recruit(null, RecruitTypeDetail.REGULAR);
 
