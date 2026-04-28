@@ -19,8 +19,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -148,7 +146,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // given
         var requesterId = 2L;
         var memberId = 1L;
-        var request = new AdminAccountUpdateRequest("updated@ject.kr", "이젝트", Role.SUPPORTER, false);
+        var request = new AdminAccountUpdateRequest("이젝트", Role.SUPPORTER, false);
         var member = Member.builder()
                 .id(memberId)
                 .email(TEST_EMAIL)
@@ -160,15 +158,14 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .build();
 
         given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
-        given(memberRepository.findByEmail("updated@ject.kr")).willReturn(Optional.empty());
 
         // when
         adminAccountService.updateAccount(requesterId, memberId, request);
 
         // then
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
-        verify(memberRepository).findByEmail("updated@ject.kr");
-        assertThat(member.getEmail()).isEqualTo("updated@ject.kr");
+        verify(memberRepository, never()).findByEmail(anyString());
+        assertThat(member.getEmail()).isEqualTo(TEST_EMAIL);
         assertThat(member.getName()).isEqualTo("이젝트");
         assertThat(member.getRole()).isEqualTo(Role.SUPPORTER);
         assertThat(member.getStatus()).isEqualTo(MemberStatus.LOCKED);
@@ -181,7 +178,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // given
         var requesterId = 2L;
         var memberId = 1L;
-        var request = new AdminAccountUpdateRequest(TEST_EMAIL, "   ", Role.ADMIN, true);
+        var request = new AdminAccountUpdateRequest("   ", Role.ADMIN, true);
         var member = Member.builder()
                 .id(memberId)
                 .email(TEST_EMAIL)
@@ -192,7 +189,6 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .build();
 
         given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
-        given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(member));
 
         // when
         adminAccountService.updateAccount(requesterId, memberId, request);
@@ -205,44 +201,9 @@ class AdminAccountServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 관리자_계정_정보_수정_실패_이미_사용중인_이메일() {
-        // given
-        var requesterId = 2L;
-        var memberId = 1L;
-        var request = new AdminAccountUpdateRequest("duplicated@ject.kr", "김젝트", Role.ADMIN, true);
-        var member = Member.builder()
-                .id(memberId)
-                .email(TEST_EMAIL)
-                .role(Role.OPERATIONS)
-                .status(MemberStatus.ACTIVE)
-                .semesterId(1L)
-                .build();
-        var duplicatedMember = Member.builder()
-                .id(3L)
-                .email("duplicated@ject.kr")
-                .role(Role.SUPPORTER)
-                .status(MemberStatus.ACTIVE)
-                .semesterId(1L)
-                .build();
-
-        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
-        given(memberRepository.findByEmail("duplicated@ject.kr")).willReturn(Optional.of(duplicatedMember));
-
-        // when, then
-        assertThatThrownBy(() -> adminAccountService.updateAccount(requesterId, memberId, request))
-                .isInstanceOf(AdminException.class)
-                .extracting(e -> ((AdminException) e).getErrorCode())
-                .isEqualTo(AdminErrorCode.DUPLICATE_ADMIN_EMAIL);
-
-        assertThat(member.getEmail()).isEqualTo(TEST_EMAIL);
-        assertThat(member.getRole()).isEqualTo(Role.OPERATIONS);
-        assertThat(member.getStatus()).isEqualTo(MemberStatus.ACTIVE);
-    }
-
-    @Test
     void 관리자_계정_정보_수정_실패_관리자_계정_유형이_아닌_role() {
         // given
-        var request = new AdminAccountUpdateRequest(TEST_EMAIL, "김젝트", Role.SEMESTER, true);
+        var request = new AdminAccountUpdateRequest("김젝트", Role.SEMESTER, true);
 
         // when, then
         assertThatThrownBy(() -> adminAccountService.updateAccount(2L, 1L, request))
@@ -257,7 +218,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
     @Test
     void 관리자_계정_정보_수정_실패_본인_계정_비활성화() {
         // given
-        var request = new AdminAccountUpdateRequest(TEST_EMAIL, "김젝트", Role.ADMIN, false);
+        var request = new AdminAccountUpdateRequest("김젝트", Role.ADMIN, false);
 
         // when, then
         assertThatThrownBy(() -> adminAccountService.updateAccount(1L, 1L, request))
@@ -272,7 +233,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
     @Test
     void 관리자_계정_정보_수정_실패_본인_관리자_권한_제거() {
         // given
-        var request = new AdminAccountUpdateRequest(TEST_EMAIL, "김젝트", Role.OPERATIONS, true);
+        var request = new AdminAccountUpdateRequest("김젝트", Role.OPERATIONS, true);
 
         // when, then
         assertThatThrownBy(() -> adminAccountService.updateAccount(1L, 1L, request))

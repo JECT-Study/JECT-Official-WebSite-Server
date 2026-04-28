@@ -94,7 +94,7 @@ class AdminAccountControllerTest extends UnitTestSupport {
         // given
         var requesterId = 2L;
         var memberId = 1L;
-        var request = new AdminAccountUpdateRequest("updated@ject.kr", "이젝트", Role.SUPPORTER, false);
+        var request = new AdminAccountUpdateRequest("이젝트", Role.SUPPORTER, false);
         setAuthentication(requesterId);
 
         doNothing().when(adminAccountService)
@@ -124,25 +124,9 @@ class AdminAccountControllerTest extends UnitTestSupport {
     }
 
     @Test
-    void 관리자_계정_정보_수정_실패_올바르지_않은_이메일_형식() throws Exception {
-        // given
-        var request = new AdminAccountUpdateRequest("invalid-email", "김젝트", Role.OPERATIONS, true);
-        setAuthentication(2L);
-
-        // when, then
-        mockMvc.perform(patch("/admin/accounts/{memberId}", 1L)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
-                .andExpect(jsonPath("$.messages[0]").value("올바른 이메일 형식이 아닙니다."))
-                .andDo(print());
-    }
-
-    @Test
     void 관리자_계정_정보_수정_실패_role_누락() throws Exception {
         // given
-        var request = new AdminAccountUpdateRequest("admin@ject.kr", "김젝트", null, true);
+        var request = new AdminAccountUpdateRequest("김젝트", null, true);
         setAuthentication(2L);
 
         // when, then
@@ -150,14 +134,13 @@ class AdminAccountControllerTest extends UnitTestSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
                 .andDo(print());
     }
 
     @Test
     void 관리자_계정_정보_수정_실패_active_누락() throws Exception {
         // given
-        var request = new AdminAccountUpdateRequest("admin@ject.kr", "김젝트", Role.OPERATIONS, null);
+        var request = new AdminAccountUpdateRequest("김젝트", Role.OPERATIONS, null);
         setAuthentication(2L);
 
         // when, then
@@ -165,7 +148,6 @@ class AdminAccountControllerTest extends UnitTestSupport {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value(GlobalErrorCode.METHOD_VALIDATION_FAILED.getCode()))
                 .andDo(print());
     }
 

@@ -44,11 +44,9 @@ public class AdminAccountService {
         validateNotChangingOwnAdminRole(requesterId, memberId, request.role());
 
         final Member member = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
-        validateEmailUniqueness(memberId, request.email());
 
         final MemberStatus status = request.active() ? MemberStatus.ACTIVE : MemberStatus.LOCKED;
         final MemberEditor editor = member.toEditor()
-                .email(request.email())
                 .name(request.normalizeName())
                 .role(request.role())
                 .status(status)
@@ -110,11 +108,4 @@ public class AdminAccountService {
         }
     }
 
-    private void validateEmailUniqueness(final Long memberId, final String email) {
-        memberRepository.findByEmail(email)
-                .filter(member -> !member.getId().equals(memberId))
-                .ifPresent(member -> {
-                    throw new AdminException(AdminErrorCode.DUPLICATE_ADMIN_EMAIL);
-                });
-    }
 }
