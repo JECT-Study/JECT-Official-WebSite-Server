@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Pattern.Flag;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
@@ -34,6 +35,7 @@ public record MemberRegisterRequest(
     public Member toEntity(Semester semester) {
         return Member.builder()
                 .role(this.role)
+                .memberType(MemberType.fromRole(this.role))
                 .name(this.name)
                 .phoneNumber(this.phoneNumber)
                 .email(this.email)

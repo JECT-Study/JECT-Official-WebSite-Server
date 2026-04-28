@@ -14,6 +14,7 @@ import org.ject.support.admin.member.dto.MemberRegisterRequest;
 import org.ject.support.admin.member.repository.AdminMemberRepository;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberProjection;
@@ -26,6 +27,7 @@ import org.ject.support.domain.member.repository.TeamMemberRepository;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.domain.PageImpl;
@@ -185,11 +187,11 @@ class AdminMemberServiceTest extends UnitTestSupport {
     void 관리자용_회원_등록_성공() {
         // given
         var request = new MemberRegisterRequest(
-                Role.SEMESTER,
+                Role.SUPPORTER,
                 TEST_NAME,
                 TEST_PHONE_NUMBER,
                 TEST_EMAIL,
-                JobFamily.BE,
+                JobFamily.SUPPORTER,
                 Region.SEOUL,
                 "1기"
         );
@@ -207,9 +209,11 @@ class AdminMemberServiceTest extends UnitTestSupport {
         adminMemberService.registerMember(request);
 
         // then
+        var memberCaptor = ArgumentCaptor.forClass(Member.class);
         verify(memberRepository).existsByEmail(TEST_EMAIL);
         verify(semesterRepository).findByName("1기");
-        verify(adminMemberRepository).save(any(Member.class));
+        verify(adminMemberRepository).save(memberCaptor.capture());
+        assertThat(memberCaptor.getValue().getMemberType()).isEqualTo(MemberType.SUPPORTERS);
     }
 
     @Test

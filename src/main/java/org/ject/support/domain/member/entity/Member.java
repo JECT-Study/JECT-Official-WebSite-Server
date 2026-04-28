@@ -25,6 +25,7 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 
@@ -58,6 +59,11 @@ public class Member extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(45)")
     private JobFamily jobFamily;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "member_type", columnDefinition = "varchar(45)", nullable = false)
+    @Builder.Default
+    private MemberType memberType = MemberType.SEMESTER;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 30)

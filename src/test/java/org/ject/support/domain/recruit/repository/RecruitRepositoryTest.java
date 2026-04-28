@@ -1,7 +1,11 @@
 package org.ject.support.domain.recruit.repository;
 
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.exception.RecruitErrorCode;
+import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PM;
@@ -55,5 +60,24 @@ class RecruitRepositoryTest {
 
         // then
         assertThat(result).isTrue();
+    }
+
+    @Test
+    void 허용되지_않은_모집_유형과_모집_사유_조합은_저장할_수_없다() {
+        // given
+        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+        Recruit recruit = Recruit.builder()
+                .semester(savedSemester)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
+                .jobFamily(BE)
+                .recruitType(RecruitType.MAKERS)
+                .recruitTypeDetail(RecruitTypeDetail.REGULAR)
+                .build();
+
+        // when & then
+        assertThatThrownBy(() -> recruitRepository.saveAndFlush(recruit))
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.INVALID_RECRUIT_TYPE_DETAIL);
     }
 }
