@@ -12,11 +12,6 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.PD;
-import static org.ject.support.domain.member.JobFamily.PM;
-
 /**
  * 기한 외 접근 제한을 위한 flag caching 초기화
  */
@@ -28,10 +23,9 @@ public class AccessPeriodInitializer implements ApplicationRunner {
 
     @Override
     public void run(final ApplicationArguments args) {
-        setRecruitFlag(PM);
-        setRecruitFlag(PD);
-        setRecruitFlag(FE);
-        setRecruitFlag(BE);
+        for (JobFamily jobFamily : JobFamily.values()) {
+            setRecruitFlag(jobFamily);
+        }
     }
 
     private void setRecruitFlag(JobFamily jobFamily) {

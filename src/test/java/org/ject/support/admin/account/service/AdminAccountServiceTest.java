@@ -6,6 +6,7 @@ import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.Role;
@@ -65,6 +66,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         assertThat(savedMember.getPin()).isEqualTo(ENCODED_PASSWORD);
         assertThat(savedMember.getName()).isEqualTo("김젝트");
         assertThat(savedMember.getRole()).isEqualTo(Role.OPERATIONS);
+        assertThat(savedMember.getMemberType()).isEqualTo(MemberType.SEMESTER);
         assertThat(savedMember.getSemesterId()).isEqualTo(1L);
     }
 

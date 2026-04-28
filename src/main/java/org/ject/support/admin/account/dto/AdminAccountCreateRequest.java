@@ -5,6 +5,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 
@@ -41,6 +42,7 @@ public record AdminAccountCreateRequest(
                 .pin(encodedPassword)
                 .name(normalizeName())
                 .role(role)
+                .memberType(MemberType.fromRole(role))
                 .semesterId(DEFAULT_ADMIN_ACCOUNT_SEMESTER_ID)
                 .build();
     }

@@ -17,4 +17,17 @@ class MemberTypeTest {
                         MemberType.SUPPORTERS
                 );
     }
+
+    @Test
+    @DisplayName("서포터즈 권한은 운영 서포터즈 구성원 타입으로 변환한다")
+    void convert_supporter_role_to_supporters_type() {
+        assertThat(MemberType.fromRole(Role.SUPPORTER)).isEqualTo(MemberType.SUPPORTERS);
+    }
+
+    @Test
+    @DisplayName("서포터즈 외 권한은 기본 구성원 타입으로 변환한다")
+    void convert_non_supporter_role_to_semester_type() {
+        assertThat(MemberType.fromRole(Role.SEMESTER)).isEqualTo(MemberType.SEMESTER);
+        assertThat(MemberType.fromRole(Role.ADMIN)).isEqualTo(MemberType.SEMESTER);
+    }
 }

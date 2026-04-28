@@ -1,88 +1,86 @@
 package org.ject.support.domain.recruit.service;
 
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.Constants;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
-import org.ject.support.domain.recruit.repository.SemesterRepository;
-import org.ject.support.testconfig.IntegrationTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.redis.core.ValueOperations;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.PD;
-import static org.ject.support.domain.member.JobFamily.PM;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
-@IntegrationTest
-@Transactional
-@TestPropertySource(properties = {"spring.data.redis.repositories.enabled=false"})
-class AccessPeriodInitializerTest {
+class AccessPeriodInitializerTest extends UnitTestSupport {
 
-    @Autowired
-    AccessPeriodInitializer accessPeriodInitializer;
+    @InjectMocks
+    private AccessPeriodInitializer accessPeriodInitializer;
 
-    @Autowired
-    RecruitRepository recruitRepository;
+    @Mock
+    private RedisTemplate<String, String> redisTemplate;
 
-    @Autowired
-    SemesterRepository semesterRepository;
+    @Mock
+    private ValueOperations<String, String> valueOperations;
 
-    @Autowired
-    RedisTemplate<String, String> redisTemplate;
+    @Mock
+    private RecruitRepository recruitRepository;
+
+    @BeforeEach
+    void setUp() {
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+    }
 
     @Test
-    @DisplayName("애플리케이션 구동 시 RECRUIT_FLAG 세팅")
+    @DisplayName("애플리케이션 구동 시 모든 직군의 RECRUIT_FLAG를 세팅한다")
     void set_recruit_flag_by_run_application() {
         // given
-        redisTemplate.delete(List.of("RECRUIT_FLAG:PM", "RECRUIT_FLAG:PD", "RECRUIT_FLAG:FE", "RECRUIT_FLAG:BE"));
-
-        Semester savedSemester = semesterRepository.save(Semester.builder()
-                .name("1기")
-                .isRecruiting(true)
-                .build());
-
-        recruitRepository.saveAll(List.of(
-                Recruit.builder()
-                        .semester(savedSemester)
-                        .startDate(LocalDateTime.now().minusDays(1))
-                        .endDate(LocalDateTime.now().plusDays(1))
-                        .jobFamily(PM)
-                        .build(),
-                Recruit.builder()
-                        .semester(savedSemester)
-                        .startDate(LocalDateTime.now().minusDays(1))
-                        .endDate(LocalDateTime.now().plusDays(1))
-                        .jobFamily(PD)
-                        .build(),
-                Recruit.builder()
-                        .semester(savedSemester)
-                        .startDate(LocalDateTime.now().plusDays(3))
-                        .endDate(LocalDateTime.now().plusDays(5))
-                        .jobFamily(FE)
-                        .build()
-        ));
+        given(redisTemplate.hasKey(anyString())).willReturn(false);
+        given(recruitRepository.findActiveRecruitByJobFamily(any(JobFamily.class), any(LocalDateTime.class)))
+                .willAnswer(invocation -> {
+                    JobFamily jobFamily = invocation.getArgument(0);
+                    if (jobFamily == JobFamily.PM || jobFamily == JobFamily.PD || jobFamily == JobFamily.SUPPORTER) {
+                        return Optional.of(recruit(jobFamily));
+                    }
+                    return Optional.empty();
+                });
 
         // when
         accessPeriodInitializer.run(null);
 
         // then
-        assertThat(Boolean.parseBoolean(getRecruitFlag(PM))).isTrue();
-        assertThat(Boolean.parseBoolean(getRecruitFlag(PD))).isTrue();
-        assertThat(Boolean.parseBoolean(getRecruitFlag(FE))).isFalse();
-        assertThat(Boolean.parseBoolean(getRecruitFlag(BE))).isFalse();
+        verify(recruitRepository).findActiveRecruitByJobFamily(eq(JobFamily.FE), any(LocalDateTime.class));
+        verify(recruitRepository).findActiveRecruitByJobFamily(eq(JobFamily.BE), any(LocalDateTime.class));
+        verify(valueOperations).set(eq(getRecruitFlagKey(JobFamily.PM)), eq(Boolean.toString(true)), any(Duration.class));
+        verify(valueOperations).set(eq(getRecruitFlagKey(JobFamily.PD)), eq(Boolean.toString(true)), any(Duration.class));
+        verify(valueOperations).set(eq(getRecruitFlagKey(JobFamily.SUPPORTER)), eq(Boolean.toString(true)), any(Duration.class));
+        verify(valueOperations, never()).set(eq(getRecruitFlagKey(JobFamily.FE)), anyString(), any(Duration.class));
+        verify(valueOperations, never()).set(eq(getRecruitFlagKey(JobFamily.BE)), anyString(), any(Duration.class));
     }
 
-    private String getRecruitFlag(JobFamily jobFamily) {
-        return redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, jobFamily));
+    private Recruit recruit(final JobFamily jobFamily) {
+        return Recruit.builder()
+                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
+                .jobFamily(jobFamily)
+                .build();
+    }
+
+    private String getRecruitFlagKey(final JobFamily jobFamily) {
+        return String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, jobFamily);
     }
 }

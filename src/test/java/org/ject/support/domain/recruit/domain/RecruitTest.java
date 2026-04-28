@@ -71,6 +71,18 @@ class RecruitTest {
     }
 
     @Test
+    @DisplayName("모집 유형이 null이면 예외가 발생한다")
+    void throw_exception_when_recruit_type_is_null() {
+        // given
+        Recruit recruit = recruit(null, RecruitTypeDetail.REGULAR);
+
+        // when & then
+        assertThatThrownBy(recruit::validateRecruitTypeDetail)
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.INVALID_RECRUIT_TYPE_DETAIL);
+    }
+
+    @Test
     @DisplayName("is invalid question semesterId")
     void is_invalid_question_id() {
         // given

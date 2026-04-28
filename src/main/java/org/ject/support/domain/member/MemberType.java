@@ -12,4 +12,11 @@ public enum MemberType {
     ;
 
     private final String description;
+
+    public static MemberType fromRole(final Role role) {
+        if (role == Role.SUPPORTER) {
+            return SUPPORTERS;
+        }
+        return SEMESTER;
+    }
 }
