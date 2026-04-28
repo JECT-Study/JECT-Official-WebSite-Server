@@ -33,6 +33,7 @@ class MemberTest {
         assertThat(member.getPhoneNumber()).isEqualTo(phoneNumber);
         assertThat(member.getEmail()).isEqualTo(email);
         assertThat(member.getJobFamily()).isEqualTo(jobFamily);
+        assertThat(member.getMemberType()).isEqualTo(MemberType.SEMESTER);
         assertThat(member.getRole()).isEqualTo(role);
         assertThat(member.getRegion()).isEqualTo(region);
     }
@@ -63,6 +64,7 @@ class MemberTest {
         assertThat(member.getRole()).isEqualTo(role);
         assertThat(member.getRegion()).isEqualTo(region);
         assertThat(member.getJobFamily()).isNull();
+        assertThat(member.getMemberType()).isEqualTo(MemberType.SEMESTER);
     }
 
     @Test
