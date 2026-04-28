@@ -5,6 +5,7 @@ import lombok.Getter;
 import org.ject.support.common.exception.ErrorCode;
 import org.springframework.http.HttpStatus;
 
+import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
@@ -13,7 +14,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public enum RecruitErrorCode implements ErrorCode {
     NOT_FOUND_RECRUIT(NOT_FOUND, "RECRUIT-1", "모집 공고를 찾을 수 없습니다."),
     DUPLICATED_JOB_FAMILY(CONFLICT, "RECRUIT-2", "이미 모집중인 직군입니다."),
-    UPDATE_NOT_ALLOW_FOR_CLOSED(CONFLICT, "RECRUIT-3", "마감된 모집 정보는 수정할 수 없습니다.");
+    UPDATE_NOT_ALLOW_FOR_CLOSED(CONFLICT, "RECRUIT-3", "마감된 모집 정보는 수정할 수 없습니다."),
+    INVALID_RECRUIT_TYPE_DETAIL(BAD_REQUEST, "RECRUIT-4", "모집 유형과 모집 사유 조합이 올바르지 않습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

@@ -1,12 +1,16 @@
 package org.ject.support.domain.recruit.domain;
 
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.recruit.exception.RecruitErrorCode;
+import org.ject.support.domain.recruit.exception.RecruitException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
 
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class RecruitTest {
 
@@ -44,6 +48,29 @@ class RecruitTest {
     }
 
     @Test
+    @DisplayName("허용된 모집 유형과 모집 사유 조합은 검증을 통과한다")
+    void validate_recruit_type_detail() {
+        // given
+        Recruit recruit = recruit(RecruitType.MAKERS, RecruitTypeDetail.NEW);
+
+        // when & then
+        assertThatCode(recruit::validateRecruitTypeDetail)
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("허용되지 않은 모집 유형과 모집 사유 조합이면 예외가 발생한다")
+    void throw_exception_when_recruit_type_detail_is_invalid() {
+        // given
+        Recruit recruit = recruit(RecruitType.SUPPORTERS, RecruitTypeDetail.REGULAR);
+
+        // when & then
+        assertThatThrownBy(recruit::validateRecruitTypeDetail)
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.INVALID_RECRUIT_TYPE_DETAIL);
+    }
+
+    @Test
     @DisplayName("is invalid question semesterId")
     void is_invalid_question_id() {
         // given
@@ -70,5 +97,16 @@ class RecruitTest {
 
         // then
         assertThat(isInvalidQuestionId).isTrue();
+    }
+
+    private Recruit recruit(RecruitType recruitType, RecruitTypeDetail recruitTypeDetail) {
+        return Recruit.builder()
+                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .jobFamily(JobFamily.BE)
+                .recruitType(recruitType)
+                .recruitTypeDetail(recruitTypeDetail)
+                .startDate(LocalDateTime.now())
+                .endDate(LocalDateTime.now().plusDays(1))
+                .build();
     }
 }

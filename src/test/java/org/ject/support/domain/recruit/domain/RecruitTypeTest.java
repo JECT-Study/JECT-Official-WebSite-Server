@@ -32,4 +32,29 @@ class RecruitTypeTest {
                         RecruitTypeDetail.REFILL
                 );
     }
+
+    @Test
+    @DisplayName("모집 유형별 허용 모집 사유를 판별한다")
+    void supports_recruit_type_detail() {
+        assertThat(RecruitType.SEMESTER.supports(RecruitTypeDetail.REGULAR)).isTrue();
+        assertThat(RecruitType.SEMESTER.supports(RecruitTypeDetail.REFILL)).isTrue();
+        assertThat(RecruitType.SEMESTER.supports(RecruitTypeDetail.NEW)).isFalse();
+
+        assertThat(RecruitType.MAKERS.supports(RecruitTypeDetail.NEW)).isTrue();
+        assertThat(RecruitType.MAKERS.supports(RecruitTypeDetail.REFILL)).isTrue();
+        assertThat(RecruitType.MAKERS.supports(RecruitTypeDetail.REGULAR)).isFalse();
+
+        assertThat(RecruitType.SUPPORTERS.supports(RecruitTypeDetail.NEW)).isTrue();
+        assertThat(RecruitType.SUPPORTERS.supports(RecruitTypeDetail.REFILL)).isTrue();
+        assertThat(RecruitType.SUPPORTERS.supports(RecruitTypeDetail.REGULAR)).isFalse();
+    }
+
+    @Test
+    @DisplayName("기존 모집 유형은 호환 기간 동안 모집 사유 validation에서 차단하지 않는다")
+    void legacy_recruit_types_support_recruit_type_detail_temporarily() {
+        assertThat(RecruitType.REGULAR.supports(RecruitTypeDetail.REGULAR)).isTrue();
+        assertThat(RecruitType.REGULAR_WAITLIST.supports(RecruitTypeDetail.REGULAR)).isTrue();
+        assertThat(RecruitType.BACKFILL.supports(RecruitTypeDetail.REFILL)).isTrue();
+        assertThat(RecruitType.MANUAL.supports(RecruitTypeDetail.REGULAR)).isTrue();
+    }
 }

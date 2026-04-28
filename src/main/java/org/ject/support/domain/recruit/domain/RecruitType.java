@@ -17,4 +17,17 @@ public enum RecruitType {
     ;
 
     private final String description;
+
+    public boolean supports(final RecruitTypeDetail recruitTypeDetail) {
+        if (recruitTypeDetail == null) {
+            return false;
+        }
+        return switch (this) {
+            case SEMESTER -> recruitTypeDetail == RecruitTypeDetail.REGULAR
+                    || recruitTypeDetail == RecruitTypeDetail.REFILL;
+            case MAKERS, SUPPORTERS -> recruitTypeDetail == RecruitTypeDetail.NEW
+                    || recruitTypeDetail == RecruitTypeDetail.REFILL;
+            case REGULAR, REGULAR_WAITLIST, BACKFILL, MANUAL -> true;
+        };
+    }
 }
