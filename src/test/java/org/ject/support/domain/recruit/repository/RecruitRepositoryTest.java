@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PM;
+import static org.ject.support.domain.member.JobFamily.SUPPORTER;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
@@ -60,6 +61,54 @@ class RecruitRepositoryTest {
 
         // then
         assertThat(result).isTrue();
+    }
+
+    @Test
+    void 활성_모집_공고만_시작일_순서로_조회한다() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+        Recruit earlierActiveRecruit = recruitRepository.save(Recruit.builder()
+                .semester(savedSemester)
+                .startDate(now.minusDays(2))
+                .endDate(now.plusDays(2))
+                .jobFamily(BE)
+                .recruitType(RecruitType.SEMESTER)
+                .recruitTypeDetail(RecruitTypeDetail.REGULAR)
+                .build());
+        Recruit laterActiveRecruit = recruitRepository.save(Recruit.builder()
+                .semester(savedSemester)
+                .startDate(now.minusDays(1))
+                .endDate(now.plusDays(2))
+                .jobFamily(SUPPORTER)
+                .recruitType(RecruitType.SUPPORTERS)
+                .recruitTypeDetail(RecruitTypeDetail.REFILL)
+                .build());
+        recruitRepository.save(Recruit.builder()
+                .semester(savedSemester)
+                .startDate(now.minusDays(4))
+                .endDate(now.minusDays(1))
+                .jobFamily(FE)
+                .recruitType(RecruitType.MAKERS)
+                .recruitTypeDetail(RecruitTypeDetail.NEW)
+                .build());
+        recruitRepository.save(Recruit.builder()
+                .semester(savedSemester)
+                .startDate(now.plusDays(1))
+                .endDate(now.plusDays(2))
+                .jobFamily(PM)
+                .recruitType(RecruitType.SEMESTER)
+                .recruitTypeDetail(RecruitTypeDetail.REFILL)
+                .build());
+
+        // when
+        List<Recruit> result = recruitRepository.findActiveRecruitments(now);
+
+        // then
+        assertThat(result)
+                .extracting(Recruit::getId)
+                .containsExactly(earlierActiveRecruit.getId(), laterActiveRecruit.getId());
+        assertThat(result.get(0).getSemester().getName()).isEqualTo("3기");
     }
 
     @Test

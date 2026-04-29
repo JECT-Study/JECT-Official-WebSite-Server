@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponse;
+import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
 import org.ject.support.domain.recruit.dto.RecruitCanceledEvent;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
@@ -18,6 +20,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -43,6 +46,15 @@ public class RecruitService implements RecruitUsecase {
                 .map(request -> request.toEntity(recruitingSemester))
                 .toList();
         recruitRepository.saveAll(recruits);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ActiveRecruitmentResponses findActiveRecruitments() {
+        List<ActiveRecruitmentResponse> responses = recruitRepository.findActiveRecruitments(LocalDateTime.now()).stream()
+                .map(ActiveRecruitmentResponse::from)
+                .toList();
+        return new ActiveRecruitmentResponses(responses);
     }
 
     @Override

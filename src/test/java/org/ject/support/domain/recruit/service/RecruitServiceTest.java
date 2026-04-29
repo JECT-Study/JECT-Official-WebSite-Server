@@ -3,7 +3,10 @@ package org.ject.support.domain.recruit.service;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import org.ject.support.domain.recruit.exception.RecruitException;
@@ -23,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
+import static org.ject.support.domain.member.JobFamily.SUPPORTER;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -65,6 +69,53 @@ class RecruitServiceTest extends UnitTestSupport {
         ArgumentCaptor<List<Recruit>> recruitsCaptor = ArgumentCaptor.forClass(List.class);
         verify(recruitRepository).saveAll(recruitsCaptor.capture());
         assertThat(recruitsCaptor.getValue()).hasSize(2);
+    }
+
+    @Test
+    void 활성_모집_공고_목록을_응답으로_변환한다() {
+        // given
+        Recruit recruit = Recruit.builder()
+                .id(1L)
+                .semester(getSemester(true))
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
+                .jobFamily(SUPPORTER)
+                .recruitType(RecruitType.SUPPORTERS)
+                .recruitTypeDetail(RecruitTypeDetail.REFILL)
+                .build();
+        when(recruitRepository.findActiveRecruitments(any())).thenReturn(List.of(recruit));
+
+        // when
+        ActiveRecruitmentResponses result = recruitService.findActiveRecruitments();
+
+        // then
+        assertThat(result.recruitments()).hasSize(1);
+        assertThat(result.recruitments().get(0).recruitId()).isEqualTo(1L);
+        assertThat(result.recruitments().get(0).recruitType()).isEqualTo(RecruitType.SUPPORTERS);
+        assertThat(result.recruitments().get(0).recruitTypeDetail()).isEqualTo(RecruitTypeDetail.REFILL);
+        assertThat(result.recruitments().get(0).jobFamily()).isEqualTo(SUPPORTER);
+    }
+
+    @Test
+    void 기존_모집_유형은_활성_목록_응답에서_정규기수_모집으로_표준화한다() {
+        // given
+        Recruit recruit = Recruit.builder()
+                .id(1L)
+                .semester(getSemester(true))
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
+                .jobFamily(BE)
+                .recruitType(RecruitType.BACKFILL)
+                .recruitTypeDetail(RecruitTypeDetail.REFILL)
+                .build();
+        when(recruitRepository.findActiveRecruitments(any())).thenReturn(List.of(recruit));
+
+        // when
+        ActiveRecruitmentResponses result = recruitService.findActiveRecruitments();
+
+        // then
+        assertThat(result.recruitments().get(0).recruitType()).isEqualTo(RecruitType.SEMESTER);
+        assertThat(result.recruitments().get(0).recruitTypeDetail()).isEqualTo(RecruitTypeDetail.REFILL);
     }
 
     private Semester getSemester() {
