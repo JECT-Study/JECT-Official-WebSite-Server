@@ -7,7 +7,6 @@ import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.testconfig.QueryDslTestConfig;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -34,8 +33,7 @@ class RecruitRepositoryTest {
     private SemesterRepository semesterRepository;
 
     @Test
-    @DisplayName("특정 직군의 마감되지 않은 모집 정보가 존재하면 true 반환")
-    void exists_by_job_family_and_is_not_closed() {
+    void 특정_직군의_마감되지_않은_모집_정보가_존재하면_true를_반환한다() {
         // given
         Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
 

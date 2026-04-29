@@ -10,7 +10,6 @@ import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.AuthenticatedUser;
 import org.ject.support.testconfig.IntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -57,8 +56,7 @@ class AdminRecruitControllerTest {
     }
 
     @Test
-    @DisplayName("모집 정보 등록")
-    void register_recruits() throws Exception {
+    void 모집_정보를_등록한다() throws Exception {
         // given
         List<RecruitRegisterRequest> requests = List.of(
                 new RecruitRegisterRequest(
@@ -84,8 +82,7 @@ class AdminRecruitControllerTest {
     }
 
     @Test
-    @DisplayName("이미 모집중인 직군에 대한 모집 등록 시 실패")
-    void register_recruit_fail_by_duplicated_job_family() throws Exception {
+    void 이미_모집중인_직군에_대한_모집_등록은_실패한다() throws Exception {
         // given
         Semester recruitingSemester = semesterRepository.findRecruitingSemester()
                 .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
@@ -111,8 +108,7 @@ class AdminRecruitControllerTest {
     }
 
     @Test
-    @DisplayName("모집 정보 수정")
-    void update_recruit() throws Exception {
+    void 모집_정보를_수정한다() throws Exception {
         // given
         Semester recruitingSemester = semesterRepository.findRecruitingSemester()
                 .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
@@ -138,8 +134,7 @@ class AdminRecruitControllerTest {
     }
 
     @Test
-    @DisplayName("모집 취소")
-    void cancel_recruit() throws Exception {
+    void 모집을_취소한다() throws Exception {
         // given
         Semester recruitingSemester = semesterRepository.findRecruitingSemester()
                 .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
