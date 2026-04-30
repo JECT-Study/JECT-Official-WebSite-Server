@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
 
-@Tag(name = "Recruitment", description = "모집 공고 API")
+@Tag(name = "Recruit", description = "모집 공고 API")
 public interface RecruitApiSpec {
 
     @Operation(
