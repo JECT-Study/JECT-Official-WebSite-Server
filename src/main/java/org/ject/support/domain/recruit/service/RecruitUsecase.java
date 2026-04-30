@@ -1,5 +1,6 @@
 package org.ject.support.domain.recruit.service;
 
+import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 
@@ -11,6 +12,11 @@ public interface RecruitUsecase {
      * 모집 정보를 등록합니다.
      */
     void registerRecruits(List<RecruitRegisterRequest> requests);
+
+    /**
+     * 현재 활성화된 모집 공고 목록을 조회합니다.
+     */
+    ActiveRecruitmentResponses findActiveRecruitments();
 
     /**
      * 모집 정보를 수정합니다.
