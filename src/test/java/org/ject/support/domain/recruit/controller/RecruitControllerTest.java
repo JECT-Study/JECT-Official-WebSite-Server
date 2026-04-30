@@ -62,7 +62,7 @@ class RecruitControllerTest {
         given(recruitUsecase.findActiveRecruitments()).willReturn(responses);
 
         // when, then
-        mockMvc.perform(get("/recruit/active"))
+        mockMvc.perform(get("/recruits/active"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.recruitments", hasSize(2)))
@@ -82,7 +82,7 @@ class RecruitControllerTest {
         given(recruitUsecase.findActiveRecruitments()).willReturn(new ActiveRecruitmentResponses(List.of()));
 
         // when, then
-        mockMvc.perform(get("/recruit/active"))
+        mockMvc.perform(get("/recruits/active"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.recruitments", hasSize(0)));
