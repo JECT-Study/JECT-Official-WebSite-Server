@@ -11,6 +11,7 @@ public interface QuestionApiSpec {
 
     @Operation(
             summary = "지원서 문항 목록 조회",
-            description = "현재 모집 중인 지원서에 한해, 전달된 직군에 해당하는 문항을 모두 조회합니다.")
-    QuestionResponses findQuestions(@RequestParam JobFamily jobFamily);
+            description = "현재 모집 중인 지원서에 한해, 전달된 모집 공고 또는 직군에 해당하는 문항을 모두 조회합니다.")
+    QuestionResponses findQuestions(@RequestParam(required = false) JobFamily jobFamily,
+                                    @RequestParam(required = false) Long recruitId);
 }
