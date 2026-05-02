@@ -1,9 +1,6 @@
 package org.ject.support.domain.recruit.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.ject.support.common.exception.GlobalErrorCode;
-import org.ject.support.common.exception.GlobalException;
-import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.dto.QuestionResponses;
 import org.ject.support.domain.recruit.service.QuestionService;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,15 +19,7 @@ public class QuestionController implements QuestionApiSpec {
     @Override
     @GetMapping
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public QuestionResponses findQuestions(@RequestParam(required = false) JobFamily jobFamily,
-                                           @RequestParam(required = false) Long recruitId) {
-        if (recruitId != null) {
-            return questionService.findQuestions(recruitId, jobFamily);
-        }
-        if (jobFamily == null) {
-            throw new GlobalException(GlobalErrorCode.MISS_REQUIRED_REQUEST_PARAMETER);
-        }
-
-        return questionService.findQuestions(jobFamily);
+    public QuestionResponses findQuestions(@RequestParam Long recruitId) {
+        return questionService.findQuestions(recruitId);
     }
 }

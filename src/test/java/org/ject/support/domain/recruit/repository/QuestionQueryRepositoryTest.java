@@ -34,35 +34,6 @@ class QuestionQueryRepositoryTest {
     private SemesterRepository semesterRepository;
 
     @Test
-    void 현재_모집중인_직군의_지원서_문항을_조회한다() {
-        // given
-        Semester savedSemester = semesterRepository.save(Semester.builder()
-                .name("1기")
-                .isRecruiting(true)
-                .build());
-
-        LocalDateTime now = LocalDateTime.now();
-        Recruit feRecruit = createRecruit(savedSemester, now, FE);
-        Recruit beRecruit = createRecruit(savedSemester, now, BE);
-        recruitRepository.saveAll(List.of(feRecruit, beRecruit));
-
-        Question feQuestion1 = createQuestion(1, TEXT, feRecruit);
-        Question feQuestion2 = createQuestion(2, FILE, feRecruit);
-        Question beQuestion1 = createQuestion(1, TEXT, beRecruit);
-        Question beQuestion2 = createQuestion(2, TEXT, beRecruit);
-        Question beQuestion3 = createQuestion(3, FILE, beRecruit);
-        questionRepository.saveAll(List.of(feQuestion1, feQuestion2, beQuestion3, beQuestion1, beQuestion2));
-
-        // when
-        List<QuestionResponse> result = questionRepository.findByJobFamilyOfActiveRecruit(now, BE);
-
-        // then
-        assertThat(result).hasSize(3);
-        assertThat(result).extracting(QuestionResponse::sequence)
-                .containsExactly(1, 2, 3);
-    }
-
-    @Test
     void 현재_모집중인_모집_공고의_지원서_문항을_조회한다() {
         // given
         Semester savedSemester = semesterRepository.save(Semester.builder()

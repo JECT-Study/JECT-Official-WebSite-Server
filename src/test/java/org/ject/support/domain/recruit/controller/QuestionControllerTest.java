@@ -106,13 +106,13 @@ class QuestionControllerTest {
     void 지원서_문항_조회_시_redis에_캐싱한다() throws Exception {
         // when
         mockMvc.perform(get("/apply/questions")
-                        .param("jobFamily", "BE"))
+                        .param("recruitId", recruit.getId().toString()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("SUCCESS")))
                 .andDo(print());
 
         // then
-        Long countExistingKeys = redisTemplate.countExistingKeys(List.of("cache::question::BE"));
+        Long countExistingKeys = redisTemplate.countExistingKeys(List.of("cache::question::RECRUIT:" + recruit.getId()));
         assertThat(countExistingKeys).isEqualTo(1);
     }
 
@@ -130,12 +130,10 @@ class QuestionControllerTest {
 
     @Test
     @AuthenticatedUser
-    void 모집_공고와_직군이_다르면_에러를_반환한다() throws Exception {
+    void 모집_공고_식별자가_없으면_에러를_반환한다() throws Exception {
         // when, then
-        mockMvc.perform(get("/apply/questions")
-                        .param("recruitId", recruit.getId().toString())
-                        .param("jobFamily", "FE"))
+        mockMvc.perform(get("/apply/questions"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value("RECRUIT-5"));
+                .andExpect(jsonPath("$.status").value("GLOBAL-10"));
     }
 }

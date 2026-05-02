@@ -4,7 +4,6 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.dto.QQuestionResponse;
 import org.ject.support.domain.recruit.dto.QuestionResponse;
 import org.springframework.stereotype.Repository;
@@ -20,15 +19,6 @@ import static org.ject.support.domain.recruit.domain.QRecruit.recruit;
 public class QuestionQueryRepositoryImpl implements QuestionQueryRepository {
 
     private final JPAQueryFactory queryFactory;
-
-    @Override
-    public List<QuestionResponse> findByJobFamilyOfActiveRecruit(final LocalDateTime now,
-                                                                 final JobFamily jobFamily) {
-        return selectQuestions()
-                .where(isWithinRecruitPeriod(now), recruit.jobFamily.eq(jobFamily))
-                .orderBy(question.sequence.asc())
-                .fetch();
-    }
 
     @Override
     public List<QuestionResponse> findByRecruitIdOfActiveRecruit(final LocalDateTime now,

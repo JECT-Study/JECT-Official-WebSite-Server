@@ -1,7 +1,6 @@
 package org.ject.support.domain.recruit.service;
 
 import org.ject.support.base.UnitTestSupport;
-import org.ject.support.common.exception.GlobalException;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
@@ -20,7 +19,6 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -56,7 +54,7 @@ class QuestionServiceTest extends UnitTestSupport {
                 .thenReturn(List.of(questionResponse));
 
         // when
-        QuestionResponses result = questionService.findQuestions(1L, BE);
+        QuestionResponses result = questionService.findQuestions(1L);
 
         // then
         assertThat(result.questionResponses()).hasSize(1);
@@ -64,21 +62,14 @@ class QuestionServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 모집_공고와_직군이_다르면_지원서_문항_조회에_실패한다() {
+    void 모집_공고를_찾을_수_없으면_지원서_문항_조회에_실패한다() {
         // given
-        when(recruitRepository.findActiveRecruitById(eq(1L), any(LocalDateTime.class))).thenReturn(createRecruit());
+        when(recruitRepository.findActiveRecruitById(eq(1L), any(LocalDateTime.class))).thenReturn(null);
 
         // when, then
-        assertThatThrownBy(() -> questionService.findQuestions(1L, FE))
+        assertThatThrownBy(() -> questionService.findQuestions(1L))
                 .isInstanceOf(RecruitException.class);
         verify(questionRepository, never()).findByRecruitIdOfActiveRecruit(any(), any());
-    }
-
-    @Test
-    void 모집_공고와_직군이_모두_없으면_지원서_문항_조회에_실패한다() {
-        // when, then
-        assertThatThrownBy(() -> questionService.findQuestions(null))
-                .isInstanceOf(GlobalException.class);
     }
 
     private Recruit createRecruit() {
