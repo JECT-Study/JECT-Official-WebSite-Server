@@ -134,6 +134,6 @@ class QuestionControllerTest {
         // when, then
         mockMvc.perform(get("/apply/questions"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value("GLOBAL-10"));
+                .andExpect(jsonPath("$.code").value("GLOBAL-10"));
     }
 }
