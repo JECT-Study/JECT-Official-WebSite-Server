@@ -27,8 +27,6 @@ import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.exception.QuestionException;
-import org.ject.support.domain.recruit.exception.RecruitErrorCode;
-import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -565,7 +563,7 @@ class ApplyServiceTest extends UnitTestSupport {
 
         assertThat(member.getName()).isEqualTo(request.name());
         assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
-        assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
+        assertThat(member.getJobFamily()).isEqualTo(recruit.getJobFamily());
     }
 
     @Test
@@ -598,13 +596,13 @@ class ApplyServiceTest extends UnitTestSupport {
 
         assertThat(member.getName()).isEqualTo(request.name());
         assertThat(member.getPhoneNumber()).isEqualTo(request.phoneNumber());
-        assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
+        assertThat(member.getJobFamily()).isEqualTo(recruit.getJobFamily());
         assertThat(member.getCareerDetails()).isEqualTo(request.careerDetails());
         assertThat(member.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
     }
 
     @Test
-    void 프로필_저장_시_모집_공고와_직군이_다르면_실패() {
+    void 프로필_저장_시_모집_공고_직군으로_프로필을_저장한다() {
         // given
         long memberId = 1L;
         long recruitId = 1L;
@@ -622,13 +620,45 @@ class ApplyServiceTest extends UnitTestSupport {
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
         given(recruitRepository.findActiveRecruitById(eq(recruitId), any())).willReturn(recruit);
+        given(applyRepository.existsByMemberIdAndRecruitIdInActiveRecruit(eq(memberId), eq(recruitId), any()))
+                .willReturn(false);
 
-        // when, then
-        assertThatThrownBy(() -> applyService.saveProfile(memberId, recruitId, request))
-                .isInstanceOf(RecruitException.class)
-                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.INVALID_RECRUIT_JOB_FAMILY);
+        // when
+        applyService.saveProfile(memberId, recruitId, request);
 
-        verify(applyRepository, never()).save(any(Apply.class));
+        // then
+        assertThat(member.getJobFamily()).isEqualTo(BE);
+    }
+
+    @Test
+    void 프로필_저장_시_모집_공고_식별자가_없으면_직군으로_공고를_조회한다() {
+        // given
+        long memberId = 1L;
+        Member member = getApplicant(memberId, "test@example.com");
+        ApplyProfileRequest request = new ApplyProfileRequest(
+                "New Name",
+                "010-1234-5678",
+                JobFamily.FE,
+                Region.SEOUL,
+                CareerDetails.STUDENT,
+                ExperiencePeriod.NONE,
+                List.of(InterestedDomain.GAME.getDescription(), InterestedDomain.EDUCATION.getDescription())
+        );
+        Recruit recruit = getActiveRecruit(request.jobFamily(), List.of());
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(recruitRepository.findActiveRecruitByJobFamily(eq(request.jobFamily()), any()))
+                .willReturn(Optional.of(recruit));
+        given(applyRepository.existsByMemberIdAndRecruitIdInActiveRecruit(eq(memberId), eq(recruit.getId()), any()))
+                .willReturn(false);
+
+        // when
+        applyService.saveProfile(memberId, null, request);
+
+        // then
+        ArgumentCaptor<Apply> applyCaptor = ArgumentCaptor.forClass(Apply.class);
+        verify(applyRepository).save(applyCaptor.capture());
+        assertThat(applyCaptor.getValue().getRecruit()).isEqualTo(recruit);
     }
 
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {

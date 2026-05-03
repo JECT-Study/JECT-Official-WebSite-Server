@@ -28,6 +28,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -83,6 +84,31 @@ class ApplyControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
 
         verify(applyUsecase).saveProfile(eq(memberId), eq(recruitId), any(ApplyProfileRequest.class));
+    }
+
+    @Test
+    void 모집_공고_식별자가_없어도_프로필을_저장한다() throws Exception {
+        // given
+        long memberId = 1L;
+        setAuthentication(memberId);
+        ApplyProfileRequest request = new ApplyProfileRequest(
+                "김젝트",
+                "010-1234-5678",
+                JobFamily.FE,
+                Region.SEOUL,
+                CareerDetails.STUDENT,
+                ExperiencePeriod.NONE,
+                List.of(InterestedDomain.GAME.getDescription())
+        );
+
+        // when, then
+        mockMvc.perform(post("/apply/profile")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+
+        verify(applyUsecase).saveProfile(eq(memberId), isNull(), any(ApplyProfileRequest.class));
     }
 
     private void setAuthentication(final Long memberId) {

@@ -196,16 +196,15 @@ public class ApplyService implements ApplyUsecase {
     public void saveProfile(Long memberId, Long recruitId, ApplyProfileRequest request) {
         var member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-        Recruit recruit = getActiveRecruit(recruitId);
+        Recruit recruit = getActiveRecruit(recruitId, request.jobFamily());
 
-        validateRecruitJobFamily(recruit, request.jobFamily());
         createApplyIfNotExists(member, recruit);
 
         var memberEditorBuilder = member.toEditor();
         var memberEditor = memberEditorBuilder
                 .name(request.name())
                 .phoneNumber(request.phoneNumber())
-                .jobFamily(request.jobFamily())
+                .jobFamily(recruit.getJobFamily())
                 .region(request.region())
                 .careerDetails(request.careerDetails())
                 .experiencePeriod(request.experiencePeriod())
@@ -223,15 +222,9 @@ public class ApplyService implements ApplyUsecase {
                 var newApply = Apply.createApply(member, recruit);
                 applyRepository.save(newApply);
             } catch (DataIntegrityViolationException e) {
-                log.warn("지원서 생성 중 레이스 컨디션 발생. memberId: {}, recruitId: {}. 이미 지원서가 존재합니다.",
+                log.warn("지원서 생성 중 중복 생성 충돌 발생. memberId: {}, recruitId: {}. 이미 지원서가 존재합니다.",
                         member.getId(), recruit.getId());
             }
-        }
-    }
-
-    private void validateRecruitJobFamily(Recruit recruit, JobFamily jobFamily) {
-        if (recruit.getJobFamily() != jobFamily) {
-            throw new RecruitException(RecruitErrorCode.INVALID_RECRUIT_JOB_FAMILY);
         }
     }
 
@@ -249,7 +242,11 @@ public class ApplyService implements ApplyUsecase {
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
 
-    private Recruit getActiveRecruit(final Long recruitId) {
+    private Recruit getActiveRecruit(final Long recruitId, final JobFamily jobFamily) {
+        if (recruitId == null) {
+            return getPeriodRecruit(jobFamily);
+        }
+
         return Optional.ofNullable(recruitRepository.findActiveRecruitById(recruitId, LocalDateTime.now()))
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
