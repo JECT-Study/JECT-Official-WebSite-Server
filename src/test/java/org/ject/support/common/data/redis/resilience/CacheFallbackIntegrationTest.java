@@ -52,6 +52,8 @@ class CacheFallbackIntegrationTest {
     @Autowired
     private RedisCacheCircuitBreakerProvider circuitBreakerProvider;
 
+    private Recruit recruit;
+
     @BeforeEach
     void setUp() {
         String uniqueSuffix = String.valueOf(System.currentTimeMillis());
@@ -64,7 +66,7 @@ class CacheFallbackIntegrationTest {
                 .isRecruiting(true)
                 .build());
 
-        Recruit recruit = Recruit.builder()
+        recruit = Recruit.builder()
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .semester(savedSemester)
@@ -104,7 +106,7 @@ class CacheFallbackIntegrationTest {
 
         // when: 캐시가 적용된 서비스 메서드 호출
         // Redis가 죽어있으므로 CacheErrorHandler가 예외를 잡고, DB에서 데이터를 가져와야 함
-        QuestionResponses response = questionService.findQuestions(JobFamily.BE);
+        QuestionResponses response = questionService.findQuestions(recruit.getId());
 
         // then
         assertThat(response).isNotNull();

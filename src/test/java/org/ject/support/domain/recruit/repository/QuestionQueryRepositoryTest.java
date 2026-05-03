@@ -6,7 +6,6 @@ import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.QuestionResponse;
 import org.ject.support.testconfig.QueryDslTestConfig;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -35,8 +34,7 @@ class QuestionQueryRepositoryTest {
     private SemesterRepository semesterRepository;
 
     @Test
-    @DisplayName("현재 모집중인 직군의 지원서 문항 조회")
-    void find_by_job_family() {
+    void 현재_모집중인_모집_공고의_지원서_문항을_조회한다() {
         // given
         Semester savedSemester = semesterRepository.save(Semester.builder()
                 .name("1기")
@@ -51,22 +49,19 @@ class QuestionQueryRepositoryTest {
         Question feQuestion1 = createQuestion(1, TEXT, feRecruit);
         Question feQuestion2 = createQuestion(2, FILE, feRecruit);
         Question beQuestion1 = createQuestion(1, TEXT, beRecruit);
-        Question beQuestion2 = createQuestion(2, TEXT, beRecruit);
-        Question beQuestion3 = createQuestion(3, FILE, beRecruit);
-        questionRepository.saveAll(List.of(feQuestion1, feQuestion2, beQuestion3, beQuestion1, beQuestion2));
+        questionRepository.saveAll(List.of(beQuestion1, feQuestion2, feQuestion1));
 
         // when
-        List<QuestionResponse> result = questionRepository.findByJobFamilyOfActiveRecruit(now, BE);
+        List<QuestionResponse> result = questionRepository.findByRecruitIdOfActiveRecruit(now, feRecruit.getId());
 
         // then
-        assertThat(result).hasSize(3);
+        assertThat(result).hasSize(2);
         assertThat(result).extracting(QuestionResponse::sequence)
-                .containsExactly(1, 2, 3);
+                .containsExactly(1, 2);
     }
 
     @Test
-    @DisplayName("selectOptions가 List<String>와 JSON 문자열 간 정상 변환됨")
-    void convert_select_options() {
+    void selectOptions가_List_String과_JSON_문자열_간_정상_변환된다() {
         // given
         List<String> selectOptions = List.of("재직", "재학", "졸업", "휴학");
 
