@@ -52,8 +52,9 @@ public interface ApplyApiSpec {
 
     @Operation(
             summary = "프로필 작성(저장)",
-            description = "지원자의 프로필을 작성(저장)합니다."
+            description = "지원자의 특정 공고에 대한 프로필을 작성(저장)합니다."
     )
     void saveProfile(@AuthPrincipal Long memberId,
+                     @RequestParam Long recruitId,
                      @RequestBody @Valid ApplyProfileRequest request);
 }

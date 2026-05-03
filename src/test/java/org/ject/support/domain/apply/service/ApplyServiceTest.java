@@ -27,6 +27,8 @@ import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.exception.QuestionException;
+import org.ject.support.domain.recruit.exception.RecruitErrorCode;
+import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -531,6 +533,7 @@ class ApplyServiceTest extends UnitTestSupport {
     void 프로필_저장_성공() {
         // given
         long memberId = 1L;
+        long recruitId = 1L;
         Member member = getApplicant(memberId, "test@example.com");
         ApplyProfileRequest request = new ApplyProfileRequest(
             "New Name",
@@ -544,11 +547,12 @@ class ApplyServiceTest extends UnitTestSupport {
         Recruit recruit = getActiveRecruit(request.jobFamily(), List.of());
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(applyRepository.existsByMemberIdInActiveRecruit(eq(memberId), any())).willReturn(false);
-        given(recruitRepository.findActiveRecruitByJobFamily(any(), any())).willReturn(Optional.of(recruit));
+        given(recruitRepository.findActiveRecruitById(eq(recruitId), any())).willReturn(recruit);
+        given(applyRepository.existsByMemberIdAndRecruitIdInActiveRecruit(eq(memberId), eq(recruitId), any()))
+                .willReturn(false);
 
         // when
-        applyService.saveProfile(memberId, request);
+        applyService.saveProfile(memberId, recruitId, request);
 
         // then
         ArgumentCaptor<Apply> applyCaptor = ArgumentCaptor.forClass(Apply.class);
@@ -568,6 +572,7 @@ class ApplyServiceTest extends UnitTestSupport {
     void 프로필_저장_시_Apply가_존재하면_프로필만_업데이트() {
         // given
         long memberId = 1L;
+        long recruitId = 1L;
         Member member = getApplicant(memberId, "test@example.com");
         ApplyProfileRequest request = new ApplyProfileRequest(
                 "New Name",
@@ -578,12 +583,15 @@ class ApplyServiceTest extends UnitTestSupport {
                 ExperiencePeriod.NONE,
                 List.of(InterestedDomain.GAME.getDescription(), InterestedDomain.EDUCATION.getDescription())
         );
+        Recruit recruit = getActiveRecruit(request.jobFamily(), List.of());
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(applyRepository.existsByMemberIdInActiveRecruit(eq(memberId), any())).willReturn(true);
+        given(recruitRepository.findActiveRecruitById(eq(recruitId), any())).willReturn(recruit);
+        given(applyRepository.existsByMemberIdAndRecruitIdInActiveRecruit(eq(memberId), eq(recruitId), any()))
+                .willReturn(true);
 
         // when
-        applyService.saveProfile(memberId, request);
+        applyService.saveProfile(memberId, recruitId, request);
 
         // then
         verify(applyRepository, never()).save(any(Apply.class));
@@ -593,6 +601,34 @@ class ApplyServiceTest extends UnitTestSupport {
         assertThat(member.getJobFamily()).isEqualTo(request.jobFamily());
         assertThat(member.getCareerDetails()).isEqualTo(request.careerDetails());
         assertThat(member.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
+    }
+
+    @Test
+    void 프로필_저장_시_모집_공고와_직군이_다르면_실패() {
+        // given
+        long memberId = 1L;
+        long recruitId = 1L;
+        Member member = getApplicant(memberId, "test@example.com");
+        ApplyProfileRequest request = new ApplyProfileRequest(
+                "New Name",
+                "010-1234-5678",
+                JobFamily.FE,
+                Region.SEOUL,
+                CareerDetails.STUDENT,
+                ExperiencePeriod.NONE,
+                List.of(InterestedDomain.GAME.getDescription(), InterestedDomain.EDUCATION.getDescription())
+        );
+        Recruit recruit = getActiveRecruit(BE, List.of());
+
+        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(recruitRepository.findActiveRecruitById(eq(recruitId), any())).willReturn(recruit);
+
+        // when, then
+        assertThatThrownBy(() -> applyService.saveProfile(memberId, recruitId, request))
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.INVALID_RECRUIT_JOB_FAMILY);
+
+        verify(applyRepository, never()).save(any(Apply.class));
     }
 
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {
