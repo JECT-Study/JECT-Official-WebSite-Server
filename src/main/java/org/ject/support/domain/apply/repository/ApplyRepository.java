@@ -29,13 +29,15 @@ public interface ApplyRepository extends JpaRepository<Apply, Long> {
     @Query("select count(a) > 0 from Apply a join a.recruit r where a.member.id = :memberId and r.startDate <= :now and r.endDate >= :now")
     boolean existsByMemberIdInActiveRecruit(@Param("memberId") Long memberId, @Param("now") LocalDateTime now);
 
-    default boolean existsByMemberIdAndRecruitIdInActiveRecruit(Long memberId, Long recruitId, LocalDateTime now) {
-        return existsByMemberIdAndRecruitIdAndRecruitStartDateLessThanEqualAndRecruitEndDateGreaterThanEqual(
-                memberId, recruitId, now, now);
-    }
-
-    boolean existsByMemberIdAndRecruitIdAndRecruitStartDateLessThanEqualAndRecruitEndDateGreaterThanEqual(
-            Long memberId, Long recruitId, LocalDateTime startDate, LocalDateTime endDate);
+    @Query("""
+            select exists (
+                select 1 from Apply a join a.recruit r
+                where a.member.id = :memberId and r.id = :recruitId and r.startDate <= :now and r.endDate >= :now
+            )
+            """)
+    boolean existsByMemberIdAndRecruitIdInActiveRecruit(@Param("memberId") Long memberId,
+                                                        @Param("recruitId") Long recruitId,
+                                                        @Param("now") LocalDateTime now);
 
     List<Apply> findByRecruitAndStatus(Recruit recruit, ApplyStatus status);
 

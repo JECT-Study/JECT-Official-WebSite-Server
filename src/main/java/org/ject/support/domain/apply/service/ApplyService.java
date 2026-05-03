@@ -196,7 +196,9 @@ public class ApplyService implements ApplyUsecase {
     public void saveProfile(Long memberId, Long recruitId, ApplyProfileRequest request) {
         var member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
-        Recruit recruit = getActiveRecruit(recruitId, request.jobFamily());
+        Recruit recruit = recruitId == null
+                ? getPeriodRecruit(request.jobFamily())
+                : getActiveRecruit(recruitId);
 
         createApplyIfNotExists(member, recruit);
 
@@ -242,11 +244,7 @@ public class ApplyService implements ApplyUsecase {
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
 
-    private Recruit getActiveRecruit(final Long recruitId, final JobFamily jobFamily) {
-        if (recruitId == null) {
-            return getPeriodRecruit(jobFamily);
-        }
-
+    private Recruit getActiveRecruit(final Long recruitId) {
         return Optional.ofNullable(recruitRepository.findActiveRecruitById(recruitId, LocalDateTime.now()))
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
