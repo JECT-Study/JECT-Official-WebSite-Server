@@ -36,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static org.ject.support.domain.apply.domain.ApplyStatus.JOINED;
 import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
@@ -192,17 +193,18 @@ public class ApplyService implements ApplyUsecase {
     @Override
     @PeriodAccessible(permitAllJob = true)
     @Transactional
-    public void saveProfile(Long memberId, ApplyProfileRequest request) {
+    public void saveProfile(Long memberId, Long recruitId, ApplyProfileRequest request) {
         var member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND_MEMBER));
+        Recruit recruit = getActiveRecruit(recruitId);
 
-        createApplyIfNotExists(member, request.jobFamily());
+        createApplyIfNotExists(member, recruit);
 
         var memberEditorBuilder = member.toEditor();
         var memberEditor = memberEditorBuilder
                 .name(request.name())
                 .phoneNumber(request.phoneNumber())
-                .jobFamily(request.jobFamily())
+                .jobFamily(recruit.getJobFamily())
                 .region(request.region())
                 .careerDetails(request.careerDetails())
                 .experiencePeriod(request.experiencePeriod())
@@ -212,14 +214,16 @@ public class ApplyService implements ApplyUsecase {
         member.edit(memberEditor);
     }
 
-    private void createApplyIfNotExists(Member member, JobFamily jobFamily) {
-        if (!applyRepository.existsByMemberIdInActiveRecruit(member.getId(), LocalDateTime.now())) {
+    private void createApplyIfNotExists(Member member, Recruit recruit) {
+        boolean exists = applyRepository.existsByMemberIdAndRecruitIdInActiveRecruit(
+                member.getId(), recruit.getId(), LocalDateTime.now());
+        if (!exists) {
             try {
-                var recruit = getPeriodRecruit(jobFamily);
                 var newApply = Apply.createApply(member, recruit);
                 applyRepository.save(newApply);
             } catch (DataIntegrityViolationException e) {
-                log.warn("지원서 생성 중 레이스 컨디션 발생. memberId: {}. 이미 지원서가 존재합니다.", member.getId());
+                log.warn("지원서 생성 중 중복 생성 충돌 발생. memberId: {}, recruitId: {}. 이미 지원서가 존재합니다.",
+                        member.getId(), recruit.getId());
             }
         }
     }
@@ -235,6 +239,11 @@ public class ApplyService implements ApplyUsecase {
 
     private Recruit getPeriodRecruit(final JobFamily jobFamily) {
         return recruitRepository.findActiveRecruitByJobFamily(jobFamily, LocalDateTime.now())
+                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
+    }
+
+    private Recruit getActiveRecruit(final Long recruitId) {
+        return Optional.ofNullable(recruitRepository.findActiveRecruitById(recruitId, LocalDateTime.now()))
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
 

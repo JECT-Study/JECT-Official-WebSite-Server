@@ -26,5 +26,5 @@ public interface ApplyUsecase {
 
     ApplyStatusResponse checkApplyStatus(Long memberId, Long recruitId);
 
-    void saveProfile(Long memberId, ApplyProfileRequest request);
+    void saveProfile(Long memberId, Long recruitId, ApplyProfileRequest request);
 }

@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.apply.domain.ApplyStatus.JOINED;
 import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
 import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
 import static org.ject.support.domain.member.JobFamily.BE;
@@ -104,6 +105,27 @@ class ApplyRepositoryTest {
 
         // then
         assertThat(count).isEqualTo(1L);
+    }
+
+    @Test
+    void 회원과_모집_공고를_바탕으로_활성_지원정보_존재_여부를_조회한다() {
+        // given
+        Member applicant = createMember("email@test.com", Role.APPLY);
+        memberRepository.save(applicant);
+
+        Apply feApply = getApply(applicant, feRecruit, JOINED);
+        Apply beApply = getApply(applicant, beRecruit, JOINED);
+        applyRepository.saveAll(List.of(feApply, beApply));
+
+        // when
+        boolean exists = applyRepository.existsByMemberIdAndRecruitIdInActiveRecruit(
+                applicant.getId(), beRecruit.getId(), LocalDateTime.now());
+        boolean notExists = applyRepository.existsByMemberIdAndRecruitIdInActiveRecruit(
+                applicant.getId(), pdRecruit.getId(), LocalDateTime.now());
+
+        // then
+        assertThat(exists).isTrue();
+        assertThat(notExists).isFalse();
     }
 
     @Test
