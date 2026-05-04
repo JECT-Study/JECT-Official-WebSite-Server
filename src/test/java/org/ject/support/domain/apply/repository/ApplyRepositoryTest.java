@@ -129,6 +129,25 @@ class ApplyRepositoryTest {
     }
 
     @Test
+    void 회원과_모집_공고를_바탕으로_활성_지원정보를_조회한다() {
+        // given
+        Member applicant = createMember("email@test.com", Role.APPLY);
+        memberRepository.save(applicant);
+
+        Apply feApply = getApply(applicant, feRecruit, JOINED);
+        Apply beApply = getApply(applicant, beRecruit, TEMP_SAVED);
+        applyRepository.saveAll(List.of(feApply, beApply));
+
+        // when
+        Apply result = applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(
+                applicant.getId(), beRecruit.getId(), LocalDateTime.now()).orElseThrow();
+
+        // then
+        assertThat(result).isEqualTo(beApply);
+        assertThat(result.getRecruit()).isEqualTo(beRecruit);
+    }
+
+    @Test
     void 지원ID와_지원서의_상태로_지원서를_상세_조회한다() {
         // given
         Member feApplicant = createMember("emailFE@test.com", Role.APPLY);

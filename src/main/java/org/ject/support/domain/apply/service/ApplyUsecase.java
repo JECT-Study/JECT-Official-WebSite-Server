@@ -10,14 +10,15 @@ import java.util.List;
 import java.util.Map;
 
 public interface ApplyUsecase {
-    TempApplicationFormResponse findTempApplicationForm(Long memberId);
+    TempApplicationFormResponse findTempApplicationForm(Long memberId, Long recruitId);
 
     void saveApplicationTemporarily(Long memberId,
+                                    Long recruitId,
                                     Map<String, String> answers,
                                     List<ApplyPortfolioDto> portfolios);
 
 
-    void deleteProfileAndTempApplicationForm(Long memberId);
+    void deleteProfileAndTempApplicationForm(Long memberId, Long recruitId);
 
     void submitApplication(Long memberId,
                            JobFamily jobFamily,

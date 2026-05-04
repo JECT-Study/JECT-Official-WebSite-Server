@@ -17,20 +17,23 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface ApplyApiSpec {
 
     @Operation(
-            summary = "가장 최근에 저장된 임시 지원서 조회",
-            description = "가장 최근에 저장된 임시 지원서를 조회합니다.")
-    TempApplicationFormResponse findTempApplicationForm(@AuthPrincipal Long memberId);
+            summary = "지원서 임시 저장 조회",
+            description = "지원자의 특정 공고에 대한 임시 저장 지원서를 조회합니다.")
+    TempApplicationFormResponse findTempApplicationForm(@AuthPrincipal Long memberId,
+                                                        @RequestParam Long recruitId);
 
     @Operation(
             summary = "지원서 임시 저장",
-            description = "지원서를 임시 저장합니다.")
+            description = "지원자의 특정 공고에 대한 지원서를 임시 저장합니다.")
     void saveApplicationTemporarily(@AuthPrincipal Long memberId,
+                                    @RequestParam Long recruitId,
                                     @RequestBody ApplyTemporaryRequest request);
 
     @Operation(
             summary = "지원서 초기화",
-            description = "해당 지원자의 프로필과 임시 지원서를 제거합니다.")
-    void deleteProfileAndTempApplicationForm(@AuthPrincipal Long memberId);
+            description = "지원자의 특정 공고에 대한 프로필과 임시 지원서를 제거합니다.")
+    void deleteProfileAndTempApplicationForm(@AuthPrincipal Long memberId,
+                                             @RequestParam Long recruitId);
 
     @Operation(
             summary = "지원서 제출",

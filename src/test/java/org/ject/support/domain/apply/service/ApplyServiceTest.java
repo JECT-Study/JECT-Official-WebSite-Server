@@ -317,11 +317,12 @@ class ApplyServiceTest extends UnitTestSupport {
 
         String content = "newContent";
 
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(applicant.getId()), eq(recruit.getId()), any()))
+                .thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(content);
 
         // when
-        applyService.saveApplicationTemporarily(1L, answers, List.of());
+        applyService.saveApplicationTemporarily(1L, recruit.getId(), answers, List.of());
 
         // then
         ArgumentCaptor<ApplicationForm> captor = ArgumentCaptor.forClass(ApplicationForm.class);
@@ -358,10 +359,11 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Apply apply = getApply(1L, recruit, applicant, applicationForm, SUBMITTED);
 
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(applicant.getId()), eq(recruit.getId()), any()))
+                .thenReturn(Optional.of(apply));
 
         // when, then
-        assertThatThrownBy(() -> applyService.saveApplicationTemporarily(1L, answers, List.of()))
+        assertThatThrownBy(() -> applyService.saveApplicationTemporarily(1L, recruit.getId(), answers, List.of()))
                 .isInstanceOf(ApplyException.class);
     }
 
@@ -369,12 +371,14 @@ class ApplyServiceTest extends UnitTestSupport {
     void 프로필_저장_전에_임시저장_시도_시_실패() {
         // given
         long memberId = 1L;
+        long recruitId = 1L;
         Map<String, String> answers = Map.of("1", "답변1");
 
-        given(applyRepository.findByMemberIdInActiveRecruit(eq(memberId), any())).willReturn(Optional.empty());
+        given(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(memberId), eq(recruitId), any()))
+                .willReturn(Optional.empty());
 
         // expected
-        assertThatThrownBy(() -> applyService.saveApplicationTemporarily(memberId, answers, List.of()))
+        assertThatThrownBy(() -> applyService.saveApplicationTemporarily(memberId, recruitId, answers, List.of()))
                 .isInstanceOf(ApplyException.class)
                 .extracting("errorCode")
                 .isEqualTo(ApplyErrorCode.NOT_FOUND_APPLY);
@@ -408,11 +412,12 @@ class ApplyServiceTest extends UnitTestSupport {
 
         String newContent = "newContent";
 
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(applicant.getId()), eq(recruit.getId()), any()))
+                .thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(newContent);
 
         // when
-        applyService.saveApplicationTemporarily(1L, answers, List.of());
+        applyService.saveApplicationTemporarily(1L, recruit.getId(), answers, List.of());
 
         // then
         ApplicationForm newApplicationForm = apply.getApplicationForm();
@@ -438,10 +443,11 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Apply apply = getApply(1L, recruit, getApplicant(1L, "email@test.com"), applicationForm, TEMP_SAVED);
 
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(1L), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(1L), eq(recruit.getId()), any()))
+                .thenReturn(Optional.of(apply));
 
         // when
-        applyService.deleteProfileAndTempApplicationForm(1L);
+        applyService.deleteProfileAndTempApplicationForm(1L, recruit.getId());
 
         // then
         assertThat(apply.getApplicationForm()).isNull();
@@ -473,13 +479,15 @@ class ApplyServiceTest extends UnitTestSupport {
                 .content("content")
                 .build(), SUBMITTED);
 
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(1L), any())).thenReturn(Optional.of(apply1));
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(2L), any())).thenReturn(Optional.of(apply2));
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(1L), eq(recruit.getId()), any()))
+                .thenReturn(Optional.of(apply1));
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(2L), eq(recruit.getId()), any()))
+                .thenReturn(Optional.of(apply2));
 
         // when, then
-        assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(1L))
+        assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(1L, recruit.getId()))
                 .isInstanceOf(ApplyException.class);
-        assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(2L))
+        assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(2L, recruit.getId()))
                 .isInstanceOf(ApplyException.class);
     }
 
@@ -499,11 +507,12 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Apply apply = getApply(1L, recruit, getApplicant(1L, "email@test.com"), tempApplicationForm, TEMP_SAVED);
 
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(1L), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(1L), eq(recruit.getId()), any()))
+                .thenReturn(Optional.of(apply));
         when(string2MapSerializer.serializeAsMap(tempApplicationForm.getContent())).thenReturn(answers);
 
         // when
-        TempApplicationFormResponse result = applyService.findTempApplicationForm(1L);
+        TempApplicationFormResponse result = applyService.findTempApplicationForm(1L, recruit.getId());
 
         // then
         assertThat(result.answers()).isEqualTo(answers);
@@ -522,10 +531,11 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Apply apply = getApply(1L, getActiveRecruit(BE, questions), getApplicant(1L, "email@test.com"), null, JOINED);
 
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(1L), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(eq(1L), eq(apply.getRecruit().getId()), any()))
+                .thenReturn(Optional.of(apply));
 
         // when, then
-        assertThatThrownBy(() -> applyService.findTempApplicationForm(1L))
+        assertThatThrownBy(() -> applyService.findTempApplicationForm(1L, apply.getRecruit().getId()))
                 .isInstanceOf(ApplyException.class);
     }
 
