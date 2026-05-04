@@ -27,6 +27,8 @@ import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.exception.QuestionException;
+import org.ject.support.domain.recruit.exception.RecruitErrorCode;
+import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -631,9 +633,10 @@ class ApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 프로필_저장_시_모집_공고_식별자가_없으면_직군으로_공고를_조회한다() {
+    void 프로필_저장_시_유효하지_않은_모집_공고_식별자면_실패한다() {
         // given
         long memberId = 1L;
+        long invalidRecruitId = 999L;
         Member member = getApplicant(memberId, "test@example.com");
         ApplyProfileRequest request = new ApplyProfileRequest(
                 "New Name",
@@ -644,21 +647,17 @@ class ApplyServiceTest extends UnitTestSupport {
                 ExperiencePeriod.NONE,
                 List.of(InterestedDomain.GAME.getDescription(), InterestedDomain.EDUCATION.getDescription())
         );
-        Recruit recruit = getActiveRecruit(request.jobFamily(), List.of());
 
         given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(recruitRepository.findActiveRecruitByJobFamily(eq(request.jobFamily()), any()))
-                .willReturn(Optional.of(recruit));
-        given(applyRepository.existsByMemberIdAndRecruitIdInActiveRecruit(eq(memberId), eq(recruit.getId()), any()))
-                .willReturn(false);
+        given(recruitRepository.findActiveRecruitById(eq(invalidRecruitId), any())).willReturn(null);
 
-        // when
-        applyService.saveProfile(memberId, null, request);
+        // when, then
+        assertThatThrownBy(() -> applyService.saveProfile(memberId, invalidRecruitId, request))
+                .isInstanceOf(RecruitException.class)
+                .extracting("errorCode")
+                .isEqualTo(RecruitErrorCode.NOT_FOUND_RECRUIT);
 
-        // then
-        ArgumentCaptor<Apply> applyCaptor = ArgumentCaptor.forClass(Apply.class);
-        verify(applyRepository).save(applyCaptor.capture());
-        assertThat(applyCaptor.getValue().getRecruit()).isEqualTo(recruit);
+        verify(applyRepository, never()).save(any(Apply.class));
     }
 
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {

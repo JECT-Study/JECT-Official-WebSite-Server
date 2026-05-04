@@ -28,8 +28,8 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -87,7 +87,7 @@ class ApplyControllerTest extends UnitTestSupport {
     }
 
     @Test
-    void 모집_공고_식별자가_없어도_프로필을_저장한다() throws Exception {
+    void 모집_공고_식별자가_없으면_프로필_저장에_실패한다() throws Exception {
         // given
         long memberId = 1L;
         setAuthentication(memberId);
@@ -105,10 +105,9 @@ class ApplyControllerTest extends UnitTestSupport {
         mockMvc.perform(post("/apply/profile")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("SUCCESS"));
+                .andExpect(status().isBadRequest());
 
-        verify(applyUsecase).saveProfile(eq(memberId), isNull(), any(ApplyProfileRequest.class));
+        verifyNoInteractions(applyUsecase);
     }
 
     private void setAuthentication(final Long memberId) {

@@ -52,9 +52,9 @@ public interface ApplyApiSpec {
 
     @Operation(
             summary = "프로필 작성(저장)",
-            description = "지원자의 특정 공고에 대한 프로필을 작성(저장)합니다. 모집 공고 식별자가 없으면 기존 방식대로 직군을 기준으로 저장합니다."
+            description = "지원자의 특정 공고에 대한 프로필을 작성(저장)합니다."
     )
     void saveProfile(@AuthPrincipal Long memberId,
-                     @RequestParam(required = false) Long recruitId,
+                     @RequestParam Long recruitId,
                      @RequestBody @Valid ApplyProfileRequest request);
 }

@@ -68,7 +68,7 @@ public class ApplyController implements ApplyApiSpec {
     @PostMapping("/profile")
     @PreAuthorize("hasRole('ROLE_APPLY')")
     public void saveProfile(@AuthPrincipal Long memberId,
-                            @RequestParam(required = false) Long recruitId,
+                            @RequestParam Long recruitId,
                             @RequestBody @Valid ApplyProfileRequest request
     ) {
         applyUsecase.saveProfile(memberId, recruitId, request);
