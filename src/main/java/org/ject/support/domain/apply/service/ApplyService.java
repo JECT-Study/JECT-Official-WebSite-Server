@@ -58,8 +58,8 @@ public class ApplyService implements ApplyUsecase {
     @Override
     @PeriodAccessible(permitAllJob = true)
     @Transactional(readOnly = true)
-    public TempApplicationFormResponse findTempApplicationForm(final Long memberId) {
-        Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
+    public TempApplicationFormResponse findTempApplicationForm(final Long memberId, final Long recruitId) {
+        Apply apply = applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(memberId, recruitId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
         if (apply.isNotTempSaved()) {
@@ -80,10 +80,11 @@ public class ApplyService implements ApplyUsecase {
     @PeriodAccessible(permitAllJob = true)
     @Transactional
     public void saveApplicationTemporarily(Long memberId,
+                                           Long recruitId,
                                            Map<String, String> answers,
                                            List<ApplyPortfolioDto> portfolios) {
-        // 1. memberId를 바탕으로 apply 조회
-        Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
+        // 1. memberId와 recruitId를 바탕으로 apply 조회
+        Apply apply = applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(memberId, recruitId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
         ApplyStatus applyStatus = apply.getStatus();
@@ -118,9 +119,9 @@ public class ApplyService implements ApplyUsecase {
     @Override
     @PeriodAccessible(permitAllJob = true)
     @Transactional
-    public void deleteProfileAndTempApplicationForm(Long memberId) {
+    public void deleteProfileAndTempApplicationForm(Long memberId, Long recruitId) {
         // 지원 정보 조회
-        Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
+        Apply apply = applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(memberId, recruitId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
         // 지원서를 임시 저장하지 않은 경우 실패

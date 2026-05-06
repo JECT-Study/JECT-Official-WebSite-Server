@@ -28,23 +28,26 @@ public class ApplyController implements ApplyApiSpec {
     @Override
     @GetMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public TempApplicationFormResponse findTempApplicationForm(@AuthPrincipal Long memberId) {
-        return applyUsecase.findTempApplicationForm(memberId);
+    public TempApplicationFormResponse findTempApplicationForm(@AuthPrincipal Long memberId,
+                                                               @RequestParam Long recruitId) {
+        return applyUsecase.findTempApplicationForm(memberId, recruitId);
     }
 
     @Override
     @PostMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
     public void saveApplicationTemporarily(@AuthPrincipal Long memberId,
+                                           @RequestParam Long recruitId,
                                            @RequestBody ApplyTemporaryRequest request) {
-        applyUsecase.saveApplicationTemporarily(memberId, request.answers(), request.portfolios());
+        applyUsecase.saveApplicationTemporarily(memberId, recruitId, request.answers(), request.portfolios());
     }
 
     @Override
     @DeleteMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void deleteProfileAndTempApplicationForm(@AuthPrincipal Long memberId) {
-        applyUsecase.deleteProfileAndTempApplicationForm(memberId);
+    public void deleteProfileAndTempApplicationForm(@AuthPrincipal Long memberId,
+                                                    @RequestParam Long recruitId) {
+        applyUsecase.deleteProfileAndTempApplicationForm(memberId, recruitId);
     }
 
     @Override

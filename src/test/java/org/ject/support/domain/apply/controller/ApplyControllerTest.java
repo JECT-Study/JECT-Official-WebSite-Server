@@ -6,6 +6,8 @@ import org.ject.support.common.response.ResponseWrapper;
 import org.ject.support.common.security.AuthenticatedMemberIdResolver;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
+import org.ject.support.domain.apply.dto.ApplyTemporaryRequest;
+import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.apply.service.ApplyUsecase;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
@@ -25,11 +27,15 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -57,6 +63,60 @@ class ApplyControllerTest extends UnitTestSupport {
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void 임시저장_지원서를_모집_공고_기준으로_조회한다() throws Exception {
+        // given
+        long memberId = 1L;
+        long recruitId = 10L;
+        setAuthentication(memberId);
+        given(applyUsecase.findTempApplicationForm(memberId, recruitId))
+                .willReturn(new TempApplicationFormResponse(JobFamily.FE, Map.of("1", "답변"), List.of()));
+
+        // when, then
+        mockMvc.perform(get("/apply/temp")
+                        .param("recruitId", String.valueOf(recruitId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+
+        verify(applyUsecase).findTempApplicationForm(memberId, recruitId);
+    }
+
+    @Test
+    void 지원서를_모집_공고_기준으로_임시저장한다() throws Exception {
+        // given
+        long memberId = 1L;
+        long recruitId = 10L;
+        setAuthentication(memberId);
+        ApplyTemporaryRequest request = new ApplyTemporaryRequest(Map.of("1", "답변"), List.of());
+
+        // when, then
+        mockMvc.perform(post("/apply/temp")
+                        .param("recruitId", String.valueOf(recruitId))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+
+        verify(applyUsecase).saveApplicationTemporarily(
+                eq(memberId), eq(recruitId), eq(request.answers()), eq(request.portfolios()));
+    }
+
+    @Test
+    void 모집_공고_기준으로_프로필과_임시저장_지원서를_제거한다() throws Exception {
+        // given
+        long memberId = 1L;
+        long recruitId = 10L;
+        setAuthentication(memberId);
+
+        // when, then
+        mockMvc.perform(delete("/apply/temp")
+                        .param("recruitId", String.valueOf(recruitId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+
+        verify(applyUsecase).deleteProfileAndTempApplicationForm(memberId, recruitId);
     }
 
     @Test
