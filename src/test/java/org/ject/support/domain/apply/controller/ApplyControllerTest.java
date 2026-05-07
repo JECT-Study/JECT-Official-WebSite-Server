@@ -6,6 +6,7 @@ import org.ject.support.common.response.ResponseWrapper;
 import org.ject.support.common.security.AuthenticatedMemberIdResolver;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
+import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.ApplyTemporaryRequest;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.apply.service.ApplyUsecase;
@@ -29,6 +30,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.List;
 import java.util.Map;
 
+import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -117,6 +119,38 @@ class ApplyControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.status").value("SUCCESS"));
 
         verify(applyUsecase).deleteProfileAndTempApplicationForm(memberId, recruitId);
+    }
+
+    @Test
+    void 지원상태를_모집_공고_기준으로_조회한다() throws Exception {
+        // given
+        long memberId = 1L;
+        long recruitId = 10L;
+        setAuthentication(memberId);
+        given(applyUsecase.checkApplyStatus(memberId, recruitId))
+                .willReturn(new ApplyStatusResponse(SUBMITTED));
+
+        // when, then
+        mockMvc.perform(get("/apply/status")
+                        .param("recruitId", String.valueOf(recruitId)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.status").value("SUBMITTED"));
+
+        verify(applyUsecase).checkApplyStatus(memberId, recruitId);
+    }
+
+    @Test
+    void 모집_공고_식별자가_없으면_지원상태_조회에_실패한다() throws Exception {
+        // given
+        long memberId = 1L;
+        setAuthentication(memberId);
+
+        // when, then
+        mockMvc.perform(get("/apply/status"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(applyUsecase);
     }
 
     @Test
