@@ -17,7 +17,6 @@ import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
-import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -139,27 +138,25 @@ public class ApplyService implements ApplyUsecase {
     }
 
     @Override
-    @PeriodAccessible
+    @PeriodAccessible(permitAllJob = true)
     @Transactional
     public void submitApplication(Long memberId,
-                                  JobFamily jobFamily,
+                                  Long recruitId,
                                   Map<String, String> answers,
                                   List<ApplyPortfolioDto> portfolios) {
         try {
-            // 1. jobFamily를 통해 현재 기수 지원양식 id 조회
-            Recruit recruit = getPeriodRecruit(jobFamily);
+            // 1. 지원 정보 조회 (낙관적 락 - @Version 기반 동시성 제어)
+            Apply apply = applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(
+                            memberId, recruitId, LocalDateTime.now())
+                    .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
             // 2. 지원양식과 answers의 key를 비교해 올바른 질문 양식인지 점검
-            validateQuestions(answers, recruit);
-
-            // 3. 지원 정보 조회 (낙관적 락 - @Version 기반 동시성 제어)
-            Apply apply = applyRepository.findByMemberIdInActiveRecruit(memberId, LocalDateTime.now())
-                    .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
+            validateQuestions(answers, apply.getRecruit());
 
             String content = map2JsonSerializer.serializeAsString(answers);
             List<Portfolio> newPortfolios = getNewPortfolios(portfolios);
 
-            // 4. ApplicationForm 준비
+            // 3. ApplicationForm 준비
             ApplicationForm applicationForm;
             if (apply.isTempSaved()) {
                 applicationForm = apply.getApplicationForm();
@@ -169,7 +166,7 @@ public class ApplyService implements ApplyUsecase {
                 applicationFormRepository.save(applicationForm);
             }
 
-            // 5. Apply 엔티티에 제출 위임 (검증 및 상태 변경 포함)
+            // 4. Apply 엔티티에 제출 위임 (검증 및 상태 변경 포함)
             apply.submit(applicationForm);
 
             // 명시적 flush를 통해 낙관적 락 충돌을 메서드 내부에서 감지하고 catch 블록으로 전달합니다.
@@ -236,11 +233,6 @@ public class ApplyService implements ApplyUsecase {
                 .forEach(key -> {
                     throw new QuestionException(QuestionErrorCode.NOT_FOUND_QUESTION);
                 });
-    }
-
-    private Recruit getPeriodRecruit(final JobFamily jobFamily) {
-        return recruitRepository.findActiveRecruitByJobFamily(jobFamily, LocalDateTime.now())
-                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
 
     private Recruit getActiveRecruit(final Long recruitId) {
