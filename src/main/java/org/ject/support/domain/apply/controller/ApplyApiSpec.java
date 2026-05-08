@@ -9,7 +9,6 @@ import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.ApplyTemporaryRequest;
 import org.ject.support.domain.apply.dto.SubmitApplicationRequest;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
-import org.ject.support.domain.member.JobFamily;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -37,9 +36,9 @@ public interface ApplyApiSpec {
 
     @Operation(
             summary = "지원서 제출",
-            description = "작성이 완료된 지원서를 제출합니다.")
+            description = "지원자의 특정 공고에 대해 작성이 완료된 지원서를 제출합니다.")
     void submitApplication(@AuthPrincipal Long memberId,
-                           @RequestParam JobFamily jobFamily,
+                           @RequestParam Long recruitId,
                            @RequestBody SubmitApplicationRequest request);
 
     @Operation(

@@ -104,12 +104,12 @@ class ApplyServiceTest extends UnitTestSupport {
 
         Apply apply = getApply(1L, recruit, applicant, applicationForm, TEMP_SAVED);
 
-        when(recruitRepository.findActiveRecruitByJobFamily(any(), any())).thenReturn(Optional.of(recruit));
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(
+                eq(applicant.getId()), eq(recruit.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
         // when
-        applyService.submitApplication(1L, BE, answers, List.of());
+        applyService.submitApplication(1L, recruit.getId(), answers, List.of());
 
         // then
         // 1. TEMP_SAVED 상태에서는 update가 발생하므로 save가 호출되지 않아야 함
@@ -135,12 +135,12 @@ class ApplyServiceTest extends UnitTestSupport {
         ApplicationForm applicationForm = getApplicationForm(answers.toString());
         Apply apply = getApply(1L, recruit, applicant, applicationForm, TEMP_SAVED);
 
-        when(recruitRepository.findActiveRecruitByJobFamily(any(), any())).thenReturn(Optional.of(recruit));
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(
+                eq(applicant.getId()), eq(recruit.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
         // expected
-        assertThatThrownBy(() -> applyService.submitApplication(1L, PD, answers, List.of()))
+        assertThatThrownBy(() -> applyService.submitApplication(1L, recruit.getId(), answers, List.of()))
                 .isInstanceOf(ApplyException.class)
                 .extracting("errorCode")
                 .isEqualTo(ApplyErrorCode.PORTFOLIO_REQUIRED);
@@ -162,12 +162,12 @@ class ApplyServiceTest extends UnitTestSupport {
                 new ApplyPortfolioDto("url", "name", "100", "1")
         );
 
-        when(recruitRepository.findActiveRecruitByJobFamily(any(), any())).thenReturn(Optional.of(recruit));
-        when(applyRepository.findByMemberIdInActiveRecruit(eq(applicant.getId()), any())).thenReturn(Optional.of(apply));
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(
+                eq(applicant.getId()), eq(recruit.getId()), any())).thenReturn(Optional.of(apply));
         when(map2JsonSerializer.serializeAsString(answers)).thenReturn(answers.toString());
 
         // when
-        applyService.submitApplication(1L, PD, answers, portfolios);
+        applyService.submitApplication(1L, recruit.getId(), answers, portfolios);
 
         // then
         assertThat(apply.getStatus()).isEqualTo(SUBMITTED);
@@ -191,10 +191,13 @@ class ApplyServiceTest extends UnitTestSupport {
                 "3", "답변 3",
                 "4", "답변 4");
 
-        when(recruitRepository.findActiveRecruitByJobFamily(any(), any())).thenReturn(Optional.of(recruit));
+        Member applicant = getApplicant(1L, "email@test.com");
+        Apply apply = getApply(1L, recruit, applicant, null, JOINED);
+        when(applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(
+                eq(applicant.getId()), eq(recruit.getId()), any())).thenReturn(Optional.of(apply));
 
         // when, then
-        assertThatThrownBy(() -> applyService.submitApplication(1L, BE, answers, List.of()))
+        assertThatThrownBy(() -> applyService.submitApplication(1L, recruit.getId(), answers, List.of()))
                 .isInstanceOf(QuestionException.class);
     }
 

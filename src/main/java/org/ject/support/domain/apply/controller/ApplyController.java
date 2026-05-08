@@ -9,7 +9,6 @@ import org.ject.support.domain.apply.dto.ApplyTemporaryRequest;
 import org.ject.support.domain.apply.dto.SubmitApplicationRequest;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.apply.service.ApplyUsecase;
-import org.ject.support.domain.member.JobFamily;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -54,9 +53,9 @@ public class ApplyController implements ApplyApiSpec {
     @PostMapping("/submit")
     @PreAuthorize("hasRole('ROLE_APPLY')")
     public void submitApplication(@AuthPrincipal Long memberId,
-                                  @RequestParam JobFamily jobFamily,
+                                  @RequestParam Long recruitId,
                                   @RequestBody SubmitApplicationRequest request) {
-        applyUsecase.submitApplication(memberId, jobFamily, request.answers(), request.portfolios());
+        applyUsecase.submitApplication(memberId, recruitId, request.answers(), request.portfolios());
     }
 
     @Override

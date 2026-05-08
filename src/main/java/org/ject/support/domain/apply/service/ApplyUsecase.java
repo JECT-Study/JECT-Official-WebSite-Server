@@ -4,7 +4,6 @@ import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
-import org.ject.support.domain.member.JobFamily;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +20,7 @@ public interface ApplyUsecase {
     void deleteProfileAndTempApplicationForm(Long memberId, Long recruitId);
 
     void submitApplication(Long memberId,
-                           JobFamily jobFamily,
+                           Long recruitId,
                            Map<String, String> answers,
                            List<ApplyPortfolioDto> portfolios);
 
