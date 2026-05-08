@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
+import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.base.UnitTestSupport;
@@ -26,6 +27,8 @@ import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.exception.QuestionErrorCode;
 import org.ject.support.domain.recruit.exception.QuestionException;
@@ -145,17 +148,18 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
+        var condition = condition(ApplyStatus.SUBMITTED, semesterId, jobFamily, null);
 
-        given(adminApplyRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable))
+        given(adminApplyRepository.findApplies(condition, pageable))
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        verify(adminApplyRepository).findApplies(condition, pageable);
     }
 
     @Test
@@ -165,17 +169,18 @@ class AdminApplyServiceTest extends UnitTestSupport {
         Long semesterId = null;
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
+        var condition = condition(ApplyStatus.SUBMITTED, semesterId, null, null);
 
-        given(adminApplyRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, null, null, pageable))
+        given(adminApplyRepository.findApplies(condition, pageable))
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, null, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, null, null, pageable);
+        verify(adminApplyRepository).findApplies(condition, pageable);
     }
 
     @Test
@@ -185,17 +190,18 @@ class AdminApplyServiceTest extends UnitTestSupport {
         var jobFamily = JobFamily.BE;
         Long semesterId = null;
         var page = new PageImpl<Apply>(List.of(), pageable, 0L);
+        var condition = condition(ApplyStatus.SUBMITTED, semesterId, jobFamily, null);
 
-        given(adminApplyRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable))
+        given(adminApplyRepository.findApplies(condition, pageable))
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
 
         // then
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
-        verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        verify(adminApplyRepository).findApplies(condition, pageable);
     }
 
     @Test
@@ -216,19 +222,20 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         var applies = List.of(submittedApply, apply2);
         var page = new PageImpl<>(applies, pageable, 25L);
+        var condition = condition(ApplyStatus.SUBMITTED, semesterId, jobFamily, null);
 
-        given(adminApplyRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable))
+        given(adminApplyRepository.findApplies(condition, pageable))
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(25L);
         assertThat(result.getNumber()).isEqualTo(1);
         assertThat(result.getSize()).isEqualTo(10);
-        verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        verify(adminApplyRepository).findApplies(condition, pageable);
     }
 
     @Test
@@ -240,17 +247,39 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         var applies = List.of(submittedApply);
         var page = new PageImpl<>(applies, pageable, 1L);
+        var condition = condition(ApplyStatus.SUBMITTED, semesterId, jobFamily, null);
 
-        given(adminApplyRepository.findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable))
+        given(adminApplyRepository.findApplies(condition, pageable))
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.SUBMITTED, semesterId, jobFamily, null, pageable);
+        verify(adminApplyRepository).findApplies(condition, pageable);
+    }
+
+    @Test
+    void 지원서_목록_조회시_공고_필터_조건을_전달한다() {
+        // given
+        var pageable = PageRequest.of(0, 15);
+        var recruitId = 1L;
+        var condition = condition(
+                ApplyStatus.SUBMITTED, null, null, RecruitType.SEMESTER, RecruitTypeDetail.REFILL, recruitId);
+        var applies = List.of(submittedApply);
+        var page = new PageImpl<>(applies, pageable, 1L);
+
+        given(adminApplyRepository.findApplies(condition, pageable))
+                .willReturn(page);
+
+        // when
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        verify(adminApplyRepository).findApplies(condition, pageable);
     }
 
     @Test
@@ -538,15 +567,16 @@ class AdminApplyServiceTest extends UnitTestSupport {
         var pageable = PageRequest.of(0, 10);
         Long semesterId = null;
         var page = new PageImpl<Apply>(List.of(), pageable, 0);
+        var condition = condition(ApplyStatus.TEMP_SAVED, semesterId, null, null);
 
-        given(adminApplyRepository.findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable))
+        given(adminApplyRepository.findApplies(condition, pageable))
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
 
         // then
-        verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        verify(adminApplyRepository).findApplies(condition, pageable);
         assertThat(result.getTotalElements()).isZero();
         assertThat(result.getContent()).isEmpty();
     }
@@ -562,7 +592,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         var semester = Semester.builder().name("1").build();
         var recruit = Recruit.builder()
                 .semester(semester)
-                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.REGULAR)
+                .recruitType(RecruitType.REGULAR)
                 .build();
 
         var a1 = Apply.builder()
@@ -583,15 +613,16 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         var applies = List.of(a1, a2);
         var page = new PageImpl<>(applies, pageable, applies.size());
+        var condition = condition(ApplyStatus.TEMP_SAVED, semesterId, null, null);
 
-        given(adminApplyRepository.findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable))
+        given(adminApplyRepository.findApplies(condition, pageable))
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
 
         // then
-        verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        verify(adminApplyRepository).findApplies(condition, pageable);
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
@@ -608,7 +639,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         var semester = Semester.builder().name("1").build();
         var recruit = Recruit.builder()
                 .semester(semester)
-                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.REGULAR)
+                .recruitType(RecruitType.REGULAR)
                 .build();
 
         var apply = Apply.builder()
@@ -621,17 +652,35 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         var applies = List.of(apply);
         var page = new PageImpl<>(applies, pageable, applies.size());
+        var condition = condition(ApplyStatus.TEMP_SAVED, semesterId, null, null);
 
-        given(adminApplyRepository.findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable))
+        given(adminApplyRepository.findApplies(condition, pageable))
                 .willReturn(page);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
 
         // then
-        verify(adminApplyRepository).findAppliesByStatus(ApplyStatus.TEMP_SAVED, semesterId, null, null, pageable);
+        verify(adminApplyRepository).findApplies(condition, pageable);
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().getFirst().applyId()).isEqualTo(1L);
+    }
+
+    private AdminApplySearchCondition condition(ApplyStatus applyStatus,
+                                                Long semesterId,
+                                                JobFamily jobFamily,
+                                                RecruitType recruitType) {
+        return condition(applyStatus, semesterId, jobFamily, recruitType, null, null);
+    }
+
+    private AdminApplySearchCondition condition(ApplyStatus applyStatus,
+                                                Long semesterId,
+                                                JobFamily jobFamily,
+                                                RecruitType recruitType,
+                                                RecruitTypeDetail recruitTypeDetail,
+                                                Long recruitId) {
+        return new AdminApplySearchCondition(
+                applyStatus, semesterId, jobFamily, recruitType, recruitTypeDetail, recruitId);
     }
 }

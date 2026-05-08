@@ -11,11 +11,13 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -27,11 +29,8 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<Apply> findAppliesByStatus(final ApplyStatus status,
-                                           final Long semesterId,
-                                           final JobFamily jobFamily,
-                                           final RecruitType recruitType,
-                                           final Pageable pageable) {
+    public Page<Apply> findApplies(final AdminApplySearchCondition condition,
+                                   final Pageable pageable) {
 
         List<Apply> content = queryFactory
                 .selectFrom(apply)
@@ -42,12 +41,14 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
                 .leftJoin(apply.applicationForm.portfolios, portfolio).fetchJoin()
                 .where(
                         apply.member.isDeleted.eq(false),
-                        eqJobFamily(jobFamily),
-                        eqApplyStatus(status),
-                        eqSemesterId(semesterId),
-                        eqRecruitType(recruitType)
+                        eqJobFamily(condition.jobFamily()),
+                        eqApplyStatus(condition.applyStatus()),
+                        eqSemesterId(condition.semesterId()),
+                        eqRecruitType(condition.recruitType()),
+                        eqRecruitTypeDetail(condition.recruitTypeDetail()),
+                        eqRecruitId(condition.recruitId())
                 )
-                .orderBy(apply.createdAt.desc())
+                .orderBy(apply.createdAt.desc(), apply.id.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -59,10 +60,12 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
                 .join(apply.recruit, recruit)
                 .where(
                         apply.member.isDeleted.eq(false),
-                        eqJobFamily(jobFamily),
-                        eqApplyStatus(status),
-                        eqSemesterId(semesterId),
-                        eqRecruitType(recruitType)
+                        eqJobFamily(condition.jobFamily()),
+                        eqApplyStatus(condition.applyStatus()),
+                        eqSemesterId(condition.semesterId()),
+                        eqRecruitType(condition.recruitType()),
+                        eqRecruitTypeDetail(condition.recruitTypeDetail()),
+                        eqRecruitId(condition.recruitId())
                 ).fetchOne();
 
         return PageResponse.from(content, pageable, total != null ? total : 0L);
@@ -108,6 +111,18 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
     private BooleanExpression eqRecruitType(final RecruitType recruitType) {
         return Optional.ofNullable(recruitType)
                 .map(apply.recruit.recruitType::eq)
+                .orElse(null);
+    }
+
+    private BooleanExpression eqRecruitTypeDetail(final RecruitTypeDetail recruitTypeDetail) {
+        return Optional.ofNullable(recruitTypeDetail)
+                .map(apply.recruit.recruitTypeDetail::eq)
+                .orElse(null);
+    }
+
+    private BooleanExpression eqRecruitId(final Long recruitId) {
+        return Optional.ofNullable(recruitId)
+                .map(apply.recruit.id::eq)
                 .orElse(null);
     }
 }
