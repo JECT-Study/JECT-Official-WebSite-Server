@@ -5,6 +5,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
+import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.common.data.PageResponse;
@@ -16,11 +17,9 @@ import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
-import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberEditor;
 import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.exception.QuestionErrorCode;
 import org.ject.support.domain.recruit.exception.QuestionException;
 import org.springframework.data.domain.Page;
@@ -37,12 +36,9 @@ public class AdminApplyService {
     private final Map2JsonSerializer map2JsonSerializer;
 
     @Transactional(readOnly = true)
-    public Page<AdminApplyResponse> findApplies(final ApplyStatus applyStatus,
-                                                final Long semesterId,
-                                                final JobFamily jobFamily,
-                                                final RecruitType recruitType,
+    public Page<AdminApplyResponse> findApplies(final AdminApplySearchCondition condition,
                                                 final Pageable pageable) {
-        Page<Apply> applyPage = adminApplyRepository.findAppliesByStatus(applyStatus, semesterId, jobFamily, recruitType, pageable);
+        Page<Apply> applyPage = adminApplyRepository.findApplies(condition, pageable);
 
         List<AdminApplyResponse> content = applyPage.getContent().stream()
                 .map(AdminApplyResponse::from)

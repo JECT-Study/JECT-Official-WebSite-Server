@@ -6,12 +6,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
+import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.service.AdminApplyService;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
@@ -36,13 +38,17 @@ public class AdminApplyController {
     @GetMapping
     @Operation(
             summary = "지원서 목록 조회",
-            description = "지원서들의 목록을 조회합니다.")
+            description = "지원서들의 목록을 조회합니다. 모집 공고, 모집 유형, 모집 사유, 기수, 직군, 지원 상태로 필터링할 수 있습니다.")
     public Page<AdminApplyResponse> findApplies(@RequestParam(required = false) final ApplyStatus applyStatus,
                                                 @RequestParam(required = false) final Long semesterId,
                                                 @RequestParam(required = false) final JobFamily jobFamily,
                                                 @RequestParam(required = false) final RecruitType recruitType,
+                                                @RequestParam(required = false) final RecruitTypeDetail recruitTypeDetail,
+                                                @RequestParam(required = false) final Long recruitId,
                                                 @PageableDefault(sort = "createdAt", direction = Direction.DESC) final Pageable pageable) {
-        return adminApplyService.findApplies(applyStatus, semesterId, jobFamily, recruitType, pageable);
+        AdminApplySearchCondition condition = new AdminApplySearchCondition(
+                applyStatus, semesterId, jobFamily, recruitType, recruitTypeDetail, recruitId);
+        return adminApplyService.findApplies(condition, pageable);
     }
 
     @GetMapping("/{applyId}")
