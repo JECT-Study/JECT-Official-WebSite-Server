@@ -11,6 +11,7 @@ import org.ject.support.admin.member.dto.MemberRegisterRequest;
 import org.ject.support.admin.member.dto.MemberResponse;
 import org.ject.support.admin.member.service.AdminMemberService;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,13 +36,14 @@ public class AdminMemberController {
 
     @Operation(
             summary = "구성원 목록 조회",
-            description = "구성원 목록을 조회합니다. 역할, 직군, 학기 필터링이 가능합니다.")
+            description = "구성원 목록을 조회합니다. 역할, 직군, 학기, 구성원 타입 필터링이 가능합니다.")
     @GetMapping
     public Page<MemberResponse> findMembers(@RequestParam final Role role,
                                             @RequestParam(required = false) final JobFamily jobFamily,
                                             @RequestParam(required = false) final Long semesterId,
+                                            @RequestParam(required = false) final MemberType memberType,
                                             @PageableDefault(size = 15) final Pageable pageable) {
-        return adminMemberService.findMembers(role, jobFamily, semesterId, pageable);
+        return adminMemberService.findMembers(role, jobFamily, semesterId, memberType, pageable);
     }
 
     @Operation(

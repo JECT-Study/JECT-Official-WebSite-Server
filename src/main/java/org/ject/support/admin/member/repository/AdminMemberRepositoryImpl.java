@@ -10,6 +10,7 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberProjection;
 import org.ject.support.domain.member.dto.QMemberProjection;
@@ -28,6 +29,7 @@ public class AdminMemberRepositoryImpl implements AdminMemberQueryRepository {
             final Role role,
             final JobFamily jobFamily,
             final Long semesterId,
+            final MemberType memberType,
             final Pageable pageable
     ) {
         final List<MemberProjection> content = queryFactory
@@ -45,6 +47,7 @@ public class AdminMemberRepositoryImpl implements AdminMemberQueryRepository {
                         member.role.eq(role),
                         eqJobFamily(jobFamily),
                         eqSemesterId(semesterId),
+                        eqMemberType(memberType),
                         member.isDeleted.eq(false))
                 .orderBy(member.createdAt.desc())
                 .offset(pageable.getOffset())
@@ -60,6 +63,7 @@ public class AdminMemberRepositoryImpl implements AdminMemberQueryRepository {
                         member.role.eq(role),
                         eqJobFamily(jobFamily),
                         eqSemesterId(semesterId),
+                        eqMemberType(memberType),
                         member.isDeleted.eq(false))
                 .fetchOne();
 
@@ -76,6 +80,12 @@ public class AdminMemberRepositoryImpl implements AdminMemberQueryRepository {
     private BooleanExpression eqSemesterId(final Long semesterId) {
         return Optional.ofNullable(semesterId)
                 .map(semester.id::eq)
+                .orElse(null);
+    }
+
+    private BooleanExpression eqMemberType(final MemberType memberType) {
+        return Optional.ofNullable(memberType)
+                .map(member.memberType::eq)
                 .orElse(null);
     }
 }

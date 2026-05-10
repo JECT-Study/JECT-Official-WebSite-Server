@@ -68,16 +68,16 @@ class AdminMemberServiceTest extends UnitTestSupport {
         );
         var expectedPage = new PageImpl<>(memberList, pageable, 2);
 
-        given(adminMemberRepository.findMembers(role, jobFamily, semesterId, pageable))
+        given(adminMemberRepository.findMembers(role, jobFamily, semesterId, MemberType.SEMESTER, pageable))
                 .willReturn(expectedPage);
 
         // when
-        var result = adminMemberService.findMembers(role, jobFamily, semesterId, pageable);
+        var result = adminMemberService.findMembers(role, jobFamily, semesterId, MemberType.SEMESTER, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(2);
-        verify(adminMemberRepository).findMembers(role, jobFamily, semesterId, pageable);
+        verify(adminMemberRepository).findMembers(role, jobFamily, semesterId, MemberType.SEMESTER, pageable);
     }
 
     @Test
@@ -91,15 +91,15 @@ class AdminMemberServiceTest extends UnitTestSupport {
         );
         var expectedPage = new PageImpl<>(memberList, pageable, 1);
 
-        given(adminMemberRepository.findMembers(role, null, null, pageable))
+        given(adminMemberRepository.findMembers(role, null, null, null, pageable))
                 .willReturn(expectedPage);
 
         // when
-        var result = adminMemberService.findMembers(role, null, null, pageable);
+        var result = adminMemberService.findMembers(role, null, null, null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        verify(adminMemberRepository).findMembers(role, null, null, pageable);
+        verify(adminMemberRepository).findMembers(role, null, null, null, pageable);
     }
 
     @Test

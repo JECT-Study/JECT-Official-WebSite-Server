@@ -24,6 +24,7 @@ import org.ject.support.admin.member.dto.MemberResponse;
 import org.ject.support.admin.member.service.AdminMemberService;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.exception.MemberErrorCode;
@@ -80,7 +81,7 @@ class AdminMemberControllerTest extends UnitTestSupport {
         );
         var mockPage = new PageImpl<>(memberList, pageable, 1);
 
-        given(memberManagementService.findMembers(any(Role.class), any(), any(), any(Pageable.class)))
+        given(memberManagementService.findMembers(any(Role.class), any(), any(), any(), any(Pageable.class)))
                 .willReturn(mockPage);
 
         // expected
@@ -95,7 +96,8 @@ class AdminMemberControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.content[0].email").value(TEST_EMAIL))
                 .andDo(print());
 
-        verify(memberManagementService).findMembers(eq(Role.SEMESTER), eq(null), eq(null), any(Pageable.class));
+        verify(memberManagementService).findMembers(eq(Role.SEMESTER), eq(null), eq(null), eq(null),
+                any(Pageable.class));
     }
 
     @Test
@@ -114,7 +116,8 @@ class AdminMemberControllerTest extends UnitTestSupport {
         );
         var mockPage = new PageImpl<>(memberList, pageable, 1);
 
-        given(memberManagementService.findMembers(any(Role.class), any(JobFamily.class), any(), any(Pageable.class)))
+        given(memberManagementService.findMembers(any(Role.class), any(JobFamily.class), any(), any(),
+                any(Pageable.class)))
                 .willReturn(mockPage);
 
         // expected
@@ -129,7 +132,8 @@ class AdminMemberControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.content[0].jobFamily").value("BE"))
                 .andDo(print());
 
-        verify(memberManagementService).findMembers(eq(Role.SEMESTER), eq(JobFamily.BE), eq(null), any(Pageable.class));
+        verify(memberManagementService).findMembers(eq(Role.SEMESTER), eq(JobFamily.BE), eq(null), eq(null),
+                any(Pageable.class));
     }
 
     @Test
@@ -149,7 +153,8 @@ class AdminMemberControllerTest extends UnitTestSupport {
         );
         var mockPage = new PageImpl<>(memberList, pageable, 1);
 
-        given(memberManagementService.findMembers(any(Role.class), any(), eq(semesterId), any(Pageable.class)))
+        given(memberManagementService.findMembers(any(Role.class), any(), eq(semesterId), any(),
+                any(Pageable.class)))
                 .willReturn(mockPage);
 
         // expected
@@ -164,7 +169,44 @@ class AdminMemberControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.content[0].semesterName").value("1"))
                 .andDo(print());
 
-        verify(memberManagementService).findMembers(eq(Role.SEMESTER), eq(null), eq(semesterId), any(Pageable.class));
+        verify(memberManagementService).findMembers(eq(Role.SEMESTER), eq(null), eq(semesterId), eq(null),
+                any(Pageable.class));
+    }
+
+    @Test
+    void 회원_목록_조회_성공_구성원_타입_필터_적용() throws Exception {
+        // given
+        var pageable = PageRequest.of(0, 15);
+        var memberList = List.of(
+                MemberResponse.builder()
+                        .id(1L)
+                        .name(TEST_NAME)
+                        .phoneNumber(TEST_PHONE_NUMBER)
+                        .email(TEST_EMAIL)
+                        .jobFamily(JobFamily.FE)
+                        .semesterName("1")
+                        .build()
+        );
+        var mockPage = new PageImpl<>(memberList, pageable, 1);
+
+        given(memberManagementService.findMembers(any(Role.class), any(), any(), any(MemberType.class),
+                any(Pageable.class)))
+                .willReturn(mockPage);
+
+        // expected
+        mockMvc.perform(get("/admin/members")
+                        .param("role", "SEMESTER")
+                        .param("memberType", "MAKERS")
+                        .param("page", "0")
+                        .param("size", "15")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].jobFamily").value("FE"))
+                .andDo(print());
+
+        verify(memberManagementService).findMembers(eq(Role.SEMESTER), eq(null), eq(null), eq(MemberType.MAKERS),
+                any(Pageable.class));
     }
 
     @Test
