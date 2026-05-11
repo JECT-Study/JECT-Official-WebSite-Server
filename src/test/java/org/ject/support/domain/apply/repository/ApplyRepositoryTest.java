@@ -1,5 +1,7 @@
 package org.ject.support.domain.apply.repository;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceUnitUtil;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.member.JobFamily;
@@ -42,6 +44,9 @@ class ApplyRepositoryTest {
 
     @Autowired
     RecruitRepository recruitRepository;
+
+    @Autowired
+    EntityManager entityManager;
 
     Semester semester;
     Recruit pmRecruit;
@@ -167,6 +172,24 @@ class ApplyRepositoryTest {
         assertThat(result.getMember()).isEqualTo(feApplicant);
         assertThat(result.getRecruit()).isEqualTo(feRecruit);
         assertThat(result.getStatus()).isEqualTo(TEMP_SAVED);
+    }
+
+    @Test
+    void 지원ID_목록으로_회원과_모집을_함께_조회한다() {
+        // given
+        Member applicant = createMember("email@test.com", Role.APPLY);
+        memberRepository.save(applicant);
+        Apply savedApply = applyRepository.save(getApply(applicant, beRecruit, SUBMITTED));
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        Apply result = applyRepository.findAllByIdWithMember(List.of(savedApply.getId())).get(0);
+
+        // then
+        PersistenceUnitUtil persistenceUnitUtil = entityManager.getEntityManagerFactory().getPersistenceUnitUtil();
+        assertThat(persistenceUnitUtil.isLoaded(result.getMember())).isTrue();
+        assertThat(persistenceUnitUtil.isLoaded(result.getRecruit())).isTrue();
     }
 
     private Recruit getRecruit(JobFamily jobFamily) {

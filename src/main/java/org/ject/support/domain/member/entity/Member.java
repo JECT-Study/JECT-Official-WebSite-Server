@@ -31,6 +31,7 @@ import org.ject.support.domain.member.Role;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @SQLDelete(sql = "UPDATE member SET is_deleted = true WHERE id = ?")
 @SQLRestriction("is_deleted = false")
@@ -162,7 +163,7 @@ public class Member extends BaseTimeEntity {
     }
 
     public void updateMemberType(MemberType memberType) {
-        this.memberType = memberType;
+        this.memberType = Objects.requireNonNull(memberType, "memberType must not be null");
     }
 
     public boolean isProfileComplete() {

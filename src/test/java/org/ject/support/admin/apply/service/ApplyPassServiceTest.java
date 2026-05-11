@@ -76,6 +76,7 @@ class ApplyPassServiceTest extends UnitTestSupport {
 
         // then
         assertThat(result).isEqualTo(1);
+        assertThat(applicant.getRole()).isEqualTo(Role.SEMESTER);
         assertThat(applicant.getMemberType()).isEqualTo(MemberType.MAKERS);
     }
 
@@ -93,6 +94,7 @@ class ApplyPassServiceTest extends UnitTestSupport {
 
         // then
         assertThat(result).isEqualTo(1);
+        assertThat(applicant.getRole()).isEqualTo(Role.SEMESTER);
         assertThat(applicant.getMemberType()).isEqualTo(MemberType.SUPPORTERS);
     }
 

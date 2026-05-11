@@ -50,6 +50,6 @@ public interface ApplyRepository extends JpaRepository<Apply, Long> {
     @Query("select count(a) from Apply a where a.status = :status")
     Long countByStatus(@Param("status") ApplyStatus status);
 
-    @Query("SELECT a FROM Apply a JOIN FETCH a.member WHERE a.id IN :ids")
+    @Query("SELECT a FROM Apply a JOIN FETCH a.member JOIN FETCH a.recruit WHERE a.id IN :ids")
     List<Apply> findAllByIdWithMember(@Param("ids") List<Long> ids);
 }
