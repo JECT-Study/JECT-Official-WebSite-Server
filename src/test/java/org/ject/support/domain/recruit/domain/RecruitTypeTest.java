@@ -3,6 +3,9 @@ package org.ject.support.domain.recruit.domain;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.member.MemberType.MAKERS;
+import static org.ject.support.domain.member.MemberType.SEMESTER;
+import static org.ject.support.domain.member.MemberType.SUPPORTERS;
 
 class RecruitTypeTest {
 
@@ -51,5 +54,20 @@ class RecruitTypeTest {
         assertThat(RecruitType.REGULAR_WAITLIST.supports(RecruitTypeDetail.REGULAR)).isTrue();
         assertThat(RecruitType.BACKFILL.supports(RecruitTypeDetail.REFILL)).isTrue();
         assertThat(RecruitType.MANUAL.supports(RecruitTypeDetail.REGULAR)).isTrue();
+    }
+
+    @Test
+    void 모집_유형을_구성원_타입으로_변환한다() {
+        assertThat(RecruitType.SEMESTER.toMemberType()).isEqualTo(SEMESTER);
+        assertThat(RecruitType.MAKERS.toMemberType()).isEqualTo(MAKERS);
+        assertThat(RecruitType.SUPPORTERS.toMemberType()).isEqualTo(SUPPORTERS);
+    }
+
+    @Test
+    void 기존_모집_유형은_정규_기수_구성원_타입으로_변환한다() {
+        assertThat(RecruitType.REGULAR.toMemberType()).isEqualTo(SEMESTER);
+        assertThat(RecruitType.REGULAR_WAITLIST.toMemberType()).isEqualTo(SEMESTER);
+        assertThat(RecruitType.BACKFILL.toMemberType()).isEqualTo(SEMESTER);
+        assertThat(RecruitType.MANUAL.toMemberType()).isEqualTo(SEMESTER);
     }
 }

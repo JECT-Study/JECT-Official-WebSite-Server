@@ -1,6 +1,7 @@
 package org.ject.support.domain.recruit.domain;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.domain.member.MemberType;
 
 @Getter
 @RequiredArgsConstructor
@@ -28,6 +29,14 @@ public enum RecruitType {
             case MAKERS, SUPPORTERS -> recruitTypeDetail == RecruitTypeDetail.NEW
                     || recruitTypeDetail == RecruitTypeDetail.REFILL;
             case REGULAR, REGULAR_WAITLIST, BACKFILL, MANUAL -> true;
+        };
+    }
+
+    public MemberType toMemberType() {
+        return switch (this) {
+            case MAKERS -> MemberType.MAKERS;
+            case SUPPORTERS -> MemberType.SUPPORTERS;
+            case SEMESTER, REGULAR, REGULAR_WAITLIST, BACKFILL, MANUAL -> MemberType.SEMESTER;
         };
     }
 }
