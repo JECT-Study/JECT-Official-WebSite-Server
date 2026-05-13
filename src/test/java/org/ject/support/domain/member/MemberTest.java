@@ -4,6 +4,7 @@ import org.ject.support.domain.member.entity.Member;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MemberTest {
 
@@ -65,6 +66,21 @@ class MemberTest {
         assertThat(member.getRegion()).isEqualTo(region);
         assertThat(member.getJobFamily()).isNull();
         assertThat(member.getMemberType()).isEqualTo(MemberType.SEMESTER);
+    }
+
+    @Test
+    void 구성원_타입을_null로_변경하면_예외가_발생한다() {
+        // given
+        Member member = Member.builder()
+                .email("john@example.com")
+                .role(Role.SEMESTER)
+                .status(MemberStatus.ACTIVE)
+                .build();
+
+        // when, then
+        assertThatThrownBy(() -> member.updateMemberType(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("memberType must not be null");
     }
 
     @Test

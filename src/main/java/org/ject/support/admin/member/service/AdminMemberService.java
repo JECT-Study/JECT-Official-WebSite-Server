@@ -11,6 +11,7 @@ import org.ject.support.admin.member.dto.MemberResponse;
 import org.ject.support.admin.member.repository.AdminMemberRepository;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.dto.MemberProjection;
 import org.ject.support.domain.member.entity.Member;
@@ -42,9 +43,10 @@ public class AdminMemberService {
             final Role role,
             final JobFamily jobFamily,
             final Long semesterId,
+            final MemberType memberType,
             final Pageable pageable
     ) {
-        Page<MemberProjection> projections = adminMemberRepository.findMembers(role, jobFamily, semesterId, pageable);
+        Page<MemberProjection> projections = adminMemberRepository.findMembers(role, jobFamily, semesterId, memberType, pageable);
         List<MemberResponse> content = projections.getContent().stream()
                 .map(MemberResponse::from)
                 .toList();

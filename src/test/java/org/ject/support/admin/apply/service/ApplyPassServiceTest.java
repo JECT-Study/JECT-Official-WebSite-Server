@@ -8,10 +8,12 @@ import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -55,6 +57,45 @@ class ApplyPassServiceTest extends UnitTestSupport {
         assertThat(applicant1.getRole()).isEqualTo(Role.SEMESTER);
         assertThat(applicant2.getRole()).isEqualTo(Role.SEMESTER);
         assertThat(applicant3.getRole()).isEqualTo(Role.SEMESTER);
+        assertThat(applicant1.getMemberType()).isEqualTo(MemberType.SEMESTER);
+        assertThat(applicant2.getMemberType()).isEqualTo(MemberType.SEMESTER);
+        assertThat(applicant3.getMemberType()).isEqualTo(MemberType.SEMESTER);
+    }
+
+    @Test
+    void 메이커스_지원자_합격_시_구성원_타입을_메이커스로_변경한다() {
+        // given
+        Recruit recruit = getActiveRecruit(1L, JobFamily.FE, RecruitType.MAKERS, List.of());
+        Member applicant = getApplicant(1L, "applicant@test.com");
+        Apply apply = getApply(1L, recruit, applicant, getApplicationForm("content"), ApplyStatus.SUBMITTED);
+
+        when(applyRepository.findAllByIdWithMember(List.of(1L))).thenReturn(List.of(apply));
+
+        // when
+        int result = applyPassService.passApply(List.of(1L));
+
+        // then
+        assertThat(result).isEqualTo(1);
+        assertThat(applicant.getRole()).isEqualTo(Role.SEMESTER);
+        assertThat(applicant.getMemberType()).isEqualTo(MemberType.MAKERS);
+    }
+
+    @Test
+    void 운영_서포터즈_지원자_합격_시_구성원_타입을_운영_서포터즈로_변경한다() {
+        // given
+        Recruit recruit = getActiveRecruit(1L, JobFamily.SUPPORTER, RecruitType.SUPPORTERS, List.of());
+        Member applicant = getApplicant(1L, "applicant@test.com");
+        Apply apply = getApply(1L, recruit, applicant, getApplicationForm("content"), ApplyStatus.SUBMITTED);
+
+        when(applyRepository.findAllByIdWithMember(List.of(1L))).thenReturn(List.of(apply));
+
+        // when
+        int result = applyPassService.passApply(List.of(1L));
+
+        // then
+        assertThat(result).isEqualTo(1);
+        assertThat(applicant.getRole()).isEqualTo(Role.SEMESTER);
+        assertThat(applicant.getMemberType()).isEqualTo(MemberType.SUPPORTERS);
     }
 
     @Test
@@ -77,12 +118,17 @@ class ApplyPassServiceTest extends UnitTestSupport {
     }
 
     private Recruit getActiveRecruit(Long id, JobFamily jobFamily, List<Question> questions) {
+        return getActiveRecruit(id, jobFamily, RecruitType.SEMESTER, questions);
+    }
+
+    private Recruit getActiveRecruit(Long id, JobFamily jobFamily, RecruitType recruitType, List<Question> questions) {
         return Recruit.builder()
                 .id(id)
                 .semester(Semester.builder().id(1L).name("1기").build())
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(jobFamily)
+                .recruitType(recruitType)
                 .questions(questions)
                 .build();
     }
