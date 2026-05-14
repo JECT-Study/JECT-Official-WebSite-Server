@@ -47,6 +47,8 @@ import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_FOUND_A
 @Service
 @RequiredArgsConstructor
 public class ApplyService implements ApplyUsecase {
+    private static final int RECRUIT_ID_PARAMETER_INDEX = 1;
+
     private final RecruitRepository recruitRepository;
     private final ApplyRepository applyRepository;
     private final ApplicationFormRepository applicationFormRepository;
@@ -55,7 +57,7 @@ public class ApplyService implements ApplyUsecase {
     private final String2MapSerializer string2MapSerializer;
 
     @Override
-    @PeriodAccessible(permitAllJob = true)
+    @PeriodAccessible(recruitIdParameterIndex = RECRUIT_ID_PARAMETER_INDEX)
     @Transactional(readOnly = true)
     public TempApplicationFormResponse findTempApplicationForm(final Long memberId, final Long recruitId) {
         Apply apply = applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(memberId, recruitId, LocalDateTime.now())
@@ -76,7 +78,7 @@ public class ApplyService implements ApplyUsecase {
     }
 
     @Override
-    @PeriodAccessible(permitAllJob = true)
+    @PeriodAccessible(recruitIdParameterIndex = RECRUIT_ID_PARAMETER_INDEX)
     @Transactional
     public void saveApplicationTemporarily(Long memberId,
                                            Long recruitId,
@@ -116,7 +118,7 @@ public class ApplyService implements ApplyUsecase {
     }
 
     @Override
-    @PeriodAccessible(permitAllJob = true)
+    @PeriodAccessible(recruitIdParameterIndex = RECRUIT_ID_PARAMETER_INDEX)
     @Transactional
     public void deleteProfileAndTempApplicationForm(Long memberId, Long recruitId) {
         // 지원 정보 조회
@@ -138,7 +140,7 @@ public class ApplyService implements ApplyUsecase {
     }
 
     @Override
-    @PeriodAccessible(permitAllJob = true)
+    @PeriodAccessible(recruitIdParameterIndex = RECRUIT_ID_PARAMETER_INDEX)
     @Transactional
     public void submitApplication(Long memberId,
                                   Long recruitId,
@@ -178,7 +180,7 @@ public class ApplyService implements ApplyUsecase {
     }
 
     @Override
-    @PeriodAccessible(permitAllJob = true)
+    @PeriodAccessible(recruitIdParameterIndex = RECRUIT_ID_PARAMETER_INDEX)
     @Transactional(readOnly = true)
     public ApplyStatusResponse checkApplyStatus(Long memberId, Long recruitId) {
         memberRepository.findById(memberId)
@@ -190,7 +192,7 @@ public class ApplyService implements ApplyUsecase {
     }
 
     @Override
-    @PeriodAccessible(permitAllJob = true)
+    @PeriodAccessible(recruitIdParameterIndex = RECRUIT_ID_PARAMETER_INDEX)
     @Transactional
     public void saveProfile(Long memberId, Long recruitId, ApplyProfileRequest request) {
         var member = memberRepository.findById(memberId)
