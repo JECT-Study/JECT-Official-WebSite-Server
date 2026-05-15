@@ -36,6 +36,7 @@ public class RecruitUpdatedEventHandler {
             recruitFlagService.setRecruitFlag(recruit);
         } else {
             // 등록된 모집의 시작일이 미래 시점이라면 스케줄 등록
+            recruitFlagService.deleteRecruitFlag(recruit.getId(), recruit.getJobFamily());
             recruitScheduleService.scheduleRecruitOpen(recruit);
         }
 

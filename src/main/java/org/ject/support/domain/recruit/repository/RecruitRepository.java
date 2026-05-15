@@ -27,4 +27,9 @@ public interface RecruitRepository extends JpaRepository<Recruit, Long>, Recruit
     @Query("SELECT r FROM Recruit r WHERE r.id = :recruitId AND r.startDate <= :now AND r.endDate >= :now")
     Recruit findActiveRecruitById(@Param("recruitId") Long recruitId,
                                   @Param("now") LocalDateTime now);
+
+    @Query("SELECT MAX(r.endDate) FROM Recruit r "
+            + "WHERE r.jobFamily = :jobFamily AND r.startDate <= :now AND r.endDate >= :now")
+    LocalDateTime findLatestActiveRecruitEndDateByJobFamily(@Param("jobFamily") JobFamily jobFamily,
+                                                            @Param("now") LocalDateTime now);
 }
