@@ -38,7 +38,7 @@ public class RecruitFlagService {
         refreshJobFamilyFlag(jobFamily);
     }
 
-    private void refreshJobFamilyFlag(JobFamily jobFamily) {
+    void refreshJobFamilyFlag(JobFamily jobFamily) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime latestEndDate = recruitRepository.findLatestActiveRecruitEndDateByJobFamily(jobFamily, now);
         if (latestEndDate == null) {

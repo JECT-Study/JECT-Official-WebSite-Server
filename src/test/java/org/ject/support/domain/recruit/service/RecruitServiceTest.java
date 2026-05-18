@@ -9,6 +9,7 @@ import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
+import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
@@ -163,6 +164,11 @@ class RecruitServiceTest extends UnitTestSupport {
         // then
         assertThat(recruit.getJobFamily()).isEqualTo(FE);
         assertThat(recruit.getEndDate()).isEqualTo(newEndDate);
+
+        ArgumentCaptor<RecruitUpdatedEvent> eventCaptor = ArgumentCaptor.forClass(RecruitUpdatedEvent.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().previousJobFamily()).isEqualTo(BE);
+        assertThat(eventCaptor.getValue().currentJobFamily()).isEqualTo(FE);
     }
 
     @Test

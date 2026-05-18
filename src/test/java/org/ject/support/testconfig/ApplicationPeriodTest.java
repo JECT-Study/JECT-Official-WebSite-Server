@@ -1,6 +1,5 @@
 package org.ject.support.testconfig;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import org.ject.support.domain.member.JobFamily;
@@ -26,7 +25,6 @@ public abstract class ApplicationPeriodTest {
     @BeforeEach
     void setUp() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(anyString())).thenReturn(Boolean.toString(true));
         when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.PM.name())))
                 .thenReturn(Boolean.toString(true));
         when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.PD.name())))

@@ -52,6 +52,7 @@ class RecruitUpdatedEventHandlerTest extends UnitTestSupport {
         recruitUpdatedEventHandler.handleRecruitUpdated(new RecruitUpdatedEvent(
                 1L,
                 JobFamily.BE,
+                JobFamily.BE,
                 futureRecruit.getStartDate(),
                 futureRecruit.getEndDate()));
 
@@ -59,5 +60,30 @@ class RecruitUpdatedEventHandlerTest extends UnitTestSupport {
         verify(recruitFlagService).deleteRecruitFlag(1L, JobFamily.BE);
         verify(recruitScheduleService).scheduleRecruitOpen(futureRecruit);
         verify(recruitFlagService, never()).setRecruitFlag(futureRecruit);
+    }
+
+    @Test
+    void 직군이_변경되면_이전_직군_recruit_flag도_재계산한다() {
+        // given
+        Recruit activeRecruit = Recruit.builder()
+                .id(1L)
+                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .jobFamily(JobFamily.FE)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
+                .build();
+        when(recruitRepository.findById(1L)).thenReturn(Optional.of(activeRecruit));
+
+        // when
+        recruitUpdatedEventHandler.handleRecruitUpdated(new RecruitUpdatedEvent(
+                1L,
+                JobFamily.BE,
+                JobFamily.FE,
+                activeRecruit.getStartDate(),
+                activeRecruit.getEndDate()));
+
+        // then
+        verify(recruitFlagService).refreshJobFamilyFlag(JobFamily.BE);
+        verify(recruitFlagService).setRecruitFlag(activeRecruit);
     }
 }
