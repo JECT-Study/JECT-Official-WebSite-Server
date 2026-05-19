@@ -63,9 +63,11 @@ public class RecruitService implements RecruitUsecase {
         if (recruit.isClosed()) {
             throw new RecruitException(RecruitErrorCode.UPDATE_NOT_ALLOW_FOR_CLOSED);
         }
+        JobFamily previousJobFamily = recruit.getJobFamily();
         recruit.update(request.jobFamily(), request.startDate(), request.endDate());
         eventPublisher.publishEvent(new RecruitUpdatedEvent(
                 recruit.getId(),
+                previousJobFamily,
                 recruit.getJobFamily(),
                 recruit.getStartDate(),
                 recruit.getEndDate()));

@@ -33,7 +33,8 @@ public abstract class ApplicationPeriodTest {
                 .thenReturn(Boolean.toString(true));
         when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.BE.name())))
                 .thenReturn(Boolean.toString(true));
+        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.SUPPORTER.name())))
+                .thenReturn(Boolean.toString(true));
         when(redisTemplate.getConnectionFactory()).thenReturn(redisConnectionFactory);
     }
 }
-

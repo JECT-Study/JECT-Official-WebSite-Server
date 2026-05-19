@@ -43,24 +43,24 @@ public class AccessPeriodVerifier {
         }
 
         try {
+            if (target.recruitIdParameterIndex() >= 0) {
+                Long recruitId = extractRecruitId(joinPoint, target.recruitIdParameterIndex());
+                validateRecruiting(isRecruiting(getKeyName(recruitId)));
+                return proceed(joinPoint, circuitBreaker);
+            }
+
             // 모든 직군에 대한 요청인 경우, 하나의 어떤 RECRUIT_FLAG만 있어도 허용
             if (target.permitAllJob()) {
                 boolean isAnyRecruiting = Arrays.stream(JobFamily.values())
-                        .anyMatch(jobFamily -> Boolean.parseBoolean(redisTemplate.opsForValue()
-                                .get(getKeyName(jobFamily.name()))));
+                        .anyMatch(jobFamily -> isRecruiting(getKeyName(jobFamily.name())));
                 validateRecruiting(isAnyRecruiting);
             } else {
                 // 특정 직군을 파라미터로 받은 경우, 해당 직군에 대한 모집 여부로 판단
                 JobFamily jobFamily = extractJobFamily(joinPoint);
-                boolean isRecruiting = Boolean.parseBoolean(redisTemplate.opsForValue()
-                        .get(getKeyName(jobFamily.name())));
-                validateRecruiting(isRecruiting);
+                validateRecruiting(isRecruiting(getKeyName(jobFamily.name())));
             }
 
-            Object result = joinPoint.proceed();
-            // 성공 기록
-            circuitBreaker.onSuccess(0, TimeUnit.NANOSECONDS);
-            return result;
+            return proceed(joinPoint, circuitBreaker);
         } catch (Throwable throwable) {
             // 레디스 관련 인프라 장애(연결, 타임아웃 등) 시 폴백 처리
             if (RedisCacheExceptionClassifier.isRedisRelated(throwable)) {
@@ -76,8 +76,23 @@ public class AccessPeriodVerifier {
         }
     }
 
+    private Object proceed(ProceedingJoinPoint joinPoint, CircuitBreaker circuitBreaker) throws Throwable {
+        Object result = joinPoint.proceed();
+        // 성공 기록
+        circuitBreaker.onSuccess(0, TimeUnit.NANOSECONDS);
+        return result;
+    }
+
     private String getKeyName(String jobFamilyName) {
         return String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, jobFamilyName);
+    }
+
+    private String getKeyName(Long recruitId) {
+        return String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, recruitId);
+    }
+
+    private boolean isRecruiting(String keyName) {
+        return Boolean.parseBoolean(redisTemplate.opsForValue().get(keyName));
     }
 
     private void validateRecruiting(boolean isRecruiting) {
@@ -92,5 +107,13 @@ public class AccessPeriodVerifier {
                 .map(JobFamily.class::cast)
                 .findFirst()
                 .orElseThrow(() -> new GlobalException(GlobalErrorCode.MISS_REQUIRED_JOB_FAMILY_PARAMETER));
+    }
+
+    private Long extractRecruitId(ProceedingJoinPoint joinPoint, int recruitIdParameterIndex) {
+        Object[] args = joinPoint.getArgs();
+        if (recruitIdParameterIndex >= args.length || !(args[recruitIdParameterIndex] instanceof Long recruitId)) {
+            throw new GlobalException(GlobalErrorCode.MISS_REQUIRED_REQUEST_PARAMETER);
+        }
+        return recruitId;
     }
 }

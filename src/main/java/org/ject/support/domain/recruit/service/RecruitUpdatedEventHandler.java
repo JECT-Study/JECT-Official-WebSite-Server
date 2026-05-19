@@ -2,6 +2,7 @@ package org.ject.support.domain.recruit.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
@@ -21,7 +22,10 @@ public class RecruitUpdatedEventHandler {
     /**
      * 모집 수정 시 호출됨
      */
-    @CacheEvict(value = "activeRecruit", key = "#event.jobFamily().name()")
+    @Caching(evict = {
+            @CacheEvict(value = "activeRecruit", key = "#event.previousJobFamily().name()"),
+            @CacheEvict(value = "activeRecruit", key = "#event.currentJobFamily().name()")
+    })
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleRecruitUpdated(RecruitUpdatedEvent event) {
         // 기존 스케줄 작업 제거
@@ -31,11 +35,16 @@ public class RecruitUpdatedEventHandler {
         Recruit recruit = recruitRepository.findById(event.recruitId())
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
 
+        if (event.previousJobFamily() != event.currentJobFamily()) {
+            recruitFlagService.refreshJobFamilyFlag(event.previousJobFamily());
+        }
+
         if (recruit.isRecruitingPeriod()) {
             // 등록된 모집이 활성화되어 있다면 즉시 flag 캐싱
             recruitFlagService.setRecruitFlag(recruit);
         } else {
             // 등록된 모집의 시작일이 미래 시점이라면 스케줄 등록
+            recruitFlagService.deleteRecruitFlag(recruit.getId(), recruit.getJobFamily());
             recruitScheduleService.scheduleRecruitOpen(recruit);
         }
 

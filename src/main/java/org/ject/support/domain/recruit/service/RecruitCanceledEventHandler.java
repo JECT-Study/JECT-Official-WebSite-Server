@@ -7,8 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import static org.ject.support.domain.recruit.dto.Constants.RECRUIT_FLAG_PREFIX;
-
 @Service
 @RequiredArgsConstructor
 public class RecruitCanceledEventHandler {
@@ -21,7 +19,7 @@ public class RecruitCanceledEventHandler {
     @CacheEvict(value = "activeRecruit", key = "#event.jobFamily().name()")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleRecruitCanceled(RecruitCanceledEvent event) {
-        recruitFlagService.deleteRecruitFlag(String.format("%s%s", RECRUIT_FLAG_PREFIX, event.jobFamily()));
+        recruitFlagService.deleteRecruitFlag(event.recruitId(), event.jobFamily());
         recruitScheduleService.cancelJobs(event.recruitId());
     }
 }
