@@ -39,3 +39,20 @@ out/
 spy.log
 src/main/generated/
 dynamodb-local-metadata.json
+
+### mac OS ###
+.DS_Store
+
+### AI ###
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+CODEX.md
+.cursorrules
+.cursorignore
+.cursor/rules/
+.cursor/rules/*.mdc
+.windsurfrules
+.windsurf/
+.roo/
+.roo-rules/
