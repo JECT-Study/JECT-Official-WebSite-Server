@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public interface RecruitRepository extends JpaRepository<Recruit, Long>, RecruitQueryRepository {
+public interface RecruitRepository extends JpaRepository<Recruit, Long> {
     @Query("SELECT r FROM Recruit r LEFT JOIN FETCH r.questions "
             + "WHERE r.startDate <= :now AND r.endDate >= :now")
     List<Recruit> findActiveRecruits(@Param("now") LocalDateTime now);
