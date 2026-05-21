@@ -3,24 +3,32 @@ package org.ject.support.admin.account.service;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountResponse;
 import org.ject.support.admin.account.dto.AdminAccountUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountSearchCondition;
 import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.MemberStatus;
-import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.Role;
+import org.ject.support.domain.member.dto.MemberAccountProjection;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -44,6 +52,44 @@ class AdminAccountServiceTest extends UnitTestSupport {
     private static final String TEST_EMAIL = "admin@ject.kr";
     private static final String TEST_PASSWORD = "password123";
     private static final String ENCODED_PASSWORD = "encoded-password";
+
+    @Test
+    void 관리자_계정_목록_조회_성공() {
+        // given
+        var pageable = PageRequest.of(0, 20);
+        var condition = new AdminAccountSearchCondition(
+                List.of(Role.ADMIN, Role.SUPPORTER),
+                List.of(MemberStatus.ACTIVE));
+        var projection = new MemberAccountProjection(1L, TEST_EMAIL, "김젝트", Role.ADMIN, MemberStatus.ACTIVE);
+        var page = new PageImpl<>(List.of(projection), pageable, 1);
+
+        given(memberRepository.findAccounts(condition, pageable)).willReturn(page);
+
+        // when
+        var result = adminAccountService.findAccounts(condition, pageable);
+
+        // then
+        assertThat(result.getContent())
+                .containsExactly(new AdminAccountResponse(1L, TEST_EMAIL, "김젝트", Role.ADMIN, MemberStatus.ACTIVE));
+        verify(memberRepository).findAccounts(condition, pageable);
+    }
+
+    @Test
+    void 관리자_계정_목록_조회_실패_관리자_계정_유형이_아닌_role_필터() {
+        // given
+        var pageable = PageRequest.of(0, 20);
+        var condition = new AdminAccountSearchCondition(
+                List.of(Role.ADMIN, Role.SEMESTER),
+                List.of(MemberStatus.ACTIVE));
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.findAccounts(condition, pageable))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ROLE);
+
+        verify(memberRepository, never()).findAccounts(any(), eq(pageable));
+    }
 
     @Test
     void 관리자_계정_생성_성공() {

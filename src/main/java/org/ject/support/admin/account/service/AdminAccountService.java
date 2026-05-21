@@ -4,7 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountResponse;
 import org.ject.support.admin.account.dto.AdminAccountUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountSearchCondition;
 import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
@@ -13,9 +15,13 @@ import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberEditor;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,6 +31,13 @@ public class AdminAccountService {
     private final MemberRepository memberRepository;
     private final AdminMemberComponent adminMemberComponent;
     private final PasswordEncoder passwordEncoder;
+
+    public Page<AdminAccountResponse> findAccounts(final AdminAccountSearchCondition condition,
+                                                   final Pageable pageable) {
+        validateBackofficeRoles(condition.roles());
+        return memberRepository.findAccounts(condition, pageable)
+                .map(AdminAccountResponse::from);
+    }
 
     @Transactional
     public void createAccount(final AdminAccountCreateRequest request) {
@@ -98,6 +111,16 @@ public class AdminAccountService {
 
     private void validateBackofficeRole(final Role role) {
         if (!role.isBackoffice()) {
+            throw new AdminException(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ROLE);
+        }
+    }
+
+    private void validateBackofficeRoles(final List<Role> roles) {
+        if (roles == null || roles.isEmpty()) {
+            return;
+        }
+
+        if (roles.stream().anyMatch(role -> !role.isBackoffice())) {
             throw new AdminException(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ROLE);
         }
     }

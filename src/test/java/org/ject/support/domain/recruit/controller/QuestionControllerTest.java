@@ -89,7 +89,7 @@ class QuestionControllerTest {
         recruitRepository.save(recruit);
 
         member = Member.builder()
-                .email("test32" + uniqueSuffix + "@gmail.com")
+                .email("test_" + uniqueSuffix + "@gmail.com")
                 .semesterId(1L)
                 .jobFamily(JobFamily.BE)
                 .name("김젝트")

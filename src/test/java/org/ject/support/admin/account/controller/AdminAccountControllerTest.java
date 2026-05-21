@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountResponse;
 import org.ject.support.admin.account.dto.AdminAccountUpdateRequest;
 import org.ject.support.admin.account.service.AdminAccountService;
 import org.ject.support.base.UnitTestSupport;
@@ -11,12 +12,17 @@ import org.ject.support.common.exception.GlobalErrorCode;
 import org.ject.support.common.exception.GlobalExceptionHandler;
 import org.ject.support.common.security.AuthenticatedMemberIdResolver;
 import org.ject.support.common.security.CustomUserDetails;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,11 +30,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -51,13 +62,75 @@ class AdminAccountControllerTest extends UnitTestSupport {
         objectMapper = new ObjectMapper();
         mockMvc = MockMvcBuilders.standaloneSetup(adminAccountController)
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(new AuthenticatedMemberIdResolver())
+                .setCustomArgumentResolvers(
+                        new AuthenticatedMemberIdResolver(),
+                        new PageableHandlerMethodArgumentResolver())
                 .build();
     }
 
     @AfterEach
     void tearDown() {
         SecurityContextHolder.clearContext();
+    }
+
+    @Test
+    void 관리자_계정_목록_조회_성공() throws Exception {
+        // given
+        var response = new AdminAccountResponse(1L, "admin@ject.kr", "김젝트", Role.ADMIN, MemberStatus.ACTIVE);
+        var page = new PageImpl<>(List.of(response), PageRequest.of(0, 20), 1);
+
+        given(adminAccountService.findAccounts(any(), any(Pageable.class))).willReturn(page);
+
+        // when, then
+        mockMvc.perform(get("/admin/accounts")
+                        .param("roles", "ADMIN", "SUPPORTER")
+                        .param("statuses", "ACTIVE", "LOCKED")
+                        .param("page", "0")
+                        .param("size", "20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].email").value("admin@ject.kr"))
+                .andExpect(jsonPath("$.content[0].name").value("김젝트"))
+                .andExpect(jsonPath("$.content[0].role").value("ADMIN"))
+                .andExpect(jsonPath("$.content[0].status").value("ACTIVE"))
+                .andDo(print());
+
+        verify(adminAccountService).findAccounts(
+                argThat(condition ->
+                        condition.roles().equals(List.of(Role.ADMIN, Role.SUPPORTER))
+                                && condition.statuses().equals(List.of(MemberStatus.ACTIVE, MemberStatus.LOCKED))),
+                any(Pageable.class));
+    }
+
+    @Test
+    void 관리자_계정_목록_조회는_필터를_생략할_수_있다() throws Exception {
+        // given
+        var page = new PageImpl<AdminAccountResponse>(List.of(), PageRequest.of(0, 20), 0);
+
+        given(adminAccountService.findAccounts(any(), any(Pageable.class))).willReturn(page);
+
+        // when, then
+        mockMvc.perform(get("/admin/accounts")
+                        .param("page", "0")
+                        .param("size", "20"))
+                .andExpect(status().isOk())
+                .andDo(print());
+
+        verify(adminAccountService).findAccounts(
+                argThat(condition -> condition.roles() == null && condition.statuses() == null),
+                any(Pageable.class));
+    }
+
+    @Test
+    void 관리자_계정_목록_조회는_ADMIN_권한만_허용한다() throws Exception {
+        // when
+        PreAuthorize preAuthorize = AdminAccountController.class
+                .getMethod("findAccounts", List.class, List.class, Pageable.class)
+                .getAnnotation(PreAuthorize.class);
+
+        // then
+        assertThat(preAuthorize).isNotNull();
+        assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
     }
 
     @Test
