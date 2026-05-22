@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS member_supporters
     id                   BIGINT NOT NULL,
     created_at           datetime(6) NULL,
     updated_at           datetime(6) NULL,
-    activity_cert_number VARCHAR(255) NULL,
+    activity_cert_number VARCHAR(20) NULL,
     CONSTRAINT `PRIMARY` PRIMARY KEY (id),
     CONSTRAINT FK_member_supporters_member_activity FOREIGN KEY (id) REFERENCES member_activity (id) ON DELETE CASCADE
 ) ENGINE = InnoDB;
