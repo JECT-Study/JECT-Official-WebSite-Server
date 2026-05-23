@@ -58,8 +58,9 @@ public class MemberActivity extends BaseTimeEntity {
     private JobFamily jobFamily;
 
     @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "varchar(45)")
-    private ActivityStatus activityStatus;
+    @Column(columnDefinition = "varchar(45)", nullable = false)
+    @Builder.Default
+    private ActivityStatus activityStatus = ActivityStatus.ACTIVE;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 30)
