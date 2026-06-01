@@ -5,7 +5,7 @@ on:
     branches:
       - "main"
       - "dev"
-      - "tmp/dev" #도메인 분리를 위한 임시 dev, dev로 병합시 제거
+      - "tmp/dev" #Todo: 도메인 분리를 위한 임시 dev, dev로 병합시 제거
 
 permissions:
   checks: write

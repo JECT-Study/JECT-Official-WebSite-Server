@@ -38,6 +38,13 @@ public class ApplicantService {
     @Transactional
     public Authentication registerTempApplicant(RegisterRequest registerRequest, String email) {
         // 이메일로 지원자 조회
+        /**
+         * Todo: 이메일을 단건으로 구분할 수 있는 정책 설정
+         * 기존 Member는 email에 유니크 제약조건 존재, applicant는 이력 의미도 포함하기 때문에 유니크 제약 X
+         * 여러 기수에 지원한 경우 현재 로직대로면 복수 행 응답 가능
+         * 지원데이터는 모집 공고 당 1개만 존재할 수 있음 -> 이메일 조회를 이메일+공고로 조회
+         * applicant에 recruit_id 필요 (값 참조)
+         */
         Applicant applicant = applicantRepository.findByEmail(email)
                 .orElse(null);
 
