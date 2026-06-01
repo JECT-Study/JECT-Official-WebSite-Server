@@ -15,6 +15,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.springframework.beans.factory.annotation.Value;
@@ -183,6 +184,11 @@ public class JwtTokenProvider {
 
     public Authentication createAuthenticationByMember(Member member) {
         CustomUserDetails userDetails = new CustomUserDetails(member);
+        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+    }
+
+    public Authentication createAuthenticationByApplicant(Applicant applicant) {
+        CustomUserDetails userDetails = new CustomUserDetails(applicant.getEmail(), applicant.getId(), applicant.getRole());
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
     
