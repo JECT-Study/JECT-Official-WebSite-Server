@@ -5,9 +5,9 @@ import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
 import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -56,7 +56,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         String password = "Password123";
         String failCountKey = "admin-login-password-fail-count:" + email;
         String blockKey = "admin-login-password-block:" + email;
-        Member adminMember = Member.builder()
+        Applicant adminApplicant = Applicant.builder()
                 .id(1L)
                 .email(email)
                 .pin("$2a$10$encodedPin")
@@ -65,9 +65,9 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .build();
 
         given(redisTemplate.hasKey(blockKey)).willReturn(false);
-        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(adminMember));
-        given(passwordEncoder.matches(password, adminMember.getPin())).willReturn(true);
-        given(jwtTokenProvider.createAuthenticationByMember(adminMember)).willReturn(authentication);
+        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(adminApplicant));
+        given(passwordEncoder.matches(password, adminApplicant.getPin())).willReturn(true);
+        given(jwtTokenProvider.createAuthenticationByApplicant(adminApplicant)).willReturn(authentication);
 
         // when
         adminAuthService.authenticateAdmin(email, password);
@@ -75,7 +75,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         // then
         verify(redisTemplate).delete(failCountKey);
         verify(redisTemplate).delete(blockKey);
-        verify(jwtTokenProvider).createAuthenticationByMember(adminMember);
+        verify(jwtTokenProvider).createAuthenticationByApplicant(adminApplicant);
     }
 
     @Test
@@ -85,7 +85,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         String password = "Password123";
         String failCountKey = "admin-login-password-fail-count:" + email;
         String blockKey = "admin-login-password-block:" + email;
-        Member operationsMember = Member.builder()
+        Applicant operationsApplicant = Applicant.builder()
                 .id(2L)
                 .email(email)
                 .pin("$2a$10$encodedPin")
@@ -94,9 +94,9 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .build();
 
         given(redisTemplate.hasKey(blockKey)).willReturn(false);
-        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(operationsMember));
-        given(passwordEncoder.matches(password, operationsMember.getPin())).willReturn(true);
-        given(jwtTokenProvider.createAuthenticationByMember(operationsMember)).willReturn(authentication);
+        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(operationsApplicant));
+        given(passwordEncoder.matches(password, operationsApplicant.getPin())).willReturn(true);
+        given(jwtTokenProvider.createAuthenticationByApplicant(operationsApplicant)).willReturn(authentication);
 
         // when
         adminAuthService.authenticateAdmin(email, password);
@@ -104,7 +104,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         // then
         verify(redisTemplate).delete(failCountKey);
         verify(redisTemplate).delete(blockKey);
-        verify(jwtTokenProvider).createAuthenticationByMember(operationsMember);
+        verify(jwtTokenProvider).createAuthenticationByApplicant(operationsApplicant);
     }
 
     @Test
@@ -130,7 +130,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         // given
         String email = "admin@ject.org";
         String password = "WrongPassword123";
-        Member adminMember = Member.builder()
+        Applicant adminApplicant = Applicant.builder()
                 .id(1L)
                 .email(email)
                 .pin("$2a$10$encodedPin")
@@ -139,11 +139,11 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .build();
         String failCountKey = "admin-login-password-fail-count:" + email;
 
-        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(adminMember));
+        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(adminApplicant));
         given(redisTemplate.hasKey("admin-login-password-block:" + email)).willReturn(false);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
         given(valueOperations.increment(failCountKey)).willReturn(1L);
-        given(passwordEncoder.matches(password, adminMember.getPin())).willReturn(false);
+        given(passwordEncoder.matches(password, adminApplicant.getPin())).willReturn(false);
 
         // when, then
         assertThatThrownBy(() -> adminAuthService.authenticateAdmin(email, password))
@@ -157,7 +157,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         // given
         String email = "locked_admin@test.com";
         String password = "Password123!";
-        Member adminMember = Member.builder()
+        Applicant adminApplicant = Applicant.builder()
                 .id(1L)
                 .email(email)
                 .pin("$2a$10$encodedPin")
@@ -165,9 +165,9 @@ class AdminAuthServiceTest extends UnitTestSupport {
                 .role(Role.ADMIN)
                 .build();
 
-        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(adminMember));
+        given(adminMemberComponent.findBackofficeMemberByEmail(email)).willReturn(Optional.of(adminApplicant));
         given(redisTemplate.hasKey("admin-login-password-block:" + email)).willReturn(false);
-        given(passwordEncoder.matches(password, adminMember.getPin())).willReturn(true);
+        given(passwordEncoder.matches(password, adminApplicant.getPin())).willReturn(true);
 
         // when, then
         assertThatThrownBy(() -> adminAuthService.authenticateAdmin(email, password))
