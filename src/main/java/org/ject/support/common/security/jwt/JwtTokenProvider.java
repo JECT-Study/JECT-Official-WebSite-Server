@@ -17,7 +17,6 @@ import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -180,11 +179,6 @@ public class JwtTokenProvider {
     public Long getApplicantId(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
         return claims.get("applicantId", Long.class);
-    }
-
-    public Authentication createAuthenticationByMember(Member member) {
-        CustomUserDetails userDetails = new CustomUserDetails(member);
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
     public Authentication createAuthenticationByApplicant(Applicant applicant) {
