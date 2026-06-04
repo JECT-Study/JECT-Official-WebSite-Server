@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class AuthenticatedMemberIdResolver implements HandlerMethodArgumentResolver {
+public class AuthenticatedApplicantIdResolver implements HandlerMethodArgumentResolver {
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
@@ -33,6 +33,6 @@ public class AuthenticatedMemberIdResolver implements HandlerMethodArgumentResol
         }
         
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        return userDetails.getMemberId();
+        return userDetails.getApplicantId();
     }
 }

@@ -1,11 +1,10 @@
 package org.ject.support.common.security;
 
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Permission;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.RolePermissions;
-import org.ject.support.domain.member.entity.Member;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 
@@ -17,13 +16,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CustomUserDetailsTest {
 
     private final String TEST_EMAIL = "test@example.com";
-    private final Long TEST_MEMBER_ID = 1L;
+    private final Long TEST_APPLICANT_ID = 1L;
 
     @Test
     void Member_객체로_CustomUserDetails_생성_시_권한에_ROLE_접두사가_추가되는지_확인() {
         // given
-        Member member = Member.builder()
-                .id(TEST_MEMBER_ID)
+        Applicant applicant = Applicant.builder()
+                .id(TEST_APPLICANT_ID)
                 .email(TEST_EMAIL)
                 .name("Test User")
                 .phoneNumber("01012345678")
@@ -32,7 +31,7 @@ class CustomUserDetailsTest {
                 .build();
 
         // when
-        CustomUserDetails userDetails = new CustomUserDetails(member);
+        CustomUserDetails userDetails = new CustomUserDetails(applicant);
         Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
         List<String> authorityNames = authorities.stream()
                 .map(GrantedAuthority::getAuthority)
@@ -49,7 +48,7 @@ class CustomUserDetailsTest {
         Role role = Role.SEMESTER;
 
         // when
-        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, TEST_MEMBER_ID, role);
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, TEST_APPLICANT_ID, role);
         Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
         List<String> authorityNames = authorities.stream()
                 .map(GrantedAuthority::getAuthority)
@@ -66,7 +65,7 @@ class CustomUserDetailsTest {
         Role role = Role.ADMIN;
 
         // when
-        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, TEST_MEMBER_ID, role);
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, TEST_APPLICANT_ID, role);
         Collection<? extends GrantedAuthority> authorities = userDetails.getAuthorities();
         List<String> authorityNames = authorities.stream()
                 .map(GrantedAuthority::getAuthority)
@@ -88,7 +87,7 @@ class CustomUserDetailsTest {
         Role role = Role.SUPPORTER;
 
         // when
-        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, TEST_MEMBER_ID, role);
+        CustomUserDetails userDetails = new CustomUserDetails(TEST_EMAIL, TEST_APPLICANT_ID, role);
         List<String> authorityNames = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .toList();

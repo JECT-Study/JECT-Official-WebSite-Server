@@ -2,25 +2,25 @@ package org.ject.support.common.security;
 
 
 import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.exception.MemberException;
-import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.exception.ApplicantException;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import static org.ject.support.domain.member.exception.MemberErrorCode.NOT_FOUND_MEMBER;
+import static org.ject.support.domain.applicant.exception.ApplicantErrorCode.NOT_FOUND_APPLICANT;
 
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailService implements UserDetailsService {
 
-    private final MemberRepository memberRepository;
+    private final ApplicantRepository applicantRepository;
 
     @Override
     public CustomUserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Member member = memberRepository.findByEmail(username)
-                .orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
-        return new CustomUserDetails(member);
+        Applicant applicant = applicantRepository.findByEmail(username)
+                .orElseThrow(() -> new ApplicantException(NOT_FOUND_APPLICANT));
+        return new CustomUserDetails(applicant);
     }
 }
