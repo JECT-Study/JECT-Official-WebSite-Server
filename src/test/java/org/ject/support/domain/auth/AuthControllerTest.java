@@ -58,7 +58,7 @@ class AuthControllerTest extends UnitTestSupport {
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_AUTH_CODE = "123456";
     private final String TEST_REFRESH_TOKEN = "test.refresh.token";
-    private final Long TEST_MEMBER_ID = 1L;
+    private final Long TEST_APPLICANT_ID = 1L;
 
     @Test
     void 인증_코드_검증_AUTH_CODE_템플릿_이메일만_반환_성공() {
@@ -106,14 +106,14 @@ class AuthControllerTest extends UnitTestSupport {
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         
         given(jwtTokenProvider.resolveRefreshToken(mockRequest)).willReturn(TEST_REFRESH_TOKEN);
-        given(authService.refreshAccessToken(TEST_REFRESH_TOKEN)).willReturn(TEST_MEMBER_ID);
+        given(authService.refreshAccessToken(TEST_REFRESH_TOKEN)).willReturn(TEST_APPLICANT_ID);
 
         // when
         authController.refreshToken(mockRequest, mockResponse);
 
         // then
         verify(authService).refreshAccessToken(TEST_REFRESH_TOKEN);
-        verify(customSuccessHandler).onAuthenticationSuccess(mockResponse, TEST_REFRESH_TOKEN, TEST_MEMBER_ID);
+        verify(customSuccessHandler).onAuthenticationSuccess(mockResponse, TEST_REFRESH_TOKEN, TEST_APPLICANT_ID);
     }
     
     @Test

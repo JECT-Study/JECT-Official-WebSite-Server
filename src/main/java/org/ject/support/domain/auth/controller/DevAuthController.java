@@ -7,8 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Profile({"local", "dev"})
 public class DevAuthController {
 
-    private final MemberRepository memberRepository;
+    private final ApplicantRepository applicantRepository;
     private final JwtTokenProvider jwtTokenProvider;
 
     @Operation(
@@ -29,9 +29,9 @@ public class DevAuthController {
     )
     @PostMapping("/access-token")
     public String getToken(@Valid @RequestBody EmailRequest request) {
-        Member member = memberRepository.findByEmail(request.email)
+        Applicant applicant = applicantRepository.findByEmail(request.email)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다."));
-        Authentication authentication = jwtTokenProvider.createAuthenticationByMember(member);
+        Authentication authentication = jwtTokenProvider.createAuthenticationByApplicant(applicant);
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         return jwtTokenProvider.createAccessToken(authentication, customUserDetails.getApplicantId());
     }
