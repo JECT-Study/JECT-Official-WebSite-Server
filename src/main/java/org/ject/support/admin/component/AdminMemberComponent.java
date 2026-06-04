@@ -20,6 +20,7 @@ public class AdminMemberComponent {
 
     private final ApplicantRepository applicantRepository;
 
+    // TODO: 내부 주체는 Applicant지만 관리자 계정 관리 맥락상 Member 네이밍을 유지한다.
     public Applicant getRequiredBackofficeMemberByEmail(String email) {
         return applicantRepository.findByEmailAndRoleIn(email, Role.backofficeRoles())
                 .orElseThrow(() -> new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));

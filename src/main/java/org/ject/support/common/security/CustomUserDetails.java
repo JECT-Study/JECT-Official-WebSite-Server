@@ -6,7 +6,6 @@ import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.Permission;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.RolePermissions;
-import org.ject.support.domain.member.entity.Member;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -20,12 +19,6 @@ public class CustomUserDetails implements UserDetails {
         this.applicantId = applicant.getId();
         this.email = applicant.getEmail();
         this.role = applicant.getRole();
-    }
-
-    public CustomUserDetails(Member member) {
-        this.applicantId = member.getId();
-        this.email = member.getEmail();
-        this.role = member.getRole();
     }
 
     public CustomUserDetails(String email, Long applicantId, Role role) {
