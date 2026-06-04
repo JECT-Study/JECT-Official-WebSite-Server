@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import org.ject.support.common.exception.GlobalException;
+import org.junit.jupiter.api.AfterEach;
 import org.ject.support.domain.member.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -50,6 +51,11 @@ class AuthenticatedApplicantIdResolverTest {
         SecurityContextHolder.setContext(securityContext);
     }
 
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
     @Test
     @DisplayName("@AuthPrincipal이 붙은 Long 타입 파라미터를 지원한다")
     void supportsParameter() {
@@ -79,7 +85,7 @@ class AuthenticatedApplicantIdResolverTest {
     }
 
     @Test
-    @DisplayName("인증된 사용자의 memberId를 반환한다")
+    @DisplayName("인증된 사용자의 applicantId를 반환한다")
     void resolveArgumentWithAuthenticatedUser() {
         // given
         CustomUserDetails userDetails = new CustomUserDetails(EMAIL, APPLICANT_ID, Role.SEMESTER);

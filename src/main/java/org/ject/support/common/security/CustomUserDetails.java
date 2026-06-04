@@ -38,10 +38,6 @@ public class CustomUserDetails implements UserDetails {
         return applicantId;
     }
 
-    public Long getMemberId() {
-        return applicantId;
-    }
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<GrantedAuthority> collection = new ArrayList<>();

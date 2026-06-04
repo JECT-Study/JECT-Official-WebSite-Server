@@ -12,9 +12,9 @@ import org.ject.support.common.exception.BusinessException;
 import org.ject.support.common.exception.GlobalErrorCode;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.repository.MemberRepository;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -46,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             .collect(Collectors.toUnmodifiableSet());
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final MemberRepository memberRepository;
+    private final ApplicantRepository applicantRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) {
@@ -107,10 +107,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        var member = memberRepository.findByIdAndRoleIn(userDetails.getMemberId(), Role.backofficeRoles())
+        var applicant = applicantRepository.findByIdAndRoleIn(userDetails.getApplicantId(), Role.backofficeRoles())
                 .orElseThrow(() -> new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
 
-        if (member.getStatus() == MemberStatus.LOCKED) {
+        if (applicant.getStatus() == MemberStatus.LOCKED) {
             throw new AdminException(AdminErrorCode.LOCKED_ADMIN);
         }
     }

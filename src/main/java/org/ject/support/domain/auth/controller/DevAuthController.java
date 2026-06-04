@@ -33,7 +33,7 @@ public class DevAuthController {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다."));
         Authentication authentication = jwtTokenProvider.createAuthenticationByMember(member);
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
-        return jwtTokenProvider.createAccessToken(authentication, customUserDetails.getMemberId());
+        return jwtTokenProvider.createAccessToken(authentication, customUserDetails.getApplicantId());
     }
 
     public record EmailRequest(

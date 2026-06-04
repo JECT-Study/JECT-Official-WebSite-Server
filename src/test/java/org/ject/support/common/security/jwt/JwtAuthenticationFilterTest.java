@@ -4,10 +4,10 @@ import jakarta.servlet.FilterChain;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
 import org.ject.support.common.security.CustomUserDetails;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.repository.MemberRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +37,7 @@ class JwtAuthenticationFilterTest {
     private JwtTokenProvider jwtTokenProvider;
 
     @Mock
-    private MemberRepository memberRepository;
+    private ApplicantRepository applicantRepository;
 
     @Mock
     private FilterChain filterChain;
@@ -55,12 +55,12 @@ class JwtAuthenticationFilterTest {
         var request = new MockHttpServletRequest();
         var response = new MockHttpServletResponse();
         var authentication = createAuthentication(1L, Role.ADMIN);
-        var member = createMember(1L, Role.ADMIN, MemberStatus.ACTIVE);
+        var applicant = createApplicant(1L, Role.ADMIN, MemberStatus.ACTIVE);
 
         given(jwtTokenProvider.resolveAccessToken(request)).willReturn(ACCESS_TOKEN);
         given(jwtTokenProvider.validateToken(ACCESS_TOKEN)).willReturn(true);
         given(jwtTokenProvider.getAuthenticationByToken(ACCESS_TOKEN)).willReturn(authentication);
-        given(memberRepository.findByIdAndRoleIn(1L, Role.backofficeRoles())).willReturn(Optional.of(member));
+        given(applicantRepository.findByIdAndRoleIn(1L, Role.backofficeRoles())).willReturn(Optional.of(applicant));
 
         // when
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
@@ -76,12 +76,12 @@ class JwtAuthenticationFilterTest {
         var request = new MockHttpServletRequest();
         var response = new MockHttpServletResponse();
         var authentication = createAuthentication(1L, Role.ADMIN);
-        var member = createMember(1L, Role.ADMIN, MemberStatus.LOCKED);
+        var applicant = createApplicant(1L, Role.ADMIN, MemberStatus.LOCKED);
 
         given(jwtTokenProvider.resolveAccessToken(request)).willReturn(ACCESS_TOKEN);
         given(jwtTokenProvider.validateToken(ACCESS_TOKEN)).willReturn(true);
         given(jwtTokenProvider.getAuthenticationByToken(ACCESS_TOKEN)).willReturn(authentication);
-        given(memberRepository.findByIdAndRoleIn(1L, Role.backofficeRoles())).willReturn(Optional.of(member));
+        given(applicantRepository.findByIdAndRoleIn(1L, Role.backofficeRoles())).willReturn(Optional.of(applicant));
 
         // when, then
         assertThatThrownBy(() -> jwtAuthenticationFilter.doFilterInternal(request, response, filterChain))
@@ -108,22 +108,22 @@ class JwtAuthenticationFilterTest {
         jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
 
         // then
-        verify(memberRepository, never()).findByIdAndRoleIn(1L, Role.backofficeRoles());
+        verify(applicantRepository, never()).findByIdAndRoleIn(1L, Role.backofficeRoles());
         verify(filterChain).doFilter(request, response);
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isEqualTo(authentication);
     }
 
-    private UsernamePasswordAuthenticationToken createAuthentication(final Long memberId,
+    private UsernamePasswordAuthenticationToken createAuthentication(final Long applicantId,
                                                                     final Role role) {
-        CustomUserDetails userDetails = new CustomUserDetails("test@ject.kr", memberId, role);
+        CustomUserDetails userDetails = new CustomUserDetails("test@ject.kr", applicantId, role);
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
-    private Member createMember(final Long memberId,
-                                final Role role,
-                                final MemberStatus status) {
-        return Member.builder()
-                .id(memberId)
+    private Applicant createApplicant(final Long applicantId,
+                                      final Role role,
+                                      final MemberStatus status) {
+        return Applicant.builder()
+                .id(applicantId)
                 .email("test@ject.kr")
                 .role(role)
                 .status(status)

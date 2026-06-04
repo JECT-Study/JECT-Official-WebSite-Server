@@ -137,7 +137,7 @@ public class AuthService {
                 throw new AuthException(INVALID_REFRESH_TOKEN);
             }
 
-            return jwtTokenProvider.extractMemberId(refreshToken);
+            return jwtTokenProvider.extractApplicantId(refreshToken);
         } catch (ExpiredJwtException e) {
             throw new AuthException(EXPIRED_REFRESH_TOKEN);
         } catch (JwtException e) {
