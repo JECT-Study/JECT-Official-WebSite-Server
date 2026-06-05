@@ -3,7 +3,7 @@ package org.ject.support.domain.apply.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.response.ResponseWrapper;
-import org.ject.support.common.security.AuthenticatedMemberIdResolver;
+import org.ject.support.common.security.AuthenticatedApplicantIdResolver;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
@@ -59,7 +59,7 @@ class ApplyControllerTest extends UnitTestSupport {
         objectMapper = new ObjectMapper();
         mockMvc = MockMvcBuilders.standaloneSetup(applyController)
                 .setControllerAdvice(new ResponseWrapper())
-                .setCustomArgumentResolvers(new AuthenticatedMemberIdResolver())
+                .setCustomArgumentResolvers(new AuthenticatedApplicantIdResolver())
                 .build();
     }
 

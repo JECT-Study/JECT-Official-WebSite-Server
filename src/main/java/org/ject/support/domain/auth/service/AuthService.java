@@ -5,11 +5,11 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.exception.ApplicantException;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.auth.dto.AuthVerificationResult;
 import org.ject.support.domain.auth.exception.AuthException;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.exception.MemberException;
-import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
@@ -24,7 +24,7 @@ import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_AUTH_
 import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_CREDENTIALS;
 import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_REFRESH_TOKEN;
 import static org.ject.support.domain.auth.exception.AuthErrorCode.NOT_FOUND_AUTH_CODE;
-import static org.ject.support.domain.member.exception.MemberErrorCode.NOT_FOUND_MEMBER;
+import static org.ject.support.domain.applicant.exception.ApplicantErrorCode.NOT_FOUND_APPLICANT;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +32,7 @@ public class AuthService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final JwtTokenProvider jwtTokenProvider;
-    private final MemberRepository memberRepository;
+    private final ApplicantRepository applicantRepository;
     private final PasswordEncoder passwordEncoder;
 
     /**
@@ -69,9 +69,9 @@ public class AuthService {
     private Authentication verifyEmailByAuthCodeOnly(String email, String userInputCode) {
         // 인증번호 검증
         verifyAuthCode(email, userInputCode);
-        Member member = findMember(email);
+        Applicant applicant = findApplicant(email);
 
-        Authentication authentication = jwtTokenProvider.createAuthenticationByMember(member);
+        Authentication authentication = jwtTokenProvider.createAuthenticationByApplicant(applicant);
         deleteAuthCode(email);
 
         return authentication;
@@ -87,20 +87,21 @@ public class AuthService {
     @Transactional
     public Authentication loginWithPin(String email, String pin) {
         // 이메일로 회원 조회
-        Member member = findMember(email);
+        Applicant applicant = findApplicant(email);
         
         // PIN 번호 검증
-        if (!passwordEncoder.matches(pin, member.getPin())) {
+        if (!passwordEncoder.matches(pin, applicant.getPin())) {
             throw new AuthException(INVALID_CREDENTIALS);
         }
         
         // 인증 및 토큰 발급
-        return jwtTokenProvider.createAuthenticationByMember(member);
+        return jwtTokenProvider.createAuthenticationByApplicant(applicant);
     }
 
-    private Member findMember(String email) {
-        return memberRepository.findByEmail(email)
-                .orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+    private Applicant findApplicant(String email) {
+        //Todo: Applicant는 이메일 유니크 제약없음(중복 발생) -> 고유하게 식별하도록 추가 개선 필요
+        return applicantRepository.findByEmail(email)
+                .orElseThrow(() -> new ApplicantException(NOT_FOUND_APPLICANT));
     }
 
     private void verifyAuthCode(String email, String userInputCode) {
@@ -137,7 +138,7 @@ public class AuthService {
                 throw new AuthException(INVALID_REFRESH_TOKEN);
             }
 
-            return jwtTokenProvider.extractMemberId(refreshToken);
+            return jwtTokenProvider.extractApplicantId(refreshToken);
         } catch (ExpiredJwtException e) {
             throw new AuthException(EXPIRED_REFRESH_TOKEN);
         } catch (JwtException e) {
@@ -146,6 +147,7 @@ public class AuthService {
     }
 
     public boolean isExistMember(String email) {
-        return memberRepository.existsByEmail(email);
+        //Todo: Applicant는 이메일 유니크 제약없음(중복 발생) -> 고유하게 식별하도록 추가 개선 필요
+        return applicantRepository.existsByEmail(email);
     }
 }

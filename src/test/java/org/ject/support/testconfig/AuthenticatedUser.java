@@ -7,6 +7,7 @@ import org.springframework.security.test.context.support.WithSecurityContext;
 @Retention(RetentionPolicy.RUNTIME)
 @WithSecurityContext(factory = WithAuthenticatedUserSecurityContextFactory.class)
 public @interface AuthenticatedUser {
+    long applicantId() default -1L;
     long memberId() default 1L;
     String email() default "test1@gmail.com";
     boolean isAdmin() default false;

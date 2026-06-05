@@ -10,11 +10,11 @@ import org.ject.support.admin.account.dto.AdminAccountSearchCondition;
 import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.entity.ApplicantEditor;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.entity.MemberEditor;
-import org.ject.support.domain.member.repository.MemberRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,14 +28,14 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class AdminAccountService {
 
-    private final MemberRepository memberRepository;
+    private final ApplicantRepository applicantRepository;
     private final AdminMemberComponent adminMemberComponent;
     private final PasswordEncoder passwordEncoder;
 
     public Page<AdminAccountResponse> findAccounts(final AdminAccountSearchCondition condition,
                                                    final Pageable pageable) {
         validateBackofficeRoles(condition.roles());
-        return memberRepository.findAccounts(condition, pageable)
+        return applicantRepository.findAccounts(condition, pageable)
                 .map(AdminAccountResponse::from);
     }
 
@@ -45,7 +45,7 @@ public class AdminAccountService {
         validateEmailUniqueness(request);
 
         final String encodedPassword = passwordEncoder.encode(request.password());
-        memberRepository.save(request.toEntity(encodedPassword));
+        applicantRepository.save(request.toEntity(encodedPassword));
     }
 
     @Transactional
@@ -56,29 +56,29 @@ public class AdminAccountService {
         validateNotLockingSelf(requesterId, memberId, request.active());
         validateNotChangingOwnAdminRole(requesterId, memberId, request.role());
 
-        final Member member = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
+        final Applicant applicant = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
 
         final MemberStatus status = request.active() ? MemberStatus.ACTIVE : MemberStatus.LOCKED;
-        final MemberEditor editor = member.toEditor()
+        final ApplicantEditor editor = applicant.toEditor()
                 .name(request.normalizeName())
                 .role(request.role())
                 .status(status)
                 .build();
 
-        member.edit(editor);
+        applicant.edit(editor);
     }
 
     @Transactional
     public void updateRole(final Long memberId, final AdminAccountRoleUpdateRequest request) {
         validateBackofficeRole(request.role());
 
-        final Member member = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
+        final Applicant applicant = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
 
-        final MemberEditor editor = member.toEditor()
+        final ApplicantEditor editor = applicant.toEditor()
                 .role(request.role())
                 .build();
 
-        member.edit(editor);
+        applicant.edit(editor);
     }
 
     @Transactional
@@ -87,10 +87,10 @@ public class AdminAccountService {
                              final AdminAccountActiveUpdateRequest request) {
         validateNotLockingSelf(requesterId, memberId, request.active());
 
-        final Member member = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
+        final Applicant applicant = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
         final MemberStatus status = request.active() ? MemberStatus.ACTIVE : MemberStatus.LOCKED;
 
-        adminMemberComponent.changeMemberStatus(member, status);
+        adminMemberComponent.changeMemberStatus(applicant, status);
     }
 
     private void validateNotLockingSelf(final Long requesterId,
@@ -126,7 +126,7 @@ public class AdminAccountService {
     }
 
     private void validateEmailUniqueness(final AdminAccountCreateRequest request) {
-        if (memberRepository.existsByEmail(request.email())) {
+        if (applicantRepository.existsByEmail(request.email())) {
             throw new AdminException(AdminErrorCode.DUPLICATE_ADMIN_EMAIL);
         }
     }

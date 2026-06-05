@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.auth.exception.AuthErrorCode.EXPIRED_REFRESH_TOKEN;
 import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_REFRESH_TOKEN;
 import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_CREDENTIALS;
-import static org.ject.support.domain.member.exception.MemberErrorCode.NOT_FOUND_MEMBER;
+import static org.ject.support.domain.applicant.exception.ApplicantErrorCode.NOT_FOUND_APPLICANT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -25,10 +25,10 @@ import static org.mockito.Mockito.lenient;
 
 import java.util.Optional;
 
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.exception.ApplicantException;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.exception.MemberException;
-import org.ject.support.domain.member.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,7 +59,7 @@ class AuthServiceTest {
     private ValueOperations<String, String> valueOperations;
     
     @Mock
-    private MemberRepository memberRepository;
+    private ApplicantRepository applicantRepository;
     
     @Mock
     private Authentication authentication;
@@ -74,7 +74,7 @@ class AuthServiceTest {
     private final String TEST_ENCODED_PIN = "123456";
     private final String TEST_ACCESS_TOKEN = "test.access.token";
     private final String TEST_REFRESH_TOKEN = "test.refresh.token";
-    private final Long TEST_MEMBER_ID = 1L;
+    private final Long TEST_APPLICANT_ID = 1L;
 
     @BeforeEach
     void setUp() {
@@ -85,8 +85,8 @@ class AuthServiceTest {
     @DisplayName("PIN 재설정을 위한 이메일 인증 코드 검증 성공 - 액세스 토큰 발급")
     void verifyEmailByAuthCodeOnly_PinReset_Success() {
         // given
-        Member member = Member.builder()
-                .id(TEST_MEMBER_ID)
+        Applicant applicant = Applicant.builder()
+                .id(TEST_APPLICANT_ID)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
@@ -94,9 +94,9 @@ class AuthServiceTest {
                 .build();
         
         given(valueOperations.get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
-        given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(member));
-        given(jwtTokenProvider.createAuthenticationByMember(member)).willReturn(authentication);
-        given(jwtTokenProvider.createAccessToken(authentication, TEST_MEMBER_ID)).willReturn(TEST_ACCESS_TOKEN);
+        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(applicant));
+        given(jwtTokenProvider.createAuthenticationByApplicant(applicant)).willReturn(authentication);
+        given(jwtTokenProvider.createAccessToken(authentication, TEST_APPLICANT_ID)).willReturn(TEST_ACCESS_TOKEN);
 
         // when
         AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET);
@@ -113,14 +113,14 @@ class AuthServiceTest {
     void refreshAccessToken_Success() {
         // given
         given(jwtTokenProvider.validateToken(TEST_REFRESH_TOKEN)).willReturn(true);
-        given(jwtTokenProvider.extractMemberId(TEST_REFRESH_TOKEN)).willReturn(TEST_MEMBER_ID);
-        given(jwtTokenProvider.reissueAccessToken(TEST_REFRESH_TOKEN, TEST_MEMBER_ID)).willReturn(TEST_ACCESS_TOKEN);
+        given(jwtTokenProvider.extractApplicantId(TEST_REFRESH_TOKEN)).willReturn(TEST_APPLICANT_ID);
+        given(jwtTokenProvider.reissueAccessToken(TEST_REFRESH_TOKEN, TEST_APPLICANT_ID)).willReturn(TEST_ACCESS_TOKEN);
 
         // when
         Long result = authService.refreshAccessToken(TEST_REFRESH_TOKEN);
 
         // then
-        assertThat(result).isEqualTo(TEST_MEMBER_ID);
+        assertThat(result).isEqualTo(TEST_APPLICANT_ID);
     }
     
     @Test
@@ -166,19 +166,19 @@ class AuthServiceTest {
     @DisplayName("PIN 로그인 성공")
     void loginWithPin_Success() {
         // given
-        Member member = Member.builder()
-                .id(TEST_MEMBER_ID)
+        Applicant applicant = Applicant.builder()
+                .id(TEST_APPLICANT_ID)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .role(Role.SEMESTER)
                 .status(MemberStatus.ACTIVE)
                 .build();
         
-        given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(member));
+        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(applicant));
         given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(true);
-        given(jwtTokenProvider.createAuthenticationByMember(member)).willReturn(authentication);
-        given(jwtTokenProvider.createAccessToken(authentication, TEST_MEMBER_ID)).willReturn(TEST_ACCESS_TOKEN);
-        given(jwtTokenProvider.createRefreshToken(authentication, member.getId())).willReturn(TEST_REFRESH_TOKEN);
+        given(jwtTokenProvider.createAuthenticationByApplicant(applicant)).willReturn(authentication);
+        given(jwtTokenProvider.createAccessToken(authentication, TEST_APPLICANT_ID)).willReturn(TEST_ACCESS_TOKEN);
+        given(jwtTokenProvider.createRefreshToken(authentication, applicant.getId())).willReturn(TEST_REFRESH_TOKEN);
         
         // when
         Authentication result = authService.loginWithPin(TEST_EMAIL, TEST_PIN);
@@ -191,28 +191,28 @@ class AuthServiceTest {
     @DisplayName("PIN 로그인 실패 - 회원 없음")
     void loginWithPin_MemberNotFound_ThrowsException() {
         // given
-        given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.empty());
+        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.empty());
         
         // when & then
         assertThatThrownBy(() -> authService.loginWithPin(TEST_EMAIL, TEST_PIN))
-            .isInstanceOf(MemberException.class)
-            .extracting(e -> ((MemberException) e).getErrorCode())
-            .isEqualTo(NOT_FOUND_MEMBER);
+            .isInstanceOf(ApplicantException.class)
+            .extracting(e -> ((ApplicantException) e).getErrorCode())
+            .isEqualTo(NOT_FOUND_APPLICANT);
     }
     
     @Test
     @DisplayName("PIN 로그인 실패 - 잘못된 PIN")
     void loginWithPin_InvalidPin_ThrowsException() {
         // given
-        Member member = Member.builder()
-                .id(TEST_MEMBER_ID)
+        Applicant applicant = Applicant.builder()
+                .id(TEST_APPLICANT_ID)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .role(Role.SEMESTER)
                 .status(MemberStatus.ACTIVE)
                 .build();
         
-        given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(member));
+        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(applicant));
         given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(false);
         
         // when & then
@@ -226,7 +226,7 @@ class AuthServiceTest {
     @DisplayName("회원 존재 여부 확인 - 회원 존재")
     void isExistMember_MemberExists_ReturnsTrue() {
         // given
-        given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(true);
+        given(applicantRepository.existsByEmail(TEST_EMAIL)).willReturn(true);
         
         // when
         boolean result = authService.isExistMember(TEST_EMAIL);
@@ -239,7 +239,7 @@ class AuthServiceTest {
     @DisplayName("회원 존재 여부 확인 - 회원 없음")
     void isExistMember_MemberNotExists_ReturnsFalse() {
         // given
-        given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
+        given(applicantRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
         
         // when
         boolean result = authService.isExistMember(TEST_EMAIL);
@@ -271,16 +271,16 @@ class AuthServiceTest {
     @DisplayName("인증번호 검증 - PIN_RESET 템플릿")
     void verifyAuthCodeByTemplate_WithPinResetTemplate_ReturnsAuthenticationResult() {
         // given
-        Member member = Member.builder()
+        Applicant applicant = Applicant.builder()
                 .email(TEST_EMAIL)
                 .name("테스트")
                 .status(MemberStatus.ACTIVE)
                 .build();
         Authentication mockAuthentication = mock(Authentication.class);
         
-        given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(member));
+        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(applicant));
         given(redisTemplate.opsForValue().get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
-        given(jwtTokenProvider.createAuthenticationByMember(any(Member.class))).willReturn(mockAuthentication);
+        given(jwtTokenProvider.createAuthenticationByApplicant(any(Applicant.class))).willReturn(mockAuthentication);
         
         // when
         AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET);

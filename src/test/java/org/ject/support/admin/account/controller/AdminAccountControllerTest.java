@@ -10,7 +10,7 @@ import org.ject.support.admin.account.service.AdminAccountService;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.exception.GlobalErrorCode;
 import org.ject.support.common.exception.GlobalExceptionHandler;
-import org.ject.support.common.security.AuthenticatedMemberIdResolver;
+import org.ject.support.common.security.AuthenticatedApplicantIdResolver;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
@@ -63,7 +63,7 @@ class AdminAccountControllerTest extends UnitTestSupport {
         mockMvc = MockMvcBuilders.standaloneSetup(adminAccountController)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(
-                        new AuthenticatedMemberIdResolver(),
+                        new AuthenticatedApplicantIdResolver(),
                         new PageableHandlerMethodArgumentResolver())
                 .build();
     }

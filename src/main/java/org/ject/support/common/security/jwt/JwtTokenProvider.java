@@ -17,7 +17,6 @@ import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -47,10 +46,10 @@ public class JwtTokenProvider {
         this.secretKey = Keys.hmacShaKeyFor(decodeSecret);
     }
 
-    public String createAccessToken(Authentication authentication, Long memberId) { // TODO: 리팩토링 필요
+    public String createAccessToken(Authentication authentication, Long applicantId) { // TODO: 리팩토링 필요
         validateAuthentication(authentication);
         Claims claims = Jwts.claims();
-        claims.put("memberId", memberId);
+        claims.put("applicantId", applicantId);
         String role = ((CustomUserDetails) authentication.getPrincipal()).getAuthorities().iterator().next().getAuthority();
         claims.put("role", role);
         claims.setSubject(authentication.getName());
@@ -86,10 +85,10 @@ public class JwtTokenProvider {
     /**
      * Refresh 토큰 생성
      */
-    public String createRefreshToken(Authentication authentication, Long memberId) {
+    public String createRefreshToken(Authentication authentication, Long applicantId) {
         validateAuthentication(authentication);
         Claims claims = Jwts.claims();
-        claims.put("memberId", memberId);
+        claims.put("applicantId", applicantId);
         claims.setSubject(authentication.getName());
         String role = ((CustomUserDetails) authentication.getPrincipal()).getAuthorities().iterator().next().getAuthority();
         claims.put("role", role);
@@ -108,7 +107,7 @@ public class JwtTokenProvider {
     public Authentication getAuthenticationByToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
         String email = claims.getSubject();
-        Long memberId = claims.get("memberId", Long.class);
+        Long applicantId = claims.get("applicantId", Long.class);
         String roleStr = claims.get("role", String.class).toUpperCase();
         
         // "ROLE_" 접두사가 있으면 제거
@@ -118,7 +117,7 @@ public class JwtTokenProvider {
         
         Role role = Role.valueOf(roleStr);
 
-        CustomUserDetails userDetails = new CustomUserDetails(email, memberId, role);
+        CustomUserDetails userDetails = new CustomUserDetails(email, applicantId, role);
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
@@ -167,24 +166,19 @@ public class JwtTokenProvider {
         }
     }
 
-    public String reissueAccessToken(String refreshToken, Long memberId) {
+    public String reissueAccessToken(String refreshToken, Long applicantId) {
         validateToken(refreshToken);
         Authentication authentication = getAuthenticationByToken(refreshToken);
-        return createAccessToken(authentication, memberId);
+        return createAccessToken(authentication, applicantId);
     }
 
-    public Long extractMemberId(String refreshToken) {
-        return getMemberId(refreshToken);
+    public Long extractApplicantId(String refreshToken) {
+        return getApplicantId(refreshToken);
     }
 
-    public Long getMemberId(String token) {
+    public Long getApplicantId(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody();
-        return claims.get("memberId", Long.class);
-    }
-
-    public Authentication createAuthenticationByMember(Member member) {
-        CustomUserDetails userDetails = new CustomUserDetails(member);
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        return claims.get("applicantId", Long.class);
     }
 
     public Authentication createAuthenticationByApplicant(Applicant applicant) {

@@ -1,8 +1,8 @@
 package org.ject.support.admin.account.dto;
 
+import org.ject.support.domain.applicant.dto.ApplicantAccountProjection;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.dto.MemberAccountProjection;
 
 public record AdminAccountResponse(
         Long id,
@@ -12,7 +12,7 @@ public record AdminAccountResponse(
         MemberStatus status
 ) {
 
-    public static AdminAccountResponse from(final MemberAccountProjection projection) {
+    public static AdminAccountResponse from(final ApplicantAccountProjection projection) {
         return new AdminAccountResponse(
                 projection.id(),
                 projection.email(),
