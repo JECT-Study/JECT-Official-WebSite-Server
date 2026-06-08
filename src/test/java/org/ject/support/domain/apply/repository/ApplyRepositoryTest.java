@@ -7,8 +7,8 @@ import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
@@ -55,7 +55,7 @@ class ApplyRepositoryTest {
     Recruit beRecruit;
 
     @Autowired
-    private MemberRepository memberRepository;
+    private ApplicantRepository memberRepository;
 
     @BeforeEach
     void setUp() {
@@ -73,10 +73,10 @@ class ApplyRepositoryTest {
     @Test
     void 모집과_지원상태를_바탕으로_임시저장_상태의_지원정보_조회_성공() {
         // given
-        Member feApplicant = createMember("emailFE@test.com", Role.APPLY);
-        Member be1Applicant = createMember("emailBE1@test.com", Role.APPLY);
-        Member be2Applicant = createMember("emailBE2@test.com", Role.APPLY);
-        Member be3Applicant = createMember("emailBE3@test.com", Role.APPLY);
+        Applicant feApplicant = createMember("emailFE@test.com", Role.APPLY);
+        Applicant be1Applicant = createMember("emailBE1@test.com", Role.APPLY);
+        Applicant be2Applicant = createMember("emailBE2@test.com", Role.APPLY);
+        Applicant be3Applicant = createMember("emailBE3@test.com", Role.APPLY);
         memberRepository.saveAll(List.of(feApplicant, be1Applicant, be2Applicant, be3Applicant));
 
         Apply feTempApply = getApply(feApplicant, feRecruit, TEMP_SAVED);
@@ -97,8 +97,8 @@ class ApplyRepositoryTest {
     @Test
     void 상태별_지원서_수_조회_성공() {
         // given
-        Member feApplicant = createMember("emailFE@test.com", Role.APPLY);
-        Member beApplicant = createMember("emailBE@test.com", Role.APPLY);
+        Applicant feApplicant = createMember("emailFE@test.com", Role.APPLY);
+        Applicant beApplicant = createMember("emailBE@test.com", Role.APPLY);
         memberRepository.saveAll(List.of(feApplicant, beApplicant));
 
         Apply feTempApply = getApply(feApplicant, feRecruit, TEMP_SAVED);
@@ -115,7 +115,7 @@ class ApplyRepositoryTest {
     @Test
     void 회원과_모집_공고를_바탕으로_활성_지원정보_존재_여부를_조회한다() {
         // given
-        Member applicant = createMember("email@test.com", Role.APPLY);
+        Applicant applicant = createMember("email@test.com", Role.APPLY);
         memberRepository.save(applicant);
 
         Apply feApply = getApply(applicant, feRecruit, JOINED);
@@ -123,9 +123,9 @@ class ApplyRepositoryTest {
         applyRepository.saveAll(List.of(feApply, beApply));
 
         // when
-        boolean exists = applyRepository.existsByMemberIdAndRecruitIdInActiveRecruit(
+        boolean exists = applyRepository.existsByApplicantIdAndRecruitIdInActiveRecruit(
                 applicant.getId(), beRecruit.getId(), LocalDateTime.now());
-        boolean notExists = applyRepository.existsByMemberIdAndRecruitIdInActiveRecruit(
+        boolean notExists = applyRepository.existsByApplicantIdAndRecruitIdInActiveRecruit(
                 applicant.getId(), pdRecruit.getId(), LocalDateTime.now());
 
         // then
@@ -136,7 +136,7 @@ class ApplyRepositoryTest {
     @Test
     void 회원과_모집_공고를_바탕으로_활성_지원정보를_조회한다() {
         // given
-        Member applicant = createMember("email@test.com", Role.APPLY);
+        Applicant applicant = createMember("email@test.com", Role.APPLY);
         memberRepository.save(applicant);
 
         Apply feApply = getApply(applicant, feRecruit, JOINED);
@@ -144,7 +144,7 @@ class ApplyRepositoryTest {
         applyRepository.saveAll(List.of(feApply, beApply));
 
         // when
-        Apply result = applyRepository.findByMemberIdAndRecruitIdInActiveRecruit(
+        Apply result = applyRepository.findByApplicantIdAndRecruitIdInActiveRecruit(
                 applicant.getId(), beRecruit.getId(), LocalDateTime.now()).orElseThrow();
 
         // then
@@ -155,8 +155,8 @@ class ApplyRepositoryTest {
     @Test
     void 지원ID와_지원서의_상태로_지원서를_상세_조회한다() {
         // given
-        Member feApplicant = createMember("emailFE@test.com", Role.APPLY);
-        Member be1Applicant = createMember("emailBE1@test.com", Role.APPLY);
+        Applicant feApplicant = createMember("emailFE@test.com", Role.APPLY);
+        Applicant be1Applicant = createMember("emailBE1@test.com", Role.APPLY);
         memberRepository.saveAll(List.of(feApplicant, be1Applicant));
 
         Apply feTempApply = getApply(feApplicant, feRecruit, TEMP_SAVED);
@@ -164,12 +164,12 @@ class ApplyRepositoryTest {
         applyRepository.saveAll(List.of(feTempApply, be1SubmitApply));
 
         // when
-        Apply result = applyRepository.findByIdAndStatusWithMember(feTempApply.getId(), TEMP_SAVED)
+        Apply result = applyRepository.findByIdAndStatusWithApplicant(feTempApply.getId(), TEMP_SAVED)
                 .orElseThrow();
 
         // then
         assertThat(result).isEqualTo(feTempApply);
-        assertThat(result.getMember()).isEqualTo(feApplicant);
+        assertThat(result.getApplicant()).isEqualTo(feApplicant);
         assertThat(result.getRecruit()).isEqualTo(feRecruit);
         assertThat(result.getStatus()).isEqualTo(TEMP_SAVED);
     }
@@ -177,18 +177,18 @@ class ApplyRepositoryTest {
     @Test
     void 지원ID_목록으로_회원과_모집을_함께_조회한다() {
         // given
-        Member applicant = createMember("email@test.com", Role.APPLY);
+        Applicant applicant = createMember("email@test.com", Role.APPLY);
         memberRepository.save(applicant);
         Apply savedApply = applyRepository.save(getApply(applicant, beRecruit, SUBMITTED));
         entityManager.flush();
         entityManager.clear();
 
         // when
-        Apply result = applyRepository.findAllByIdWithMember(List.of(savedApply.getId())).get(0);
+        Apply result = applyRepository.findAllByIdWithApplicant(List.of(savedApply.getId())).get(0);
 
         // then
         PersistenceUnitUtil persistenceUnitUtil = entityManager.getEntityManagerFactory().getPersistenceUnitUtil();
-        assertThat(persistenceUnitUtil.isLoaded(result.getMember())).isTrue();
+        assertThat(persistenceUnitUtil.isLoaded(result.getApplicant())).isTrue();
         assertThat(persistenceUnitUtil.isLoaded(result.getRecruit())).isTrue();
     }
 
@@ -201,16 +201,16 @@ class ApplyRepositoryTest {
                 .build();
     }
 
-    private Apply getApply(Member member, Recruit recruit, ApplyStatus status) {
+    private Apply getApply(Applicant member, Recruit recruit, ApplyStatus status) {
         return Apply.builder()
                 .recruit(recruit)
-                .member(member)
+                .applicant(member)
                 .status(status)
                 .build();
     }
 
-    private Member createMember(String email, Role role) {
-        return Member.builder()
+    private Applicant createMember(String email, Role role) {
+        return Applicant.builder()
                 .email(email)
                 .semesterId(1L)
                 .role(role)

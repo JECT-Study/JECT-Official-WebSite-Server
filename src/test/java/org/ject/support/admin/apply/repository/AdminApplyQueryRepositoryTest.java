@@ -17,8 +17,8 @@ import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
@@ -49,7 +49,7 @@ class AdminApplyQueryRepositoryTest {
     RecruitRepository recruitRepository;
 
     @Autowired
-    MemberRepository memberRepository;
+    ApplicantRepository memberRepository;
 
     @Autowired
     org.ject.support.domain.apply.repository.ApplyRepository applyRepository;
@@ -75,9 +75,9 @@ class AdminApplyQueryRepositoryTest {
     @Test
     void JobFamily로_제출된_지원서_목록_조회_성공() {
         // given
-        Member beMember1 = createMember("be1@test.com", BE);
-        Member beMember2 = createMember("be2@test.com", BE);
-        Member feMember = createMember("fe@test.com", FE);
+        Applicant beMember1 = createMember("be1@test.com", BE);
+        Applicant beMember2 = createMember("be2@test.com", BE);
+        Applicant feMember = createMember("fe@test.com", FE);
         memberRepository.saveAll(List.of(beMember1, beMember2, feMember));
 
         Apply beApply1 = getApply(beMember1, beRecruit, SUBMITTED);
@@ -95,16 +95,16 @@ class AdminApplyQueryRepositoryTest {
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent())
-                .extracting(Apply::getMember)
+                .extracting(Apply::getApplicant)
                 .containsExactlyInAnyOrder(beMember1, beMember2);
     }
 
     @Test
     void JobFamily가_null이면_전체_제출된_지원서_조회() {
         // given
-        Member beMember = createMember("be@test.com", BE);
-        Member feMember = createMember("fe@test.com", FE);
-        Member pmMember = createMember("pm@test.com", PM);
+        Applicant beMember = createMember("be@test.com", BE);
+        Applicant feMember = createMember("fe@test.com", FE);
+        Applicant pmMember = createMember("pm@test.com", PM);
         memberRepository.saveAll(List.of(beMember, feMember, pmMember));
 
         Apply beApply = getApply(beMember, beRecruit, SUBMITTED);
@@ -126,8 +126,8 @@ class AdminApplyQueryRepositoryTest {
     @Test
     void 임시저장_상태는_조회되지_않음() {
         // given
-        Member beMember1 = createMember("be1@test.com", BE);
-        Member beMember2 = createMember("be2@test.com", BE);
+        Applicant beMember1 = createMember("be1@test.com", BE);
+        Applicant beMember2 = createMember("be2@test.com", BE);
         memberRepository.saveAll(List.of(beMember1, beMember2));
 
         Apply submittedApply = getApply(beMember1, beRecruit, SUBMITTED);
@@ -148,8 +148,8 @@ class AdminApplyQueryRepositoryTest {
     @Test
     void 삭제된_회원의_지원서는_조회되지_않음() {
         // given
-        Member activeMember = createMember("active@test.com", BE);
-        Member deletedMember = createMember("deleted@test.com", BE);
+        Applicant activeMember = createMember("active@test.com", BE);
+        Applicant deletedMember = createMember("deleted@test.com", BE);
         deletedMember.deleteProfile();
         memberRepository.saveAll(List.of(activeMember, deletedMember));
 
@@ -165,14 +165,14 @@ class AdminApplyQueryRepositoryTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().getFirst().getMember()).isEqualTo(activeMember);
+        assertThat(result.getContent().getFirst().getApplicant()).isEqualTo(activeMember);
     }
 
     @Test
     void 페이징_정상_작동() {
         // given
         for (int i = 1; i <= 25; i++) {
-            Member member = createMember("be" + i + "@test.com", BE);
+            Applicant member = createMember("be" + i + "@test.com", BE);
             memberRepository.save(member);
             Apply apply = getApply(member, beRecruit, SUBMITTED);
             applyRepository.save(apply);
@@ -209,9 +209,9 @@ class AdminApplyQueryRepositoryTest {
     @Test
     void createdAt_기준_내림차순_정렬()  {
         // given
-        Member member1 = createMember("be1@test.com", BE);
-        Member member2 = createMember("be2@test.com", BE);
-        Member member3 = createMember("be3@test.com", BE);
+        Applicant member1 = createMember("be1@test.com", BE);
+        Applicant member2 = createMember("be2@test.com", BE);
+        Applicant member3 = createMember("be3@test.com", BE);
         memberRepository.saveAll(List.of(member1, member2, member3));
 
         Apply apply1 = getApply(member1, beRecruit, SUBMITTED);
@@ -258,8 +258,8 @@ class AdminApplyQueryRepositoryTest {
                 .jobFamily(BE)
                 .build());
 
-        Member member1 = createMember("be1@test.com", BE);
-        Member member2 = createMember("be2@test.com", BE);
+        Applicant member1 = createMember("be1@test.com", BE);
+        Applicant member2 = createMember("be2@test.com", BE);
         memberRepository.saveAll(List.of(member1, member2));
 
         Apply apply1 = getApply(member1, recruit1, SUBMITTED);
@@ -297,8 +297,8 @@ class AdminApplyQueryRepositoryTest {
                 .recruitType(RecruitType.BACKFILL)
                 .build());
 
-        Member member1 = createMember("regular@test.com", BE);
-        Member member2 = createMember("backfill@test.com", BE);
+        Applicant member1 = createMember("regular@test.com", BE);
+        Applicant member2 = createMember("backfill@test.com", BE);
         memberRepository.saveAll(List.of(member1, member2));
 
         Apply apply1 = getApply(member1, regularRecruit, SUBMITTED);
@@ -338,8 +338,8 @@ class AdminApplyQueryRepositoryTest {
                 .recruitTypeDetail(RecruitTypeDetail.REFILL)
                 .build());
 
-        Member regularMember = createMember("regular-detail@test.com", BE);
-        Member refillMember = createMember("refill-detail@test.com", BE);
+        Applicant regularMember = createMember("regular-detail@test.com", BE);
+        Applicant refillMember = createMember("refill-detail@test.com", BE);
         memberRepository.saveAll(List.of(regularMember, refillMember));
 
         Apply regularApply = getApply(regularMember, regularRecruit, SUBMITTED);
@@ -362,8 +362,8 @@ class AdminApplyQueryRepositoryTest {
     @Test
     void recruitId로_제출된_지원서_필터링_조회() {
         // given
-        Member beMember = createMember("be-recruit-id@test.com", BE);
-        Member feMember = createMember("fe-recruit-id@test.com", FE);
+        Applicant beMember = createMember("be-recruit-id@test.com", BE);
+        Applicant feMember = createMember("fe-recruit-id@test.com", FE);
         memberRepository.saveAll(List.of(beMember, feMember));
 
         Apply beApply = getApply(beMember, beRecruit, SUBMITTED);
@@ -392,13 +392,13 @@ class AdminApplyQueryRepositoryTest {
                 .build();
     }
 
-    private Apply getApply(Member member, Recruit recruit, ApplyStatus status) {
+    private Apply getApply(Applicant member, Recruit recruit, ApplyStatus status) {
         ApplicationForm applicationForm = ApplicationForm.builder()
                 .build();
 
         Apply apply = Apply.builder()
                 .recruit(recruit)
-                .member(member)
+                .applicant(member)
                 .status(status)
                 .applicationForm(applicationForm)
                 .build();
@@ -408,8 +408,8 @@ class AdminApplyQueryRepositoryTest {
         return apply;
     }
 
-    private Member createMember(String email, JobFamily jobFamily) {
-        return Member.builder()
+    private Applicant createMember(String email, JobFamily jobFamily) {
+        return Applicant.builder()
                 .email(email)
                 .jobFamily(jobFamily)
                 .semesterId(1L)

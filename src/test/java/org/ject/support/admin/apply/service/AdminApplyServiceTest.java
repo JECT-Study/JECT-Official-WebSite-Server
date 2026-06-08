@@ -24,7 +24,7 @@ import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.RecruitType;
@@ -60,7 +60,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
     @BeforeEach
     void setUp() {
         var applyId = 1L;
-        var member = Member.builder()
+        var member = Applicant.builder()
                 .name("김젝트")
                 .phoneNumber("010-1234-5678")
                 .email("test@mail.com")
@@ -89,7 +89,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         submittedApply = Apply.builder()
                 .id(applyId)
-                .member(member)
+                .applicant(member)
                 .recruit(recruit)
                 .status(ApplyStatus.SUBMITTED)
                 .note("Test note")
@@ -101,14 +101,14 @@ class AdminApplyServiceTest extends UnitTestSupport {
     void 단건_삭제_성공() {
         // given
         var applyId = submittedApply.getId();
-        given(adminApplyRepository.findByIdWithMember(applyId))
+        given(adminApplyRepository.findByIdWithApplicant(applyId))
                 .willReturn(Optional.of(submittedApply));
 
         // when
         adminApplyService.deleteApply(applyId);
 
         // then
-        verify(adminApplyRepository).findByIdWithMember(applyId);
+        verify(adminApplyRepository).findByIdWithApplicant(applyId);
         verify(adminApplyRepository).delete(submittedApply);
     }
 
@@ -116,7 +116,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
     void 단건_삭제시_존재하지_않으면_예외_발생() {
         // given
         var applyId = 999L;
-        given(adminApplyRepository.findByIdWithMember(applyId))
+        given(adminApplyRepository.findByIdWithApplicant(applyId))
                 .willReturn(Optional.empty());
 
         // expected
@@ -211,10 +211,10 @@ class AdminApplyServiceTest extends UnitTestSupport {
         var jobFamily = JobFamily.BE;
         Long semesterId = null;
 
-        var member2 = Member.builder().name("김젝트2").build();
+        var member2 = Applicant.builder().name("김젝트2").build();
         var apply2 = Apply.builder()
                 .id(2L)
-                .member(member2)
+                .applicant(member2)
                 .recruit(submittedApply.getRecruit())
                 .status(ApplyStatus.SUBMITTED)
                 .applicationForm(ApplicationForm.builder().build())
@@ -299,14 +299,14 @@ class AdminApplyServiceTest extends UnitTestSupport {
     void 상세조회하려는_제출된_지원서의_ApplicationForm이_null이면_빈_응답을_반환() {
         // given
         var applyId = submittedApply.getId() + 1L;
-        var member2 = Member.builder()
+        var member2 = Applicant.builder()
                 .name("김젝트2")
                 .build();
         var apply2 = Apply.builder()
                 .id(applyId)
                 .status(ApplyStatus.SUBMITTED)
                 .applicationForm(null)
-                .member(member2)
+                .applicant(member2)
                 .recruit(submittedApply.getRecruit())
                 .build();
 
@@ -351,7 +351,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         // given
         var tempApply = Apply.builder()
                 .id(10L)
-                .member(submittedApply.getMember())
+                .applicant(submittedApply.getApplicant())
                 .recruit(submittedApply.getRecruit())
                 .status(ApplyStatus.TEMP_SAVED)
                 .note("")
@@ -375,7 +375,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         // given
         var rejectedApply = Apply.builder()
                 .id(20L)
-                .member(submittedApply.getMember())
+                .applicant(submittedApply.getApplicant())
                 .recruit(submittedApply.getRecruit())
                 .status(ApplyStatus.REJECTED)
                 .note("")
@@ -398,7 +398,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         // given
         var joinedApply = Apply.builder()
                 .id(30L)
-                .member(submittedApply.getMember())
+                .applicant(submittedApply.getApplicant())
                 .recruit(submittedApply.getRecruit())
                 .status(ApplyStatus.JOINED)
                 .note("")
@@ -498,7 +498,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 newPortfolios
         );
 
-        given(adminApplyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
+        given(adminApplyRepository.findByIdAndStatusWithApplicant(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.of(submittedApply));
         given(map2JsonSerializer.serializeAsString(newAnswers))
                 .willReturn("{\"1\":\"수정된 답변1\",\"2\":\"수정된 답변2\"}");
@@ -507,12 +507,12 @@ class AdminApplyServiceTest extends UnitTestSupport {
         adminApplyService.updateSubmittedApply(applyId, request);
 
         // then
-        verify(adminApplyRepository).findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED);
+        verify(adminApplyRepository).findByIdAndStatusWithApplicant(applyId, ApplyStatus.SUBMITTED);
         verify(map2JsonSerializer).serializeAsString(newAnswers);
-        assertThat(submittedApply.getMember().getName()).isEqualTo(newName);
-        assertThat(submittedApply.getMember().getPhoneNumber()).isEqualTo(newPhoneNumber);
-        assertThat(submittedApply.getMember().getEmail()).isEqualTo(newEmail);
-        assertThat(submittedApply.getMember().getJobFamily()).isEqualTo(newJobFamily);
+        assertThat(submittedApply.getApplicant().getName()).isEqualTo(newName);
+        assertThat(submittedApply.getApplicant().getPhoneNumber()).isEqualTo(newPhoneNumber);
+        assertThat(submittedApply.getApplicant().getEmail()).isEqualTo(newEmail);
+        assertThat(submittedApply.getApplicant().getJobFamily()).isEqualTo(newJobFamily);
     }
 
     @Test
@@ -528,7 +528,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 List.of()
         );
 
-        given(adminApplyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
+        given(adminApplyRepository.findByIdAndStatusWithApplicant(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.empty());
 
         // expected
@@ -552,7 +552,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 List.of()
         );
 
-        given(adminApplyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED))
+        given(adminApplyRepository.findByIdAndStatusWithApplicant(applyId, ApplyStatus.SUBMITTED))
                 .willReturn(Optional.of(submittedApply));
 
         // expected
@@ -587,8 +587,8 @@ class AdminApplyServiceTest extends UnitTestSupport {
         var pageable = PageRequest.of(0, 10);
         Long semesterId = null;
 
-        var m1 = Member.builder().name("김1").jobFamily(JobFamily.BE).build();
-        var m2 = Member.builder().name("김2").jobFamily(JobFamily.BE).build();
+        var m1 = Applicant.builder().name("김1").jobFamily(JobFamily.BE).build();
+        var m2 = Applicant.builder().name("김2").jobFamily(JobFamily.BE).build();
         var semester = Semester.builder().name("1").build();
         var recruit = Recruit.builder()
                 .semester(semester)
@@ -597,7 +597,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         var a1 = Apply.builder()
                 .id(1L)
-                .member(m1)
+                .applicant(m1)
                 .recruit(recruit)
                 .status(ApplyStatus.TEMP_SAVED)
                 .applicationForm(ApplicationForm.builder().build())
@@ -605,7 +605,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         var a2 = Apply.builder()
                 .id(2L)
-                .member(m2)
+                .applicant(m2)
                 .recruit(recruit)
                 .status(ApplyStatus.TEMP_SAVED)
                 .applicationForm(ApplicationForm.builder().build())
@@ -635,7 +635,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         var pageable = PageRequest.of(0, 10);
         Long semesterId = 1L;
 
-        var member = Member.builder().name("김젝트").jobFamily(JobFamily.BE).build();
+        var member = Applicant.builder().name("김젝트").jobFamily(JobFamily.BE).build();
         var semester = Semester.builder().name("1").build();
         var recruit = Recruit.builder()
                 .semester(semester)
@@ -644,7 +644,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         var apply = Apply.builder()
                 .id(1L)
-                .member(member)
+                .applicant(member)
                 .recruit(recruit)
                 .status(ApplyStatus.TEMP_SAVED)
                 .applicationForm(ApplicationForm.builder().build())
