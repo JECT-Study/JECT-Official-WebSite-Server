@@ -1,10 +1,12 @@
 package org.ject.support.domain.applicant.repository;
 
+import org.ject.support.admin.account.dto.AdminAccountSearchCondition;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
+import org.ject.support.domain.applicant.dto.ApplicantAccountProjection;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
@@ -18,11 +20,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.ject.support.domain.apply.domain.ApplyStatus.JOINED;
 import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
 import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
@@ -195,6 +201,77 @@ class ApplicantRepositoryTest {
                 .containsExactlyInAnyOrder(be6.getEmail(), be9.getEmail(), pd10.getEmail());
     }
 
+    @Test
+    void 필터가_없으면_삭제되지_않은_백오피스_계정만_조회한다() {
+        // given
+        Applicant admin = createApplicant("관리자", "01011112221", "admin@ject.kr", BE, Role.ADMIN);
+        Applicant operations = createApplicant("운영자", "01011112222", "operations@ject.kr", BE, Role.OPERATIONS);
+        Applicant semester = createApplicant("일반회원", "01011112223", "semester@ject.kr", BE, Role.SEMESTER);
+        Applicant deleted = createApplicant("삭제회원", "01011112224", "deleted@ject.kr", BE, Role.SUPPORTER);
+        ReflectionTestUtils.setField(deleted, "isDeleted", true);
+        applicantRepository.saveAll(List.of(admin, operations, semester, deleted));
+
+        // when
+        Page<ApplicantAccountProjection> result = applicantRepository.findAccounts(
+                new AdminAccountSearchCondition(null, null),
+                PageRequest.of(0, 20));
+
+        // then
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent())
+                .extracting(ApplicantAccountProjection::email)
+                .containsExactlyInAnyOrder("admin@ject.kr", "operations@ject.kr");
+    }
+
+    @Test
+    void 계정_유형과_상태를_복수_필터로_조회한다() {
+        // given
+        Applicant activeAdmin = createApplicant("활성관리자", "01011112225", "active-admin@ject.kr", BE, Role.ADMIN);
+        Applicant lockedAdmin = createApplicant("잠긴관리자", "01011112226", "locked-admin@ject.kr", BE, Role.ADMIN);
+        Applicant activeSupporter = createApplicant("활성서포터", "01011112227", "active-supporter@ject.kr", BE, Role.SUPPORTER);
+        Applicant lockedOperations = createApplicant("잠긴운영자", "01011112228", "locked-operations@ject.kr", BE, Role.OPERATIONS);
+        ReflectionTestUtils.setField(lockedAdmin, "status", MemberStatus.LOCKED);
+        ReflectionTestUtils.setField(lockedOperations, "status", MemberStatus.LOCKED);
+        applicantRepository.saveAll(List.of(activeAdmin, lockedAdmin, activeSupporter, lockedOperations));
+
+        AdminAccountSearchCondition condition = new AdminAccountSearchCondition(
+                List.of(Role.ADMIN, Role.SUPPORTER),
+                List.of(MemberStatus.ACTIVE));
+
+        // when
+        Page<ApplicantAccountProjection> result = applicantRepository.findAccounts(condition, PageRequest.of(0, 20));
+
+        // then
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getContent())
+                .extracting(ApplicantAccountProjection::email)
+                .containsExactlyInAnyOrder("active-admin@ject.kr", "active-supporter@ject.kr");
+    }
+
+    @Test
+    void 페이지네이션과_기본_정렬을_적용한다() {
+        // given
+        Applicant first = createApplicant("첫번째", "01011112229", "first@ject.kr", BE, Role.ADMIN);
+        Applicant second = createApplicant("두번째", "01011112230", "second@ject.kr", BE, Role.ADMIN);
+        Applicant third = createApplicant("세번째", "01011112234", "third@ject.kr", BE, Role.ADMIN);
+        setCreatedAt(first, LocalDateTime.of(2026, 1, 1, 0, 0));
+        setCreatedAt(second, LocalDateTime.of(2026, 1, 2, 0, 0));
+        setCreatedAt(third, LocalDateTime.of(2026, 1, 3, 0, 0));
+        applicantRepository.saveAll(List.of(first, second, third));
+        applicantRepository.flush();
+
+        // when
+        Page<ApplicantAccountProjection> result = applicantRepository.findAccounts(
+                new AdminAccountSearchCondition(null, null),
+                PageRequest.of(0, 2));
+
+        // then
+        assertThat(result.getTotalElements()).isEqualTo(3);
+        assertThat(result.getContent())
+                .extracting(ApplicantAccountProjection::email)
+                .containsExactly("third@ject.kr", "second@ject.kr");
+    }
+
     private Applicant createApplicant(String name, String phoneNumber, String email, JobFamily jobFamily, Role role) {
         return Applicant.builder()
                 .name(name)
@@ -230,5 +307,9 @@ class ApplicantRepositoryTest {
                 .content("content")
                 .apply(apply)
                 .build();
+    }
+
+    private void setCreatedAt(Applicant applicant, LocalDateTime createdAt) {
+        ReflectionTestUtils.setField(applicant, "createdAt", createdAt);
     }
 }
