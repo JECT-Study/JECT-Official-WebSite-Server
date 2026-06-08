@@ -9,22 +9,22 @@ import java.util.List;
 import java.util.Map;
 
 public interface ApplyUsecase {
-    TempApplicationFormResponse findTempApplicationForm(Long memberId, Long recruitId);
+    TempApplicationFormResponse findTempApplicationForm(Long applicantId, Long recruitId);
 
-    void saveApplicationTemporarily(Long memberId,
+    void saveApplicationTemporarily(Long applicantId,
                                     Long recruitId,
                                     Map<String, String> answers,
                                     List<ApplyPortfolioDto> portfolios);
 
 
-    void deleteProfileAndTempApplicationForm(Long memberId, Long recruitId);
+    void deleteProfileAndTempApplicationForm(Long applicantId, Long recruitId);
 
-    void submitApplication(Long memberId,
+    void submitApplication(Long applicantId,
                            Long recruitId,
                            Map<String, String> answers,
                            List<ApplyPortfolioDto> portfolios);
 
-    ApplyStatusResponse checkApplyStatus(Long memberId, Long recruitId);
+    ApplyStatusResponse checkApplyStatus(Long applicantId, Long recruitId);
 
-    void saveProfile(Long memberId, Long recruitId, ApplyProfileRequest request);
+    void saveProfile(Long applicantId, Long recruitId, ApplyProfileRequest request);
 }

@@ -3,7 +3,7 @@ package org.ject.support.admin.apply.repository;
 import static org.ject.support.domain.apply.domain.QApplicationForm.applicationForm;
 import static org.ject.support.domain.apply.domain.QApply.apply;
 import static org.ject.support.domain.apply.domain.QPortfolio.portfolio;
-import static org.ject.support.domain.member.entity.QMember.member;
+import static org.ject.support.domain.applicant.entity.QApplicant.applicant;
 import static org.ject.support.domain.recruit.domain.QRecruit.recruit;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
@@ -35,12 +35,12 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
         List<Apply> content = queryFactory
                 .selectFrom(apply)
                 .distinct()
-                .join(apply.member, member).fetchJoin()
+                .join(apply.applicant, applicant).fetchJoin()
                 .join(apply.applicationForm, applicationForm).fetchJoin()
                 .join(apply.recruit, recruit).fetchJoin()
                 .leftJoin(apply.applicationForm.portfolios, portfolio).fetchJoin()
                 .where(
-                        apply.member.isDeleted.eq(false),
+                        apply.applicant.isDeleted.eq(false),
                         eqJobFamily(condition.jobFamily()),
                         eqApplyStatus(condition.applyStatus()),
                         eqSemesterId(condition.semesterId()),
@@ -56,10 +56,10 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
         Long total = queryFactory
                 .select(apply.count())
                 .from(apply)
-                .join(apply.member, member)
+                .join(apply.applicant, applicant)
                 .join(apply.recruit, recruit)
                 .where(
-                        apply.member.isDeleted.eq(false),
+                        apply.applicant.isDeleted.eq(false),
                         eqJobFamily(condition.jobFamily()),
                         eqApplyStatus(condition.applyStatus()),
                         eqSemesterId(condition.semesterId()),
@@ -76,13 +76,13 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
         Apply result = queryFactory
                 .selectFrom(apply)
                 .distinct()
-                .join(apply.member, member).fetchJoin()
+                .join(apply.applicant, applicant).fetchJoin()
                 .join(apply.applicationForm, applicationForm).fetchJoin()
                 .join(apply.recruit, recruit).fetchJoin()
                 .leftJoin(apply.applicationForm.portfolios, portfolio).fetchJoin()
                 .where(
                         apply.id.eq(applyId),
-                        apply.member.isDeleted.eq(false),
+                        apply.applicant.isDeleted.eq(false),
                         eqApplyStatus(status)
                 )
                 .fetchOne();
@@ -92,7 +92,7 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
 
     private BooleanExpression eqJobFamily(final JobFamily jobFamily) {
         return Optional.ofNullable(jobFamily)
-                .map(apply.member.jobFamily::eq)
+                .map(apply.applicant.jobFamily::eq)
                 .orElse(null);
     }
 

@@ -1,7 +1,5 @@
 package org.ject.support.domain.member.repository;
 
-import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
-import static org.ject.support.domain.apply.domain.QApply.apply;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PD;
@@ -62,18 +60,6 @@ public class MemberQueryRepositoryImpl implements MemberQueryRepository {
                                 .then(member.name)
                                 .otherwise((String) null))
                 ))).get(teamId);
-    }
-
-    @Override
-    public List<String> findEmailsByIdsAndNotSubmitted(List<Long> applicantIds) {
-        return queryFactory.select(member.email)
-                .from(member)
-                .join(apply)
-                .on(member.id.eq(apply.member.id))
-                .where(member.id.in(applicantIds),
-                        member.isDeleted.eq(false),
-                        apply.status.eq(SUBMITTED).not())
-                .fetch();
     }
 
     @Override

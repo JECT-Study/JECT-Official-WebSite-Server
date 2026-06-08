@@ -22,19 +22,19 @@ public record AdminApplyDetailResponse(
         List<String> interestedDomains
 ) {
     public static AdminApplyDetailResponse from(Apply apply) {
-        var member = apply.getMember();
+        var applicant = apply.getApplicant();
         return new AdminApplyDetailResponse(
                 apply.getId(),
-                member.getName(),
-                member.getPhoneNumber(),
-                member.getEmail(),
-                member.getJobFamily(),
-                Optional.ofNullable(member.getCareerDetails()).map(CareerDetails::getDescription).orElse(""),
+                applicant.getName(),
+                applicant.getPhoneNumber(),
+                applicant.getEmail(),
+                applicant.getJobFamily(),
+                Optional.ofNullable(applicant.getCareerDetails()).map(CareerDetails::getDescription).orElse(""),
                 apply.getRecruit().getRecruitType().name(),
                 apply.getNote(),
-                Optional.ofNullable(member.getRegion()).map(Region::getDescription).orElse(""),
-                Optional.ofNullable(member.getExperiencePeriod()).map(ExperiencePeriod::getDescription).orElse(""),
-                Optional.ofNullable(member.getInterestedDomains()).orElse(List.of())
+                Optional.ofNullable(applicant.getRegion()).map(Region::getDescription).orElse(""),
+                Optional.ofNullable(applicant.getExperiencePeriod()).map(ExperiencePeriod::getDescription).orElse(""),
+                Optional.ofNullable(applicant.getInterestedDomains()).orElse(List.of())
         );
     }
 }

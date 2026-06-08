@@ -30,7 +30,7 @@ public class ApplicantQueryRepositoryImpl implements ApplicantQueryRepository {
         return queryFactory.select(applicant.email)
                 .from(applicant)
                 .join(apply)
-                .on(applicant.id.eq(apply.member.id))
+                .on(applicant.id.eq(apply.applicant.id))
                 .where(applicant.id.in(applicantIds),
                         applicant.isDeleted.eq(false),
                         apply.status.eq(SUBMITTED).not())
