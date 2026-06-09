@@ -31,7 +31,7 @@ class ApplicationFormRepositoryTest {
     RecruitRepository recruitRepository;
 
     @Autowired
-    ApplicantRepository memberRepository;
+    ApplicantRepository applicantRepository;
 
     @Autowired
     ApplyRepository applyRepository;
@@ -58,7 +58,7 @@ class ApplicationFormRepositoryTest {
                 .jobFamily(JobFamily.BE)
                 .build());
 
-        Applicant member = memberRepository.save(Applicant.builder()
+        Applicant applicant = applicantRepository.save(Applicant.builder()
                 .email("test32@gmail.com")
                 .semesterId(savedSemester.getId())
                 .jobFamily(JobFamily.BE)
@@ -70,7 +70,7 @@ class ApplicationFormRepositoryTest {
                 .build());
 
         Apply apply = applyRepository.save(Apply.builder()
-                .applicant(member)
+                .applicant(applicant)
                 .recruit(recruit)
                 .status(ApplyStatus.JOINED)
                 .build());
@@ -82,7 +82,7 @@ class ApplicationFormRepositoryTest {
                 .build());
 
         // when
-        boolean result = applicationFormRepository.existsByApplicantId(member.getId(), LocalDateTime.now());
+        boolean result = applicationFormRepository.existsByApplicantId(applicant.getId(), LocalDateTime.now());
 
         // then
         Assertions.assertThat(result).isTrue();
