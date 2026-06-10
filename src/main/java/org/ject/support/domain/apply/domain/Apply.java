@@ -20,10 +20,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.base.BaseTimeEntity;
-import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.recruit.domain.Recruit;
 
 @Entity
@@ -40,8 +40,8 @@ public class Apply extends BaseTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    @JoinColumn(name = "applicant_id", nullable = false)
+    private Applicant applicant;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recruit_id", nullable = false)
@@ -65,9 +65,9 @@ public class Apply extends BaseTimeEntity {
     @Version
     private Long version;
 
-    public static Apply createApply(Member member, Recruit recruit) {
+    public static Apply createApply(Applicant applicant, Recruit recruit) {
         return Apply.builder()
-                .member(member)
+                .applicant(applicant)
                 .recruit(recruit)
                 .status(ApplyStatus.JOINED)
                 .build();

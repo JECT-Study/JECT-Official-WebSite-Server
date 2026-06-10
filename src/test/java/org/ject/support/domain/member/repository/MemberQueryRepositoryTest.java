@@ -148,51 +148,6 @@ class MemberQueryRepositoryTest {
         assertThat(teamMemberNames.frontendDevelopers()).contains("폴백");
     }
 
-    @Test
-    void 전달_받은_ID_중_지원서를_제출하지_않은_사용자의_이메일_목록_조회() {
-        // given
-        Member be5 = createMember("이젝트", "01011112231", "be5@test.kr", BE); // 5
-        Member be6 = createMember("박젝트", "01011112232", "be6@test.kr", BE); // 6
-        Member pm7 = createMember("서젝트", "01011112233", "pm7@test.kr", PM); // 7
-        Member fe8 = createMember("양젝트", "01011112234", "fe8@test.kr", FE); // 8
-        Member be9 = createMember("조젝트", "01011112235", "be9@test.kr", BE); // 9
-        Member pd10 = createMember("표젝트", "01011112236", "pd10@test.kr", PD); // 10
-        List<Member> testMembers = memberRepository.saveAll(List.of(be5, be6, pm7, fe8, be9, pd10));
-
-        Semester savedSemester = semesterRepository.save(Semester.builder()
-                .name("1기")
-                .isRecruiting(true)
-                .build());
-        Recruit pmRecruit = createRecruit(savedSemester, PM);
-        Recruit pdRecruit = createRecruit(savedSemester, PD);
-        Recruit feRecruit = createRecruit(savedSemester, FE);
-        Recruit beRecruit = createRecruit(savedSemester, BE);
-        recruitRepository.saveAll(List.of(pmRecruit, pdRecruit, feRecruit, beRecruit));
-
-        // 일부 회원만 지원서 제출
-        Apply be5Apply = applyRepository.save(createApply(beRecruit, be5, SUBMITTED));
-        applyRepository.save(createApply(beRecruit, be6, JOINED));
-        Apply pm7Apply = applyRepository.save(createApply(pmRecruit, pm7, SUBMITTED));
-        Apply fe8Apply = applyRepository.save(createApply(feRecruit, fe8, SUBMITTED));
-        applyRepository.save(createApply(beRecruit, be9, JOINED));
-        applyRepository.save(createApply(pdRecruit, pd10, TEMP_SAVED));
-
-        applicationFormRepository.saveAll(List.of(
-                createApplicationForm(be5Apply),
-                createApplicationForm(pm7Apply),
-                createApplicationForm(fe8Apply)));
-
-        List<Long> applicantIds = testMembers.stream().map(Member::getId).toList();
-
-        // when
-        List<String> result = memberRepository.findEmailsByIdsAndNotSubmitted(applicantIds);
-
-        // then
-        assertThat(result).hasSize(3)
-                .containsExactlyInAnyOrder(be6.getEmail(), be9.getEmail(), pd10.getEmail());
-    }
-
-
     private Semester createSemester(String name) {
         return Semester.builder()
                 .name(name)
@@ -258,18 +213,4 @@ class MemberQueryRepositoryTest {
                 .build();
     }
 
-    private Apply createApply(Recruit recruit, Member member, ApplyStatus status) {
-        return applyRepository.save(Apply.builder()
-                .member(member)
-                .recruit(recruit)
-                .status(status)
-                .build());
-    }
-
-    private ApplicationForm createApplicationForm(Apply apply) {
-        return ApplicationForm.builder()
-                .content("content")
-                .apply(apply)
-                .build();
-    }
 }

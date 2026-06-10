@@ -16,13 +16,14 @@ public record AdminApplyResponse(
         String note
 ) {
     public static AdminApplyResponse from(Apply apply) {
+        var applicant = apply.getApplicant();
         return new AdminApplyResponse(
                 apply.getId(),
-                apply.getMember().getName(),
-                apply.getMember().getPhoneNumber(),
-                apply.getMember().getEmail(),
-                apply.getMember().getJobFamily(),
-                Optional.ofNullable(apply.getMember().getCareerDetails()).map(CareerDetails::getDescription).orElse(""),
+                applicant.getName(),
+                applicant.getPhoneNumber(),
+                applicant.getEmail(),
+                applicant.getJobFamily(),
+                Optional.ofNullable(applicant.getCareerDetails()).map(CareerDetails::getDescription).orElse(""),
                 apply.getRecruit().getRecruitType().name(),
                 apply.getNote()
         );

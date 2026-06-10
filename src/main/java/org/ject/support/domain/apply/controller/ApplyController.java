@@ -27,52 +27,52 @@ public class ApplyController implements ApplyApiSpec {
     @Override
     @GetMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public TempApplicationFormResponse findTempApplicationForm(@AuthPrincipal Long memberId,
+    public TempApplicationFormResponse findTempApplicationForm(@AuthPrincipal Long applicantId,
                                                                @RequestParam Long recruitId) {
-        return applyUsecase.findTempApplicationForm(memberId, recruitId);
+        return applyUsecase.findTempApplicationForm(applicantId, recruitId);
     }
 
     @Override
     @PostMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void saveApplicationTemporarily(@AuthPrincipal Long memberId,
+    public void saveApplicationTemporarily(@AuthPrincipal Long applicantId,
                                            @RequestParam Long recruitId,
                                            @RequestBody ApplyTemporaryRequest request) {
-        applyUsecase.saveApplicationTemporarily(memberId, recruitId, request.answers(), request.portfolios());
+        applyUsecase.saveApplicationTemporarily(applicantId, recruitId, request.answers(), request.portfolios());
     }
 
     @Override
     @DeleteMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void deleteProfileAndTempApplicationForm(@AuthPrincipal Long memberId,
+    public void deleteProfileAndTempApplicationForm(@AuthPrincipal Long applicantId,
                                                     @RequestParam Long recruitId) {
-        applyUsecase.deleteProfileAndTempApplicationForm(memberId, recruitId);
+        applyUsecase.deleteProfileAndTempApplicationForm(applicantId, recruitId);
     }
 
     @Override
     @PostMapping("/submit")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void submitApplication(@AuthPrincipal Long memberId,
+    public void submitApplication(@AuthPrincipal Long applicantId,
                                   @RequestParam Long recruitId,
                                   @RequestBody SubmitApplicationRequest request) {
-        applyUsecase.submitApplication(memberId, recruitId, request.answers(), request.portfolios());
+        applyUsecase.submitApplication(applicantId, recruitId, request.answers(), request.portfolios());
     }
 
     @Override
     @GetMapping("/status")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long memberId,
+    public ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long applicantId,
                                                 @RequestParam Long recruitId) {
-        return applyUsecase.checkApplyStatus(memberId, recruitId);
+        return applyUsecase.checkApplyStatus(applicantId, recruitId);
     }
 
     @Override
     @PostMapping("/profile")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void saveProfile(@AuthPrincipal Long memberId,
+    public void saveProfile(@AuthPrincipal Long applicantId,
                             @RequestParam Long recruitId,
                             @RequestBody @Valid ApplyProfileRequest request
     ) {
-        applyUsecase.saveProfile(memberId, recruitId, request);
+        applyUsecase.saveProfile(applicantId, recruitId, request);
     }
 }
