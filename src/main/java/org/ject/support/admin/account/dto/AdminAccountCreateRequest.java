@@ -5,9 +5,9 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
 
 @Schema(description = "관리자 계정 생성 요청")
 public record AdminAccountCreateRequest(
@@ -36,8 +36,8 @@ public record AdminAccountCreateRequest(
 
     private static final long DEFAULT_ADMIN_ACCOUNT_SEMESTER_ID = 1L;
 
-    public Member toEntity(final String encodedPassword) {
-        return Member.builder()
+    public Applicant toEntity(final String encodedPassword) {
+        return Applicant.builder()
                 .email(email)
                 .pin(encodedPassword)
                 .name(normalizeName())

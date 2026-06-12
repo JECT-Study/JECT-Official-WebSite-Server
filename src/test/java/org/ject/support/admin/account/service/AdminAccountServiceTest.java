@@ -10,12 +10,12 @@ import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
 import org.ject.support.base.UnitTestSupport;
+import org.ject.support.domain.applicant.dto.ApplicantAccountProjection;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.dto.MemberAccountProjection;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.repository.MemberRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -41,7 +41,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
     private AdminAccountService adminAccountService;
 
     @Mock
-    private MemberRepository memberRepository;
+    private ApplicantRepository applicantRepository;
 
     @Mock
     private AdminMemberComponent adminMemberComponent;
@@ -60,10 +60,10 @@ class AdminAccountServiceTest extends UnitTestSupport {
         var condition = new AdminAccountSearchCondition(
                 List.of(Role.ADMIN, Role.SUPPORTER),
                 List.of(MemberStatus.ACTIVE));
-        var projection = new MemberAccountProjection(1L, TEST_EMAIL, "김젝트", Role.ADMIN, MemberStatus.ACTIVE);
+        var projection = new ApplicantAccountProjection(1L, TEST_EMAIL, "김젝트", Role.ADMIN, MemberStatus.ACTIVE);
         var page = new PageImpl<>(List.of(projection), pageable, 1);
 
-        given(memberRepository.findAccounts(condition, pageable)).willReturn(page);
+        given(applicantRepository.findAccounts(condition, pageable)).willReturn(page);
 
         // when
         var result = adminAccountService.findAccounts(condition, pageable);
@@ -71,7 +71,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // then
         assertThat(result.getContent())
                 .containsExactly(new AdminAccountResponse(1L, TEST_EMAIL, "김젝트", Role.ADMIN, MemberStatus.ACTIVE));
-        verify(memberRepository).findAccounts(condition, pageable);
+        verify(applicantRepository).findAccounts(condition, pageable);
     }
 
     @Test
@@ -88,7 +88,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ROLE);
 
-        verify(memberRepository, never()).findAccounts(any(), eq(pageable));
+        verify(applicantRepository, never()).findAccounts(any(), eq(pageable));
     }
 
     @Test
@@ -96,25 +96,25 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // given
         var request = new AdminAccountCreateRequest(TEST_EMAIL, TEST_PASSWORD, "김젝트", Role.OPERATIONS);
 
-        given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
+        given(applicantRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
         given(passwordEncoder.encode(TEST_PASSWORD)).willReturn(ENCODED_PASSWORD);
 
         // when
         adminAccountService.createAccount(request);
 
         // then
-        var memberCaptor = ArgumentCaptor.forClass(Member.class);
-        verify(memberRepository).existsByEmail(TEST_EMAIL);
+        var applicantCaptor = ArgumentCaptor.forClass(Applicant.class);
+        verify(applicantRepository).existsByEmail(TEST_EMAIL);
         verify(passwordEncoder).encode(TEST_PASSWORD);
-        verify(memberRepository).save(memberCaptor.capture());
+        verify(applicantRepository).save(applicantCaptor.capture());
 
-        Member savedMember = memberCaptor.getValue();
-        assertThat(savedMember.getEmail()).isEqualTo(TEST_EMAIL);
-        assertThat(savedMember.getPin()).isEqualTo(ENCODED_PASSWORD);
-        assertThat(savedMember.getName()).isEqualTo("김젝트");
-        assertThat(savedMember.getRole()).isEqualTo(Role.OPERATIONS);
-        assertThat(savedMember.getMemberType()).isEqualTo(MemberType.SEMESTER);
-        assertThat(savedMember.getSemesterId()).isEqualTo(1L);
+        Applicant savedApplicant = applicantCaptor.getValue();
+        assertThat(savedApplicant.getEmail()).isEqualTo(TEST_EMAIL);
+        assertThat(savedApplicant.getPin()).isEqualTo(ENCODED_PASSWORD);
+        assertThat(savedApplicant.getName()).isEqualTo("김젝트");
+        assertThat(savedApplicant.getRole()).isEqualTo(Role.OPERATIONS);
+        assertThat(savedApplicant.getMemberType()).isEqualTo(MemberType.SEMESTER);
+        assertThat(savedApplicant.getSemesterId()).isEqualTo(1L);
     }
 
     @Test
@@ -122,17 +122,17 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // given
         var request = new AdminAccountCreateRequest(TEST_EMAIL, TEST_PASSWORD, "", Role.ADMIN);
 
-        given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
+        given(applicantRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
         given(passwordEncoder.encode(TEST_PASSWORD)).willReturn(ENCODED_PASSWORD);
 
         // when
         adminAccountService.createAccount(request);
 
         // then
-        var memberCaptor = ArgumentCaptor.forClass(Member.class);
-        verify(memberRepository).save(memberCaptor.capture());
+        var applicantCaptor = ArgumentCaptor.forClass(Applicant.class);
+        verify(applicantRepository).save(applicantCaptor.capture());
 
-        assertThat(memberCaptor.getValue().getName()).isNull();
+        assertThat(applicantCaptor.getValue().getName()).isNull();
     }
 
     @Test
@@ -140,17 +140,17 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // given
         var request = new AdminAccountCreateRequest(TEST_EMAIL, TEST_PASSWORD, "   ", Role.ADMIN);
 
-        given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
+        given(applicantRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
         given(passwordEncoder.encode(TEST_PASSWORD)).willReturn(ENCODED_PASSWORD);
 
         // when
         adminAccountService.createAccount(request);
 
         // then
-        var memberCaptor = ArgumentCaptor.forClass(Member.class);
-        verify(memberRepository).save(memberCaptor.capture());
+        var applicantCaptor = ArgumentCaptor.forClass(Applicant.class);
+        verify(applicantRepository).save(applicantCaptor.capture());
 
-        assertThat(memberCaptor.getValue().getName()).isNull();
+        assertThat(applicantCaptor.getValue().getName()).isNull();
     }
 
     @Test
@@ -158,7 +158,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // given
         var request = new AdminAccountCreateRequest(TEST_EMAIL, TEST_PASSWORD, "김젝트", Role.ADMIN);
 
-        given(memberRepository.existsByEmail(TEST_EMAIL)).willReturn(true);
+        given(applicantRepository.existsByEmail(TEST_EMAIL)).willReturn(true);
 
         // expected
         assertThatThrownBy(() -> adminAccountService.createAccount(request))
@@ -166,9 +166,9 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.DUPLICATE_ADMIN_EMAIL);
 
-        verify(memberRepository).existsByEmail(TEST_EMAIL);
+        verify(applicantRepository).existsByEmail(TEST_EMAIL);
         verify(passwordEncoder, never()).encode(anyString());
-        verify(memberRepository, never()).save(org.mockito.ArgumentMatchers.any(Member.class));
+        verify(applicantRepository, never()).save(org.mockito.ArgumentMatchers.any(Applicant.class));
     }
 
     @Test
@@ -182,9 +182,9 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ROLE);
 
-        verify(memberRepository, never()).existsByEmail(anyString());
+        verify(applicantRepository, never()).existsByEmail(anyString());
         verify(passwordEncoder, never()).encode(anyString());
-        verify(memberRepository, never()).save(org.mockito.ArgumentMatchers.any(Member.class));
+        verify(applicantRepository, never()).save(org.mockito.ArgumentMatchers.any(Applicant.class));
     }
 
     @Test
@@ -193,7 +193,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         var requesterId = 2L;
         var memberId = 1L;
         var request = new AdminAccountUpdateRequest("이젝트", Role.SUPPORTER, false);
-        var member = Member.builder()
+        var applicant = Applicant.builder()
                 .id(memberId)
                 .email(TEST_EMAIL)
                 .name("김젝트")
@@ -203,20 +203,20 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .semesterId(1L)
                 .build();
 
-        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(applicant);
 
         // when
         adminAccountService.updateAccount(requesterId, memberId, request);
 
         // then
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
-        verify(memberRepository, never()).findByEmail(anyString());
-        assertThat(member.getEmail()).isEqualTo(TEST_EMAIL);
-        assertThat(member.getName()).isEqualTo("이젝트");
-        assertThat(member.getRole()).isEqualTo(Role.SUPPORTER);
-        assertThat(member.getStatus()).isEqualTo(MemberStatus.LOCKED);
-        assertThat(member.getPhoneNumber()).isEqualTo("01012345678");
-        assertThat(member.getSemesterId()).isEqualTo(1L);
+        verify(applicantRepository, never()).findByEmail(anyString());
+        assertThat(applicant.getEmail()).isEqualTo(TEST_EMAIL);
+        assertThat(applicant.getName()).isEqualTo("이젝트");
+        assertThat(applicant.getRole()).isEqualTo(Role.SUPPORTER);
+        assertThat(applicant.getStatus()).isEqualTo(MemberStatus.LOCKED);
+        assertThat(applicant.getPhoneNumber()).isEqualTo("01012345678");
+        assertThat(applicant.getSemesterId()).isEqualTo(1L);
     }
 
     @Test
@@ -225,7 +225,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         var requesterId = 2L;
         var memberId = 1L;
         var request = new AdminAccountUpdateRequest("   ", Role.ADMIN, true);
-        var member = Member.builder()
+        var applicant = Applicant.builder()
                 .id(memberId)
                 .email(TEST_EMAIL)
                 .name("김젝트")
@@ -234,16 +234,16 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .semesterId(1L)
                 .build();
 
-        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(applicant);
 
         // when
         adminAccountService.updateAccount(requesterId, memberId, request);
 
         // then
-        assertThat(member.getName()).isNull();
-        assertThat(member.getEmail()).isEqualTo(TEST_EMAIL);
-        assertThat(member.getRole()).isEqualTo(Role.ADMIN);
-        assertThat(member.getStatus()).isEqualTo(MemberStatus.ACTIVE);
+        assertThat(applicant.getName()).isNull();
+        assertThat(applicant.getEmail()).isEqualTo(TEST_EMAIL);
+        assertThat(applicant.getRole()).isEqualTo(Role.ADMIN);
+        assertThat(applicant.getStatus()).isEqualTo(MemberStatus.ACTIVE);
     }
 
     @Test
@@ -258,7 +258,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ROLE);
 
         verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(org.mockito.ArgumentMatchers.anyLong());
-        verify(memberRepository, never()).findByEmail(anyString());
+        verify(applicantRepository, never()).findByEmail(anyString());
     }
 
     @Test
@@ -273,7 +273,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .isEqualTo(AdminErrorCode.CANNOT_LOCK_SELF);
 
         verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(org.mockito.ArgumentMatchers.anyLong());
-        verify(memberRepository, never()).findByEmail(anyString());
+        verify(applicantRepository, never()).findByEmail(anyString());
     }
 
     @Test
@@ -288,7 +288,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .isEqualTo(AdminErrorCode.CANNOT_CHANGE_OWN_ADMIN_ROLE);
 
         verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(org.mockito.ArgumentMatchers.anyLong());
-        verify(memberRepository, never()).findByEmail(anyString());
+        verify(applicantRepository, never()).findByEmail(anyString());
     }
 
     @Test
@@ -296,7 +296,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // given
         var memberId = 1L;
         var request = new AdminAccountRoleUpdateRequest(Role.SUPPORTER);
-        var member = Member.builder()
+        var applicant = Applicant.builder()
                 .id(memberId)
                 .email(TEST_EMAIL)
                 .name("김젝트")
@@ -305,18 +305,18 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .semesterId(1L)
                 .build();
 
-        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(applicant);
 
         // when
         adminAccountService.updateRole(memberId, request);
 
         // then
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
-        assertThat(member.getRole()).isEqualTo(Role.SUPPORTER);
-        assertThat(member.getEmail()).isEqualTo(TEST_EMAIL);
-        assertThat(member.getName()).isEqualTo("김젝트");
-        assertThat(member.getPhoneNumber()).isEqualTo("01012345678");
-        assertThat(member.getSemesterId()).isEqualTo(1L);
+        assertThat(applicant.getRole()).isEqualTo(Role.SUPPORTER);
+        assertThat(applicant.getEmail()).isEqualTo(TEST_EMAIL);
+        assertThat(applicant.getName()).isEqualTo("김젝트");
+        assertThat(applicant.getPhoneNumber()).isEqualTo("01012345678");
+        assertThat(applicant.getSemesterId()).isEqualTo(1L);
     }
 
     @Test
@@ -357,7 +357,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         var requesterId = 2L;
         var memberId = 1L;
         var request = new AdminAccountActiveUpdateRequest(false);
-        var member = Member.builder()
+        var applicant = Applicant.builder()
                 .id(memberId)
                 .email(TEST_EMAIL)
                 .role(Role.OPERATIONS)
@@ -365,14 +365,14 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .semesterId(1L)
                 .build();
 
-        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(applicant);
 
         // when
         adminAccountService.updateActive(requesterId, memberId, request);
 
         // then
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
-        verify(adminMemberComponent).changeMemberStatus(eq(member), eq(MemberStatus.LOCKED));
+        verify(adminMemberComponent).changeMemberStatus(eq(applicant), eq(MemberStatus.LOCKED));
     }
 
     @Test
@@ -381,7 +381,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         var requesterId = 2L;
         var memberId = 1L;
         var request = new AdminAccountActiveUpdateRequest(true);
-        var member = Member.builder()
+        var applicant = Applicant.builder()
                 .id(memberId)
                 .email(TEST_EMAIL)
                 .role(Role.OPERATIONS)
@@ -389,14 +389,14 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .semesterId(1L)
                 .build();
 
-        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(member);
+        given(adminMemberComponent.getRequiredBackofficeMemberById(memberId)).willReturn(applicant);
 
         // when
         adminAccountService.updateActive(requesterId, memberId, request);
 
         // then
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
-        verify(adminMemberComponent).changeMemberStatus(eq(member), eq(MemberStatus.ACTIVE));
+        verify(adminMemberComponent).changeMemberStatus(eq(applicant), eq(MemberStatus.ACTIVE));
     }
 
     @Test

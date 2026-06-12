@@ -10,6 +10,8 @@ import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.entity.ApplicantEditor;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.Portfolio;
@@ -17,8 +19,6 @@ import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.entity.MemberEditor;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.exception.QuestionErrorCode;
 import org.ject.support.domain.recruit.exception.QuestionException;
@@ -58,17 +58,17 @@ public class AdminApplyService {
     @Transactional
     public void updateSubmittedApply(final Long applyId,
                                      final SubmittedApplyEditRequest request) {
-        Apply apply = adminApplyRepository.findByIdAndStatusWithMember(applyId, ApplyStatus.SUBMITTED)
+        Apply apply = adminApplyRepository.findByIdAndStatusWithApplicant(applyId, ApplyStatus.SUBMITTED)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
 
-        Member member = apply.getMember();
-        MemberEditor memberEditor = member.toEditor()
+        Applicant applicant = apply.getApplicant();
+        ApplicantEditor applicantEditor = applicant.toEditor()
                 .name(request.name())
                 .phoneNumber(request.phoneNumber())
                 .email(request.email())
                 .jobFamily(request.jobFamily())
                 .build();
-        member.edit(memberEditor);
+        applicant.edit(applicantEditor);
 
         Map<String, String> answers = request.answers();
         validateQuestions(answers, apply.getRecruit());
@@ -85,7 +85,7 @@ public class AdminApplyService {
 
     @Transactional
     public void deleteApply(final Long applyId) {
-        Apply apply = adminApplyRepository.findByIdWithMember(applyId)
+        Apply apply = adminApplyRepository.findByIdWithApplicant(applyId)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
         adminApplyRepository.delete(apply);
     }

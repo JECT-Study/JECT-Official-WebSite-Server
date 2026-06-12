@@ -1,19 +1,19 @@
-package org.ject.support.domain.member.service;
+package org.ject.support.domain.applicant.service;
 
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.domain.applicant.dto.ApplicantDto.InitialProfileRequest;
+import org.ject.support.domain.applicant.dto.ApplicantDto.RegisterRequest;
+import org.ject.support.domain.applicant.dto.ApplicantDto.UpdatePinRequest;
+import org.ject.support.domain.applicant.dto.ApplicantProfileResponse;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.exception.ApplicantErrorCode;
+import org.ject.support.domain.applicant.exception.ApplicantException;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Region;
-import org.ject.support.domain.member.dto.MemberDto.InitialProfileRequest;
-import org.ject.support.domain.member.dto.MemberDto.RegisterRequest;
-import org.ject.support.domain.member.dto.MemberDto.UpdatePinRequest;
-import org.ject.support.domain.member.dto.MemberProfileResponse;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.exception.MemberErrorCode;
-import org.ject.support.domain.member.exception.MemberException;
-import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,13 +32,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
-class MemberServiceTest extends UnitTestSupport {
+class ApplicantServiceTest extends UnitTestSupport {
 
     @InjectMocks
-    private MemberService memberService;
+    private ApplicantService applicantService;
 
     @Mock
-    private MemberRepository memberRepository;
+    private ApplicantRepository applicantRepository;
 
     @Mock
     private JwtTokenProvider jwtTokenProvider;
@@ -64,10 +64,10 @@ class MemberServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 임시_회원_등록_성공() {
+    void 임시_지원자_등록_성공() {
         // given
         RegisterRequest request = new RegisterRequest(TEST_PIN);
-        Member member = Member.builder()
+        Applicant applicant = Applicant.builder()
                 .id(1L)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
@@ -79,88 +79,88 @@ class MemberServiceTest extends UnitTestSupport {
                 .isRecruiting(true)
                 .build();
 
-        given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.empty());
+        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.empty());
         given(passwordEncoder.encode(TEST_PIN)).willReturn(TEST_ENCODED_PIN);
-        given(memberRepository.save(any(Member.class))).willReturn(member);
-        given(jwtTokenProvider.createAuthenticationByMember(any(Member.class))).willReturn(authentication);
+        given(applicantRepository.save(any(Applicant.class))).willReturn(applicant);
+        given(jwtTokenProvider.createAuthenticationByApplicant(any(Applicant.class))).willReturn(authentication);
         given(semesterRepository.findRecruitingSemester()).willReturn(Optional.of(semester));
 
         // when
-        Authentication result = memberService.registerTempMember(request, TEST_EMAIL);
+        Authentication result = applicantService.registerTempApplicant(request, TEST_EMAIL);
 
         // then
         assertThat(result).isEqualTo(authentication);
-        verify(memberRepository).save(any(Member.class));
+        verify(applicantRepository).save(any(Applicant.class));
         verify(passwordEncoder).encode(TEST_PIN);
-        verify(jwtTokenProvider).createAuthenticationByMember(any(Member.class));
+        verify(jwtTokenProvider).createAuthenticationByApplicant(any(Applicant.class));
     }
 
     @Test
-    void 이미_존재하는_회원인_경우_예외_발생() {
+    void 이미_존재하는_지원자인_경우_예외_발생() {
         // given
         RegisterRequest request = new RegisterRequest(TEST_PIN);
-        Member existingMember = Member.builder()
+        Applicant existingApplicant = Applicant.builder()
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
                 .build();
 
-        given(memberRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(existingMember));
+        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(existingApplicant));
 
         // when & then
-        assertThatThrownBy(() -> memberService.registerTempMember(request, TEST_EMAIL))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.ALREADY_EXIST_MEMBER);
+        assertThatThrownBy(() -> applicantService.registerTempApplicant(request, TEST_EMAIL))
+                .isInstanceOf(ApplicantException.class)
+                .extracting(e -> ((ApplicantException) e).getErrorCode())
+                .isEqualTo(ApplicantErrorCode.ALREADY_EXIST_APPLICANT);
     }
 
     @Test
-    void 회원_정보_업데이트_성공() {
+    void 지원자_정보_업데이트_성공() {
         // given
-        Long memberId = 1L;
+        Long applicantId = 1L;
         InitialProfileRequest request = new InitialProfileRequest(TEST_NAME, TEST_PHONE_NUMBER);
-        Member member = Member.builder()
-                .id(memberId)
+        Applicant applicant = Applicant.builder()
+                .id(applicantId)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
                 .build();
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(applicantRepository.findById(applicantId)).willReturn(Optional.of(applicant));
 
         // when
-        memberService.registerInitialProfile(request, memberId);
+        applicantService.registerInitialProfile(request, applicantId);
 
         // then
-        assertThat(member.getName()).isEqualTo(TEST_NAME);
-        assertThat(member.getPhoneNumber()).isEqualTo(TEST_PHONE_NUMBER);
-        verify(memberRepository).findById(memberId);
+        assertThat(applicant.getName()).isEqualTo(TEST_NAME);
+        assertThat(applicant.getPhoneNumber()).isEqualTo(TEST_PHONE_NUMBER);
+        verify(applicantRepository).findById(applicantId);
     }
 
     @Test
-    void 존재하지_않는_회원_정보_업데이트_시_예외_발생() {
+    void 존재하지_않는_지원자_정보_업데이트_시_예외_발생() {
         // given
-        Long memberId = 1L;
+        Long applicantId = 1L;
         InitialProfileRequest request = new InitialProfileRequest(TEST_NAME, TEST_PHONE_NUMBER);
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+        given(applicantRepository.findById(applicantId)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> memberService.registerInitialProfile(request, memberId))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+        assertThatThrownBy(() -> applicantService.registerInitialProfile(request, applicantId))
+                .isInstanceOf(ApplicantException.class)
+                .extracting(e -> ((ApplicantException) e).getErrorCode())
+                .isEqualTo(ApplicantErrorCode.NOT_FOUND_APPLICANT);
     }
 
     @Test
     void 핀번호_재설정_성공() {
         // given
-        Long memberId = 1L;
+        Long applicantId = 1L;
         String newPin = "654321";
         UpdatePinRequest request = new UpdatePinRequest(newPin);
 
-        Member member = Member.builder()
-                .id(memberId)
+        Applicant applicant = Applicant.builder()
+                .id(applicantId)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
@@ -168,51 +168,51 @@ class MemberServiceTest extends UnitTestSupport {
 
         String newEncodedPin = "new_encoded_pin";
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+        given(applicantRepository.findById(applicantId)).willReturn(Optional.of(applicant));
         given(passwordEncoder.encode(newPin)).willReturn(newEncodedPin);
 
         // when
-        memberService.updatePin(request, memberId);
+        applicantService.updatePin(request, applicantId);
 
         // then
-        assertThat(member.getPin()).isEqualTo(newEncodedPin);
-        verify(memberRepository).findById(memberId);
+        assertThat(applicant.getPin()).isEqualTo(newEncodedPin);
+        verify(applicantRepository).findById(applicantId);
         verify(passwordEncoder).encode(newPin);
     }
 
     @Test
-    void 핀번호_재설정_실패_존재하지_않는_회원() {
+    void 핀번호_재설정_실패_존재하지_않는_지원자() {
         // given
-        Long memberId = 1L;
+        Long applicantId = 1L;
         UpdatePinRequest request = new UpdatePinRequest("654321");
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+        given(applicantRepository.findById(applicantId)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> memberService.updatePin(request, memberId))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+        assertThatThrownBy(() -> applicantService.updatePin(request, applicantId))
+                .isInstanceOf(ApplicantException.class)
+                .extracting(e -> ((ApplicantException) e).getErrorCode())
+                .isEqualTo(ApplicantErrorCode.NOT_FOUND_APPLICANT);
     }
 
     @Test
-    void 존재하지않는_회원ID로_회원_프로필_정보를_조회할_경우_NOT_FOUND_MEMBER_예외_발생() {
+    void 존재하지않는_지원자ID로_지원자_프로필_정보를_조회할_경우_NOT_FOUND_APPLICANT_예외_발생() {
         // given
-        Long memberId = 1L;
-        given(memberRepository.findById(memberId))
+        Long applicantId = 1L;
+        given(applicantRepository.findById(applicantId))
                 .willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> memberService.getMemberProfile(memberId))
-                .isInstanceOf(MemberException.class)
-                .extracting(e -> ((MemberException) e).getErrorCode())
-                .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+        assertThatThrownBy(() -> applicantService.getApplicantProfile(applicantId))
+                .isInstanceOf(ApplicantException.class)
+                .extracting(e -> ((ApplicantException) e).getErrorCode())
+                .isEqualTo(ApplicantErrorCode.NOT_FOUND_APPLICANT);
     }
 
     @Test
-    void 회원ID로_회원_프로필_정보를_조회할_경우_회원정보를_반환한다() {
+    void 지원자ID로_지원자_프로필_정보를_조회할_경우_지원자정보를_반환한다() {
         // given
-        Long memberId = 1L;
+        Long applicantId = 1L;
         String name = "프로필";
         String phoneNumber = "01012345678";
         CareerDetails careerDetails = CareerDetails.EMPLOYEE;
@@ -220,8 +220,8 @@ class MemberServiceTest extends UnitTestSupport {
         ExperiencePeriod experiencePeriod = ExperiencePeriod.FIVE_PLUS;
         List<String> interestedDomains = List.of("BACKEND", "FRONTEND");
 
-        Member member = Member.builder()
-                .id(memberId)
+        Applicant applicant = Applicant.builder()
+                .id(applicantId)
                 .name(name)
                 .phoneNumber(phoneNumber)
                 .careerDetails(careerDetails)
@@ -230,14 +230,14 @@ class MemberServiceTest extends UnitTestSupport {
                 .interestedDomains(interestedDomains)
                 .build();
 
-        given(memberRepository.findById(memberId))
-                .willReturn(Optional.of(member));
+        given(applicantRepository.findById(applicantId))
+                .willReturn(Optional.of(applicant));
 
         // when
-        MemberProfileResponse result = memberService.getMemberProfile(memberId);
+        ApplicantProfileResponse result = applicantService.getApplicantProfile(applicantId);
 
         // then
-        assertThat(result.id()).isEqualTo(memberId);
+        assertThat(result.id()).isEqualTo(applicantId);
         assertThat(result.name()).isEqualTo(name);
         assertThat(result.careerDetails()).isEqualTo(careerDetails);
         assertThat(result.region()).isEqualTo(region);

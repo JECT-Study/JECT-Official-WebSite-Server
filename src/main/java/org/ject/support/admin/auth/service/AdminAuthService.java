@@ -6,8 +6,8 @@ import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.MemberStatus;
-import org.ject.support.domain.member.entity.Member;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,17 +36,17 @@ public class AdminAuthService {
     public Authentication authenticateAdmin(String email, String password) {
         validateLoginAttemptLimit(email);
 
-        Member member = adminMemberComponent.findBackofficeMemberByEmail(email)
+        Applicant applicant = adminMemberComponent.findBackofficeMemberByEmail(email)
                 .orElseThrow(() -> handleInvalidAdminCredentials(email));
 
-        if (!passwordEncoder.matches(password, member.getPin())) {
+        if (!passwordEncoder.matches(password, applicant.getPin())) {
             throw handleInvalidAdminCredentials(email);
         }
 
-        checkMemberStatus(member);
+        checkMemberStatus(applicant);
         clearLoginFailState(email);
 
-        return jwtTokenProvider.createAuthenticationByMember(member);
+        return jwtTokenProvider.createAuthenticationByApplicant(applicant);
     }
 
     private AdminException handleInvalidAdminCredentials(String email) {
@@ -79,8 +79,8 @@ public class AdminAuthService {
         redisTemplate.delete(ADMIN_LOGIN_PASSWORD_BLOCK_KEY_PREFIX + email);
     }
 
-    private void checkMemberStatus(Member member) {
-        if (member.getStatus() == MemberStatus.LOCKED) {
+    private void checkMemberStatus(Applicant applicant) {
+        if (applicant.getStatus() == MemberStatus.LOCKED) {
             throw new AdminException(AdminErrorCode.LOCKED_ADMIN);
         }
     }

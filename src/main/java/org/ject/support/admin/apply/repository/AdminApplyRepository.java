@@ -11,16 +11,16 @@ import org.springframework.data.repository.query.Param;
 
 public interface AdminApplyRepository extends JpaRepository<Apply, Long>, AdminApplyQueryRepository {
 
-    @Query("SELECT a FROM Apply a JOIN FETCH a.member LEFT JOIN FETCH a.applicationForm WHERE a.id = :id")
-    Optional<Apply> findByIdWithMember(@Param("id") Long id);
+    @Query("SELECT a FROM Apply a JOIN FETCH a.applicant LEFT JOIN FETCH a.applicationForm WHERE a.id = :id")
+    Optional<Apply> findByIdWithApplicant(@Param("id") Long id);
 
-    @Query("SELECT a FROM Apply a JOIN FETCH a.member LEFT JOIN FETCH a.applicationForm WHERE a.id IN :ids")
-    List<Apply> findAllByIdWithMember(@Param("ids") List<Long> ids);
+    @Query("SELECT a FROM Apply a JOIN FETCH a.applicant LEFT JOIN FETCH a.applicationForm WHERE a.id IN :ids")
+    List<Apply> findAllByIdWithApplicant(@Param("ids") List<Long> ids);
 
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Apply a SET a.isDeleted = true WHERE a.id IN :ids")
     void deleteAllByIds(@Param("ids") Iterable<Long> ids);
 
-    @Query("select a from Apply a join fetch a.member m where a.id = :applyId and a.status = :status")
-    Optional<Apply> findByIdAndStatusWithMember(@Param("applyId") Long applyId, @Param("status") ApplyStatus status);
+    @Query("select a from Apply a join fetch a.applicant m where a.id = :applyId and a.status = :status")
+    Optional<Apply> findByIdAndStatusWithApplicant(@Param("applyId") Long applyId, @Param("status") ApplyStatus status);
 }

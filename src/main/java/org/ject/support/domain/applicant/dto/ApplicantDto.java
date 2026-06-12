@@ -1,19 +1,19 @@
-package org.ject.support.domain.member.dto;
+package org.ject.support.domain.applicant.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
 
-public class MemberDto {
+public class ApplicantDto {
 
     public record RegisterRequest(
 
             @NotBlank @Pattern(regexp = "^\\d{6}$", message = "PIN 번호는 6자리 숫자여야 합니다.") String pin) {
 
-        public Member toEntity(Long semesterId, String email, String encodedPin) {
-            return Member.builder()
+        public Applicant toEntity(Long semesterId, String email, String encodedPin) {
+            return Applicant.builder()
                     .semesterId(semesterId)
                     .email(email)
                     .pin(encodedPin)
@@ -24,7 +24,7 @@ public class MemberDto {
     }
 
     /**
-     * 임시회원이 최초로 이름과 전화번호를 등록할 때 사용하는 DTO
+     * 지원자가 최초로 이름과 전화번호를 등록할 때 사용하는 DTO
      */
     public record InitialProfileRequest(
 

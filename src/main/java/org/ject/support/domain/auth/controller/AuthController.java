@@ -62,8 +62,8 @@ public class AuthController implements AuthApiSpec {
     @PreAuthorize("permitAll()")
     public boolean refreshToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = jwtTokenProvider.resolveRefreshToken(request);
-        Long memberId = authService.refreshAccessToken(refreshToken);
-        customSuccessHandler.onAuthenticationSuccess(response, refreshToken, memberId);
+        Long applicantId = authService.refreshAccessToken(refreshToken);
+        customSuccessHandler.onAuthenticationSuccess(response, refreshToken, applicantId);
 
         return true;
     }

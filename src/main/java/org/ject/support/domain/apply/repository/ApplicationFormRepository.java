@@ -13,7 +13,7 @@ public interface ApplicationFormRepository extends JpaRepository<ApplicationForm
             "SELECT 1 FROM application_form af " +
             "LEFT JOIN apply a on af.apply_id = a.id " +
             "JOIN recruit r on a.recruit_id = r.id " +
-            "WHERE r.start_date <= :now and r.end_date >= :now and a.member_id = :memberId)", nativeQuery = true)
-    boolean existsByMemberId(@Param("memberId") Long memberId,
-                             @Param("now") LocalDateTime now);
+            "WHERE r.start_date <= :now and r.end_date >= :now and a.applicant_id = :applicantId)", nativeQuery = true)
+    boolean existsByApplicantId(@Param("applicantId") Long applicantId,
+                                @Param("now") LocalDateTime now);
 }

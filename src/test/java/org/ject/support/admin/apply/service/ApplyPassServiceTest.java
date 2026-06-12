@@ -10,7 +10,7 @@ import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.RecruitType;
@@ -39,15 +39,15 @@ class ApplyPassServiceTest extends UnitTestSupport {
         // given
         Recruit recruit = getActiveRecruit(1L, JobFamily.BE, List.of());
 
-        Member applicant1 = getApplicant(1L, "applicant1@test.com");
-        Member applicant2 = getApplicant(2L, "applicant2@test.com");
-        Member applicant3 = getApplicant(3L, "applicant3@test.com");
+        Applicant applicant1 = getApplicant(1L, "applicant1@test.com");
+        Applicant applicant2 = getApplicant(2L, "applicant2@test.com");
+        Applicant applicant3 = getApplicant(3L, "applicant3@test.com");
 
         Apply apply1 = getApply(1L, recruit, applicant1, getApplicationForm("content"), ApplyStatus.SUBMITTED);
         Apply apply2 = getApply(2L, recruit, applicant2, getApplicationForm("content"), ApplyStatus.SUBMITTED);
         Apply apply3 = getApply(3L, recruit, applicant3, getApplicationForm("content"), ApplyStatus.SUBMITTED);
 
-        when(applyRepository.findAllByIdWithMember(List.of(1L, 2L, 3L))).thenReturn(List.of(apply1, apply2, apply3));
+        when(applyRepository.findAllByIdWithApplicant(List.of(1L, 2L, 3L))).thenReturn(List.of(apply1, apply2, apply3));
 
         // when
         int result = applyPassService.passApply(List.of(1L, 2L, 3L));
@@ -66,10 +66,10 @@ class ApplyPassServiceTest extends UnitTestSupport {
     void 메이커스_지원자_합격_시_구성원_타입을_메이커스로_변경한다() {
         // given
         Recruit recruit = getActiveRecruit(1L, JobFamily.FE, RecruitType.MAKERS, List.of());
-        Member applicant = getApplicant(1L, "applicant@test.com");
+        Applicant applicant = getApplicant(1L, "applicant@test.com");
         Apply apply = getApply(1L, recruit, applicant, getApplicationForm("content"), ApplyStatus.SUBMITTED);
 
-        when(applyRepository.findAllByIdWithMember(List.of(1L))).thenReturn(List.of(apply));
+        when(applyRepository.findAllByIdWithApplicant(List.of(1L))).thenReturn(List.of(apply));
 
         // when
         int result = applyPassService.passApply(List.of(1L));
@@ -84,10 +84,10 @@ class ApplyPassServiceTest extends UnitTestSupport {
     void 운영_서포터즈_지원자_합격_시_구성원_타입을_운영_서포터즈로_변경한다() {
         // given
         Recruit recruit = getActiveRecruit(1L, JobFamily.SUPPORTER, RecruitType.SUPPORTERS, List.of());
-        Member applicant = getApplicant(1L, "applicant@test.com");
+        Applicant applicant = getApplicant(1L, "applicant@test.com");
         Apply apply = getApply(1L, recruit, applicant, getApplicationForm("content"), ApplyStatus.SUBMITTED);
 
-        when(applyRepository.findAllByIdWithMember(List.of(1L))).thenReturn(List.of(apply));
+        when(applyRepository.findAllByIdWithApplicant(List.of(1L))).thenReturn(List.of(apply));
 
         // when
         int result = applyPassService.passApply(List.of(1L));
@@ -102,15 +102,15 @@ class ApplyPassServiceTest extends UnitTestSupport {
     void 제출되지_않은_지원서_승인_실패() {
         Recruit recruit = getActiveRecruit(1L, JobFamily.BE, List.of());
 
-        Member applicant1 = getApplicant(1L, "applicant1@test.com");
-        Member applicant2 = getApplicant(2L, "applicant2@test.com");
-        Member applicant3 = getApplicant(3L, "applicant3@test.com");
+        Applicant applicant1 = getApplicant(1L, "applicant1@test.com");
+        Applicant applicant2 = getApplicant(2L, "applicant2@test.com");
+        Applicant applicant3 = getApplicant(3L, "applicant3@test.com");
 
         Apply apply1 = getApply(1L, recruit, applicant1, getApplicationForm("content"), ApplyStatus.SUBMITTED);
         Apply apply2 = getApply(2L, recruit, applicant2, getApplicationForm("content"), ApplyStatus.TEMP_SAVED);
         Apply apply3 = getApply(3L, recruit, applicant3, getApplicationForm("content"), ApplyStatus.SUBMITTED);
 
-        when(applyRepository.findAllByIdWithMember(List.of(1L, 2L, 3L))).thenReturn(List.of(apply1, apply2, apply3));
+        when(applyRepository.findAllByIdWithApplicant(List.of(1L, 2L, 3L))).thenReturn(List.of(apply1, apply2, apply3));
 
         // when, then
         assertThatThrownBy(() -> applyPassService.passApply(List.of(1L, 2L, 3L)))
@@ -133,8 +133,8 @@ class ApplyPassServiceTest extends UnitTestSupport {
                 .build();
     }
 
-    private Member getApplicant(Long id, String email) {
-        return Member.builder()
+    private Applicant getApplicant(Long id, String email) {
+        return Applicant.builder()
                 .id(id)
                 .email(email)
                 .pin("111111")
@@ -143,11 +143,11 @@ class ApplyPassServiceTest extends UnitTestSupport {
                 .build();
     }
 
-    private Apply getApply(Long id, Recruit recruit, Member applicant, ApplicationForm applicationForm, ApplyStatus status) {
+    private Apply getApply(Long id, Recruit recruit, Applicant applicant, ApplicationForm applicationForm, ApplyStatus status) {
         return Apply.builder()
                 .id(id)
                 .recruit(recruit)
-                .member(applicant)
+                .applicant(applicant)
                 .applicationForm(applicationForm)
                 .status(status)
                 .build();

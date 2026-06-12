@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import org.ject.support.common.exception.GlobalException;
+import org.junit.jupiter.api.AfterEach;
 import org.ject.support.domain.member.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,10 +23,10 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 @ExtendWith(MockitoExtension.class)
-class AuthenticatedMemberIdResolverTest {
+class AuthenticatedApplicantIdResolverTest {
 
     @InjectMocks
-    private AuthenticatedMemberIdResolver resolver;
+    private AuthenticatedApplicantIdResolver resolver;
 
     @Mock
     private MethodParameter methodParameter;
@@ -42,12 +43,17 @@ class AuthenticatedMemberIdResolverTest {
     @Mock
     private SecurityContext securityContext;
 
-    private static final Long MEMBER_ID = 1L;
+    private static final Long APPLICANT_ID = 1L;
     private static final String EMAIL = "test@example.com";
 
     @BeforeEach
     void setUp() {
         SecurityContextHolder.setContext(securityContext);
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -79,10 +85,10 @@ class AuthenticatedMemberIdResolverTest {
     }
 
     @Test
-    @DisplayName("인증된 사용자의 memberId를 반환한다")
+    @DisplayName("인증된 사용자의 applicantId를 반환한다")
     void resolveArgumentWithAuthenticatedUser() {
         // given
-        CustomUserDetails userDetails = new CustomUserDetails(EMAIL, MEMBER_ID, Role.SEMESTER);
+        CustomUserDetails userDetails = new CustomUserDetails(EMAIL, APPLICANT_ID, Role.SEMESTER);
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
         when(securityContext.getAuthentication()).thenReturn(authentication);
 
@@ -90,7 +96,7 @@ class AuthenticatedMemberIdResolverTest {
         Long result = resolver.resolveArgument(methodParameter, mavContainer, webRequest, binderFactory);
 
         // then
-        assertThat(result).isEqualTo(MEMBER_ID);
+        assertThat(result).isEqualTo(APPLICANT_ID);
     }
 
     @Test
