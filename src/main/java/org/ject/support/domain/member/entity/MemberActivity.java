@@ -4,12 +4,9 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 
@@ -22,6 +19,7 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
 @Entity
 @Getter
@@ -71,4 +69,8 @@ public class MemberActivity extends BaseTimeEntity {
 
     @Column(length = 100)
     private String memo;
+
+    @Column(name = "recruit_type_detail", length = 45)
+    @Enumerated(EnumType.STRING)
+    private RecruitTypeDetail recruitTypeDetail;
 }
