@@ -3,11 +3,11 @@ package org.ject.support.domain.member.entity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AccessLevel;
@@ -19,6 +19,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.ject.support.common.util.StringListConverter;
 import org.ject.support.domain.base.BaseTimeEntity;
+import org.ject.support.domain.member.Region;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,10 @@ public class Member extends BaseTimeEntity {
     @Size(max = 20)
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private Region region;
+
     @Column(length = 12)
     @Pattern(regexp = "^010\\d{8}$", message = "010으로 시작하는 11자리 숫자를 입력하세요.")
     private String phoneNumber;
@@ -56,20 +61,4 @@ public class Member extends BaseTimeEntity {
     @Builder.Default
     private Boolean isDeleted = false;
 
-    @OneToMany(mappedBy = "member", fetch = FetchType.LAZY)
-    @Builder.Default
-    private List<TeamMember> teamMembers = new ArrayList<>();
-
-    public void updateNameAndPhoneNumber(String name, String phoneNumber) {
-        this.name = name;
-        this.phoneNumber = phoneNumber;
-    }
-
-    public boolean isInitialed() {
-        return this.name != null && this.phoneNumber != null;
-    }
-
-    public boolean isProfileComplete() {
-        return this.name != null && this.phoneNumber != null;
-    }
 }
