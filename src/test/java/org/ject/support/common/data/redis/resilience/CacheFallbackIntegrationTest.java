@@ -8,8 +8,6 @@ import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.member.MemberStatus;
-import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
@@ -81,13 +79,8 @@ class CacheFallbackIntegrationTest {
 
         Member member = Member.builder()
                 .email("test" + uniqueSuffix + "@gmail.com")
-                .semesterId(savedSemester.getId())
-                .jobFamily(JobFamily.BE)
                 .name("김젝트")
-                .role(Role.SEMESTER)
                 .phoneNumber("01012345678")
-                .pin("123456")
-                .status(MemberStatus.ACTIVE)
                 .build();
         memberRepository.save(member);
     }

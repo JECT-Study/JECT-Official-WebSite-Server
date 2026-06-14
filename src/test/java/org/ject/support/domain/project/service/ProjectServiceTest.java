@@ -71,8 +71,7 @@ class ProjectServiceTest extends UnitTestSupport {
     void 프로젝트_상세_조회() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
-        when(memberRepository.findMemberNamesByTeamId(1L)).thenReturn(
-                new TeamMemberNames(projectManagers, productDesigners, frontendDevelopers, backendDevelopers));
+        //TODO: team_id 기반으로 member와 activity를 조회해도록 구현 후 검증 추가
 
         // when
         ProjectDetailResponse result = projectService.findProjectDetails(1L);
@@ -81,10 +80,6 @@ class ProjectServiceTest extends UnitTestSupport {
         assertThat(result.name()).isEqualTo(project.getName());
         assertThat(result.startDate()).isEqualTo(project.getStartDate());
         assertThat(result.endDate()).isEqualTo(project.getEndDate());
-        assertThat(result.teamMemberNames().productManagers()).hasSize(0);
-        assertThat(result.teamMemberNames().productDesigners()).hasSize(1);
-        assertThat(result.teamMemberNames().frontendDevelopers()).hasSize(2);
-        assertThat(result.teamMemberNames().backendDevelopers()).hasSize(3);
         assertThat(result.description()).isEqualTo(project.getDescription());
         assertThat(result.serviceUrl()).isEqualTo(project.getServiceUrl());
         assertThat(result.sampleImageUrls()).hasSize(3);
@@ -95,8 +90,7 @@ class ProjectServiceTest extends UnitTestSupport {
     void 프로젝트_상세_조회_시_서비스_소개서는_sequence_기준으로_오름차순_정렬() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
-        when(memberRepository.findMemberNamesByTeamId(1L)).thenReturn(
-                new TeamMemberNames(projectManagers, productDesigners, frontendDevelopers, backendDevelopers));
+        //TODO: team_id 기반으로 member와 activity를 조회해도록 구현 후 검증 추가
 
         // when
         ProjectDetailResponse result = projectService.findProjectDetails(1L);
@@ -121,8 +115,7 @@ class ProjectServiceTest extends UnitTestSupport {
     void 프로젝트_상세_조회_시_기술_스택을_배열_형태로_반환() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
-        when(memberRepository.findMemberNamesByTeamId(1L)).thenReturn(
-                new TeamMemberNames(projectManagers, productDesigners, frontendDevelopers, backendDevelopers));
+        //TODO: team_id 기반으로 member와 activity를 조회해도록 구현 후 검증 추가
 
         // when
         ProjectDetailResponse result = projectService.findProjectDetails(1L);
