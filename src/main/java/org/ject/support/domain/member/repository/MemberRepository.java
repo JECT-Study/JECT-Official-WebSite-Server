@@ -1,21 +1,10 @@
 package org.ject.support.domain.member.repository;
 
-import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.Collection;
 import java.util.Optional;
 
-public interface MemberRepository extends JpaRepository<Member, Long>, MemberQueryRepository {
+public interface MemberRepository extends JpaRepository<Member, Long> {
 
-    Optional<Member> findByEmail(String email);
-
-    Optional<Member> findByEmailAndRole(String email, Role role);
-
-    Optional<Member> findByEmailAndRoleIn(String email, Collection<Role> roles);
-
-    Optional<Member> findByIdAndRoleIn(Long id, Collection<Role> roles);
-
-    boolean existsByEmail(String email);
 }
