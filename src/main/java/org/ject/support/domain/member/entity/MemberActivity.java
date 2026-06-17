@@ -70,7 +70,7 @@ public class MemberActivity extends BaseTimeEntity {
     @Column(length = 100)
     private String memo;
 
-    @Column(name = "recruit_type_detail", length = 45)
+    @Column(name = "recruit_type_detail", length = 45, nullable = false)
     @Enumerated(EnumType.STRING)
     private RecruitTypeDetail recruitTypeDetail;
 }
