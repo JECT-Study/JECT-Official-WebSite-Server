@@ -22,6 +22,8 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.exception.MemberErrorCode;
+import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
 @Entity
@@ -99,7 +101,6 @@ public class MemberActivity extends BaseTimeEntity {
             .experiencePeriod(experiencePeriod)
             .memo(memo)
             .build();
-
         //애그리거트 루트인 MemberActivity쪽에서 식별 관계인 엔티티 생성 책임
         //MemberSemester는 MemberActivity없이 단독으로 사용되지 않음
         memberActivity.memberSemester = MemberSemester.create(memberActivity, semesterId);

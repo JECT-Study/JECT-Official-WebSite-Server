@@ -22,8 +22,13 @@ public class AdminMemberService {
 
 	// 구성원 신상정보 생성
 	private Long createMember(CreateMemberSemesterRequest request) {
-		Member member = Member.create(request.name(), request.email(), request.phoneNumber(),
-			request.interestedDomains(), request.region());
+		Member member = Member.create(
+			request.name(),
+			request.email(),
+			request.phoneNumber(),
+			request.interestedDomains(),
+			request.region()
+		);
 
 		Member savedMember = memberRepository.save(member);
 		return savedMember.getId();

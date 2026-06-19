@@ -41,7 +41,7 @@ public class MemberSemester extends BaseTimeEntity {
     @Column(length = 255)
     private String secondReview;
 
-    static MemberSemester create(
+    public static MemberSemester create(
         MemberActivity memberActivity,
         Long semesterId
     ){
