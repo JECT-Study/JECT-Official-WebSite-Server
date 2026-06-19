@@ -13,7 +13,7 @@ import org.ject.support.domain.base.BaseTimeEntity;
 
 @Entity
 @Getter
-@Builder
+@Builder(access = AccessLevel.PRIVATE)
 @Table(name = "member_semester")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -40,4 +40,15 @@ public class MemberSemester extends BaseTimeEntity {
 
     @Column(length = 255)
     private String secondReview;
+
+    static MemberSemester create(
+        MemberActivity memberActivity,
+        Long semesterId
+    ){
+        return MemberSemester.builder()
+            .memberActivity(memberActivity)
+            .semesterId(semesterId)
+            .build();
+    }
+
 }
