@@ -28,7 +28,7 @@ import java.util.List;
 @SQLRestriction("is_deleted = false")
 @Entity
 @Getter
-@Builder
+@Builder(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Member extends BaseTimeEntity {
@@ -61,4 +61,20 @@ public class Member extends BaseTimeEntity {
     @Builder.Default
     private Boolean isDeleted = false;
 
+
+    public static Member create(
+        String name,
+        String email,
+        String phoneNumber,
+        List<String> interestedDomains,
+        Region region
+    ){
+        return Member.builder()
+            .name(name)
+            .email(email)
+            .phoneNumber(phoneNumber)
+            .region(region)
+            .interestedDomains(interestedDomains)
+            .build();
+    }
 }
