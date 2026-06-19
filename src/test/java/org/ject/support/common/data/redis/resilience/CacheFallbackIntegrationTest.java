@@ -77,11 +77,13 @@ class CacheFallbackIntegrationTest {
 
         recruitRepository.save(recruit);
 
-        Member member = Member.builder()
-                .email("test" + uniqueSuffix + "@gmail.com")
-                .name("김젝트")
-                .phoneNumber("01012345678")
-                .build();
+        Member member = Member.create(
+                "김젝트",
+                "test" + uniqueSuffix + "@gmail.com",
+                "01012345678",
+                List.of(),
+                null
+        );
         memberRepository.save(member);
     }
 

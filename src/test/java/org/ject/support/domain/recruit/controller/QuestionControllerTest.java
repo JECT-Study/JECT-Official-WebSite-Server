@@ -86,11 +86,13 @@ class QuestionControllerTest {
 
         recruitRepository.save(recruit);
 
-        member = Member.builder()
-                .email("test_" + uniqueSuffix + "@gmail.com")
-                .name("김젝트")
-                .phoneNumber("01012345678")
-                .build();
+        member = Member.create(
+                "김젝트",
+                "test_" + uniqueSuffix + "@gmail.com",
+                "01012345678",
+                List.of(),
+                null
+        );
         memberRepository.save(member);
     }
 
