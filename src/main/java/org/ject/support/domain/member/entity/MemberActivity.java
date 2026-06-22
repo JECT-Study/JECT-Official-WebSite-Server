@@ -90,7 +90,8 @@ public class MemberActivity extends BaseTimeEntity {
         CareerDetails careerDetails,
         ExperiencePeriod experiencePeriod,
         String memo,
-        Long semesterId
+        Long semesterId,
+        Long teamId
     ){
         MemberActivity memberActivity = MemberActivity.builder()
             .memberId(memberId)
@@ -103,7 +104,7 @@ public class MemberActivity extends BaseTimeEntity {
             .build();
         //애그리거트 루트인 MemberActivity쪽에서 식별 관계인 엔티티 생성 책임
         //MemberSemester는 MemberActivity없이 단독으로 사용되지 않음
-        memberActivity.memberSemester = MemberSemester.create(memberActivity, semesterId);
+        memberActivity.memberSemester = MemberSemester.create(memberActivity, semesterId, teamId);
         return memberActivity;
     }
 

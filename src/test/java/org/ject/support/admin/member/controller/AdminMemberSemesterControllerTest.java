@@ -64,6 +64,22 @@ class AdminMemberSemesterControllerTest {
     }
 
     @Test
+    @DisplayName("팀을 선택하지 않은 요청도 일반 구성원을 추가한다")
+    void 팀을_선택하지_않은_요청도_일반_구성원을_추가한다() throws Exception {
+        // given
+        CreateMemberSemesterRequest request = createMemberSemesterRequest("jectkim@ject.kr", null);
+
+        // when
+        mockMvc.perform(post("/admin/members/semester")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+            .andExpect(status().isOk());
+
+        // then
+        verify(adminMemberUseCase).createMemberSemester(any(CreateMemberSemesterRequest.class));
+    }
+
+    @Test
     @DisplayName("필수값이 없으면 일반 구성원을 추가하지 않는다")
     void 필수값이_없으면_일반_구성원을_추가하지_않는다() throws Exception {
         // given
@@ -75,6 +91,7 @@ class AdminMemberSemesterControllerTest {
             RecruitTypeDetail.REGULAR,
             CareerDetails.EMPLOYEE,
             1L,
+            null,
             ExperiencePeriod.ONE_TO_TWO,
             "memo",
             List.of("HEALTHCARE"),
@@ -108,6 +125,10 @@ class AdminMemberSemesterControllerTest {
     }
 
     private CreateMemberSemesterRequest createMemberSemesterRequest(String email) {
+		return createMemberSemesterRequest(email, 2L);
+	}
+
+    private CreateMemberSemesterRequest createMemberSemesterRequest(String email, Long teamId) {
         return new CreateMemberSemesterRequest(
             "김젝트",
             email,
@@ -116,6 +137,7 @@ class AdminMemberSemesterControllerTest {
             RecruitTypeDetail.REGULAR,
             CareerDetails.EMPLOYEE,
             1L,
+            teamId,
             ExperiencePeriod.ONE_TO_TWO,
             "memo",
             List.of("HEALTHCARE", "FINTECH", "AI"),

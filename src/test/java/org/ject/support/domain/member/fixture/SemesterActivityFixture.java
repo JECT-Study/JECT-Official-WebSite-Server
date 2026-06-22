@@ -15,6 +15,7 @@ public final class SemesterActivityFixture {
     private ExperiencePeriod experiencePeriod = ExperiencePeriod.ONE_TO_TWO;
     private String memo = "테스트 메모";
     private Long semesterId = 2L;
+    private Long teamId = 3L;
 
     private SemesterActivityFixture() {
     }
@@ -58,6 +59,11 @@ public final class SemesterActivityFixture {
         return this;
     }
 
+    public SemesterActivityFixture teamId(Long teamId) {
+        this.teamId = teamId;
+        return this;
+    }
+
     public MemberActivity build() {
         return MemberActivity.createSemesterActivity(
             memberId,
@@ -66,7 +72,8 @@ public final class SemesterActivityFixture {
             careerDetails,
             experiencePeriod,
             memo,
-            semesterId
+            semesterId,
+            teamId
         );
     }
 }

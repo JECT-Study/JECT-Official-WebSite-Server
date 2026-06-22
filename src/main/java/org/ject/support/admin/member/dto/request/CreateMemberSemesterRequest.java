@@ -18,7 +18,7 @@ public record CreateMemberSemesterRequest(
 
 	/*
 	필수 항목: 이름, 전화번호, 이메일, 직군(포지션), 지원자 신분, 모집단위, 기수id
-	선택 항목: 비고, 관심도메인, 거주지역, 직무 관련 경험
+	선택 항목: 팀id, 비고, 관심도메인, 거주지역, 직무 관련 경험
 	 */
 	@NotBlank(message = "이름을 입력해주세요")
 	@Pattern(regexp = "^[^\\s]+$", message = "이름은 공백없이 입력해주세요")
@@ -43,6 +43,8 @@ public record CreateMemberSemesterRequest(
 
 	@NotNull(message = "기수를 선택해주세요")
 	Long semesterId,
+
+	Long teamId,
 
 	ExperiencePeriod experiencePeriod,
 

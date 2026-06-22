@@ -63,6 +63,7 @@ class AdminMemberActivityServiceTest {
         assertThat(memberActivity.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
         assertThat(memberActivity.getMemo()).isEqualTo(request.memo());
         assertThat(memberActivity.getMemberSemester().getSemesterId()).isEqualTo(request.semesterId());
+        assertThat(memberActivity.getMemberSemester().getTeamId()).isEqualTo(request.teamId());
     }
 
     @Test
@@ -99,6 +100,7 @@ class AdminMemberActivityServiceTest {
             RecruitTypeDetail.REGULAR,
             CareerDetails.EMPLOYEE,
             1L,
+            2L,
             ExperiencePeriod.ONE_TO_TWO,
             "memo",
             List.of("HEALTHCARE", "FINTECH", "AI"),

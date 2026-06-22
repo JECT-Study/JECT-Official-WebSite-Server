@@ -43,11 +43,13 @@ public class MemberSemester extends BaseTimeEntity {
 
     public static MemberSemester create(
         MemberActivity memberActivity,
-        Long semesterId
+        Long semesterId,
+        Long teamId
     ){
         return MemberSemester.builder()
             .memberActivity(memberActivity)
             .semesterId(semesterId)
+            .teamId(teamId)
             .build();
     }
 

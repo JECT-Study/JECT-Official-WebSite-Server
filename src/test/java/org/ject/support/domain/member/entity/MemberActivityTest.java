@@ -58,6 +58,19 @@ class MemberActivityTest {
 		// then
 		assertThat(memberSemester).isNotNull();
 		assertThat(memberSemester.getSemesterId()).isEqualTo(2L);
+		assertThat(memberSemester.getTeamId()).isEqualTo(3L);
 		assertThat(memberSemester.getMemberActivity()).isSameAs(memberActivity);
+	}
+
+	@Test
+	@DisplayName("팀을 선택하지 않으면 팀 정보 없이 일반 구성원 활동을 생성한다")
+	void 팀을_선택하지_않으면_팀_정보_없이_일반_구성원_활동을_생성한다() {
+		// given
+
+		// when
+		MemberActivity memberActivity = semesterActivity().teamId(null).build();
+
+		// then
+		assertThat(memberActivity.getMemberSemester().getTeamId()).isNull();
 	}
 }

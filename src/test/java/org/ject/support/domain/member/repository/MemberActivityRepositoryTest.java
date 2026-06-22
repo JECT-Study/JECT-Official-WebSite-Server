@@ -51,6 +51,7 @@ class MemberActivityRepositoryTest {
         assertThat(memberSemester).isNotNull();
         assertThat(memberSemester.getId()).isEqualTo(result.getId());
         assertThat(memberSemester.getSemesterId()).isEqualTo(SEMESTER_ID);
+        assertThat(memberSemester.getTeamId()).isEqualTo(3L);
         assertThat(memberSemester.getMemberActivity()).isSameAs(result);
     }
 

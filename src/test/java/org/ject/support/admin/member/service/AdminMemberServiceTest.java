@@ -40,6 +40,7 @@ class AdminMemberServiceTest {
 			RecruitTypeDetail.REGULAR,
 			CareerDetails.EMPLOYEE,
 			1L,
+			null,
 			ExperiencePeriod.ONE_TO_TWO,
 			"memo",
 			List.of("HEALTHCARE", "FINTECH", "AI"),

@@ -30,7 +30,8 @@ public class AdminMemberActivityService {
 			request.careerDetails(),
 			request.experiencePeriod(),
 			request.memo(),
-			request.semesterId()
+			request.semesterId(),
+			request.teamId()
 		);
 
 		memberActivityRepository.save(memberActivity);
