@@ -1,6 +1,7 @@
 package org.ject.support.domain.member.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
@@ -13,24 +14,15 @@ import org.junit.jupiter.api.Test;
 
 class MemberActivityTest {
 
-	private MemberActivity createSemesterActivity(){
-		return MemberActivity.createSemesterActivity(
-			1L,
-			JobFamily.BE,
-			RecruitTypeDetail.REGULAR,
-			CareerDetails.EMPLOYEE,
-			ExperiencePeriod.ONE_TO_TWO,
-			"테스트 메모",
-			2L
-		);
-	}
-
 	@Test
-	@DisplayName("일반 구성원 활동을 생성한다.")
+	@DisplayName("일반 구성원 활동을 생성한다")
 	void 일반_구성원_활동을_생성한다() {
+		// given
 
-		MemberActivity memberActivity = createSemesterActivity();
+		// when
+		MemberActivity memberActivity = semesterActivity().build();
 
+		// then
 		assertThat(memberActivity.getMemberId()).isEqualTo(1L);
 		assertThat(memberActivity.getMemberType()).isEqualTo(MemberType.SEMESTER);
 		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.BE);
@@ -42,20 +34,28 @@ class MemberActivityTest {
 	}
 
 	@Test
-	@DisplayName("일반_구성원_활동은_ACTIVE_상태로_생성된다")
+	@DisplayName("일반 구성원 활동은 ACTIVE 상태로 생성된다")
 	void 일반_구성원_활동은_ACTIVE_상태로_생성된다() {
-		MemberActivity memberActivity = createSemesterActivity();
+		// given
 
+		// when
+		MemberActivity memberActivity = semesterActivity().build();
+
+		// then
 		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ACTIVE);
 		assertThat(memberActivity.getIsDeleted()).isFalse();
 	}
 
 	@Test
-	@DisplayName("일반_구성원_활동을_생성하면_관리_항목이_함께_생성된다")
+	@DisplayName("일반 구성원 활동을 생성하면 관리 항목이 함께 생성된다")
 	void 일반_구성원_활동을_생성하면_관리_항목이_함께_생성된다() {
-		MemberActivity memberActivity = createSemesterActivity();
+		// given
+
+		// when
+		MemberActivity memberActivity = semesterActivity().build();
 		MemberSemester memberSemester = memberActivity.getMemberSemester();
 
+		// then
 		assertThat(memberSemester).isNotNull();
 		assertThat(memberSemester.getSemesterId()).isEqualTo(2L);
 		assertThat(memberSemester.getMemberActivity()).isSameAs(memberActivity);

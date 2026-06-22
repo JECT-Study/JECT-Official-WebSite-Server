@@ -2,6 +2,7 @@ package org.ject.support.common.data.redis.resilience;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -77,13 +78,11 @@ class CacheFallbackIntegrationTest {
 
         recruitRepository.save(recruit);
 
-        Member member = Member.create(
-                "김젝트",
-                "test" + uniqueSuffix + "@gmail.com",
-                "01012345678",
-                List.of(),
-                null
-        );
+        Member member = member()
+                .email("test" + uniqueSuffix + "@gmail.com")
+                .interestedDomains(List.of())
+                .region(null)
+                .build();
         memberRepository.save(member);
     }
 

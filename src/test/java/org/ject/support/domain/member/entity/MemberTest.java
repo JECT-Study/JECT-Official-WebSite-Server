@@ -1,6 +1,7 @@
 package org.ject.support.domain.member.entity;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.member.fixture.MemberFixture.member;
 
 import java.util.List;
 
@@ -11,22 +12,24 @@ import org.junit.jupiter.api.Test;
 class MemberTest {
 
 	@Test
-	@DisplayName("")
+	@DisplayName("구성원을 생성한다")
 	void 구성원을_생성한다() {
-	    Member member = Member.create(
-			"김젝트",
-			"admin@ject.kr",
-			"01012345678",
-			List.of("HEALTHCARE","FINTECH", "AI"),
-			Region.SEOUL
-		);
+		// given
+		List<String> interestedDomains = List.of("HEALTHCARE", "FINTECH", "AI");
 
-		assertEquals("김젝트", member.getName());
-		assertEquals("admin@ject.kr", member.getEmail());
-		assertEquals("01012345678", member.getPhoneNumber());
-		assertEquals(List.of("HEALTHCARE","FINTECH", "AI"), member.getInterestedDomains());
-		assertEquals(Region.SEOUL, member.getRegion());
+		// when
+	    Member member = member()
+			.email("admin@ject.kr")
+			.interestedDomains(interestedDomains)
+			.build();
 
+		// then
+		assertThat(member.getName()).isEqualTo("김젝트");
+		assertThat(member.getEmail()).isEqualTo("admin@ject.kr");
+		assertThat(member.getPhoneNumber()).isEqualTo("01012345678");
+		assertThat(member.getInterestedDomains()).containsExactlyElementsOf(interestedDomains);
+		assertThat(member.getRegion()).isEqualTo(Region.SEOUL);
+		assertThat(member.getIsDeleted()).isFalse();
 	}
 
 }
