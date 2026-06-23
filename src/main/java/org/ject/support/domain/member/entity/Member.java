@@ -77,4 +77,18 @@ public class Member extends BaseTimeEntity {
             .interestedDomains(interestedDomains)
             .build();
     }
+
+    // 삭제된 구성원 정보가 있는 경우 복구한 뒤 새로 입력한 값으로 덮어쓰기
+    public void restore(
+        String name,
+        String phoneNumber,
+        List<String> interestedDomains,
+        Region region
+    ) {
+        this.isDeleted = false;
+        this.name = name;
+        this.phoneNumber = phoneNumber;
+        this.interestedDomains = interestedDomains;
+        this.region = region;
+    }
 }

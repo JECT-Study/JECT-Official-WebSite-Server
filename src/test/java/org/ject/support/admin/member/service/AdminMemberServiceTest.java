@@ -21,6 +21,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class AdminMemberServiceTest {
@@ -56,7 +57,7 @@ class AdminMemberServiceTest {
 		Member savedMember = mock(Member.class);
 		given(savedMember.getId()).willReturn(1L);
 
-		given(memberRepository.findByEmail(request.email())).willReturn(Optional.empty());
+		given(memberRepository.findByEmailIncludingDeleted(request.email())).willReturn(Optional.empty());
 		given(memberRepository.save(any(Member.class))).willReturn(savedMember);
 
 	    // when
@@ -64,7 +65,7 @@ class AdminMemberServiceTest {
 
 	    // then
 		assertThat(memberId).isEqualTo(1L);
-		verify(memberRepository).findByEmail(request.email());
+		verify(memberRepository).findByEmailIncludingDeleted(request.email());
 
 		// 실제 save 시점에 전달된 인자 확인
 		ArgumentCaptor<Member> memberCaptor = ArgumentCaptor.forClass(Member.class);
@@ -85,15 +86,49 @@ class AdminMemberServiceTest {
 	    CreateMemberSemesterRequest request = createMemberSemesterRequest();
 		Member existMember = mock(Member.class);
 		given(existMember.getId()).willReturn(3L);
+		given(existMember.getIsDeleted()).willReturn(false);
 
-		given(memberRepository.findByEmail(request.email())).willReturn(Optional.of(existMember));
+		given(memberRepository.findByEmailIncludingDeleted(request.email())).willReturn(Optional.of(existMember));
 
 	    // when
 	    Long memberId = adminMemberService.findOrCreateMember(request);
 
 	    // then
 		assertThat(memberId).isEqualTo(existMember.getId());
-		verify(memberRepository).findByEmail(request.email());
+		verify(memberRepository).findByEmailIncludingDeleted(request.email());
+		verify(memberRepository, never()).save(any(Member.class));
+	}
+
+	@Test
+	@DisplayName("입력한 이메일로 삭제된 구성원이 존재하면 복구하고 값을 덮어쓴다")
+	void 입력한_이메일로_삭제된_구성원이_존재하면_복구하고_값을_덮어쓴다() {
+	    // given
+	    CreateMemberSemesterRequest request = createMemberSemesterRequest();
+		Member deletedMember = Member.create(
+			"삭제된 구성원",
+			request.email(),
+			"01087654321",
+			List.of("COMMERCE"),
+			Region.BUSAN
+		);
+
+		//Todo: 삭제 API 구현 시 도메인 로직을 사용하도록 수정
+		ReflectionTestUtils.setField(deletedMember, "id", 7L);
+		ReflectionTestUtils.setField(deletedMember, "isDeleted", true);
+
+		given(memberRepository.findByEmailIncludingDeleted(request.email())).willReturn(Optional.of(deletedMember));
+
+	    // when
+	    Long memberId = adminMemberService.findOrCreateMember(request);
+
+	    // then
+		assertThat(memberId).isEqualTo(7L);
+		assertThat(deletedMember.getIsDeleted()).isFalse();
+		assertThat(deletedMember.getName()).isEqualTo(request.name());
+		assertThat(deletedMember.getPhoneNumber()).isEqualTo(request.phoneNumber());
+		assertThat(deletedMember.getInterestedDomains()).containsExactlyElementsOf(request.interestedDomains());
+		assertThat(deletedMember.getRegion()).isEqualTo(request.region());
+		verify(memberRepository).findByEmailIncludingDeleted(request.email());
 		verify(memberRepository, never()).save(any(Member.class));
 	}
 }

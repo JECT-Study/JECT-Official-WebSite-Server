@@ -9,6 +9,7 @@ import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
 
 @Import(QueryDslTestConfig.class)
@@ -17,6 +18,9 @@ class MemberRepositoryTest {
 
     @Autowired
     MemberRepository memberRepository;
+
+    @Autowired
+    TestEntityManager entityManager;
 
     @Test
     void 이메일로_구성원을_조회한다() {
@@ -42,5 +46,25 @@ class MemberRepositoryTest {
 
         // then
         assertThat(result).isEmpty();
+    }
+
+    @Test
+    void 삭제된_구성원을_포함해_이메일로_조회한다() {
+        // given
+        String email = "deleted@test.com";
+        Member savedMember = memberRepository.save(member().email(email).build());
+        memberRepository.delete(savedMember);
+        memberRepository.flush();
+        entityManager.clear();
+
+        // when
+        Optional<Member> activeResult = memberRepository.findByEmail(email);
+        Optional<Member> includingDeletedResult = memberRepository.findByEmailIncludingDeleted(email);
+
+        // then
+        assertThat(activeResult).isEmpty();
+        assertThat(includingDeletedResult).isPresent();
+        assertThat(includingDeletedResult.get().getEmail()).isEqualTo(email);
+        assertThat(includingDeletedResult.get().getIsDeleted()).isTrue();
     }
 }
