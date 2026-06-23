@@ -24,6 +24,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -86,10 +87,10 @@ class QuestionControllerTest {
 
         recruitRepository.save(recruit);
 
-        member = Member.builder()
+        member = member()
                 .email("test_" + uniqueSuffix + "@gmail.com")
-                .name("김젝트")
-                .phoneNumber("01012345678")
+                .interestedDomains(List.of())
+                .region(null)
                 .build();
         memberRepository.save(member);
     }

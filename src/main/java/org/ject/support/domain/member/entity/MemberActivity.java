@@ -1,12 +1,15 @@
 package org.ject.support.domain.member.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 
@@ -19,11 +22,13 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.exception.MemberErrorCode;
+import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
 @Entity
 @Getter
-@Builder
+@Builder(access = AccessLevel.PRIVATE)
 @Table(name = "member_activity")
 @SQLDelete(sql = "UPDATE member_activity SET is_deleted = true WHERE id = ?")
 @SQLRestriction("is_deleted = false")
@@ -73,4 +78,37 @@ public class MemberActivity extends BaseTimeEntity {
     @Column(name = "recruit_type_detail", length = 45, nullable = false)
     @Enumerated(EnumType.STRING)
     private RecruitTypeDetail recruitTypeDetail;
+
+    @OneToOne(mappedBy = "memberActivity", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    private MemberSemester memberSemester;
+
+    // 일반 구성원 활동과 관리 항목 생성
+    public static MemberActivity createSemesterActivity(
+        Long memberId,
+        JobFamily jobFamily,
+        RecruitTypeDetail recruitTypeDetail,
+        CareerDetails careerDetails,
+        ExperiencePeriod experiencePeriod,
+        String memo,
+        Long semesterId,
+        Long teamId
+    ){
+        MemberActivity memberActivity = MemberActivity.builder()
+            .memberId(memberId)
+            .memberType(MemberType.SEMESTER)
+            .jobFamily(jobFamily)
+            .recruitTypeDetail(recruitTypeDetail)
+            .careerDetails(careerDetails)
+            .experiencePeriod(experiencePeriod)
+            .memo(memo)
+            .build();
+        //애그리거트 루트인 MemberActivity쪽에서 식별 관계인 엔티티 생성 책임
+        //MemberSemester는 MemberActivity없이 단독으로 사용되지 않음
+        memberActivity.memberSemester = MemberSemester.create(memberActivity, semesterId, teamId);
+        return memberActivity;
+    }
+
+    //Todo: 메이커스 구성원 활동과 관리 항목 생성
+
+    //Todo: 운영 서포터즈 구성원 활동과 관리 항목 생성
 }

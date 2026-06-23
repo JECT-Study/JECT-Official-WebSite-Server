@@ -22,9 +22,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.ject.support.domain.file.exception.FileErrorCode.INVALID_EXTENSION;
+import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -52,10 +54,11 @@ class FileControllerTest extends ApplicationPeriodTest {
 
     @BeforeEach
     void setUp() {
-        member = Member.builder()
-                .email("test32@gmail.com")
+        member = member()
                 .name("홍길동")
-                .phoneNumber("01012345678")
+                .email("test32@gmail.com")
+                .interestedDomains(List.of())
+                .region(null)
                 .build();
         memberRepository.save(member);
     }

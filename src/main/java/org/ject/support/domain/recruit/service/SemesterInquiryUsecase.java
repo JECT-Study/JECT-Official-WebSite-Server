@@ -1,5 +1,6 @@
 package org.ject.support.domain.recruit.service;
 
+import org.ject.support.domain.recruit.dto.SemesterResponse;
 import org.ject.support.domain.recruit.dto.SemesterResponses;
 
 public interface SemesterInquiryUsecase {
@@ -9,4 +10,6 @@ public interface SemesterInquiryUsecase {
      * @return 기수 목록
      */
     SemesterResponses getAllSemesters();
+
+    SemesterResponse getSemester(Long id);
 }
