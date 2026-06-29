@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MemberActivityRepository extends JpaRepository<MemberActivity, Long> {
+public interface MemberActivityRepository extends JpaRepository<MemberActivity, Long>, MemberActivityQueryRepository {
 
 	@Query("""
 		select count(ma) > 0
