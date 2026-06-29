@@ -1,8 +1,18 @@
 package org.ject.support.admin.member.service;
 
-import static org.ject.support.domain.member.exception.MemberErrorCode.NOT_FOUND_TEAM_OF_SEMESTER;
+import static org.ject.support.domain.member.exception.MemberErrorCode.*;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
+import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
+import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
+import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
+import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
 import org.springframework.stereotype.Service;
@@ -33,6 +43,56 @@ public class AdminMemberUseCase {
 		adminMemberActivityService.createMemberSemesterActivity(request, memberId);
 	}
 
+
+	// 일반 구성원 목록 조회 (커서 기반 페이징)
+	@Transactional(readOnly=true)
+	public CursorPageResponse<SearchMemberSemesterResponse> searchMemberSemester(
+		MemberSemesterSearchCondition condition
+	) {
+		// 기수 유효성 체크
+		validateSemester(condition.semesterId());
+		// 팀 유효성 체크
+		validateTeams(condition.semesterId(), condition.teamIds());
+		// size만큼 조회 + 전체 행 수 조회
+		SearchMemberSemesterPageResult pageResult = adminMemberActivityService.searchMemberSemesterList(condition);
+		// 페이징 값 처리
+		boolean hasNext = pageResult.content().size() > condition.getSizeOrDefault();
+		long totalCount = pageResult.totalCount();
+		List<SearchMemberSemesterProjection> content = hasNext
+			? pageResult.content().subList(0,condition.getSizeOrDefault())
+			: pageResult.content();
+
+		List<SearchMemberSemesterResponse> responses = content.stream()
+			.map(SearchMemberSemesterResponse::from)
+			.toList();
+
+		Long nextCursor = hasNext && !content.isEmpty()
+			? content.get(content.size()-1).memberActivityId()
+			: null;
+
+		// 응답
+		return CursorPageResponse.of(
+			responses,
+			condition.getSizeOrDefault(),
+			hasNext,
+			nextCursor,
+			totalCount
+		);
+	}
+
+	/*
+	유틸 함수
+	 */
+
+	// 존재하는 기수인지 검증
+	private void validateSemester(Long semesterId) {
+		if(semesterId == null){
+			return;
+		}
+		// 존재하지 않으면 semester 도메인에서 예외 처리
+		semesterInquiryUsecase.getSemester(semesterId);
+	}
+
 	// 선택한 팀의 기수 소속 검증
 	private void validateTeam(Long semesterId, Long teamId) {
 		if (teamId == null) {
@@ -43,4 +103,26 @@ public class AdminMemberUseCase {
 			throw new MemberException(NOT_FOUND_TEAM_OF_SEMESTER);
 		}
 	}
+
+	private void validateTeams(Long semesterId, List<Long> teamIds) {
+		if(teamIds == null || teamIds.isEmpty()){
+			return;
+		}
+
+		// 팀이 있는데 기수가 없으면 예외
+		if (semesterId == null) {
+			throw new MemberException(REQUIRED_SEMESTER_FOR_TEAM_FILTER);
+		}
+
+		// 조회 결과 List에서 바로 containsAll() -> O(N*M)
+		// Set에 담고 O(1)로 비교시 -> O(N+M)
+		Set<Long> validTeamIds = new HashSet<>(
+			adminMemberTeamService.getTeamIdsBySemesterId(semesterId)
+		);
+
+		if(!validTeamIds.containsAll(teamIds)) {
+			throw new MemberException(NOT_FOUND_TEAM_OF_SEMESTER);
+		}
+	}
+
 }
