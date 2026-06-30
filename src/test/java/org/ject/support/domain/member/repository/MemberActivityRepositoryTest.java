@@ -5,11 +5,19 @@ import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 
 import jakarta.persistence.EntityManager;
+import java.util.List;
+import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
+import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
+import org.ject.support.domain.member.CareerDetails;
+import org.ject.support.domain.member.ExperiencePeriod;
+import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.entity.MemberSemester;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.testconfig.QueryDslTestConfig;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -30,7 +38,51 @@ class MemberActivityRepositoryTest {
     @Autowired
     EntityManager entityManager;
 
+    private MemberSemesterSearchCondition searchCondition(
+        Long cursor,
+        Integer size,
+        Long semesterId,
+        List<JobFamily> jobFamilies,
+        List<RecruitTypeDetail> recruitTypeDetails,
+        List<CareerDetails> careerDetails,
+        List<Long> teamIds
+    ) {
+        return new MemberSemesterSearchCondition(
+            cursor,
+            size,
+            semesterId,
+            jobFamilies,
+            recruitTypeDetails,
+            careerDetails,
+            teamIds
+        );
+    }
+
+    private MemberActivity saveSemesterActivity(
+        String email,
+        Long semesterId,
+        Long teamId,
+        JobFamily jobFamily,
+        RecruitTypeDetail recruitTypeDetail,
+        CareerDetails careerDetails,
+        ExperiencePeriod experiencePeriod
+    ) {
+        Member member = memberRepository.save(member().email(email).build());
+        return memberActivityRepository.saveAndFlush(semesterActivity()
+            .memberId(member.getId())
+            .semesterId(semesterId)
+            .teamId(teamId)
+            .jobFamily(jobFamily)
+            .recruitTypeDetail(recruitTypeDetail)
+            .careerDetails(careerDetails)
+            .experiencePeriod(experiencePeriod)
+            .build());
+    }
+    /**
+     * 일반 구성원 추가 테스트
+     */
     @Test
+    @DisplayName("일반 구성원 활동을 저장하면 하위 테이블에 기수 정보를 함께 저장한다")
     void 일반_구성원_활동을_저장하면_하위_테이블에_기수_정보를_함께_저장한다() {
         // given
         Member member = memberRepository.save(member().email("member@test.com").build());
@@ -56,6 +108,7 @@ class MemberActivityRepositoryTest {
     }
 
     @Test
+    @DisplayName("같은 구성원의 동일 기수 활동이 존재하면 true를 반환한다")
     void 같은_구성원의_동일_기수_활동이_존재하면_true를_반환한다() {
         // given
         Member member = memberRepository.save(member().email("member@test.com").build());
@@ -76,6 +129,7 @@ class MemberActivityRepositoryTest {
     }
 
     @Test
+    @DisplayName("다른 기수의 활동만 존재하면 false를 반환한다")
     void 다른_기수의_활동만_존재하면_false를_반환한다() {
         // given
         Member member = memberRepository.save(member().email("member@test.com").build());
@@ -96,6 +150,7 @@ class MemberActivityRepositoryTest {
     }
 
     @Test
+    @DisplayName("다른 구성원의 활동만 존재하면 false를 반환한다")
     void 다른_구성원의_활동만_존재하면_false를_반환한다() {
         // given
         Member member = memberRepository.save(member().email("member@test.com").build());
@@ -117,6 +172,7 @@ class MemberActivityRepositoryTest {
     }
 
     @Test
+    @DisplayName("다른 구성원 유형으로 조회하면 false를 반환한다")
     void 다른_구성원_유형으로_조회하면_false를_반환한다() {
         // given
         Member member = memberRepository.save(member().email("member@test.com").build());
@@ -134,5 +190,396 @@ class MemberActivityRepositoryTest {
 
         // then
         assertThat(result).isFalse();
+    }
+
+    /**
+     * 일반 구성원 목록 조회 테스트
+     */
+    // 목록 조회 (필터 X)
+    @Test
+    void 일반_구성원_목록을_최신순으로_조회한다() {
+        // given
+        MemberActivity first = saveSemesterActivity(
+            "member1@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        MemberActivity second = saveSemesterActivity(
+            "member2@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.FE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.STUDENT,
+            ExperiencePeriod.NONE
+        );
+        MemberSemesterSearchCondition condition = searchCondition(
+            null,
+            30,
+            null,
+            null,
+            null,
+            null,
+            null
+        );
+
+        // when
+        List<SearchMemberSemesterProjection> results =
+            memberActivityRepository.searchMemberSemesters(condition, 30);
+
+        // then
+        assertThat(results)
+            .extracting(SearchMemberSemesterProjection::memberActivityId)
+            .containsExactly(second.getId(), first.getId());
+    }
+
+    // 목록 조회(커서)
+    @Test
+    @DisplayName("커서보다 작은 일반 구성원 목록을 조회한다")
+    void 커서보다_작은_일반_구성원_목록을_조회한다() {
+        // given
+        MemberActivity first = saveSemesterActivity(
+            "member1@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        MemberActivity second = saveSemesterActivity(
+            "member2@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.FE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.STUDENT,
+            ExperiencePeriod.NONE
+        );
+        MemberSemesterSearchCondition condition = searchCondition(
+            second.getId(),
+            30,
+            null,
+            null,
+            null,
+            null,
+            null
+        );
+
+        // when
+        List<SearchMemberSemesterProjection> results =
+            memberActivityRepository.searchMemberSemesters(condition, 30);
+
+        // then
+        assertThat(results)
+            .extracting(SearchMemberSemesterProjection::memberActivityId)
+            .containsExactly(first.getId());
+    }
+
+    // 목록 조회(전체 필터 조합)
+    @Test
+    @DisplayName("전체 필터 조건에 맞는 일반 구성원 목록을 조회한다")
+    void 전체_필터_조건에_맞는_일반_구성원_목록을_조회한다() {
+        // given
+        MemberActivity matched = saveSemesterActivity(
+            "matched@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        saveSemesterActivity(
+            "other-job@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.FE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        saveSemesterActivity(
+            "other-semester@test.com",
+            6L,
+            2L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        MemberSemesterSearchCondition condition = searchCondition(
+            null,
+            30,
+            SEMESTER_ID,
+            List.of(JobFamily.BE),
+            List.of(RecruitTypeDetail.REGULAR),
+            List.of(CareerDetails.EMPLOYEE),
+            List.of(1L)
+        );
+
+        // when
+        List<SearchMemberSemesterProjection> results =
+            memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
+
+        // then
+        assertThat(results)
+            .extracting(SearchMemberSemesterProjection::memberActivityId)
+            .containsExactly(matched.getId());
+    }
+
+    // 목록 조회(기수 필터)
+    @Test
+    @DisplayName("기수 필터 조건에 맞는 일반 구성원 목록을 조회한다")
+    void 기수_필터_조건에_맞는_일반_구성원_목록을_조회한다() {
+        // given
+        MemberActivity matched = saveSemesterActivity(
+            "matched@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        saveSemesterActivity(
+            "other-semester@test.com",
+            10L,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        MemberSemesterSearchCondition condition = searchCondition(
+            null,
+            30,
+            SEMESTER_ID,
+            null,
+            null,
+            null,
+            null
+        );
+        // when
+        List<SearchMemberSemesterProjection> result =
+            memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
+        // then
+        assertThat(result)
+            .extracting(SearchMemberSemesterProjection::memberActivityId)
+            .containsExactly(matched.getId());
+    }
+
+    // 목록 조회(직군 필터)
+    @Test
+    @DisplayName("직군 필터 조건에 맞는 일반 구성원 목록을 조회한다")
+    void 직군_필터_조건에_맞는_일반_구성원_목록을_조회한다() {
+        // given
+        MemberActivity matched = saveSemesterActivity(
+            "matched@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        saveSemesterActivity(
+            "other-job-family@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.FE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        MemberSemesterSearchCondition condition = searchCondition(
+            null,
+            30,
+            null,
+            List.of(JobFamily.BE),
+            null,
+            null,
+            null
+        );
+        // when
+        List<SearchMemberSemesterProjection> result =
+            memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
+        // then
+        assertThat(result)
+            .extracting(SearchMemberSemesterProjection::memberActivityId)
+            .containsExactly(matched.getId());
+    }
+    // 목록 조회(모집 단위 필터)
+    @Test
+    @DisplayName("모집 단위 필터 조건에 맞는 일반 구성원 목록을 조회한다")
+    void 모집_단위_필터_조건에_맞는_일반_구성원_목록을_조회한다() {
+        // given
+        MemberActivity matched = saveSemesterActivity(
+            "matched@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        saveSemesterActivity(
+            "other-recruit-type@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REFILL,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        MemberSemesterSearchCondition condition = searchCondition(
+            null,
+            30,
+            null,
+            null,
+            List.of(RecruitTypeDetail.REGULAR),
+            null,
+            null
+        );
+        // when
+        List<SearchMemberSemesterProjection> result =
+            memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
+        // then
+        assertThat(result)
+            .extracting(SearchMemberSemesterProjection::memberActivityId)
+            .containsExactly(matched.getId());
+    }
+    // 목록 조회(신분 필터)
+    @Test
+    @DisplayName("신분 필터 조건에 맞는 일반 구성원 목록을 조회한다")
+    void 신분_필터_조건에_맞는_일반_구성원_목록을_조회한다() {
+        // given
+        MemberActivity matched = saveSemesterActivity(
+            "matched@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        saveSemesterActivity(
+            "other-career@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.STUDENT,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        MemberSemesterSearchCondition condition = searchCondition(
+            null,
+            30,
+            null,
+            null,
+            null,
+            List.of(CareerDetails.EMPLOYEE),
+            null
+        );
+        // when
+        List<SearchMemberSemesterProjection> result =
+            memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
+        // then
+        assertThat(result)
+            .extracting(SearchMemberSemesterProjection::memberActivityId)
+            .containsExactly(matched.getId());
+    }
+    // 목록 조회(팀 필터)
+    @Test
+    @DisplayName("팀 필터 조건에 맞는 일반 구성원 목록을 조회한다")
+    void 팀_필터_조건에_맞는_일반_구성원_목록을_조회한다() {
+        // given
+        MemberActivity matched = saveSemesterActivity(
+            "matched@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        saveSemesterActivity(
+            "other-team@test.com",
+            SEMESTER_ID,
+            4L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        MemberSemesterSearchCondition condition = searchCondition(
+            null,
+            30,
+            null,
+            null,
+            null,
+            null,
+            List.of(1L,2L,3L)
+        );
+        // when
+        List<SearchMemberSemesterProjection> result =
+            memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
+        // then
+        assertThat(result)
+            .extracting(SearchMemberSemesterProjection::memberActivityId)
+            .containsExactly(matched.getId());
+    }
+    @Test
+    void 카운트_조회는_커서_조건을_적용하지_않는다() {
+        // given
+        saveSemesterActivity(
+            "member1@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        MemberActivity cursor = saveSemesterActivity(
+            "member2@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        saveSemesterActivity(
+            "member3@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO
+        );
+        MemberSemesterSearchCondition condition = searchCondition(
+            cursor.getId(),
+            30,
+            SEMESTER_ID,
+            List.of(JobFamily.BE),
+            List.of(RecruitTypeDetail.REGULAR),
+            List.of(CareerDetails.EMPLOYEE),
+            List.of(1L)
+        );
+
+        // when
+        List<SearchMemberSemesterProjection> results =
+            memberActivityRepository.searchMemberSemesters(condition, 30);
+        long totalCount = memberActivityRepository.countMemberSemesters(condition);
+
+        // then
+        assertThat(results).hasSize(1);
+        assertThat(totalCount).isEqualTo(3L);
     }
 }

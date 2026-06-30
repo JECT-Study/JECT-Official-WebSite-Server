@@ -8,7 +8,12 @@ import static org.mockito.BDDMockito.never;
 import static org.mockito.BDDMockito.verify;
 
 import java.util.List;
+
+import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
+import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
+import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
+import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
@@ -36,6 +41,9 @@ class AdminMemberActivityServiceTest {
     @InjectMocks
     private AdminMemberActivityService adminMemberActivityService;
 
+    /**
+     * 일반 구성원 추가 테스트
+     */
     @Test
     @DisplayName("동일 기수 활동이 없으면 일반 구성원 활동을 저장한다")
     void 동일_기수_활동이_없으면_일반_구성원_활동을_저장한다() {
@@ -91,6 +99,46 @@ class AdminMemberActivityServiceTest {
         verify(memberActivityRepository, never()).save(any(MemberActivity.class));
     }
 
+    /**
+     * 일반 구성원 목록 조회 테스트
+     */
+
+    @Test
+    @DisplayName("다중 필터를 적용해서 일반 구성원 목록을 조회한다")
+    void 다중_필터를_적용해서_일반_구성원_목록을_조회한다() {
+        // given
+        MemberSemesterSearchCondition condition = new MemberSemesterSearchCondition(
+          null,
+          20,
+          1L,
+          List.of(JobFamily.BE),
+          List.of(RecruitTypeDetail.REGULAR),
+          List.of(CareerDetails.EMPLOYEE),
+          List.of(1L,2L,3L)
+        );
+
+        List<SearchMemberSemesterProjection> projections = List.of(
+            new SearchMemberSemesterProjection(
+                1L,
+                "김젝트",
+                JobFamily.BE,
+                "01012345678",
+                CareerDetails.EMPLOYEE,
+                ExperiencePeriod.ONE_TO_TWO
+            )
+        );
+        given(memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1)).willReturn(projections);
+        given(memberActivityRepository.countMemberSemesters(condition)).willReturn(1L);
+
+        // when
+        SearchMemberSemesterPageResult pageResult = adminMemberActivityService.searchMemberSemesterList(condition);
+        // then
+        assertThat(pageResult.content()).isEqualTo(projections);
+        assertThat(pageResult.totalCount()).isEqualTo(1L);
+        verify(memberActivityRepository).searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
+        verify(memberActivityRepository).countMemberSemesters(condition);
+    }
+
     private CreateMemberSemesterRequest createMemberSemesterRequest() {
         return new CreateMemberSemesterRequest(
             "김젝트",
@@ -107,4 +155,6 @@ class AdminMemberActivityServiceTest {
             Region.SEOUL
         );
     }
+
+
 }
