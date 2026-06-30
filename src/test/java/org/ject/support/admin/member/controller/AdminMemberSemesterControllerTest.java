@@ -1,7 +1,7 @@
 package org.ject.support.admin.member.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.*;
 import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -34,6 +34,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.cache.support.NullValue;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -195,7 +196,7 @@ class AdminMemberSemesterControllerTest {
 			.andExpect(jsonPath("$.data.content", hasSize(1)))
 			.andExpect(jsonPath("$.data.content[0].memberActivityId").value(first.getId()))
 			.andExpect(jsonPath("$.data.hasNext").value(false))
-			.andExpect(jsonPath("$.data.nextCursor").doesNotExist())
+			.andExpect(jsonPath("$.data.nextCursor").value(nullValue()))
 			.andExpect(jsonPath("$.data.totalCount").value(3));
 	}
 
