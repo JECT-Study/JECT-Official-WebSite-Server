@@ -61,6 +61,7 @@ class QuestionControllerTest {
     @BeforeEach
     void setUp() {
         String uniqueSuffix = String.valueOf(System.nanoTime());
+        String shortSuffix = uniqueSuffix.substring(uniqueSuffix.length()-6);
         List<Question> questions = List.of(
                 Question.builder().sequence(1).inputType(TEXT).isRequired(true).title("title1").label("label").selectOptions(List.of("a", "b", "c")).build(),
                 Question.builder().sequence(2).inputType(TEXT).isRequired(true).title("title2").label("label").build(),
@@ -88,7 +89,7 @@ class QuestionControllerTest {
         recruitRepository.save(recruit);
 
         member = member()
-                .email("test_" + uniqueSuffix + "@gmail.com")
+                .email("test_" + shortSuffix + "@gmail.com")
                 .interestedDomains(List.of())
                 .region(null)
                 .build();
