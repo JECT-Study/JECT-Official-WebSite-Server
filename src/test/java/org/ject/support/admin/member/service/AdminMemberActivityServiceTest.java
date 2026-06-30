@@ -14,6 +14,7 @@ import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
 import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
@@ -114,7 +115,8 @@ class AdminMemberActivityServiceTest {
           List.of(JobFamily.BE),
           List.of(RecruitTypeDetail.REGULAR),
           List.of(CareerDetails.EMPLOYEE),
-          List.of(1L,2L,3L)
+          List.of(1L,2L,3L),
+          List.of(ActivityStatus.ACTIVE)
         );
 
         List<SearchMemberSemesterProjection> projections = List.of(
@@ -124,7 +126,8 @@ class AdminMemberActivityServiceTest {
                 JobFamily.BE,
                 "01012345678",
                 CareerDetails.EMPLOYEE,
-                ExperiencePeriod.ONE_TO_TWO
+                ExperiencePeriod.ONE_TO_TWO,
+                ActivityStatus.ACTIVE
             )
         );
         given(memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1)).willReturn(projections);

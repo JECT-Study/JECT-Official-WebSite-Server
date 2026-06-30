@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
@@ -36,7 +37,8 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 			memberActivity.jobFamily,
 			member.phoneNumber,
 			memberActivity.careerDetails,
-			memberActivity.experiencePeriod
+			memberActivity.experiencePeriod,
+			memberActivity.activityStatus
 			))
 			.from(memberActivity)
 			.join(member).on(member.id.eq(memberActivity.memberId))
@@ -47,7 +49,8 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 				jobFamilyIn(condition.jobFamilies()),
 				careerDetailsIn(condition.careerDetails()),
 				teamIdIn(condition.teamIds()),
-				recruitTypeDetailsIn(condition.recruitTypeDetails()),
+				recruitTypeDetailIn(condition.recruitTypeDetails()),
+				statusIn(condition.statuses()),
 				member.isDeleted.isFalse(),
 				memberActivity.isDeleted.isFalse(),
 				memberActivity.memberType.eq(MemberType.SEMESTER)
@@ -67,7 +70,8 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 				jobFamilyIn(condition.jobFamilies()),
 				careerDetailsIn(condition.careerDetails()),
 				teamIdIn(condition.teamIds()),
-				recruitTypeDetailsIn(condition.recruitTypeDetails()),
+				recruitTypeDetailIn(condition.recruitTypeDetails()),
+				statusIn(condition.statuses()),
 				member.isDeleted.isFalse(),
 				memberActivity.isDeleted.isFalse(),
 				memberActivity.memberType.eq(MemberType.SEMESTER)
@@ -103,9 +107,15 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 			: memberSemester.teamId.in(teamIds);
 	}
 
-	private BooleanExpression recruitTypeDetailsIn(List<RecruitTypeDetail> recruitTypeDetails) {
+	private BooleanExpression recruitTypeDetailIn(List<RecruitTypeDetail> recruitTypeDetails) {
 		return recruitTypeDetails == null || recruitTypeDetails.isEmpty()
 			? null
 			: memberActivity.recruitTypeDetail.in(recruitTypeDetails);
+	}
+
+	private BooleanExpression statusIn(List<ActivityStatus> statuses) {
+		return statuses == null || statuses.isEmpty()
+			? null
+			: memberActivity.activityStatus.in(statuses);
 	}
 }

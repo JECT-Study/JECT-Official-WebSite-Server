@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Comparator;
 import java.util.List;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
@@ -232,11 +233,13 @@ class AdminMemberSemesterControllerTest {
 				.param("jobFamilies", "BE")
 				.param("recruitTypeDetails", "REGULAR")
 				.param("careerDetails", "EMPLOYEE")
-				.param("teamIds", String.valueOf(team.getId())))
+				.param("teamIds", String.valueOf(team.getId()))
+				.param("statuses", ActivityStatus.ACTIVE.name()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("SUCCESS"))
 			.andExpect(jsonPath("$.data.content", hasSize(1)))
 			.andExpect(jsonPath("$.data.content[0].memberActivityId").value(matched.getId()))
+			.andExpect(jsonPath("$.data.content[0].status").value(ActivityStatus.ACTIVE.name()))
 			.andExpect(jsonPath("$.data.totalCount").value(1));
 	}
 
@@ -257,6 +260,16 @@ class AdminMemberSemesterControllerTest {
 		mockMvc.perform(get("/admin/members/semester")
 				.param("jobFamilies", "WRONG"))
 			.andExpect(status().isBadRequest());
+	}
+
+	@Test
+	@DisplayName("일반 구성원에서 사용할 수 없는 활동 상태면 목록을 조회하지 않는다")
+	void 일반_구성원에서_사용할_수_없는_활동_상태면_목록을_조회하지_않는다() throws Exception {
+		// when & then
+		mockMvc.perform(get("/admin/members/semester")
+				.param("statuses", ActivityStatus.DROPOUT.name()))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.INVALID_ACTIVITY_STATUS.getCode()));
 	}
 
 	private CreateMemberSemesterRequest createMemberSemesterRequest(String email, Long semesterId, Long teamId) {

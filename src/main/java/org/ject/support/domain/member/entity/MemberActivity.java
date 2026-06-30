@@ -111,4 +111,13 @@ public class MemberActivity extends BaseTimeEntity {
     //Todo: 메이커스 구성원 활동과 관리 항목 생성
 
     //Todo: 운영 서포터즈 구성원 활동과 관리 항목 생성
+
+    // 구성원 유형에 맞는 활동 상태로 변경
+    public void updateActivityStatus(ActivityStatus activityStatus) {
+        if (!activityStatus.isAvailableFor(memberType)) {
+            throw new MemberException(MemberErrorCode.INVALID_ACTIVITY_STATUS);
+        }
+
+        this.activityStatus = activityStatus;
+    }
 }

@@ -5,7 +5,6 @@ import static org.ject.support.domain.member.exception.MemberErrorCode.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
@@ -13,6 +12,8 @@ import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
 import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.domain.member.ActivityStatus;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
 import org.springframework.stereotype.Service;
@@ -53,6 +54,8 @@ public class AdminMemberUseCase {
 		validateSemester(condition.semesterId());
 		// 팀 유효성 체크
 		validateTeams(condition.semesterId(), condition.teamIds());
+		// 활동 상태 체크
+		validateStatuses(condition.statuses(), MemberType.SEMESTER);
 		// size만큼 조회 + 전체 행 수 조회
 		SearchMemberSemesterPageResult pageResult = adminMemberActivityService.searchMemberSemesterList(condition);
 		// 페이징 값 처리
@@ -122,6 +125,13 @@ public class AdminMemberUseCase {
 
 		if(!validTeamIds.containsAll(teamIds)) {
 			throw new MemberException(NOT_FOUND_TEAM_OF_SEMESTER);
+		}
+	}
+
+	// 구성원 유형에서 허용되는 활동 상태인지 검증
+	private void validateStatuses(List<ActivityStatus> statuses, MemberType type) {
+		if (!ActivityStatus.isAllAvailableFor(statuses, type)) {
+			throw new MemberException(INVALID_ACTIVITY_STATUS);
 		}
 	}
 

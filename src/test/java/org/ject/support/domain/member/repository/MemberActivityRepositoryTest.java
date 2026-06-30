@@ -8,6 +8,7 @@ import jakarta.persistence.EntityManager;
 import java.util.List;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
@@ -45,7 +46,8 @@ class MemberActivityRepositoryTest {
         List<JobFamily> jobFamilies,
         List<RecruitTypeDetail> recruitTypeDetails,
         List<CareerDetails> careerDetails,
-        List<Long> teamIds
+        List<Long> teamIds,
+        List<ActivityStatus> statuses
     ) {
         return new MemberSemesterSearchCondition(
             cursor,
@@ -54,8 +56,32 @@ class MemberActivityRepositoryTest {
             jobFamilies,
             recruitTypeDetails,
             careerDetails,
-            teamIds
+            teamIds,
+            statuses
         );
+    }
+
+    private MemberActivity saveSemesterActivity(
+        String email,
+        Long semesterId,
+        Long teamId,
+        JobFamily jobFamily,
+        RecruitTypeDetail recruitTypeDetail,
+        CareerDetails careerDetails,
+        ExperiencePeriod experiencePeriod,
+        ActivityStatus activityStatus
+    ) {
+        Member member = memberRepository.save(member().email(email).build());
+        return memberActivityRepository.saveAndFlush(semesterActivity()
+            .memberId(member.getId())
+            .semesterId(semesterId)
+            .teamId(teamId)
+            .jobFamily(jobFamily)
+            .recruitTypeDetail(recruitTypeDetail)
+            .careerDetails(careerDetails)
+            .experiencePeriod(experiencePeriod)
+            .activityStatus(activityStatus)
+            .build());
     }
 
     private MemberActivity saveSemesterActivity(
@@ -67,16 +93,16 @@ class MemberActivityRepositoryTest {
         CareerDetails careerDetails,
         ExperiencePeriod experiencePeriod
     ) {
-        Member member = memberRepository.save(member().email(email).build());
-        return memberActivityRepository.saveAndFlush(semesterActivity()
-            .memberId(member.getId())
-            .semesterId(semesterId)
-            .teamId(teamId)
-            .jobFamily(jobFamily)
-            .recruitTypeDetail(recruitTypeDetail)
-            .careerDetails(careerDetails)
-            .experiencePeriod(experiencePeriod)
-            .build());
+        return saveSemesterActivity(
+            email,
+            semesterId,
+            teamId,
+            jobFamily,
+            recruitTypeDetail,
+            careerDetails,
+            experiencePeriod,
+            ActivityStatus.ACTIVE
+        );
     }
     /**
      * 일반 구성원 추가 테스트
@@ -224,6 +250,7 @@ class MemberActivityRepositoryTest {
             null,
             null,
             null,
+            null,
             null
         );
 
@@ -263,6 +290,7 @@ class MemberActivityRepositoryTest {
         MemberSemesterSearchCondition condition = searchCondition(
             second.getId(),
             30,
+            null,
             null,
             null,
             null,
@@ -319,7 +347,8 @@ class MemberActivityRepositoryTest {
             List.of(JobFamily.BE),
             List.of(RecruitTypeDetail.REGULAR),
             List.of(CareerDetails.EMPLOYEE),
-            List.of(1L)
+            List.of(1L),
+            null
         );
 
         // when
@@ -359,6 +388,7 @@ class MemberActivityRepositoryTest {
             null,
             30,
             SEMESTER_ID,
+            null,
             null,
             null,
             null,
@@ -403,6 +433,7 @@ class MemberActivityRepositoryTest {
             List.of(JobFamily.BE),
             null,
             null,
+            null,
             null
         );
         // when
@@ -442,6 +473,7 @@ class MemberActivityRepositoryTest {
             null,
             null,
             List.of(RecruitTypeDetail.REGULAR),
+            null,
             null,
             null
         );
@@ -483,6 +515,7 @@ class MemberActivityRepositoryTest {
             null,
             null,
             List.of(CareerDetails.EMPLOYEE),
+            null,
             null
         );
         // when
@@ -523,7 +556,8 @@ class MemberActivityRepositoryTest {
             null,
             null,
             null,
-            List.of(1L,2L,3L)
+            List.of(1L,2L,3L),
+            null
         );
         // when
         List<SearchMemberSemesterProjection> result =
@@ -533,6 +567,56 @@ class MemberActivityRepositoryTest {
             .extracting(SearchMemberSemesterProjection::memberActivityId)
             .containsExactly(matched.getId());
     }
+
+    // 목록 조회(활동 상태 필터)
+    @Test
+    @DisplayName("활동 상태 필터 조건에 맞는 일반 구성원 목록을 조회한다")
+    void 활동_상태_필터_조건에_맞는_일반_구성원_목록을_조회한다() {
+        // given
+        MemberActivity matched = saveSemesterActivity(
+            "matched@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO,
+            ActivityStatus.COMPLETED
+        );
+        saveSemesterActivity(
+            "other-status@test.com",
+            SEMESTER_ID,
+            1L,
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO,
+            ActivityStatus.ACTIVE
+        );
+        MemberSemesterSearchCondition condition = searchCondition(
+            null,
+            30,
+            null,
+            null,
+            null,
+            null,
+            null,
+            List.of(ActivityStatus.COMPLETED)
+        );
+
+        // when
+        List<SearchMemberSemesterProjection> result =
+            memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
+
+        // then
+        assertThat(result)
+            .extracting(SearchMemberSemesterProjection::memberActivityId)
+            .containsExactly(matched.getId());
+        assertThat(result)
+            .extracting(SearchMemberSemesterProjection::status)
+            .containsExactly(ActivityStatus.COMPLETED);
+    }
+
     @Test
     void 카운트_조회는_커서_조건을_적용하지_않는다() {
         // given
@@ -570,7 +654,8 @@ class MemberActivityRepositoryTest {
             List.of(JobFamily.BE),
             List.of(RecruitTypeDetail.REGULAR),
             List.of(CareerDetails.EMPLOYEE),
-            List.of(1L)
+            List.of(1L),
+            null
         );
 
         // when

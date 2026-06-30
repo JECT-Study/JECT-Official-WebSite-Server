@@ -2,6 +2,7 @@ package org.ject.support.admin.member.dto.request;
 
 import java.util.List;
 
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
@@ -35,7 +36,9 @@ public record MemberSemesterSearchCondition(
 	// 신분 (다중 선택)
 	List<CareerDetails> careerDetails,
 	// 팀 (다중 선택)
-	List<@Positive Long> teamIds
+	List<@Positive Long> teamIds,
+	// 활동 상태 (다중 선택)
+	List<ActivityStatus> statuses
 ) {
 	//size가 없으면 기본 30개
 	public int getSizeOrDefault() {

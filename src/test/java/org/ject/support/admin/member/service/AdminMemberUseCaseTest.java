@@ -11,6 +11,7 @@ import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
 import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
@@ -68,6 +69,15 @@ class AdminMemberUseCaseTest {
 	}
 
 	private MemberSemesterSearchCondition searchCondition(Integer size, Long semesterId, List<Long> teamIds) {
+		return searchCondition(size, semesterId, teamIds, null);
+	}
+
+	private MemberSemesterSearchCondition searchCondition(
+		Integer size,
+		Long semesterId,
+		List<Long> teamIds,
+		List<ActivityStatus> statuses
+	) {
 		return new MemberSemesterSearchCondition(
 			null,
 			size,
@@ -75,7 +85,8 @@ class AdminMemberUseCaseTest {
 			null,
 			null,
 			null,
-			teamIds
+			teamIds,
+			statuses
 		);
 	}
 
@@ -86,7 +97,8 @@ class AdminMemberUseCaseTest {
 			JobFamily.BE,
 			"01012345678",
 			CareerDetails.EMPLOYEE,
-			ExperiencePeriod.ONE_TO_TWO
+			ExperiencePeriod.ONE_TO_TWO,
+			ActivityStatus.ACTIVE
 		);
 	}
 
@@ -274,5 +286,39 @@ class AdminMemberUseCaseTest {
 			.isEqualTo(MemberErrorCode.NOT_FOUND_TEAM_OF_SEMESTER);
 		verify(semesterInquiryUsecase).getSemester(condition.semesterId());
 		verifyNoInteractions(adminMemberActivityService);
+	}
+
+	@Test
+	@DisplayName("일반 구성원에서 사용할 수 없는 활동 상태로 조회하면 예외가 발생한다")
+	void 일반_구성원에서_사용할_수_없는_활동_상태로_조회하면_예외가_발생한다() {
+		// given
+		MemberSemesterSearchCondition condition = searchCondition(3, null, null, List.of(ActivityStatus.DROPOUT));
+
+		// when
+		Throwable throwable = catchThrowable(() -> adminMemberUseCase.searchMemberSemester(condition));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
+		verifyNoInteractions(adminMemberActivityService);
+	}
+
+	@Test
+	@DisplayName("일반 구성원에서 탈퇴 상태로 목록을 조회한다")
+	void 일반_구성원에서_탈퇴_상태로_목록을_조회한다() {
+		// given
+		MemberSemesterSearchCondition condition = searchCondition(3, null, null, List.of(ActivityStatus.WITHDRAWN));
+		SearchMemberSemesterPageResult pageResult = new SearchMemberSemesterPageResult(List.of(), 0L);
+		given(adminMemberActivityService.searchMemberSemesterList(condition)).willReturn(pageResult);
+
+		// when
+		CursorPageResponse<SearchMemberSemesterResponse> response =
+			adminMemberUseCase.searchMemberSemester(condition);
+
+		// then
+		assertThat(response.content()).isEmpty();
+		verify(adminMemberActivityService).searchMemberSemesterList(condition);
 	}
 }
