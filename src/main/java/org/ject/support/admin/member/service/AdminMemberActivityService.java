@@ -45,7 +45,7 @@ public class AdminMemberActivityService {
 
 	// 동적 필터로 일반 구성원 목록 조회
 	public SearchMemberSemesterPageResult searchMemberSemesterList(MemberSemesterSearchCondition condition) {
-		// size+1로 조회 (다음 페이지 유무 확인용)
+		// size+1로 조회 (다음 페이지 유무 확인)
 		List<SearchMemberSemesterProjection> projections =
 			memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
 		long totalCount = memberActivityRepository.countMemberSemesters(condition);

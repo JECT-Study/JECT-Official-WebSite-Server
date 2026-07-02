@@ -22,7 +22,7 @@ public class AdminMemberSemesterController implements AdminMemberSemesterApiSpec
 
 	private final AdminMemberUseCase adminMemberUsecase;
 
-	//일반 구성원 추가
+	// 일반 구성원 추가
 	@Override
 	@PostMapping
 	public void createAdminMemberSemester(
@@ -30,6 +30,7 @@ public class AdminMemberSemesterController implements AdminMemberSemesterApiSpec
 		adminMemberUsecase.createMemberSemester(request);
 	}
 
+	// 일반 구성원 목록 조회
 	@Override
 	@GetMapping
 	public CursorPageResponse<SearchMemberSemesterResponse> searchAdminMemberSemesterList(

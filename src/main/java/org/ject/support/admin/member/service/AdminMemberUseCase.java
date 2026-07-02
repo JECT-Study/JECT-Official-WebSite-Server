@@ -33,7 +33,7 @@ public class AdminMemberUseCase {
 	// 일반 구성원 생성 흐름 처리
 	@Transactional
 	public void createMemberSemester(CreateMemberSemesterRequest request) {
-		// 기수 유효성 검증
+		// 유효성 검증
 		semesterInquiryUsecase.getSemester(request.semesterId());
 		validateTeam(request.semesterId(), request.teamId());
 
@@ -50,11 +50,9 @@ public class AdminMemberUseCase {
 	public CursorPageResponse<SearchMemberSemesterResponse> searchMemberSemester(
 		MemberSemesterSearchCondition condition
 	) {
-		// 기수 유효성 체크
+		// 유효성 검증
 		validateSemester(condition.semesterId());
-		// 팀 유효성 체크
 		validateTeams(condition.semesterId(), condition.teamIds());
-		// 활동 상태 체크
 		validateStatuses(condition.statuses(), MemberType.SEMESTER);
 		// size만큼 조회 + 전체 행 수 조회
 		SearchMemberSemesterPageResult pageResult = adminMemberActivityService.searchMemberSemesterList(condition);
@@ -107,18 +105,17 @@ public class AdminMemberUseCase {
 		}
 	}
 
+	// 넘겨받은 팀 목록 전체의 기수 소속 및 유효성 검증
 	private void validateTeams(Long semesterId, List<Long> teamIds) {
 		if(teamIds == null || teamIds.isEmpty()){
 			return;
 		}
 
-		// 팀이 있는데 기수가 없으면 예외
+		// 팀이 있는데 기수가 없으면 잘못된 요청
 		if (semesterId == null) {
 			throw new MemberException(REQUIRED_SEMESTER_FOR_TEAM_FILTER);
 		}
 
-		// 조회 결과 List에서 바로 containsAll() -> O(N*M)
-		// Set에 담고 O(1)로 비교시 -> O(N+M)
 		Set<Long> validTeamIds = new HashSet<>(
 			adminMemberTeamService.getTeamIdsBySemesterId(semesterId)
 		);
