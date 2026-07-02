@@ -6,7 +6,6 @@ import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
-import org.ject.support.domain.recruit.repository.QuestionRepository;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.AuthenticatedUser;
@@ -21,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -44,9 +44,6 @@ class QuestionControllerTest {
     RecruitRepository recruitRepository;
 
     @Autowired
-    QuestionRepository questionRepository;
-
-    @Autowired
     MemberRepository memberRepository;
 
     @Autowired
@@ -60,7 +57,7 @@ class QuestionControllerTest {
 
     @BeforeEach
     void setUp() {
-        String uniqueSuffix = String.valueOf(System.nanoTime());
+        String uniqueSuffix = uniqueSuffix();
         List<Question> questions = List.of(
                 Question.builder().sequence(1).inputType(TEXT).isRequired(true).title("title1").label("label").selectOptions(List.of("a", "b", "c")).build(),
                 Question.builder().sequence(2).inputType(TEXT).isRequired(true).title("title2").label("label").build(),
@@ -88,11 +85,18 @@ class QuestionControllerTest {
         recruitRepository.save(recruit);
 
         member = member()
-                .email("test_" + uniqueSuffix + "@gmail.com")
+                .email("test_" + uniqueSuffix + "@t.kr")
                 .interestedDomains(List.of())
                 .region(null)
                 .build();
         memberRepository.save(member);
+    }
+
+    private String uniqueSuffix() {
+        return UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 8);
     }
 
     @Test
