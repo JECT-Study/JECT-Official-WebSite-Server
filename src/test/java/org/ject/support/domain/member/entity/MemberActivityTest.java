@@ -1,6 +1,7 @@
 package org.ject.support.domain.member.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 
 import org.ject.support.domain.member.ActivityStatus;
@@ -8,6 +9,8 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.exception.MemberErrorCode;
+import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,5 +75,23 @@ class MemberActivityTest {
 
 		// then
 		assertThat(memberActivity.getMemberSemester().getTeamId()).isNull();
+	}
+
+	@Test
+	@DisplayName("일반 구성원에서 사용할 수 없는 활동 상태로 변경하면 예외가 발생한다")
+	void 일반_구성원에서_사용할_수_없는_활동_상태로_변경하면_예외가_발생한다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().build();
+
+		// when
+		Throwable throwable = catchThrowable(() ->
+			memberActivity.updateActivityStatus(ActivityStatus.DROPOUT)
+		);
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
 	}
 }

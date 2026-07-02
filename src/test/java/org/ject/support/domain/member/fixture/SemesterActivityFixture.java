@@ -3,6 +3,7 @@ package org.ject.support.domain.member.fixture;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
@@ -13,6 +14,7 @@ public final class SemesterActivityFixture {
     private RecruitTypeDetail recruitTypeDetail = RecruitTypeDetail.REGULAR;
     private CareerDetails careerDetails = CareerDetails.EMPLOYEE;
     private ExperiencePeriod experiencePeriod = ExperiencePeriod.ONE_TO_TWO;
+    private ActivityStatus activityStatus = ActivityStatus.ACTIVE;
     private String memo = "테스트 메모";
     private Long semesterId = 2L;
     private Long teamId = 3L;
@@ -49,6 +51,11 @@ public final class SemesterActivityFixture {
         return this;
     }
 
+    public SemesterActivityFixture activityStatus(ActivityStatus activityStatus) {
+        this.activityStatus = activityStatus;
+        return this;
+    }
+
     public SemesterActivityFixture memo(String memo) {
         this.memo = memo;
         return this;
@@ -65,7 +72,7 @@ public final class SemesterActivityFixture {
     }
 
     public MemberActivity build() {
-        return MemberActivity.createSemesterActivity(
+        MemberActivity memberActivity = MemberActivity.createSemesterActivity(
             memberId,
             jobFamily,
             recruitTypeDetail,
@@ -75,5 +82,7 @@ public final class SemesterActivityFixture {
             semesterId,
             teamId
         );
+        memberActivity.updateActivityStatus(activityStatus);
+        return memberActivity;
     }
 }

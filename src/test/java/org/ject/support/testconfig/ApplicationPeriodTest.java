@@ -25,16 +25,10 @@ public abstract class ApplicationPeriodTest {
     @BeforeEach
     void setUp() {
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.PM.name())))
-                .thenReturn(Boolean.toString(true));
-        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.PD.name())))
-                .thenReturn(Boolean.toString(true));
-        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.FE.name())))
-                .thenReturn(Boolean.toString(true));
-        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.BE.name())))
-                .thenReturn(Boolean.toString(true));
-        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.SUPPORTER.name())))
-                .thenReturn(Boolean.toString(true));
+        for (JobFamily jobFamily : JobFamily.values()) {
+            when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, jobFamily.name())))
+                    .thenReturn(Boolean.toString(true));
+        }
         when(redisTemplate.getConnectionFactory()).thenReturn(redisConnectionFactory);
     }
 }
