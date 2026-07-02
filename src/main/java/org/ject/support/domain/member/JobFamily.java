@@ -10,6 +10,7 @@ public enum JobFamily {
     PD("프로덕트 디자이너(PD)", true),
     FE("프론트엔드 개발자(FE)", false),
     BE("백엔드 개발자(BE)", false),
+    APP("앱 개발자(APP)", false),
     SUPPORTER("운영 서포터즈", false),
     ;
 
