@@ -110,6 +110,14 @@ class FileControllerTest extends ApplicationPeriodTest {
                 .thenReturn(Boolean.toString(false));
         when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.SUPPORTER.name())))
                 .thenReturn(Boolean.toString(false));
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.OPS.name())))
+                .thenReturn(Boolean.toString(false));
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.INFRA.name())))
+                .thenReturn(Boolean.toString(false));
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.BX.name())))
+                .thenReturn(Boolean.toString(false));
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.ER.name())))
+                .thenReturn(Boolean.toString(false));
 
         // then
         mockMvc.perform(post("/upload/portfolios")
