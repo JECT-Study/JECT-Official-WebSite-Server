@@ -12,6 +12,10 @@ public enum JobFamily {
     BE("백엔드 개발자(BE)", false),
     APP("앱 개발자(APP)", false),
     SUPPORTER("운영 서포터즈", false),
+    OPS("운영팀(OPS)", false),
+    INFRA("인프라팀(INFRA)", false),
+    BX("BX팀(BX)", false),
+    ER("대외협력팀(ER)", false),
     ;
 
     private final String description;

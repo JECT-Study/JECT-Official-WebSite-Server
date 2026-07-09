@@ -49,6 +49,34 @@ class JobFamilyTest {
     }
 
     @Test
+    @DisplayName("운영팀 직군을 제공한다")
+    void 운영팀_직군을_제공한다() {
+        assertThat(JobFamily.OPS.getDescription()).isEqualTo("운영팀(OPS)");
+        assertThat(JobFamily.OPS.isPortfolioRequired()).isFalse();
+    }
+
+    @Test
+    @DisplayName("인프라팀 직군을 제공한다")
+    void 인프라팀_직군을_제공한다() {
+        assertThat(JobFamily.INFRA.getDescription()).isEqualTo("인프라팀(INFRA)");
+        assertThat(JobFamily.INFRA.isPortfolioRequired()).isFalse();
+    }
+
+    @Test
+    @DisplayName("BX팀 직군을 제공한다")
+    void BX팀_직군을_제공한다() {
+        assertThat(JobFamily.BX.getDescription()).isEqualTo("BX팀(BX)");
+        assertThat(JobFamily.BX.isPortfolioRequired()).isFalse();
+    }
+
+    @Test
+    @DisplayName("대외협력팀 직군을 제공한다")
+    void 대외협력팀_직군을_제공한다() {
+        assertThat(JobFamily.ER.getDescription()).isEqualTo("대외협력팀(ER)");
+        assertThat(JobFamily.ER.isPortfolioRequired()).isFalse();
+    }
+
+    @Test
     @DisplayName("프로덕트 디자이너는 포트폴리오가 필수다")
     void 프로덕트_디자이너는_포트폴리오가_필수다() {
         assertThat(JobFamily.PD.isPortfolioRequired()).isTrue();
