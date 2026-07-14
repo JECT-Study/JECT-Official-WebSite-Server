@@ -19,6 +19,6 @@ public interface JectalkApiSpec {
     )
     Page<JectalkResponse> findJectalks(
             @PageableDefault(size = 12) Pageable pageable,
-            @Parameter(description = "기수 (SEMESTER_1, SEMESTER_2, SEMESTER_3)", example = "SEMESTER_1")
+            @Parameter(description = "기수 (SEMESTER_1, SEMESTER_2, SEMESTER_3, SEMESTER_4)", example = "SEMESTER_1")
             @RequestParam(required = false) Project.Category category);
 }

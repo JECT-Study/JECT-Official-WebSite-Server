@@ -62,6 +62,7 @@ class ProjectServiceTest extends UnitTestSupport {
                 .description("description")
                 .thumbnailUrl("thumbnail.png")
                 .serviceUrl("service.com")
+                .githubUrl("https://github.com/JECT-Study/project")
                 .team(Team.builder().id(1L).name("team").semesterId(1L).build())
                 .projectIntros(List.of(serviceIntro1, serviceIntro2, serviceIntro3, devIntro1))
                 .build();
@@ -82,6 +83,7 @@ class ProjectServiceTest extends UnitTestSupport {
         assertThat(result.endDate()).isEqualTo(project.getEndDate());
         assertThat(result.description()).isEqualTo(project.getDescription());
         assertThat(result.serviceUrl()).isEqualTo(project.getServiceUrl());
+        assertThat(result.githubUrl()).isEqualTo(project.getGithubUrl());
         assertThat(result.sampleImageUrls()).hasSize(3);
         assertThat(result.descriptionImageUrls()).hasSize(1);
     }
@@ -148,6 +150,9 @@ class ProjectServiceTest extends UnitTestSupport {
 
         assertThat(summary.categorySummaries().get(3).categoryName()).isEqualTo(Project.Category.SEMESTER_3.name());
         assertThat(summary.categorySummaries().get(3).count()).isEqualTo(0L);
+
+        assertThat(summary.categorySummaries().get(4).categoryName()).isEqualTo(Project.Category.SEMESTER_4.name());
+        assertThat(summary.categorySummaries().get(4).count()).isEqualTo(0L);
     }
 
     private ProjectIntro createProjectIntro(Long id, String imageUrl, Category category, int sequence) {
