@@ -3,7 +3,7 @@ package org.ject.support.domain.project.service;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Team;
-import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.member.repository.MemberActivityRepository;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectIntroResponse;
 import org.ject.support.domain.project.dto.ProjectSummaryResponse;
@@ -35,7 +35,7 @@ class ProjectServiceTest extends UnitTestSupport {
     private ProjectRepository projectRepository;
 
     @Mock
-    private MemberRepository memberRepository;
+    private MemberActivityRepository memberActivityRepository;
 
     private Project project;
     private List<String> projectManagers;
@@ -72,7 +72,8 @@ class ProjectServiceTest extends UnitTestSupport {
     void 프로젝트_상세_조회() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
-        //TODO: team_id 기반으로 member와 activity를 조회해도록 구현 후 검증 추가
+        when(memberActivityRepository.findMemberNamesByTeamId(1L)).thenReturn(
+                new TeamMemberNames(projectManagers, productDesigners, frontendDevelopers, backendDevelopers));
 
         // when
         ProjectDetailResponse result = projectService.findProjectDetails(1L);
@@ -81,6 +82,10 @@ class ProjectServiceTest extends UnitTestSupport {
         assertThat(result.name()).isEqualTo(project.getName());
         assertThat(result.startDate()).isEqualTo(project.getStartDate());
         assertThat(result.endDate()).isEqualTo(project.getEndDate());
+        assertThat(result.teamMemberNames().productManagers()).isEmpty();
+        assertThat(result.teamMemberNames().productDesigners()).containsExactly("designer1");
+        assertThat(result.teamMemberNames().frontendDevelopers()).containsExactly("front1", "front2");
+        assertThat(result.teamMemberNames().backendDevelopers()).containsExactly("back1", "back2", "back3");
         assertThat(result.description()).isEqualTo(project.getDescription());
         assertThat(result.serviceUrl()).isEqualTo(project.getServiceUrl());
         assertThat(result.githubUrl()).isEqualTo(project.getGithubUrl());
@@ -92,7 +97,8 @@ class ProjectServiceTest extends UnitTestSupport {
     void 프로젝트_상세_조회_시_서비스_소개서는_sequence_기준으로_오름차순_정렬() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
-        //TODO: team_id 기반으로 member와 activity를 조회해도록 구현 후 검증 추가
+        when(memberActivityRepository.findMemberNamesByTeamId(1L)).thenReturn(
+                new TeamMemberNames(projectManagers, productDesigners, frontendDevelopers, backendDevelopers));
 
         // when
         ProjectDetailResponse result = projectService.findProjectDetails(1L);
@@ -117,7 +123,8 @@ class ProjectServiceTest extends UnitTestSupport {
     void 프로젝트_상세_조회_시_기술_스택을_배열_형태로_반환() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
-        //TODO: team_id 기반으로 member와 activity를 조회해도록 구현 후 검증 추가
+        when(memberActivityRepository.findMemberNamesByTeamId(1L)).thenReturn(
+                new TeamMemberNames(projectManagers, productDesigners, frontendDevelopers, backendDevelopers));
 
         // when
         ProjectDetailResponse result = projectService.findProjectDetails(1L);
