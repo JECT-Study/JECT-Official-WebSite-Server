@@ -12,8 +12,10 @@ import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -78,6 +80,40 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 			).fetchOne();
 
 		return count == null ? 0L : count;
+	}
+
+	// 팀에 소속된 일반 구성원 이름을 직군별로 조회
+	@Override
+	public TeamMemberNames findMemberNamesByTeamId(Long teamId) {
+		List<Tuple> teamMembers = jpaQueryFactory
+			.select(member.name, memberActivity.jobFamily)
+			.from(memberActivity)
+			.join(member).on(member.id.eq(memberActivity.memberId))
+			.join(memberSemester).on(memberSemester.id.eq(memberActivity.id))
+			.where(
+				memberSemester.teamId.eq(teamId),
+				memberActivity.memberType.eq(MemberType.SEMESTER),
+				member.isDeleted.isFalse(),
+				memberActivity.isDeleted.isFalse(),
+				member.name.isNotNull()
+			)
+			.orderBy(memberActivity.id.asc())
+			.fetch();
+
+		return new TeamMemberNames(
+			findNamesByJobFamily(teamMembers, JobFamily.PM),
+			findNamesByJobFamily(teamMembers, JobFamily.PD),
+			findNamesByJobFamily(teamMembers, JobFamily.FE),
+			findNamesByJobFamily(teamMembers, JobFamily.BE)
+		);
+	}
+
+	// 조회 결과에서 지정 직군의 이름만 분리
+	private List<String> findNamesByJobFamily(List<Tuple> teamMembers, JobFamily jobFamily) {
+		return teamMembers.stream()
+			.filter(teamMember -> jobFamily == teamMember.get(memberActivity.jobFamily))
+			.map(teamMember -> teamMember.get(member.name))
+			.toList();
 	}
 
 	private BooleanExpression cursorLt(Long cursor){

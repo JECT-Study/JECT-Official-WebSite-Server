@@ -13,6 +13,7 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.entity.MemberSemester;
@@ -81,6 +82,22 @@ class MemberActivityRepositoryTest {
             .careerDetails(careerDetails)
             .experiencePeriod(experiencePeriod)
             .activityStatus(activityStatus)
+            .build());
+    }
+
+    private MemberActivity saveSemesterActivity(
+        String name,
+        String email,
+        Long semesterId,
+        Long teamId,
+        JobFamily jobFamily
+    ) {
+        Member member = memberRepository.save(member().name(name).email(email).build());
+        return memberActivityRepository.saveAndFlush(semesterActivity()
+            .memberId(member.getId())
+            .semesterId(semesterId)
+            .teamId(teamId)
+            .jobFamily(jobFamily)
             .build());
     }
 
@@ -666,5 +683,77 @@ class MemberActivityRepositoryTest {
         // then
         assertThat(results).hasSize(1);
         assertThat(totalCount).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("팀 ID로 일반 구성원 이름을 직군별로 조회한다")
+    void 팀_ID로_일반_구성원_이름을_직군별로_조회한다() {
+        // given
+        Long teamId = 10L;
+        saveSemesterActivity("기획자", "pm@test.com", SEMESTER_ID, teamId, JobFamily.PM);
+        saveSemesterActivity("디자이너", "pd@test.com", SEMESTER_ID, teamId, JobFamily.PD);
+        saveSemesterActivity("프론트1", "fe1@test.com", SEMESTER_ID, teamId, JobFamily.FE);
+        saveSemesterActivity("프론트2", "fe2@test.com", SEMESTER_ID, teamId, JobFamily.FE);
+        saveSemesterActivity("백엔드", "be@test.com", SEMESTER_ID, teamId, JobFamily.BE);
+        saveSemesterActivity("앱", "app@test.com", SEMESTER_ID, teamId, JobFamily.APP);
+        saveSemesterActivity("다른팀", "other@test.com", SEMESTER_ID, 20L, JobFamily.BE);
+
+        // when
+        TeamMemberNames result = memberActivityRepository.findMemberNamesByTeamId(teamId);
+
+        // then
+        assertThat(result.productManagers()).containsExactly("기획자");
+        assertThat(result.productDesigners()).containsExactly("디자이너");
+        assertThat(result.frontendDevelopers()).containsExactly("프론트1", "프론트2");
+        assertThat(result.backendDevelopers()).containsExactly("백엔드");
+    }
+
+    @Test
+    @DisplayName("구성원이 없는 팀은 직군별 빈 목록을 반환한다")
+    void 구성원이_없는_팀은_직군별_빈_목록을_반환한다() {
+        // when
+        TeamMemberNames result = memberActivityRepository.findMemberNamesByTeamId(999L);
+
+        // then
+        assertThat(result.productManagers()).isEmpty();
+        assertThat(result.productDesigners()).isEmpty();
+        assertThat(result.frontendDevelopers()).isEmpty();
+        assertThat(result.backendDevelopers()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("삭제된 구성원과 활동은 팀원 이름 조회에서 제외한다")
+    void 삭제된_구성원과_활동은_팀원_이름_조회에서_제외한다() {
+        // given
+        Long teamId = 10L;
+        saveSemesterActivity("정상 구성원", "active@test.com", SEMESTER_ID, teamId, JobFamily.BE);
+
+        Member deletedMember = memberRepository.save(
+            member().name("삭제 구성원").email("deleted-member@test.com").build()
+        );
+        memberActivityRepository.saveAndFlush(semesterActivity()
+            .memberId(deletedMember.getId())
+            .semesterId(SEMESTER_ID)
+            .teamId(teamId)
+            .jobFamily(JobFamily.BE)
+            .build());
+        memberRepository.delete(deletedMember);
+
+        MemberActivity deletedActivity = saveSemesterActivity(
+            "삭제 활동",
+            "deleted-activity@test.com",
+            SEMESTER_ID,
+            teamId,
+            JobFamily.BE
+        );
+        memberActivityRepository.delete(deletedActivity);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        TeamMemberNames result = memberActivityRepository.findMemberNamesByTeamId(teamId);
+
+        // then
+        assertThat(result.backendDevelopers()).containsExactly("정상 구성원");
     }
 }
