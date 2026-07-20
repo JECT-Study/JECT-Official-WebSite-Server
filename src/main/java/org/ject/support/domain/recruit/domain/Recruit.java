@@ -13,6 +13,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,6 +23,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.DynamicUpdate;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.recruit.exception.RecruitErrorCode;
+import org.ject.support.domain.recruit.exception.RecruitException;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -58,6 +62,11 @@ public class Recruit extends BaseTimeEntity {
     @Builder.Default
     private RecruitType recruitType = RecruitType.REGULAR;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recruit_type_detail", columnDefinition = "varchar(45)", nullable = false)
+    @Builder.Default
+    private RecruitTypeDetail recruitTypeDetail = RecruitTypeDetail.REGULAR;
+
     @OneToMany(mappedBy = "recruit", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Question> questions = new ArrayList<>();
@@ -77,6 +86,14 @@ public class Recruit extends BaseTimeEntity {
 
     public boolean isInvalidQuestionId(final Long questionId) {
         return questions.stream().noneMatch(question -> question.getId().equals(questionId));
+    }
+
+    @PrePersist
+    @PreUpdate
+    void validateRecruitTypeDetail() {
+        if (recruitType == null || !recruitType.supports(recruitTypeDetail)) {
+            throw new RecruitException(RecruitErrorCode.INVALID_RECRUIT_TYPE_DETAIL);
+        }
     }
 
     public void update(JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate) {

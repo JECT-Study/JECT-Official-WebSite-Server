@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponse;
+import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
 import org.ject.support.domain.recruit.dto.RecruitCanceledEvent;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
@@ -18,6 +20,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -46,14 +49,25 @@ public class RecruitService implements RecruitUsecase {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public ActiveRecruitmentResponses findActiveRecruitments() {
+        List<ActiveRecruitmentResponse> responses = recruitRepository.findActiveRecruitments(LocalDateTime.now()).stream()
+                .map(ActiveRecruitmentResponse::from)
+                .toList();
+        return new ActiveRecruitmentResponses(responses);
+    }
+
+    @Override
     public void updateRecruit(Long recruitId, RecruitUpdateRequest request) {
         Recruit recruit = getRecruit(recruitId);
         if (recruit.isClosed()) {
             throw new RecruitException(RecruitErrorCode.UPDATE_NOT_ALLOW_FOR_CLOSED);
         }
+        JobFamily previousJobFamily = recruit.getJobFamily();
         recruit.update(request.jobFamily(), request.startDate(), request.endDate());
         eventPublisher.publishEvent(new RecruitUpdatedEvent(
                 recruit.getId(),
+                previousJobFamily,
                 recruit.getJobFamily(),
                 recruit.getStartDate(),
                 recruit.getEndDate()));

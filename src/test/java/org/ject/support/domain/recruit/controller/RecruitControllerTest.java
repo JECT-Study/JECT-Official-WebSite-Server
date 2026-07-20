@@ -1,161 +1,90 @@
 package org.ject.support.domain.recruit.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.ject.support.domain.recruit.domain.Recruit;
-import org.ject.support.domain.recruit.domain.Semester;
-import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
-import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
-import org.ject.support.domain.recruit.repository.RecruitRepository;
-import org.ject.support.domain.recruit.repository.SemesterRepository;
-import org.ject.support.testconfig.AuthenticatedUser;
-import org.ject.support.testconfig.IntegrationTest;
+import org.ject.support.common.response.ResponseWrapper;
+import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponse;
+import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
+import org.ject.support.domain.recruit.service.RecruitUsecase;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.http.MediaType;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.recruit.exception.RecruitErrorCode.DUPLICATED_JOB_FAMILY;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.ject.support.domain.recruit.domain.RecruitType.MAKERS;
+import static org.ject.support.domain.recruit.domain.RecruitType.SEMESTER;
+import static org.ject.support.domain.recruit.domain.RecruitTypeDetail.NEW;
+import static org.ject.support.domain.recruit.domain.RecruitTypeDetail.REGULAR;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@IntegrationTest
-@AutoConfigureMockMvc
-@Transactional
-@AuthenticatedUser(isAdmin = true)
+@ExtendWith(MockitoExtension.class)
 class RecruitControllerTest {
 
-    @Autowired
     MockMvc mockMvc;
 
-    @Autowired
-    ObjectMapper objectMapper;
+    @Mock
+    RecruitUsecase recruitUsecase;
 
-    @Autowired
-    RecruitRepository recruitRepository;
-
-    @Autowired
-    SemesterRepository semesterRepository;
+    @InjectMocks
+    RecruitController recruitController;
 
     @BeforeEach
     void setUp() {
-        semesterRepository.deleteAll();
-        recruitRepository.deleteAll();
-        semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+        mockMvc = MockMvcBuilders.standaloneSetup(recruitController)
+                .setControllerAdvice(new ResponseWrapper())
+                .build();
     }
 
     @Test
-    @DisplayName("모집 정보 등록")
-    void register_recruits() throws Exception {
+    void 활성_모집_공고_목록을_조회한다() throws Exception {
         // given
-        List<RecruitRegisterRequest> requests = List.of(
-                new RecruitRegisterRequest(
-                        BE,
-                        LocalDateTime.now().minusDays(1),
-                        LocalDateTime.now().plusDays(1)),
-                new RecruitRegisterRequest(
-                        FE,
-                        LocalDateTime.now().minusDays(1),
-                        LocalDateTime.now().plusDays(1))
-        );
-
-        String reqJson = objectMapper.writeValueAsString(requests);
-
-        // when
-        mockMvc.perform(post("/admin/recruits")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(reqJson))
-                .andExpect(content().string(containsString("SUCCESS")));
-
-        // then
-        assertThat(recruitRepository.findActiveRecruits(LocalDateTime.now())).hasSize(2);
-    }
-
-    @Test
-    @DisplayName("이미 모집중인 직군에 대한 모집 등록 시 실패")
-    void register_recruit_fail_by_duplicated_job_family() throws Exception {
-        // given
-        Semester recruitingSemester = semesterRepository.findRecruitingSemester()
-                .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
-        recruitRepository.save(Recruit.builder()
-                .semester(recruitingSemester)
-                .startDate(LocalDateTime.now().minusDays(1))
-                .endDate(LocalDateTime.now().plusDays(1))
-                .jobFamily(BE)
-                .build());
-
-        List<RecruitRegisterRequest> requests = List.of(
-                new RecruitRegisterRequest(BE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1)),
-                new RecruitRegisterRequest(FE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1))
-        );
-
-        String reqJson = objectMapper.writeValueAsString(requests);
+        LocalDateTime now = LocalDateTime.now();
+        ActiveRecruitmentResponses responses = new ActiveRecruitmentResponses(List.of(
+                new ActiveRecruitmentResponse(
+                        1L, 3L, "3기", SEMESTER, "정규 기수 모집", REGULAR, "정규 모집",
+                        BE, "백엔드 개발자(BE)", now.minusDays(2), now.plusDays(2)),
+                new ActiveRecruitmentResponse(
+                        2L, 3L, "3기", MAKERS, "메이커스 모집", NEW, "신규 모집",
+                        FE, "프론트엔드 개발자(FE)", now.minusDays(1), now.plusDays(2))
+        ));
+        given(recruitUsecase.findActiveRecruitments()).willReturn(responses);
 
         // when, then
-        mockMvc.perform(post("/admin/recruits")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(reqJson))
-                .andExpect(content().string(containsString(DUPLICATED_JOB_FAMILY.getCode())));
+        mockMvc.perform(get("/recruits/active"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.recruitments", hasSize(2)))
+                .andExpect(jsonPath("$.data.recruitments[0].recruitType").value("SEMESTER"))
+                .andExpect(jsonPath("$.data.recruitments[0].recruitTypeDescription").value("정규 기수 모집"))
+                .andExpect(jsonPath("$.data.recruitments[0].recruitTypeDetail").value("REGULAR"))
+                .andExpect(jsonPath("$.data.recruitments[0].jobFamily").value("BE"))
+                .andExpect(jsonPath("$.data.recruitments[1].recruitType").value("MAKERS"))
+                .andExpect(jsonPath("$.data.recruitments[1].recruitTypeDetail").value("NEW"))
+                .andExpect(jsonPath("$.data.recruitments[1].jobFamily").value("FE"));
+        verify(recruitUsecase).findActiveRecruitments();
     }
 
     @Test
-    @DisplayName("모집 정보 수정")
-    void update_recruit() throws Exception {
+    void 활성_모집_공고가_없으면_빈_목록을_반환한다() throws Exception {
         // given
-        Semester recruitingSemester = semesterRepository.findRecruitingSemester()
-                .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
-        Recruit savedRecruit = recruitRepository.save(Recruit.builder()
-                .semester(recruitingSemester)
-                .startDate(LocalDateTime.now().minusDays(1))
-                .endDate(LocalDateTime.now().plusDays(1))
-                .jobFamily(BE)
-                .build());
+        given(recruitUsecase.findActiveRecruitments()).willReturn(new ActiveRecruitmentResponses(List.of()));
 
-        String reqJson = objectMapper.writeValueAsString(
-                new RecruitUpdateRequest(FE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1)));
-
-        // when
-        mockMvc.perform(put("/admin/recruits/{recruitId}", savedRecruit.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(reqJson))
-                .andExpect(content().string(containsString("SUCCESS")));
-
-        // then
-        Recruit updatedRecruit = recruitRepository.findById(savedRecruit.getId()).orElseThrow();
-        assertThat(updatedRecruit.getJobFamily()).isEqualTo(FE);
-    }
-
-    @Test
-    @DisplayName("모집 취소")
-    void cancel_recruit() throws Exception {
-        // given
-        Semester recruitingSemester = semesterRepository.findRecruitingSemester()
-                .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
-        Recruit savedRecruit = recruitRepository.save(Recruit.builder()
-                .semester(recruitingSemester)
-                .startDate(LocalDateTime.now().minusDays(1))
-                .endDate(LocalDateTime.now().plusDays(1))
-                .jobFamily(BE)
-                .build());
-
-        // when
-        mockMvc.perform(delete("/admin/recruits/{recruitId}", savedRecruit.getId()))
-                .andExpect(content().string(containsString("SUCCESS")));
-
-        // then
-        List<Recruit> recruits = recruitRepository.findActiveRecruits(LocalDateTime.now());
-        assertThat(recruits).isEmpty();
+        // when, then
+        mockMvc.perform(get("/recruits/active"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.recruitments", hasSize(0)));
     }
 }

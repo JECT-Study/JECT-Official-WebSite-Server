@@ -5,6 +5,7 @@ import static org.mockito.Mockito.when;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.dto.Constants;
 import org.junit.jupiter.api.BeforeEach;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -14,10 +15,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 public abstract class ApplicationPeriodTest {
     @MockitoBean
     protected RedisTemplate<String, String> redisTemplate;
-    
-    @MockitoBean
+
+    @MockitoBean(answers = Answers.RETURNS_DEEP_STUBS)
     protected RedisConnectionFactory redisConnectionFactory;
-    
+
     @Mock
     protected ValueOperations<String, String> valueOperations;
 
@@ -31,6 +32,18 @@ public abstract class ApplicationPeriodTest {
         when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.FE.name())))
                 .thenReturn(Boolean.toString(true));
         when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.BE.name())))
+                .thenReturn(Boolean.toString(true));
+        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.APP.name())))
+                .thenReturn(Boolean.toString(true));
+        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.SUPPORTER.name())))
+                .thenReturn(Boolean.toString(true));
+        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.OPS.name())))
+                .thenReturn(Boolean.toString(true));
+        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.INFRA.name())))
+                .thenReturn(Boolean.toString(true));
+        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.BX.name())))
+                .thenReturn(Boolean.toString(true));
+        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.ER.name())))
                 .thenReturn(Boolean.toString(true));
         when(redisTemplate.getConnectionFactory()).thenReturn(redisConnectionFactory);
     }

@@ -61,9 +61,3 @@ security:
     allowed-origins-client-dev: http://localhost:3000
     cookie:
       domain: localhost
-
-notification:
-  discord:
-    webhook:
-      admin-login: dummy-url-for-test
-      supporter-token-issue: dummy-url-for-test

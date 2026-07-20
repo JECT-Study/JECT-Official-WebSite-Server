@@ -17,7 +17,6 @@ public class RecruitUpdatedEventHandler {
     private final RecruitRepository recruitRepository;
     private final RecruitFlagService recruitFlagService;
     private final RecruitScheduleService recruitScheduleService;
-
     /**
      * 모집 수정 시 호출됨
      */
@@ -30,11 +29,16 @@ public class RecruitUpdatedEventHandler {
         Recruit recruit = recruitRepository.findById(event.recruitId())
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
 
+        if (event.previousJobFamily() != event.currentJobFamily()) {
+            recruitFlagService.refreshJobFamilyFlag(event.previousJobFamily());
+        }
+
         if (recruit.isRecruitingPeriod()) {
             // 등록된 모집이 활성화되어 있다면 즉시 flag 캐싱
             recruitFlagService.setRecruitFlag(recruit);
         } else {
             // 등록된 모집의 시작일이 미래 시점이라면 스케줄 등록
+            recruitFlagService.deleteRecruitFlag(recruit.getId(), recruit.getJobFamily());
             recruitScheduleService.scheduleRecruitOpen(recruit);
         }
 

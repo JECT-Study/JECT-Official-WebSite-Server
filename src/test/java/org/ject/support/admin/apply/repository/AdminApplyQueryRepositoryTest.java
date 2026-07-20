@@ -1,13 +1,27 @@
 package org.ject.support.admin.apply.repository;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
+import static org.ject.support.domain.member.JobFamily.BE;
+import static org.ject.support.domain.member.JobFamily.FE;
+import static org.ject.support.domain.member.JobFamily.PM;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
@@ -21,23 +35,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
-import static org.ject.support.domain.apply.domain.Apply.Status.TEMP_SAVED;
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.PM;
-import static org.springframework.test.util.ReflectionTestUtils.setField;
-
 @Import({QueryDslTestConfig.class, AdminApplyQueryRepositoryImpl.class})
 @DataJpaTest
 class AdminApplyQueryRepositoryTest {
 
     @Autowired
-    AdminApplyQueryRepository adminApplyQueryRepository;
+    AdminApplyRepository adminApplyRepository;
 
     @Autowired
     SemesterRepository semesterRepository;
@@ -46,7 +49,7 @@ class AdminApplyQueryRepositoryTest {
     RecruitRepository recruitRepository;
 
     @Autowired
-    MemberRepository memberRepository;
+    ApplicantRepository applicantRepository;
 
     @Autowired
     org.ject.support.domain.apply.repository.ApplyRepository applyRepository;
@@ -72,48 +75,48 @@ class AdminApplyQueryRepositoryTest {
     @Test
     void JobFamily로_제출된_지원서_목록_조회_성공() {
         // given
-        Member beMember1 = createMember("be1@test.com", BE);
-        Member beMember2 = createMember("be2@test.com", BE);
-        Member feMember = createMember("fe@test.com", FE);
-        memberRepository.saveAll(List.of(beMember1, beMember2, feMember));
+        Applicant beApplicant1 = createApplicant("be1@test.com", BE);
+        Applicant beApplicant2 = createApplicant("be2@test.com", BE);
+        Applicant feApplicant = createApplicant("fe@test.com", FE);
+        applicantRepository.saveAll(List.of(beApplicant1, beApplicant2, feApplicant));
 
-        Apply beApply1 = getApply(beMember1, beRecruit, SUBMITTED);
-        Apply beApply2 = getApply(beMember2, beRecruit, SUBMITTED);
-        Apply feApply = getApply(feMember, feRecruit, SUBMITTED);
+        Apply beApply1 = getApply(beApplicant1, beRecruit, SUBMITTED);
+        Apply beApply2 = getApply(beApplicant2, beRecruit, SUBMITTED);
+        Apply feApply = getApply(feApplicant, feRecruit, SUBMITTED);
         applyRepository.saveAll(List.of(beApply1, beApply2, feApply));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent())
-                .extracting(Apply::getMember)
-                .containsExactlyInAnyOrder(beMember1, beMember2);
+                .extracting(Apply::getApplicant)
+                .containsExactlyInAnyOrder(beApplicant1, beApplicant2);
     }
 
     @Test
     void JobFamily가_null이면_전체_제출된_지원서_조회() {
         // given
-        Member beMember = createMember("be@test.com", BE);
-        Member feMember = createMember("fe@test.com", FE);
-        Member pmMember = createMember("pm@test.com", PM);
-        memberRepository.saveAll(List.of(beMember, feMember, pmMember));
+        Applicant beApplicant = createApplicant("be@test.com", BE);
+        Applicant feApplicant = createApplicant("fe@test.com", FE);
+        Applicant pmApplicant = createApplicant("pm@test.com", PM);
+        applicantRepository.saveAll(List.of(beApplicant, feApplicant, pmApplicant));
 
-        Apply beApply = getApply(beMember, beRecruit, SUBMITTED);
-        Apply feApply = getApply(feMember, feRecruit, SUBMITTED);
-        Apply pmApply = getApply(pmMember, pmRecruit, SUBMITTED);
+        Apply beApply = getApply(beApplicant, beRecruit, SUBMITTED);
+        Apply feApply = getApply(feApplicant, feRecruit, SUBMITTED);
+        Apply pmApply = getApply(pmApplicant, pmRecruit, SUBMITTED);
         applyRepository.saveAll(List.of(beApply, feApply, pmApply));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(null, status, null, null, pageable);
+        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, null, null), pageable);
 
         // then
         assertThat(result.getContent()).hasSize(3);
@@ -123,19 +126,19 @@ class AdminApplyQueryRepositoryTest {
     @Test
     void 임시저장_상태는_조회되지_않음() {
         // given
-        Member beMember1 = createMember("be1@test.com", BE);
-        Member beMember2 = createMember("be2@test.com", BE);
-        memberRepository.saveAll(List.of(beMember1, beMember2));
+        Applicant beApplicant1 = createApplicant("be1@test.com", BE);
+        Applicant beApplicant2 = createApplicant("be2@test.com", BE);
+        applicantRepository.saveAll(List.of(beApplicant1, beApplicant2));
 
-        Apply submittedApply = getApply(beMember1, beRecruit, SUBMITTED);
-        Apply tempApply = getApply(beMember2, beRecruit, TEMP_SAVED);
+        Apply submittedApply = getApply(beApplicant1, beRecruit, SUBMITTED);
+        Apply tempApply = getApply(beApplicant2, beRecruit, TEMP_SAVED);
         applyRepository.saveAll(List.of(submittedApply, tempApply));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -145,41 +148,41 @@ class AdminApplyQueryRepositoryTest {
     @Test
     void 삭제된_회원의_지원서는_조회되지_않음() {
         // given
-        Member activeMember = createMember("active@test.com", BE);
-        Member deletedMember = createMember("deleted@test.com", BE);
-        deletedMember.deleteProfile();
-        memberRepository.saveAll(List.of(activeMember, deletedMember));
+        Applicant activeApplicant = createApplicant("active@test.com", BE);
+        Applicant deletedApplicant = createApplicant("deleted@test.com", BE);
+        deletedApplicant.deleteProfile();
+        applicantRepository.saveAll(List.of(activeApplicant, deletedApplicant));
 
-        Apply activeApply = getApply(activeMember, beRecruit, SUBMITTED);
-        Apply deletedApply = getApply(deletedMember, beRecruit, SUBMITTED);
+        Apply activeApply = getApply(activeApplicant, beRecruit, SUBMITTED);
+        Apply deletedApply = getApply(deletedApplicant, beRecruit, SUBMITTED);
         applyRepository.saveAll(List.of(activeApply, deletedApply));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().getFirst().getMember()).isEqualTo(activeMember);
+        assertThat(result.getContent().getFirst().getApplicant()).isEqualTo(activeApplicant);
     }
 
     @Test
     void 페이징_정상_작동() {
         // given
         for (int i = 1; i <= 25; i++) {
-            Member member = createMember("be" + i + "@test.com", BE);
-            memberRepository.save(member);
-            Apply apply = getApply(member, beRecruit, SUBMITTED);
+            Applicant applicant = createApplicant("be" + i + "@test.com", BE);
+            applicantRepository.save(applicant);
+            Apply apply = getApply(applicant, beRecruit, SUBMITTED);
             applyRepository.save(apply);
         }
 
         Pageable pageable = PageRequest.of(1, 10);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
 
         // then
         assertThat(result.getContent()).hasSize(10);
@@ -192,10 +195,10 @@ class AdminApplyQueryRepositoryTest {
     void 제출된_지원서가_없으면_빈_페이지_반환() {
         // given
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
 
 
         // then
@@ -206,25 +209,25 @@ class AdminApplyQueryRepositoryTest {
     @Test
     void createdAt_기준_내림차순_정렬()  {
         // given
-        Member member1 = createMember("be1@test.com", BE);
-        Member member2 = createMember("be2@test.com", BE);
-        Member member3 = createMember("be3@test.com", BE);
-        memberRepository.saveAll(List.of(member1, member2, member3));
+        Applicant applicant1 = createApplicant("be1@test.com", BE);
+        Applicant applicant2 = createApplicant("be2@test.com", BE);
+        Applicant applicant3 = createApplicant("be3@test.com", BE);
+        applicantRepository.saveAll(List.of(applicant1, applicant2, applicant3));
 
-        Apply apply1 = getApply(member1, beRecruit, SUBMITTED);
+        Apply apply1 = getApply(applicant1, beRecruit, SUBMITTED);
         applyRepository.save(apply1);
 
-        Apply apply2 = getApply(member2, beRecruit, SUBMITTED);
+        Apply apply2 = getApply(applicant2, beRecruit, SUBMITTED);
         applyRepository.save(apply2);
 
-        Apply apply3 = getApply(member3, beRecruit, SUBMITTED);
+        Apply apply3 = getApply(applicant3, beRecruit, SUBMITTED);
         applyRepository.save(apply3);
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, null, null, pageable);
+        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
 
         // then
         assertThat(result.getContent()).hasSize(3);
@@ -255,19 +258,19 @@ class AdminApplyQueryRepositoryTest {
                 .jobFamily(BE)
                 .build());
 
-        Member member1 = createMember("be1@test.com", BE);
-        Member member2 = createMember("be2@test.com", BE);
-        memberRepository.saveAll(List.of(member1, member2));
+        Applicant applicant1 = createApplicant("be1@test.com", BE);
+        Applicant applicant2 = createApplicant("be2@test.com", BE);
+        applicantRepository.saveAll(List.of(applicant1, applicant2));
 
-        Apply apply1 = getApply(member1, recruit1, SUBMITTED);
-        Apply apply2 = getApply(member2, recruit2, SUBMITTED);
+        Apply apply1 = getApply(applicant1, recruit1, SUBMITTED);
+        Apply apply2 = getApply(applicant2, recruit2, SUBMITTED);
         applyRepository.saveAll(List.of(apply1, apply2));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(BE, status, semester.getId(), null, pageable);
+        Page<Apply> result = adminApplyRepository.findApplies(condition(status, semester.getId(), BE, null), pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -283,7 +286,7 @@ class AdminApplyQueryRepositoryTest {
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(7))
                 .jobFamily(BE)
-                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.REGULAR)
+                .recruitType(RecruitType.REGULAR)
                 .build());
 
         Recruit backfillRecruit = recruitRepository.save(Recruit.builder()
@@ -291,27 +294,93 @@ class AdminApplyQueryRepositoryTest {
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(7))
                 .jobFamily(BE)
-                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.BACKFILL)
+                .recruitType(RecruitType.BACKFILL)
                 .build());
 
-        Member member1 = createMember("regular@test.com", BE);
-        Member member2 = createMember("backfill@test.com", BE);
-        memberRepository.saveAll(List.of(member1, member2));
+        Applicant applicant1 = createApplicant("regular@test.com", BE);
+        Applicant applicant2 = createApplicant("backfill@test.com", BE);
+        applicantRepository.saveAll(List.of(applicant1, applicant2));
 
-        Apply apply1 = getApply(member1, regularRecruit, SUBMITTED);
-        Apply apply2 = getApply(member2, backfillRecruit, SUBMITTED);
+        Apply apply1 = getApply(applicant1, regularRecruit, SUBMITTED);
+        Apply apply2 = getApply(applicant2, backfillRecruit, SUBMITTED);
         applyRepository.saveAll(List.of(apply1, apply2));
 
         Pageable pageable = PageRequest.of(0, 15);
-        Apply.Status status = SUBMITTED;
+        ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyQueryRepository.findAppliesByStatus(null, status, null, org.ject.support.domain.recruit.domain.RecruitType.BACKFILL, pageable);
+        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, null, RecruitType.BACKFILL), pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().getFirst().getRecruit().getRecruitType()).isEqualTo(org.ject.support.domain.recruit.domain.RecruitType.BACKFILL);
+        assertThat(result.getContent().getFirst().getRecruit().getRecruitType()).isEqualTo(RecruitType.BACKFILL);
+    }
+
+    @Test
+    void recruitTypeDetail로_제출된_지원서_필터링_조회() {
+        // given
+        Recruit regularRecruit = recruitRepository.save(Recruit.builder()
+                .semester(semester)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(7))
+                .jobFamily(BE)
+                .recruitType(RecruitType.SEMESTER)
+                .recruitTypeDetail(RecruitTypeDetail.REGULAR)
+                .build());
+
+        Recruit refillRecruit = recruitRepository.save(Recruit.builder()
+                .semester(semester)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(7))
+                .jobFamily(BE)
+                .recruitType(RecruitType.SEMESTER)
+                .recruitTypeDetail(RecruitTypeDetail.REFILL)
+                .build());
+
+        Applicant regularApplicant = createApplicant("regular-detail@test.com", BE);
+        Applicant refillApplicant = createApplicant("refill-detail@test.com", BE);
+        applicantRepository.saveAll(List.of(regularApplicant, refillApplicant));
+
+        Apply regularApply = getApply(regularApplicant, regularRecruit, SUBMITTED);
+        Apply refillApply = getApply(refillApplicant, refillRecruit, SUBMITTED);
+        applyRepository.saveAll(List.of(regularApply, refillApply));
+
+        Pageable pageable = PageRequest.of(0, 15);
+        ApplyStatus status = SUBMITTED;
+
+        // when
+        Page<Apply> result = adminApplyRepository.findApplies(
+                condition(status, null, null, null, RecruitTypeDetail.REFILL, null), pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().getFirst().getRecruit().getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REFILL);
+    }
+
+    @Test
+    void recruitId로_제출된_지원서_필터링_조회() {
+        // given
+        Applicant beApplicant = createApplicant("be-recruit-id@test.com", BE);
+        Applicant feApplicant = createApplicant("fe-recruit-id@test.com", FE);
+        applicantRepository.saveAll(List.of(beApplicant, feApplicant));
+
+        Apply beApply = getApply(beApplicant, beRecruit, SUBMITTED);
+        Apply feApply = getApply(feApplicant, feRecruit, SUBMITTED);
+        applyRepository.saveAll(List.of(beApply, feApply));
+
+        Pageable pageable = PageRequest.of(0, 15);
+        ApplyStatus status = SUBMITTED;
+
+        // when
+        Page<Apply> result = adminApplyRepository.findApplies(
+                condition(status, null, null, null, null, beRecruit.getId()), pageable);
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().getFirst().getRecruit()).isEqualTo(beRecruit);
     }
 
     private Recruit getRecruit(JobFamily jobFamily) {
@@ -323,13 +392,13 @@ class AdminApplyQueryRepositoryTest {
                 .build();
     }
 
-    private Apply getApply(Member member, Recruit recruit, Apply.Status status) {
+    private Apply getApply(Applicant applicant, Recruit recruit, ApplyStatus status) {
         ApplicationForm applicationForm = ApplicationForm.builder()
                 .build();
 
         Apply apply = Apply.builder()
                 .recruit(recruit)
-                .member(member)
+                .applicant(applicant)
                 .status(status)
                 .applicationForm(applicationForm)
                 .build();
@@ -339,8 +408,8 @@ class AdminApplyQueryRepositoryTest {
         return apply;
     }
 
-    private Member createMember(String email, JobFamily jobFamily) {
-        return Member.builder()
+    private Applicant createApplicant(String email, JobFamily jobFamily) {
+        return Applicant.builder()
                 .email(email)
                 .jobFamily(jobFamily)
                 .semesterId(1L)
@@ -348,5 +417,21 @@ class AdminApplyQueryRepositoryTest {
                 .pin("123456")
                 .status(MemberStatus.ACTIVE)
                 .build();
+    }
+
+    private AdminApplySearchCondition condition(ApplyStatus status,
+                                                Long semesterId,
+                                                JobFamily jobFamily,
+                                                RecruitType recruitType) {
+        return condition(status, semesterId, jobFamily, recruitType, null, null);
+    }
+
+    private AdminApplySearchCondition condition(ApplyStatus status,
+                                                Long semesterId,
+                                                JobFamily jobFamily,
+                                                RecruitType recruitType,
+                                                RecruitTypeDetail recruitTypeDetail,
+                                                Long recruitId) {
+        return new AdminApplySearchCondition(status, semesterId, jobFamily, recruitType, recruitTypeDetail, recruitId);
     }
 }

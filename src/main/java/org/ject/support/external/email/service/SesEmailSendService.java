@@ -1,6 +1,12 @@
 package org.ject.support.external.email.service;
 
+import static org.ject.support.external.email.exception.EmailErrorCode.EMAIL_SEND_FAILURE;
+
 import com.google.common.collect.Lists;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.Map2JsonSerializer;
@@ -10,21 +16,17 @@ import org.ject.support.external.infrastructure.SesRateLimiter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.sesv2.SesV2Client;
+import software.amazon.awssdk.services.sesv2.model.Body;
 import software.amazon.awssdk.services.sesv2.model.BulkEmailContent;
 import software.amazon.awssdk.services.sesv2.model.BulkEmailEntry;
+import software.amazon.awssdk.services.sesv2.model.Content;
 import software.amazon.awssdk.services.sesv2.model.Destination;
 import software.amazon.awssdk.services.sesv2.model.EmailContent;
+import software.amazon.awssdk.services.sesv2.model.Message;
 import software.amazon.awssdk.services.sesv2.model.MessageTag;
 import software.amazon.awssdk.services.sesv2.model.SendBulkEmailRequest;
 import software.amazon.awssdk.services.sesv2.model.SendEmailRequest;
 import software.amazon.awssdk.services.sesv2.model.Template;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Map;
-
-import static org.ject.support.external.email.exception.EmailErrorCode.EMAIL_SEND_FAILURE;
 
 @Slf4j
 @Service
@@ -96,6 +98,31 @@ public class SesEmailSendService implements EmailSendService {
 
                     sesV2Client.sendBulkEmail(sendBulkEmailRequest);
                 });
+    }
+
+    @Override
+    public void sendEmail(String to, String subject, String htmlBody) {
+        EmailContent emailContent = EmailContent.builder()
+                .simple(Message.builder()
+                        .subject(Content.builder().data(subject).charset("UTF-8").build())
+                        .body(Body.builder()
+                                .html(Content.builder().data(htmlBody).charset("UTF-8").build())
+                                .build())
+                        .build())
+                .build();
+
+        SendEmailRequest emailRequest = SendEmailRequest.builder()
+                .destination(getDestination(to))
+                .content(emailContent)
+                .fromEmailAddress(from)
+                .build();
+
+        try {
+            sesV2Client.sendEmail(emailRequest);
+        } catch (Exception e) {
+            log.error("단건 이메일 전송 실패 to={}", to, e);
+            throw new EmailException(EMAIL_SEND_FAILURE);
+        }
     }
 
     private Template getTemplate(String templateName, Map<String, String> parameter) {

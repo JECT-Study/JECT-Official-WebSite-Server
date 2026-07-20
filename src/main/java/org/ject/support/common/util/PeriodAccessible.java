@@ -10,4 +10,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface PeriodAccessible {
     boolean permitAllJob() default false;
+
+    int recruitIdParameterIndex() default -1;
 }

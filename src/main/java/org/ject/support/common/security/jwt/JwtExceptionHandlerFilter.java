@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ject.support.common.exception.BusinessException;
+import org.ject.support.common.exception.ErrorCode;
 import org.ject.support.common.exception.GlobalErrorCode;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.response.ApiResponse;
@@ -43,6 +45,9 @@ public class JwtExceptionHandlerFilter extends OncePerRequestFilter {
         } catch (GlobalException e) {
             setErrorResponse(response, e.getErrorCode());
             log.error("GlobalException: {}", e.getErrorCode().getMessage());
+        } catch (BusinessException e) {
+            setErrorResponse(response, e.getErrorCode());
+            log.error("BusinessException: {}", e.getErrorCode().getMessage());
         } catch (AuthenticationException e) {
             setErrorResponse(response, INVALID_ACCESS_TOKEN);
             log.error("AuthenticationException: {}", e.getMessage());
@@ -62,7 +67,7 @@ public class JwtExceptionHandlerFilter extends OncePerRequestFilter {
 
     private void setErrorResponse(
             HttpServletResponse response,
-            GlobalErrorCode errorCode
+            ErrorCode errorCode
     ) throws IOException {
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());

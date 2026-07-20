@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
@@ -40,10 +41,12 @@ public class DevRecruitController {
 
         Recruit recruit = recruitRepository.findById(recruitId)
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
+        JobFamily previousJobFamily = recruit.getJobFamily();
         recruit.update(request.jobFamily(), request.startDate(), request.endDate());
 
         eventPublisher.publishEvent(new RecruitUpdatedEvent(
                 recruit.getId(),
+                previousJobFamily,
                 recruit.getJobFamily(),
                 recruit.getStartDate(),
                 recruit.getEndDate()));

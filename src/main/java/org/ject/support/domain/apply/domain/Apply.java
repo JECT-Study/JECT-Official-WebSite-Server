@@ -12,20 +12,25 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.base.BaseTimeEntity;
-import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.recruit.domain.Recruit;
 
 @Entity
 @Getter
 @Builder
+@SQLDelete(sql = "UPDATE apply SET is_deleted = true, version = version + 1 WHERE id = ? AND version = ?")
+@SQLRestriction("is_deleted = false")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Apply extends BaseTimeEntity {
@@ -35,8 +40,8 @@ public class Apply extends BaseTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    @JoinColumn(name = "applicant_id", nullable = false)
+    private Applicant applicant;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recruit_id", nullable = false)
@@ -47,17 +52,24 @@ public class Apply extends BaseTimeEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(50)", nullable = false)
-    private Status status;
+    private ApplyStatus status;
 
     @Column(columnDefinition = "varchar(500) default ''", nullable = false)
     @Builder.Default
     private String note = "";
 
-    public static Apply createApply(Member member, Recruit recruit) {
+    @Column(name = "is_deleted", nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
+
+    @Version
+    private Long version;
+
+    public static Apply createApply(Applicant applicant, Recruit recruit) {
         return Apply.builder()
-                .member(member)
+                .applicant(applicant)
                 .recruit(recruit)
-                .status(Status.JOINED)
+                .status(ApplyStatus.JOINED)
                 .build();
     }
 
@@ -65,24 +77,20 @@ public class Apply extends BaseTimeEntity {
         this.applicationForm = newApplicationForm;
     }
 
-    public void updateNote(String note) {
-        this.note = note != null ? note : "";
-    }
-
-    public void updateStatus(Status status) {
+    public void updateStatus(ApplyStatus status) {
         this.status = status;
     }
 
     public boolean isNotTempSaved() {
-        return status.equals(Status.JOINED)
-                || status.equals(Status.SUBMITTED)
-                || (status.equals(Status.TEMP_SAVED) && applicationForm == null);
+        return status.equals(ApplyStatus.JOINED)
+                || status.equals(ApplyStatus.SUBMITTED)
+                || (status.equals(ApplyStatus.TEMP_SAVED) && applicationForm == null);
     }
 
     public boolean isNotSubmitted() {
-        return status.equals(Status.JOINED)
-                || status.equals(Status.TEMP_SAVED)
-                || (status.equals(Status.SUBMITTED) && applicationForm == null);
+        return status.equals(ApplyStatus.JOINED)
+                || status.equals(ApplyStatus.TEMP_SAVED)
+                || (status.equals(ApplyStatus.SUBMITTED) && applicationForm == null);
     }
 
     public void deleteApplicationForm() {
@@ -93,15 +101,15 @@ public class Apply extends BaseTimeEntity {
 
     public void reject() {
         this.applicationForm = null;
-        this.status = Status.REJECTED;
+        this.status = ApplyStatus.REJECTED;
     }
 
     public boolean isTempSaved() {
-        return status.equals(Status.TEMP_SAVED);
+        return status.equals(ApplyStatus.TEMP_SAVED);
     }
 
     public boolean isSubmitted() {
-        return status.equals(Status.SUBMITTED);
+        return status.equals(ApplyStatus.SUBMITTED);
     }
 
     public void submit(ApplicationForm applicationForm) {
@@ -114,10 +122,7 @@ public class Apply extends BaseTimeEntity {
         }
 
         this.applicationForm = applicationForm;
-        this.status = Status.SUBMITTED;
+        this.status = ApplyStatus.SUBMITTED;
     }
 
-    public enum Status {
-        JOINED, TEMP_SAVED, SUBMITTED, REJECTED
-    }
 }

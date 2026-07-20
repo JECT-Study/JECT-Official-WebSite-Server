@@ -1,10 +1,10 @@
 package org.ject.support.domain.apply.domain;
 
 import org.ject.support.base.TestSupport;
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +12,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.domain.apply.domain.Apply.Status.SUBMITTED;
+import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
 
 class ApplyTest extends TestSupport {
 
@@ -22,7 +22,7 @@ class ApplyTest extends TestSupport {
         Recruit recruit = Recruit.builder()
                 .jobFamily(JobFamily.BE)
                 .build();
-        Apply apply = Apply.createApply(Member.builder().build(), recruit);
+        Apply apply = Apply.createApply(Applicant.builder().build(), recruit);
         ApplicationForm form = ApplicationForm.builder().build();
 
         // when
@@ -39,7 +39,7 @@ class ApplyTest extends TestSupport {
         Recruit recruit = Recruit.builder()
                 .jobFamily(JobFamily.PD)
                 .build();
-        Apply apply = Apply.createApply(Member.builder().build(), recruit);
+        Apply apply = Apply.createApply(Applicant.builder().build(), recruit);
         
         Portfolio portfolio = Portfolio.builder().build();
         ApplicationForm form = ApplicationForm.builder()
@@ -60,7 +60,7 @@ class ApplyTest extends TestSupport {
         Recruit recruit = Recruit.builder()
                 .jobFamily(JobFamily.PD)
                 .build();
-        Apply apply = Apply.createApply(Member.builder().build(), recruit);
+        Apply apply = Apply.createApply(Applicant.builder().build(), recruit);
         ApplicationForm form = ApplicationForm.builder().build(); // 빈 포트폴리오
 
         // when & then
@@ -76,7 +76,7 @@ class ApplyTest extends TestSupport {
         Recruit recruit = Recruit.builder()
                 .jobFamily(JobFamily.BE)
                 .build();
-        Apply apply = Apply.createApply(Member.builder().build(), recruit);
+        Apply apply = Apply.createApply(Applicant.builder().build(), recruit);
         apply.updateStatus(SUBMITTED); // 이미 제출된 상태
 
         ApplicationForm form = ApplicationForm.builder().build();

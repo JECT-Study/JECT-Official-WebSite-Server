@@ -1,21 +1,16 @@
 package org.ject.support.domain.recruit.controller;
 
-import org.assertj.core.api.Assertions;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.member.MemberStatus;
-import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
-import org.ject.support.domain.recruit.repository.QuestionRepository;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.AuthenticatedUser;
 import org.ject.support.testconfig.IntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -25,12 +20,16 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.ject.support.domain.recruit.domain.Question.InputType.TEXT;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @IntegrationTest
@@ -45,9 +44,6 @@ class QuestionControllerTest {
     RecruitRepository recruitRepository;
 
     @Autowired
-    QuestionRepository questionRepository;
-
-    @Autowired
     MemberRepository memberRepository;
 
     @Autowired
@@ -57,9 +53,11 @@ class QuestionControllerTest {
     RedisTemplate<String, String> redisTemplate;
 
     Member member;
+    Recruit recruit;
 
     @BeforeEach
     void setUp() {
+        String uniqueSuffix = uniqueSuffix();
         List<Question> questions = List.of(
                 Question.builder().sequence(1).inputType(TEXT).isRequired(true).title("title1").label("label").selectOptions(List.of("a", "b", "c")).build(),
                 Question.builder().sequence(2).inputType(TEXT).isRequired(true).title("title2").label("label").build(),
@@ -69,11 +67,11 @@ class QuestionControllerTest {
         );
 
         Semester savedSemester = semesterRepository.save(Semester.builder()
-                .name("1기")
+                .name("1기" + uniqueSuffix)
                 .isRecruiting(true)
                 .build());
 
-        Recruit recruit = Recruit.builder()
+        recruit = Recruit.builder()
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .semester(savedSemester)
@@ -86,32 +84,54 @@ class QuestionControllerTest {
 
         recruitRepository.save(recruit);
 
-        member = Member.builder()
-                .email("test32@gmail.com")
-                .semesterId(1L)
-                .jobFamily(JobFamily.BE)
-                .name("김젝트")
-                .role(Role.SEMESTER)
-                .phoneNumber("01012345678")
-                .pin("123456") // PIN 필드 추가
-                .status(MemberStatus.ACTIVE)
+        member = member()
+                .email("test_" + uniqueSuffix + "@t.kr")
+                .interestedDomains(List.of())
+                .region(null)
                 .build();
         memberRepository.save(member);
     }
 
+    private String uniqueSuffix() {
+        return UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 8);
+    }
+
     @Test
-    @DisplayName("지원서 문항 조회 시 redis에 캐싱")
     @AuthenticatedUser
-    void find_questions_cache() throws Exception {
+    void 지원서_문항_조회_시_redis에_캐싱한다() throws Exception {
         // when
         mockMvc.perform(get("/apply/questions")
-                        .param("jobFamily", "BE"))
+                        .param("recruitId", recruit.getId().toString()))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("SUCCESS")))
                 .andDo(print());
 
         // then
-        Long countExistingKeys = redisTemplate.countExistingKeys(List.of("cache::question::BE"));
-        Assertions.assertThat(countExistingKeys).isEqualTo(1);
+        Long countExistingKeys = redisTemplate.countExistingKeys(List.of("cache::question::RECRUIT:" + recruit.getId()));
+        assertThat(countExistingKeys).isEqualTo(1);
+    }
+
+    @Test
+    @AuthenticatedUser
+    void 모집_공고_기준으로_지원서_문항을_조회한다() throws Exception {
+        // when, then
+        mockMvc.perform(get("/apply/questions")
+                        .param("recruitId", recruit.getId().toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data.questionResponses[0].title").value("title1"))
+                .andExpect(jsonPath("$.data.questionResponses[4].title").value("title5"));
+    }
+
+    @Test
+    @AuthenticatedUser
+    void 모집_공고_식별자가_없으면_에러를_반환한다() throws Exception {
+        // when, then
+        mockMvc.perform(get("/apply/questions"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("GLOBAL-10"));
     }
 }

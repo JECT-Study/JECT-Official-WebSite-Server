@@ -1,18 +1,16 @@
 package org.ject.support.domain.member.repository;
 
-import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.member.MemberStatus;
-import org.ject.support.domain.member.Role;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.member.fixture.MemberFixture.member;
+
+import java.util.Optional;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.annotation.Import;
-
-import java.util.Optional;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
@@ -21,46 +19,52 @@ class MemberRepositoryTest {
     @Autowired
     MemberRepository memberRepository;
 
+    @Autowired
+    TestEntityManager entityManager;
+
     @Test
-    void 이메일과_역활로_회원을_조회시_존재하는_회원을_반환한다() {
+    void 이메일로_구성원을_조회한다() {
         // given
-        String email = "test@example.com";
-        Role role = Role.ADMIN;
-        Member member = createMember("테스트", "01012345678", email, JobFamily.FE, role);
-        memberRepository.save(member);
+        String email = "member@test.com";
+        memberRepository.save(member().email(email).build());
 
         // when
-        Optional<Member> found = memberRepository.findByEmailAndRole(email, role);
+        Optional<Member> result = memberRepository.findByEmail(email);
 
         // then
-        assertThat(found).isPresent();
-        assertThat(found.get().getEmail()).isEqualTo(email);
-        assertThat(found.get().getRole()).isEqualTo(role);
+        assertThat(result).isPresent();
+        assertThat(result.get().getEmail()).isEqualTo(email);
     }
 
     @Test
-    void 존재하지_않는_이메일과_역활로_회원을_조회시_빈_Optional을_반환한다() {
+    void 존재하지_않는_이메일로_조회하면_빈_결과를_반환한다() {
         // given
-        String findEmail = "notfound@example.com";
-        Role findRole = Role.ADMIN;
+        String email = "not-found@test.com";
 
         // when
-        Optional<Member> found = memberRepository.findByEmailAndRole(findEmail, findRole);
+        Optional<Member> result = memberRepository.findByEmail(email);
 
         // then
-        assertThat(found).isEmpty();
+        assertThat(result).isEmpty();
     }
 
-    private Member createMember(String name, String phoneNumber, String email, JobFamily jobFamily, Role role) {
-        return Member.builder()
-                .name(name)
-                .phoneNumber(phoneNumber)
-                .email(email)
-                .semesterId(1L)
-                .jobFamily(jobFamily)
-                .role(role)
-                .pin("123456")
-                .status(MemberStatus.ACTIVE)
-                .build();
+    @Test
+    void 삭제된_구성원을_포함해_이메일로_조회한다() {
+        // given
+        String email = "deleted@test.com";
+        Member savedMember = memberRepository.save(member().email(email).build());
+        memberRepository.delete(savedMember);
+        memberRepository.flush();
+        entityManager.clear();
+
+        // when
+        Optional<Member> activeResult = memberRepository.findByEmail(email);
+        Optional<Member> includingDeletedResult = memberRepository.findByEmailIncludingDeleted(email);
+
+        // then
+        assertThat(activeResult).isEmpty();
+        assertThat(includingDeletedResult).isPresent();
+        assertThat(includingDeletedResult.get().getEmail()).isEqualTo(email);
+        assertThat(includingDeletedResult.get().getIsDeleted()).isTrue();
     }
 }

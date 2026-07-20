@@ -1,0 +1,12 @@
+ALTER TABLE member
+    ADD COLUMN member_type VARCHAR(45) NULL;
+
+UPDATE member
+SET member_type = CASE
+    WHEN role = 'SUPPORTER' THEN 'SUPPORTERS'
+    ELSE 'SEMESTER'
+END
+WHERE member_type IS NULL;
+
+ALTER TABLE member
+    MODIFY COLUMN member_type VARCHAR(45) NOT NULL DEFAULT 'SEMESTER';

@@ -1,9 +1,9 @@
 package org.ject.support.domain.recruit.repository;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.dto.QQuestionResponse;
 import org.ject.support.domain.recruit.dto.QuestionResponse;
 import org.springframework.stereotype.Repository;
@@ -21,8 +21,15 @@ public class QuestionQueryRepositoryImpl implements QuestionQueryRepository {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<QuestionResponse> findByJobFamilyOfActiveRecruit(final LocalDateTime now,
-                                                                 final JobFamily jobFamily) {
+    public List<QuestionResponse> findByRecruitIdOfActiveRecruit(final LocalDateTime now,
+                                                                final Long recruitId) {
+        return selectQuestions()
+                .where(isWithinRecruitPeriod(now), recruit.id.eq(recruitId))
+                .orderBy(question.sequence.asc())
+                .fetch();
+    }
+
+    private JPAQuery<QuestionResponse> selectQuestions() {
         return queryFactory.select(new QQuestionResponse(
                         question.id,
                         question.sequence,
@@ -36,10 +43,7 @@ public class QuestionQueryRepositoryImpl implements QuestionQueryRepository {
                         question.maxTextLength,
                         question.maxFileSize))
                 .from(question)
-                .leftJoin(question.recruit, recruit)
-                .where(isWithinRecruitPeriod(now), recruit.jobFamily.eq(jobFamily))
-                .orderBy(question.sequence.asc())
-                .fetch();
+                .leftJoin(question.recruit, recruit);
     }
 
     private BooleanExpression isWithinRecruitPeriod(LocalDateTime now) {

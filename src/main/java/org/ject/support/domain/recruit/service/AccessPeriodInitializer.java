@@ -1,21 +1,12 @@
 package org.ject.support.domain.recruit.service;
 
 import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.recruit.dto.Constants;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
-
-import static org.ject.support.domain.member.JobFamily.BE;
-import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.PD;
-import static org.ject.support.domain.member.JobFamily.PM;
 
 /**
  * 기한 외 접근 제한을 위한 flag caching 초기화
@@ -23,27 +14,12 @@ import static org.ject.support.domain.member.JobFamily.PM;
 @Component
 @RequiredArgsConstructor
 public class AccessPeriodInitializer implements ApplicationRunner {
-    private final RedisTemplate<String, String> redisTemplate;
     private final RecruitRepository recruitRepository;
+    private final RecruitFlagService recruitFlagService;
 
     @Override
     public void run(final ApplicationArguments args) {
-        setRecruitFlag(PM);
-        setRecruitFlag(PD);
-        setRecruitFlag(FE);
-        setRecruitFlag(BE);
-    }
-
-    private void setRecruitFlag(JobFamily jobFamily) {
-        if (Boolean.FALSE.equals(redisTemplate.hasKey(getKey(jobFamily)))) {
-            recruitRepository.findActiveRecruitByJobFamily(jobFamily, LocalDateTime.now())
-                    .ifPresent(recruit -> redisTemplate.opsForValue().set(
-                            getKey(jobFamily), Boolean.toString(true),
-                            Duration.between(recruit.getStartDate(), recruit.getEndDate())));
-        }
-    }
-
-    private String getKey(JobFamily jobFamily) {
-        return String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, jobFamily);
+        recruitRepository.findActiveRecruits(LocalDateTime.now())
+                .forEach(recruitFlagService::setRecruitFlag);
     }
 }

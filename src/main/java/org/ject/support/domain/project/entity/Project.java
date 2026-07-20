@@ -67,6 +67,9 @@ public class Project extends BaseTimeEntity {
     @Column(length = 2083)
     private String serviceUrl;
 
+    @Column(length = 2083)
+    private String githubUrl;
+
     @Column(length = 50, nullable = false)
     private String serviceType;
 
@@ -90,7 +93,8 @@ public class Project extends BaseTimeEntity {
 
         SEMESTER_1(1, "1기"),
         SEMESTER_2(2, "2기"),
-        SEMESTER_3(3, "3기");
+        SEMESTER_3(3, "3기"),
+        SEMESTER_4(4, "4기");
 
         private final int order;
         private final String displayName;

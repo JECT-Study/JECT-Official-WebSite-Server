@@ -1,7 +1,6 @@
 package org.ject.support.domain.recruit.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.dto.QuestionResponses;
 import org.ject.support.domain.recruit.service.QuestionService;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,7 +19,7 @@ public class QuestionController implements QuestionApiSpec {
     @Override
     @GetMapping
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public QuestionResponses findQuestions(@RequestParam JobFamily jobFamily) {
-        return questionService.findQuestions(jobFamily);
+    public QuestionResponses findQuestions(@RequestParam Long recruitId) {
+        return questionService.findQuestions(recruitId);
     }
 }

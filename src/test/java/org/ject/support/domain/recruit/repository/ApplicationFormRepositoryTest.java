@@ -3,13 +3,14 @@ package org.ject.support.domain.recruit.repository;
 import org.assertj.core.api.Assertions;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.repository.ApplicationFormRepository;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
-import org.ject.support.domain.member.entity.Member;
-import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.testconfig.QueryDslTestConfig;
@@ -30,7 +31,7 @@ class ApplicationFormRepositoryTest {
     RecruitRepository recruitRepository;
 
     @Autowired
-    MemberRepository memberRepository;
+    ApplicantRepository applicantRepository;
 
     @Autowired
     ApplyRepository applyRepository;
@@ -57,7 +58,7 @@ class ApplicationFormRepositoryTest {
                 .jobFamily(JobFamily.BE)
                 .build());
 
-        Member member = memberRepository.save(Member.builder()
+        Applicant applicant = applicantRepository.save(Applicant.builder()
                 .email("test32@gmail.com")
                 .semesterId(savedSemester.getId())
                 .jobFamily(JobFamily.BE)
@@ -69,9 +70,9 @@ class ApplicationFormRepositoryTest {
                 .build());
 
         Apply apply = applyRepository.save(Apply.builder()
-                .member(member)
+                .applicant(applicant)
                 .recruit(recruit)
-                .status(Apply.Status.JOINED)
+                .status(ApplyStatus.JOINED)
                 .build());
 
         applicationFormRepository.save(ApplicationForm.builder().
@@ -81,7 +82,7 @@ class ApplicationFormRepositoryTest {
                 .build());
 
         // when
-        boolean result = applicationFormRepository.existsByMemberId(member.getId(), LocalDateTime.now());
+        boolean result = applicationFormRepository.existsByApplicantId(applicant.getId(), LocalDateTime.now());
 
         // then
         Assertions.assertThat(result).isTrue();

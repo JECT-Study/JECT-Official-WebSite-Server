@@ -2,7 +2,7 @@ package org.ject.support.domain.project.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.member.dto.TeamMemberNames;
-import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.member.repository.MemberActivityRepository;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectIntroResponse;
 import org.ject.support.domain.project.dto.ProjectResponse;
@@ -25,7 +25,7 @@ import java.util.List;
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
-    private final MemberRepository memberRepository;
+    private final MemberActivityRepository memberActivityRepository;
 
     /**
      * 주어진 기수의 프로젝트를 모두 조회합니다.
@@ -47,7 +47,7 @@ public class ProjectService {
                 .orElseThrow(() -> new ProjectException(ProjectErrorCode.NOT_FOUND_PROJECT));
 
         TeamMemberNames teamMemberNames =
-                memberRepository.findMemberNamesByTeamId(project.getTeam().getId());
+                memberActivityRepository.findMemberNamesByTeamId(project.getTeam().getId());
 
         List<ProjectIntro> projectIntros = project.getProjectIntros();
 

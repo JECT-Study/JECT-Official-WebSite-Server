@@ -3,7 +3,7 @@ package org.ject.support.domain.project.service;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Team;
-import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.member.repository.MemberActivityRepository;
 import org.ject.support.domain.project.dto.ProjectDetailResponse;
 import org.ject.support.domain.project.dto.ProjectIntroResponse;
 import org.ject.support.domain.project.dto.ProjectSummaryResponse;
@@ -35,7 +35,7 @@ class ProjectServiceTest extends UnitTestSupport {
     private ProjectRepository projectRepository;
 
     @Mock
-    private MemberRepository memberRepository;
+    private MemberActivityRepository memberActivityRepository;
 
     private Project project;
     private List<String> projectManagers;
@@ -62,6 +62,7 @@ class ProjectServiceTest extends UnitTestSupport {
                 .description("description")
                 .thumbnailUrl("thumbnail.png")
                 .serviceUrl("service.com")
+                .githubUrl("https://github.com/JECT-Study/project")
                 .team(Team.builder().id(1L).name("team").semesterId(1L).build())
                 .projectIntros(List.of(serviceIntro1, serviceIntro2, serviceIntro3, devIntro1))
                 .build();
@@ -71,7 +72,7 @@ class ProjectServiceTest extends UnitTestSupport {
     void 프로젝트_상세_조회() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
-        when(memberRepository.findMemberNamesByTeamId(1L)).thenReturn(
+        when(memberActivityRepository.findMemberNamesByTeamId(1L)).thenReturn(
                 new TeamMemberNames(projectManagers, productDesigners, frontendDevelopers, backendDevelopers));
 
         // when
@@ -81,12 +82,13 @@ class ProjectServiceTest extends UnitTestSupport {
         assertThat(result.name()).isEqualTo(project.getName());
         assertThat(result.startDate()).isEqualTo(project.getStartDate());
         assertThat(result.endDate()).isEqualTo(project.getEndDate());
-        assertThat(result.teamMemberNames().productManagers()).hasSize(0);
-        assertThat(result.teamMemberNames().productDesigners()).hasSize(1);
-        assertThat(result.teamMemberNames().frontendDevelopers()).hasSize(2);
-        assertThat(result.teamMemberNames().backendDevelopers()).hasSize(3);
+        assertThat(result.teamMemberNames().productManagers()).isEmpty();
+        assertThat(result.teamMemberNames().productDesigners()).containsExactly("designer1");
+        assertThat(result.teamMemberNames().frontendDevelopers()).containsExactly("front1", "front2");
+        assertThat(result.teamMemberNames().backendDevelopers()).containsExactly("back1", "back2", "back3");
         assertThat(result.description()).isEqualTo(project.getDescription());
         assertThat(result.serviceUrl()).isEqualTo(project.getServiceUrl());
+        assertThat(result.githubUrl()).isEqualTo(project.getGithubUrl());
         assertThat(result.sampleImageUrls()).hasSize(3);
         assertThat(result.descriptionImageUrls()).hasSize(1);
     }
@@ -95,7 +97,7 @@ class ProjectServiceTest extends UnitTestSupport {
     void 프로젝트_상세_조회_시_서비스_소개서는_sequence_기준으로_오름차순_정렬() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
-        when(memberRepository.findMemberNamesByTeamId(1L)).thenReturn(
+        when(memberActivityRepository.findMemberNamesByTeamId(1L)).thenReturn(
                 new TeamMemberNames(projectManagers, productDesigners, frontendDevelopers, backendDevelopers));
 
         // when
@@ -121,7 +123,7 @@ class ProjectServiceTest extends UnitTestSupport {
     void 프로젝트_상세_조회_시_기술_스택을_배열_형태로_반환() {
         // given
         when(projectRepository.findById(1L)).thenReturn(Optional.ofNullable(project));
-        when(memberRepository.findMemberNamesByTeamId(1L)).thenReturn(
+        when(memberActivityRepository.findMemberNamesByTeamId(1L)).thenReturn(
                 new TeamMemberNames(projectManagers, productDesigners, frontendDevelopers, backendDevelopers));
 
         // when
@@ -155,6 +157,9 @@ class ProjectServiceTest extends UnitTestSupport {
 
         assertThat(summary.categorySummaries().get(3).categoryName()).isEqualTo(Project.Category.SEMESTER_3.name());
         assertThat(summary.categorySummaries().get(3).count()).isEqualTo(0L);
+
+        assertThat(summary.categorySummaries().get(4).categoryName()).isEqualTo(Project.Category.SEMESTER_4.name());
+        assertThat(summary.categorySummaries().get(4).count()).isEqualTo(0L);
     }
 
     private ProjectIntro createProjectIntro(Long id, String imageUrl, Category category, int sequence) {

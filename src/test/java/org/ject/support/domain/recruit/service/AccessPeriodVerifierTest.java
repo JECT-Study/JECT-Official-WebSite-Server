@@ -6,8 +6,10 @@ import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.ject.support.base.UnitTestSupport;
+import org.ject.support.common.data.redis.resilience.RedisCacheCircuitBreakerProvider;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.util.PeriodAccessible;
 import org.ject.support.domain.member.JobFamily;
@@ -35,9 +37,56 @@ class AccessPeriodVerifierTest extends UnitTestSupport {
     @Mock
     ValueOperations<String, String> valueOperations;
 
+    @Mock
+    RedisCacheCircuitBreakerProvider circuitBreakerProvider;
+
+    @Mock
+    CircuitBreaker circuitBreaker;
+
     @BeforeEach
     void setUp() {
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        lenient().when(circuitBreakerProvider.get(anyString())).thenReturn(circuitBreaker);
+        lenient().when(circuitBreaker.tryAcquirePermission()).thenReturn(true);
+        lenient().when(target.recruitIdParameterIndex()).thenReturn(-1);
+    }
+
+    @Test
+    void 모집_공고_식별자_플래그가_모집중이면_통과() throws Throwable {
+        // given
+        when(target.recruitIdParameterIndex()).thenReturn(1);
+        when(joinPoint.getArgs()).thenReturn(new Object[]{1L, 10L});
+        when(valueOperations.get("RECRUIT_FLAG:10")).thenReturn("true");
+        when(joinPoint.proceed()).thenReturn("OK");
+
+        // when
+        Object result = accessPeriodVerifier.checkRecruitmentPeriod(joinPoint, target);
+
+        // then
+        assertThat(result).isEqualTo("OK");
+    }
+
+    @Test
+    void 모집_공고_식별자_플래그가_모집중이_아니면_실패() {
+        // given
+        when(target.recruitIdParameterIndex()).thenReturn(1);
+        when(joinPoint.getArgs()).thenReturn(new Object[]{1L, 10L});
+        when(valueOperations.get("RECRUIT_FLAG:10")).thenReturn("false");
+
+        // when, then
+        assertThatThrownBy(() -> accessPeriodVerifier.checkRecruitmentPeriod(joinPoint, target))
+                .isInstanceOf(GlobalException.class);
+    }
+
+    @Test
+    void 모집_공고_식별자_인덱스의_파라미터가_Long이_아니면_실패() {
+        // given
+        when(target.recruitIdParameterIndex()).thenReturn(1);
+        when(joinPoint.getArgs()).thenReturn(new Object[]{1L, "10"});
+
+        // when, then
+        assertThatThrownBy(() -> accessPeriodVerifier.checkRecruitmentPeriod(joinPoint, target))
+                .isInstanceOf(GlobalException.class);
     }
 
     @Test

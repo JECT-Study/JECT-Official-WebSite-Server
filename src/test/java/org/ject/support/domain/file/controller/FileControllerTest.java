@@ -2,8 +2,6 @@ package org.ject.support.domain.file.controller;
 
 import org.ject.support.domain.file.exception.FileErrorCode;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.member.MemberStatus;
-import org.ject.support.domain.member.Role;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
@@ -24,9 +22,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.ject.support.domain.file.exception.FileErrorCode.INVALID_EXTENSION;
+import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -54,15 +54,11 @@ class FileControllerTest extends ApplicationPeriodTest {
 
     @BeforeEach
     void setUp() {
-        member = Member.builder()
+        member = member()
+                .name("홍길동")
                 .email("test32@gmail.com")
-                .semesterId(1L)
-                .jobFamily(JobFamily.BE)
-                .name("홍길동") // 한글 1~5글자로 수정
-                .role(Role.SEMESTER)
-                .phoneNumber("01012345678") // 010으로 시작하는 11자리 수정
-                .pin("123456") // PIN 추가
-                .status(MemberStatus.ACTIVE)
+                .interestedDomains(List.of())
+                .region(null)
                 .build();
         memberRepository.save(member);
     }
@@ -109,6 +105,18 @@ class FileControllerTest extends ApplicationPeriodTest {
         when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.FE.name())))
                 .thenReturn(Boolean.toString(false));
         when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.BE.name())))
+                .thenReturn(Boolean.toString(false));
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.APP.name())))
+                .thenReturn(Boolean.toString(false));
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.SUPPORTER.name())))
+                .thenReturn(Boolean.toString(false));
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.OPS.name())))
+                .thenReturn(Boolean.toString(false));
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.INFRA.name())))
+                .thenReturn(Boolean.toString(false));
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.BX.name())))
+                .thenReturn(Boolean.toString(false));
+        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.ER.name())))
                 .thenReturn(Boolean.toString(false));
 
         // then

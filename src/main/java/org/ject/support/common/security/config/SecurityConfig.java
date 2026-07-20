@@ -5,10 +5,10 @@ import org.ject.support.common.security.jwt.JwtAccessDeniedHandler;
 import org.ject.support.common.security.jwt.JwtAuthenticationEntryPoint;
 import org.ject.support.common.security.jwt.JwtAuthenticationFilter;
 import org.ject.support.common.security.jwt.JwtExceptionHandlerFilter;
+import org.ject.support.domain.member.Role;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
 import org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -32,6 +32,9 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private static final long MAX_AGE_SEC = 3600;
+    private static final String[] BACKOFFICE_ROLE_NAMES = Role.backofficeRoles().stream()
+            .map(Role::name)
+            .toArray(String[]::new);
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
     private final JwtAccessDeniedHandler jwtAccessDeniedHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -48,11 +51,7 @@ public class SecurityConfig {
 
     @Bean
     public static RoleHierarchy roleHierarchy() {
-        return RoleHierarchyImpl.fromHierarchy("""
-                ROLE_ADMIN > ROLE_SEMESTER
-                ROLE_SEMESTER > ROLE_APPLY
-                ROLE_APPLY > ROLE_VERIFICATION
-                """);
+        return RoleHierarchyImpl.fromHierarchy(RoleHierarchySpec.hierarchyExpression());
     }
 
     @Bean
@@ -72,9 +71,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/admin-auth/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/admin/**")
-                            .hasAnyRole("ADMIN", "SUPPORTER")
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasAnyRole(BACKOFFICE_ROLE_NAMES)
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

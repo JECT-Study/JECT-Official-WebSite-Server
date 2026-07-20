@@ -18,6 +18,7 @@ public record ProjectDetailResponse(
         List<String> badges,
         String description,
         String serviceUrl,
+        String githubUrl,
         ProjectIntroResponse bannerImageUrl,
         List<ProjectIntroResponse> sampleImageUrls,
         List<ProjectIntroResponse> descriptionImageUrls
@@ -41,6 +42,7 @@ public record ProjectDetailResponse(
                 .badges(project.getBadges())
                 .description(project.getDescription())
                 .serviceUrl(project.getServiceUrl())
+                .githubUrl(project.getGithubUrl())
                 .bannerImageUrl(bannerImageUrl)
                 .sampleImageUrls(sampleImageUrls)
                 .descriptionImageUrls(descriptionImageUrls)

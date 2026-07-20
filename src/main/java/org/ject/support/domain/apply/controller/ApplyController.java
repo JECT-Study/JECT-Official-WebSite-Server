@@ -9,7 +9,6 @@ import org.ject.support.domain.apply.dto.ApplyTemporaryRequest;
 import org.ject.support.domain.apply.dto.SubmitApplicationRequest;
 import org.ject.support.domain.apply.dto.TempApplicationFormResponse;
 import org.ject.support.domain.apply.service.ApplyUsecase;
-import org.ject.support.domain.member.JobFamily;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,48 +27,52 @@ public class ApplyController implements ApplyApiSpec {
     @Override
     @GetMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public TempApplicationFormResponse findTempApplicationForm(@AuthPrincipal Long memberId) {
-        return applyUsecase.findTempApplicationForm(memberId);
+    public TempApplicationFormResponse findTempApplicationForm(@AuthPrincipal Long applicantId,
+                                                               @RequestParam Long recruitId) {
+        return applyUsecase.findTempApplicationForm(applicantId, recruitId);
     }
 
     @Override
     @PostMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void saveApplicationTemporarily(@AuthPrincipal Long memberId,
+    public void saveApplicationTemporarily(@AuthPrincipal Long applicantId,
+                                           @RequestParam Long recruitId,
                                            @RequestBody ApplyTemporaryRequest request) {
-        applyUsecase.saveApplicationTemporarily(memberId, request.answers(), request.portfolios());
+        applyUsecase.saveApplicationTemporarily(applicantId, recruitId, request.answers(), request.portfolios());
     }
 
     @Override
     @DeleteMapping("/temp")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void deleteProfileAndTempApplicationForm(@AuthPrincipal Long memberId) {
-        applyUsecase.deleteProfileAndTempApplicationForm(memberId);
+    public void deleteProfileAndTempApplicationForm(@AuthPrincipal Long applicantId,
+                                                    @RequestParam Long recruitId) {
+        applyUsecase.deleteProfileAndTempApplicationForm(applicantId, recruitId);
     }
 
     @Override
     @PostMapping("/submit")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void submitApplication(@AuthPrincipal Long memberId,
-                                  @RequestParam JobFamily jobFamily,
+    public void submitApplication(@AuthPrincipal Long applicantId,
+                                  @RequestParam Long recruitId,
                                   @RequestBody SubmitApplicationRequest request) {
-        applyUsecase.submitApplication(memberId, jobFamily, request.answers(), request.portfolios());
+        applyUsecase.submitApplication(applicantId, recruitId, request.answers(), request.portfolios());
     }
 
     @Override
     @GetMapping("/status")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long memberId,
+    public ApplyStatusResponse checkApplyStatus(@AuthPrincipal Long applicantId,
                                                 @RequestParam Long recruitId) {
-        return applyUsecase.checkApplyStatus(memberId, recruitId);
+        return applyUsecase.checkApplyStatus(applicantId, recruitId);
     }
 
     @Override
     @PostMapping("/profile")
     @PreAuthorize("hasRole('ROLE_APPLY')")
-    public void saveProfile(@AuthPrincipal Long memberId,
+    public void saveProfile(@AuthPrincipal Long applicantId,
+                            @RequestParam Long recruitId,
                             @RequestBody @Valid ApplyProfileRequest request
     ) {
-        applyUsecase.saveProfile(memberId, request);
+        applyUsecase.saveProfile(applicantId, recruitId, request);
     }
 }

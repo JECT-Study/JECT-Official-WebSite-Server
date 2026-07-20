@@ -6,9 +6,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.ject.support.admin.exception.AdminErrorCode;
+import org.ject.support.admin.exception.AdminException;
+import org.ject.support.common.exception.BusinessException;
 import org.ject.support.common.exception.GlobalErrorCode;
 import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.CustomUserDetails;
+import org.ject.support.domain.applicant.repository.ApplicantRepository;
+import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -20,6 +25,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * JWT 토큰 기반의 인증을 처리하는 필터
@@ -34,7 +41,12 @@ import java.util.List;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Set<String> BACKOFFICE_AUTHORITIES = Role.backofficeRoles().stream()
+            .map(role -> "ROLE_" + role.name())
+            .collect(Collectors.toUnmodifiableSet());
+
     private final JwtTokenProvider jwtTokenProvider;
+    private final ApplicantRepository applicantRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) {
@@ -48,6 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (accessToken != null) {
                 if (jwtTokenProvider.validateToken(accessToken)) {
                     Authentication auth = jwtTokenProvider.getAuthenticationByToken(accessToken);
+                    validateBackofficeMemberStatus(auth);
                     SecurityContextHolder.getContext().setAuthentication(auth);
 
                     chain.doFilter(request, response);
@@ -78,11 +91,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             chain.doFilter(request, response);
 
+        } catch (BusinessException e) {
+            SecurityContextHolder.clearContext();
+            throw e;
         } catch (Exception e) {
             log.error("JWT 인증 처리 중 에러 발생", e);
             SecurityContextHolder.clearContext();
             throw new GlobalException(GlobalErrorCode.INVALID_ACCESS_TOKEN);
         }
+    }
+
+    private void validateBackofficeMemberStatus(Authentication authentication) {
+        if (!hasBackofficeRole(authentication)) {
+            return;
+        }
+
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        var applicant = applicantRepository.findByIdAndRoleIn(userDetails.getApplicantId(), Role.backofficeRoles())
+                .orElseThrow(() -> new AdminException(AdminErrorCode.NOT_FOUND_ADMIN));
+
+        if (applicant.getStatus() == MemberStatus.LOCKED) {
+            throw new AdminException(AdminErrorCode.LOCKED_ADMIN);
+        }
+    }
+
+    private boolean hasBackofficeRole(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(BACKOFFICE_AUTHORITIES::contains);
     }
     
     private Authentication createVerificationAuthentication(String email) {
