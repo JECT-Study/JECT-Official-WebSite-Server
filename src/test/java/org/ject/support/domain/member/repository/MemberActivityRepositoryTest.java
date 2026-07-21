@@ -722,6 +722,31 @@ class MemberActivityRepositoryTest {
     }
 
     @Test
+    @DisplayName("활동 상태가 탈퇴인 일반 구성원은 팀원 이름 조회에서 제외한다")
+    void 활동_상태가_탈퇴인_일반_구성원은_팀원_이름_조회에서_제외한다() {
+        // given
+        Long teamId = 10L;
+        saveSemesterActivity("정상 구성원", "active-name@test.com", SEMESTER_ID, teamId, JobFamily.BE);
+
+        Member withdrawnMember = memberRepository.save(
+            member().name("탈퇴 구성원").email("withdrawn-name@test.com").build()
+        );
+        memberActivityRepository.saveAndFlush(semesterActivity()
+            .memberId(withdrawnMember.getId())
+            .semesterId(SEMESTER_ID)
+            .teamId(teamId)
+            .jobFamily(JobFamily.BE)
+            .activityStatus(ActivityStatus.WITHDRAWN)
+            .build());
+
+        // when
+        TeamMemberNames result = memberActivityRepository.findMemberNamesByTeamId(teamId);
+
+        // then
+        assertThat(result.backendDevelopers()).containsExactly("정상 구성원");
+    }
+
+    @Test
     @DisplayName("삭제된 구성원과 활동은 팀원 이름 조회에서 제외한다")
     void 삭제된_구성원과_활동은_팀원_이름_조회에서_제외한다() {
         // given
