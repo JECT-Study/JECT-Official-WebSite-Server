@@ -42,7 +42,8 @@ public class ProjectQueryRepositoryImpl implements ProjectQueryRepository {
 
         JPAQuery<Long> countQuery = queryFactory
                 .select(project.count())
-                .from(project);
+                .from(project)
+                .where(eqCategory(category));
 
         return PageResponse.from(content, pageable, countQuery.fetchFirst());
     }

@@ -80,13 +80,18 @@ class AdminMemberServiceTest {
 	}
 
 	@Test
-	@DisplayName("입력한 이메일로 기존 구성원이 존재하면 새로 저장하지 않는다")
-	void 입력한_이메일로_기존_구성원이_존재하면_새로_저장하지_않는다() {
+	@DisplayName("입력한 이메일로 기존 구성원이 존재하면 값을 덮어쓰고 새로 저장하지 않는다")
+	void 입력한_이메일로_기존_구성원이_존재하면_값을_덮어쓰고_새로_저장하지_않는다() {
 	    // given
 	    CreateMemberSemesterRequest request = createMemberSemesterRequest();
-		Member existMember = mock(Member.class);
-		given(existMember.getId()).willReturn(3L);
-		given(existMember.getIsDeleted()).willReturn(false);
+		Member existMember = Member.create(
+			"기존 구성원",
+			request.email(),
+			"01087654321",
+			List.of("COMMERCE"),
+			Region.BUSAN
+		);
+		ReflectionTestUtils.setField(existMember, "id", 3L);
 
 		given(memberRepository.findByEmailIncludingDeleted(request.email())).willReturn(Optional.of(existMember));
 
@@ -95,6 +100,10 @@ class AdminMemberServiceTest {
 
 	    // then
 		assertThat(memberId).isEqualTo(existMember.getId());
+		assertThat(existMember.getName()).isEqualTo(request.name());
+		assertThat(existMember.getPhoneNumber()).isEqualTo(request.phoneNumber());
+		assertThat(existMember.getInterestedDomains()).containsExactlyElementsOf(request.interestedDomains());
+		assertThat(existMember.getRegion()).isEqualTo(request.region());
 		verify(memberRepository).findByEmailIncludingDeleted(request.email());
 		verify(memberRepository, never()).save(any(Member.class));
 	}
