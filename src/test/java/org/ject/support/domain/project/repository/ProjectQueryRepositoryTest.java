@@ -76,10 +76,33 @@ class ProjectQueryRepositoryTest {
 
         // when
         Page<ProjectResponse> result =
-                projectRepository.findProjectsByCategory(Project.Category.SEMESTER_1, PageRequest.of(0, 30));
+                projectRepository.findProjectsByCategory(Project.Category.SEMESTER_1, PageRequest.of(0, 2));
 
         // then
         assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getTotalPages()).isEqualTo(1);
+        assertThat(result.hasNext()).isFalse();
+    }
+
+    @Test
+    void 카테고리로_프로젝트_필터링_조회시_범위를_벗어난_페이지는_다음_페이지가_없음() {
+        // given
+        Project project1 = createProject(Project.Category.SEMESTER_1, team1);
+        Project project2 = createProject(Project.Category.SEMESTER_1, team2);
+        Project project3 = createProject(Project.Category.SEMESTER_2, team3);
+        Project project4 = createProject(Project.Category.SEMESTER_2, team1);
+        projectRepository.saveAll(List.of(project1, project2, project3, project4));
+
+        // when
+        Page<ProjectResponse> result =
+                projectRepository.findProjectsByCategory(Project.Category.SEMESTER_1, PageRequest.of(1, 2));
+
+        // then
+        assertThat(result.getContent()).isEmpty();
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getTotalPages()).isEqualTo(1);
+        assertThat(result.hasNext()).isFalse();
     }
 
     @Test
