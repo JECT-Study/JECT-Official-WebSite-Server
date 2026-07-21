@@ -78,14 +78,18 @@ public class Member extends BaseTimeEntity {
             .build();
     }
 
-    // 삭제된 구성원 정보가 있는 경우 복구한 뒤 새로 입력한 값으로 덮어쓰기
-    public void restore(
+    // 삭제된 구성원 복구
+    public void restore() {
+        this.isDeleted = false;
+    }
+
+    // 기존 구성원 신상정보를 새 입력값으로 갱신
+    public void updateProfile(
         String name,
         String phoneNumber,
         List<String> interestedDomains,
         Region region
     ) {
-        this.isDeleted = false;
         this.name = name;
         this.phoneNumber = phoneNumber;
         this.interestedDomains = interestedDomains;
