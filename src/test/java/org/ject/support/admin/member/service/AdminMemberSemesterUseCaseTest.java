@@ -30,7 +30,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class AdminMemberUseCaseTest {
+class AdminMemberSemesterUseCaseTest {
 
 	@Mock
 	private AdminMemberService adminMemberService;
@@ -45,7 +45,7 @@ class AdminMemberUseCaseTest {
 	private SemesterInquiryUsecase semesterInquiryUsecase;
 
 	@InjectMocks
-	private AdminMemberUseCase adminMemberUseCase;
+	private AdminMemberSemesterUseCase adminMemberSemesterUseCase;
 
 	private CreateMemberSemesterRequest createMemberSemesterRequest() {
 		return createMemberSemesterRequest(null);
@@ -115,7 +115,7 @@ class AdminMemberUseCaseTest {
 		given(adminMemberService.findOrCreateMember(request)).willReturn(memberId);
 
 	    // when
-		adminMemberUseCase.createMemberSemester(request);
+		adminMemberSemesterUseCase.createMemberSemester(request);
 
 	    // then
 		verify(semesterInquiryUsecase).getSemester(request.semesterId());
@@ -135,7 +135,7 @@ class AdminMemberUseCaseTest {
 		given(adminMemberService.findOrCreateMember(request)).willReturn(memberId);
 
 		// when
-		adminMemberUseCase.createMemberSemester(request);
+		adminMemberSemesterUseCase.createMemberSemester(request);
 
 		// then
 		verify(semesterInquiryUsecase).getSemester(request.semesterId());
@@ -153,7 +153,7 @@ class AdminMemberUseCaseTest {
 			.willReturn(List.of(1L, 2L, 3L));
 
 		// when
-		Throwable throwable = catchThrowable(() -> adminMemberUseCase.createMemberSemester(request));
+		Throwable throwable = catchThrowable(() -> adminMemberSemesterUseCase.createMemberSemester(request));
 
 		// then
 		assertThat(throwable)
@@ -173,7 +173,7 @@ class AdminMemberUseCaseTest {
 	    given(semesterInquiryUsecase.getSemester(request.semesterId())).willThrow(exception);
 
 	    // when
-		Throwable throwable = catchThrowable(() -> adminMemberUseCase.createMemberSemester(request));
+		Throwable throwable = catchThrowable(() -> adminMemberSemesterUseCase.createMemberSemester(request));
 
 		// then
 		assertThat(throwable).isSameAs(exception);
@@ -199,7 +199,7 @@ class AdminMemberUseCaseTest {
 
 		// when
 		CursorPageResponse<SearchMemberSemesterResponse> response =
-			adminMemberUseCase.searchMemberSemester(condition);
+			adminMemberSemesterUseCase.searchMemberSemester(condition);
 
 		// then
 		assertThat(response.content()).hasSize(2);
@@ -223,7 +223,7 @@ class AdminMemberUseCaseTest {
 
 		// when
 		CursorPageResponse<SearchMemberSemesterResponse> response =
-			adminMemberUseCase.searchMemberSemester(condition);
+			adminMemberSemesterUseCase.searchMemberSemester(condition);
 
 		// then
 		assertThat(response.content()).hasSize(2);
@@ -242,7 +242,7 @@ class AdminMemberUseCaseTest {
 
 		// when
 		CursorPageResponse<SearchMemberSemesterResponse> response =
-			adminMemberUseCase.searchMemberSemester(condition);
+			adminMemberSemesterUseCase.searchMemberSemester(condition);
 
 		// then
 		assertThat(response.content()).isEmpty();
@@ -258,7 +258,7 @@ class AdminMemberUseCaseTest {
 		MemberSemesterSearchCondition condition = searchCondition(3, null, 1L);
 
 		// when
-		Throwable throwable = catchThrowable(() -> adminMemberUseCase.searchMemberSemester(condition));
+		Throwable throwable = catchThrowable(() -> adminMemberSemesterUseCase.searchMemberSemester(condition));
 
 		// then
 		assertThat(throwable)
@@ -277,7 +277,7 @@ class AdminMemberUseCaseTest {
 			.willReturn(List.of(1L, 2L, 3L));
 
 		// when
-		Throwable throwable = catchThrowable(() -> adminMemberUseCase.searchMemberSemester(condition));
+		Throwable throwable = catchThrowable(() -> adminMemberSemesterUseCase.searchMemberSemester(condition));
 
 		// then
 		assertThat(throwable)
@@ -295,7 +295,7 @@ class AdminMemberUseCaseTest {
 		MemberSemesterSearchCondition condition = searchCondition(3, null, null, ActivityStatus.DROPOUT);
 
 		// when
-		Throwable throwable = catchThrowable(() -> adminMemberUseCase.searchMemberSemester(condition));
+		Throwable throwable = catchThrowable(() -> adminMemberSemesterUseCase.searchMemberSemester(condition));
 
 		// then
 		assertThat(throwable)
@@ -315,7 +315,7 @@ class AdminMemberUseCaseTest {
 
 		// when
 		CursorPageResponse<SearchMemberSemesterResponse> response =
-			adminMemberUseCase.searchMemberSemester(condition);
+			adminMemberSemesterUseCase.searchMemberSemester(condition);
 
 		// then
 		assertThat(response.content()).isEmpty();

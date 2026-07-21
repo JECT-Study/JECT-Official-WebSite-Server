@@ -5,9 +5,12 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 
 import org.ject.support.domain.member.ActivityStatus;
+import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.CareerDetails;
+import org.ject.support.domain.member.CareerLevel;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -63,6 +66,50 @@ class MemberActivityTest {
 		assertThat(memberSemester.getSemesterId()).isEqualTo(2L);
 		assertThat(memberSemester.getTeamId()).isEqualTo(3L);
 		assertThat(memberSemester.getMemberActivity()).isSameAs(memberActivity);
+	}
+
+	@Test
+	@DisplayName("메이커스 구성원 활동을 생성하면 관리 항목이 함께 생성된다")
+	void 메이커스_구성원_활동을_생성하면_관리_항목이_함께_생성된다() {
+		// when
+		MemberActivity memberActivity = MemberActivity.createMakersActivity(
+			1L,
+			JobFamily.FE,
+			RecruitTypeDetail.REGULAR,
+			CareerDetails.EMPLOYEE,
+			ExperiencePeriod.ONE_TO_TWO,
+			"테스트 메모",
+			MakersTeam.TEAM_1,
+			Availability.HIGHLY_AVAILABLE,
+			Availability.AVAILABLE_BY_TOPIC,
+			Availability.CONSIDER_LATER,
+			CareerLevel.JUNIOR,
+			"Spring",
+			"JECT",
+			"백오피스",
+			"MK-001"
+		);
+		MemberMakers memberMakers = memberActivity.getMemberMakers();
+
+		// then
+		assertThat(memberActivity.getMemberId()).isEqualTo(1L);
+		assertThat(memberActivity.getMemberType()).isEqualTo(MemberType.MAKERS);
+		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.FE);
+		assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REGULAR);
+		assertThat(memberActivity.getCareerDetails()).isEqualTo(CareerDetails.EMPLOYEE);
+		assertThat(memberActivity.getExperiencePeriod()).isEqualTo(ExperiencePeriod.ONE_TO_TWO);
+		assertThat(memberActivity.getMemo()).isEqualTo("테스트 메모");
+		assertThat(memberMakers).isNotNull();
+		assertThat(memberMakers.getMemberActivity()).isSameAs(memberActivity);
+		assertThat(memberMakers.getMakersTeam()).isEqualTo(MakersTeam.TEAM_1);
+		assertThat(memberMakers.getMentoringAvailability()).isEqualTo(Availability.HIGHLY_AVAILABLE);
+		assertThat(memberMakers.getProjectSupplementAvailability()).isEqualTo(Availability.AVAILABLE_BY_TOPIC);
+		assertThat(memberMakers.getSpeakerAvailability()).isEqualTo(Availability.CONSIDER_LATER);
+		assertThat(memberMakers.getCareerLevel()).isEqualTo(CareerLevel.JUNIOR);
+		assertThat(memberMakers.getSkills()).isEqualTo("Spring");
+		assertThat(memberMakers.getCompany()).isEqualTo("JECT");
+		assertThat(memberMakers.getExpertTopics()).isEqualTo("백오피스");
+		assertThat(memberMakers.getActivityCertNumber()).isEqualTo("MK-001");
 	}
 
 	@Test
