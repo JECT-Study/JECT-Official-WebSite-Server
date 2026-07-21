@@ -3,7 +3,7 @@ package org.ject.support.admin.member.controller;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
-import org.ject.support.admin.member.service.AdminMemberUseCase;
+import org.ject.support.admin.member.service.AdminMemberSemesterUseCase;
 import org.ject.support.common.response.CursorPageResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AdminMemberSemesterController implements AdminMemberSemesterApiSpec {
 
-	private final AdminMemberUseCase adminMemberUsecase;
+	private final AdminMemberSemesterUseCase adminMemberUsecase;
 
 	// 일반 구성원 추가
 	@Override

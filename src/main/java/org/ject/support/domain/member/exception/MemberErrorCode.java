@@ -19,6 +19,7 @@ public enum MemberErrorCode implements ErrorCode {
     NOT_FOUND_TEAM_OF_SEMESTER(NOT_FOUND, "MEMBER-7", "해당 기수의 팀을 찾을 수 없습니다."),
     REQUIRED_SEMESTER_FOR_TEAM_FILTER(BAD_REQUEST, "MEMBER-8", "팀 필터를 사용할 때는 기수를 함께 선택해야 합니다."),
     INVALID_ACTIVITY_STATUS(BAD_REQUEST, "MEMBER-9", "구성원 유형에 맞지 않는 활동 상태입니다."),
+    ALREADY_EXIST_ACTIVE_MEMBER_MAKERS_ACTIVITY(CONFLICT, "MEMBER-10", "이미 활동 중인 메이커스팀 구성원입니다."),
     ;
 
     private final HttpStatus httpStatus;
