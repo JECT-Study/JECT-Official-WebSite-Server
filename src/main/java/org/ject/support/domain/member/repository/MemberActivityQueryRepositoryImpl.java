@@ -93,6 +93,7 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 			.where(
 				memberSemester.teamId.eq(teamId),
 				memberActivity.memberType.eq(MemberType.SEMESTER),
+				memberActivity.activityStatus.in(ActivityStatus.ACTIVE, ActivityStatus.COMPLETED),
 				member.isDeleted.isFalse(),
 				memberActivity.isDeleted.isFalse(),
 				member.name.isNotNull()
