@@ -44,21 +44,21 @@ class MemberActivityRepositoryTest {
         Long cursor,
         Integer size,
         Long semesterId,
-        List<JobFamily> jobFamilies,
-        List<RecruitTypeDetail> recruitTypeDetails,
-        List<CareerDetails> careerDetails,
-        List<Long> teamIds,
-        List<ActivityStatus> statuses
+        JobFamily jobFamily,
+        RecruitTypeDetail recruitTypeDetail,
+        CareerDetails careerDetails,
+        Long teamId,
+        ActivityStatus status
     ) {
         return new MemberSemesterSearchCondition(
             cursor,
             size,
             semesterId,
-            jobFamilies,
-            recruitTypeDetails,
+            jobFamily,
+            recruitTypeDetail,
             careerDetails,
-            teamIds,
-            statuses
+            teamId,
+            status
         );
     }
 
@@ -361,10 +361,10 @@ class MemberActivityRepositoryTest {
             null,
             30,
             SEMESTER_ID,
-            List.of(JobFamily.BE),
-            List.of(RecruitTypeDetail.REGULAR),
-            List.of(CareerDetails.EMPLOYEE),
-            List.of(1L),
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            1L,
             null
         );
 
@@ -447,7 +447,7 @@ class MemberActivityRepositoryTest {
             null,
             30,
             null,
-            List.of(JobFamily.BE),
+            JobFamily.BE,
             null,
             null,
             null,
@@ -489,7 +489,7 @@ class MemberActivityRepositoryTest {
             30,
             null,
             null,
-            List.of(RecruitTypeDetail.REGULAR),
+            RecruitTypeDetail.REGULAR,
             null,
             null,
             null
@@ -531,7 +531,7 @@ class MemberActivityRepositoryTest {
             null,
             null,
             null,
-            List.of(CareerDetails.EMPLOYEE),
+            CareerDetails.EMPLOYEE,
             null,
             null
         );
@@ -573,7 +573,7 @@ class MemberActivityRepositoryTest {
             null,
             null,
             null,
-            List.of(1L,2L,3L),
+            1L,
             null
         );
         // when
@@ -618,7 +618,7 @@ class MemberActivityRepositoryTest {
             null,
             null,
             null,
-            List.of(ActivityStatus.COMPLETED)
+            ActivityStatus.COMPLETED
         );
 
         // when
@@ -668,10 +668,10 @@ class MemberActivityRepositoryTest {
             cursor.getId(),
             30,
             SEMESTER_ID,
-            List.of(JobFamily.BE),
-            List.of(RecruitTypeDetail.REGULAR),
-            List.of(CareerDetails.EMPLOYEE),
-            List.of(1L),
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            1L,
             null
         );
 
@@ -719,6 +719,31 @@ class MemberActivityRepositoryTest {
         assertThat(result.productDesigners()).isEmpty();
         assertThat(result.frontendDevelopers()).isEmpty();
         assertThat(result.backendDevelopers()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("활동 상태가 탈퇴인 일반 구성원은 팀원 이름 조회에서 제외한다")
+    void 활동_상태가_탈퇴인_일반_구성원은_팀원_이름_조회에서_제외한다() {
+        // given
+        Long teamId = 10L;
+        saveSemesterActivity("정상 구성원", "active-name@test.com", SEMESTER_ID, teamId, JobFamily.BE);
+
+        Member withdrawnMember = memberRepository.save(
+            member().name("탈퇴 구성원").email("withdrawn-name@test.com").build()
+        );
+        memberActivityRepository.saveAndFlush(semesterActivity()
+            .memberId(withdrawnMember.getId())
+            .semesterId(SEMESTER_ID)
+            .teamId(teamId)
+            .jobFamily(JobFamily.BE)
+            .activityStatus(ActivityStatus.WITHDRAWN)
+            .build());
+
+        // when
+        TeamMemberNames result = memberActivityRepository.findMemberNamesByTeamId(teamId);
+
+        // then
+        assertThat(result.backendDevelopers()).containsExactly("정상 구성원");
     }
 
     @Test

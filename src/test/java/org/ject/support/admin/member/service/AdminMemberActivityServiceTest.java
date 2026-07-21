@@ -105,18 +105,18 @@ class AdminMemberActivityServiceTest {
      */
 
     @Test
-    @DisplayName("다중 필터를 적용해서 일반 구성원 목록을 조회한다")
-    void 다중_필터를_적용해서_일반_구성원_목록을_조회한다() {
+    @DisplayName("단일 필터를 적용해서 일반 구성원 목록을 조회한다")
+    void 단일_필터를_적용해서_일반_구성원_목록을_조회한다() {
         // given
         MemberSemesterSearchCondition condition = new MemberSemesterSearchCondition(
           null,
           20,
           1L,
-          List.of(JobFamily.BE),
-          List.of(RecruitTypeDetail.REGULAR),
-          List.of(CareerDetails.EMPLOYEE),
-          List.of(1L,2L,3L),
-          List.of(ActivityStatus.ACTIVE)
+          JobFamily.BE,
+          RecruitTypeDetail.REGULAR,
+          CareerDetails.EMPLOYEE,
+          1L,
+          ActivityStatus.ACTIVE
         );
 
         List<SearchMemberSemesterProjection> projections = List.of(

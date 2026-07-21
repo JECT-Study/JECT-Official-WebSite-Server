@@ -230,11 +230,11 @@ class AdminMemberSemesterControllerTest {
 		mockMvc.perform(get("/admin/members/semester")
 				.param("size", "30")
 				.param("semesterId", String.valueOf(semester.getId()))
-				.param("jobFamilies", "BE")
-				.param("recruitTypeDetails", "REGULAR")
+				.param("jobFamily", "BE")
+				.param("recruitTypeDetail", "REGULAR")
 				.param("careerDetails", "EMPLOYEE")
-				.param("teamIds", String.valueOf(team.getId()))
-				.param("statuses", ActivityStatus.ACTIVE.name()))
+				.param("teamId", String.valueOf(team.getId()))
+				.param("status", ActivityStatus.ACTIVE.name()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("SUCCESS"))
 			.andExpect(jsonPath("$.data.content", hasSize(1)))
@@ -248,7 +248,7 @@ class AdminMemberSemesterControllerTest {
 	void 팀_필터만_있으면_일반_구성원_목록을_조회하지_않는다() throws Exception {
 		// when & then
 		mockMvc.perform(get("/admin/members/semester")
-				.param("teamIds", "1"))
+				.param("teamId", "1"))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.status").value(MemberErrorCode.REQUIRED_SEMESTER_FOR_TEAM_FILTER.getCode()));
 	}
@@ -258,7 +258,7 @@ class AdminMemberSemesterControllerTest {
 	void 잘못된_enum_값이면_일반_구성원_목록을_조회하지_않는다() throws Exception {
 		// when & then
 		mockMvc.perform(get("/admin/members/semester")
-				.param("jobFamilies", "WRONG"))
+				.param("jobFamily", "WRONG"))
 			.andExpect(status().isBadRequest());
 	}
 
@@ -267,7 +267,7 @@ class AdminMemberSemesterControllerTest {
 	void 일반_구성원에서_사용할_수_없는_활동_상태면_목록을_조회하지_않는다() throws Exception {
 		// when & then
 		mockMvc.perform(get("/admin/members/semester")
-				.param("statuses", ActivityStatus.DROPOUT.name()))
+				.param("status", ActivityStatus.DROPOUT.name()))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.status").value(MemberErrorCode.INVALID_ACTIVITY_STATUS.getCode()));
 	}
