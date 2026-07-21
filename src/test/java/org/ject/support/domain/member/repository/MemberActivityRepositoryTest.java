@@ -44,21 +44,21 @@ class MemberActivityRepositoryTest {
         Long cursor,
         Integer size,
         Long semesterId,
-        List<JobFamily> jobFamilies,
-        List<RecruitTypeDetail> recruitTypeDetails,
-        List<CareerDetails> careerDetails,
-        List<Long> teamIds,
-        List<ActivityStatus> statuses
+        JobFamily jobFamily,
+        RecruitTypeDetail recruitTypeDetail,
+        CareerDetails careerDetails,
+        Long teamId,
+        ActivityStatus status
     ) {
         return new MemberSemesterSearchCondition(
             cursor,
             size,
             semesterId,
-            jobFamilies,
-            recruitTypeDetails,
+            jobFamily,
+            recruitTypeDetail,
             careerDetails,
-            teamIds,
-            statuses
+            teamId,
+            status
         );
     }
 
@@ -361,10 +361,10 @@ class MemberActivityRepositoryTest {
             null,
             30,
             SEMESTER_ID,
-            List.of(JobFamily.BE),
-            List.of(RecruitTypeDetail.REGULAR),
-            List.of(CareerDetails.EMPLOYEE),
-            List.of(1L),
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            1L,
             null
         );
 
@@ -447,7 +447,7 @@ class MemberActivityRepositoryTest {
             null,
             30,
             null,
-            List.of(JobFamily.BE),
+            JobFamily.BE,
             null,
             null,
             null,
@@ -489,7 +489,7 @@ class MemberActivityRepositoryTest {
             30,
             null,
             null,
-            List.of(RecruitTypeDetail.REGULAR),
+            RecruitTypeDetail.REGULAR,
             null,
             null,
             null
@@ -531,7 +531,7 @@ class MemberActivityRepositoryTest {
             null,
             null,
             null,
-            List.of(CareerDetails.EMPLOYEE),
+            CareerDetails.EMPLOYEE,
             null,
             null
         );
@@ -573,7 +573,7 @@ class MemberActivityRepositoryTest {
             null,
             null,
             null,
-            List.of(1L,2L,3L),
+            1L,
             null
         );
         // when
@@ -618,7 +618,7 @@ class MemberActivityRepositoryTest {
             null,
             null,
             null,
-            List.of(ActivityStatus.COMPLETED)
+            ActivityStatus.COMPLETED
         );
 
         // when
@@ -668,10 +668,10 @@ class MemberActivityRepositoryTest {
             cursor.getId(),
             30,
             SEMESTER_ID,
-            List.of(JobFamily.BE),
-            List.of(RecruitTypeDetail.REGULAR),
-            List.of(CareerDetails.EMPLOYEE),
-            List.of(1L),
+            JobFamily.BE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            1L,
             null
         );
 

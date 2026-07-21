@@ -27,7 +27,7 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 
 	private final JPAQueryFactory jpaQueryFactory;
 
-	//다중 값은 in, 단일 값은 eq로 필터링
+	// 단일 값 기준으로 일반 구성원 필터링
 	//id기준 내림차순 - 최신순
 	//size+1개 조회
 	@Override
@@ -47,12 +47,12 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 			.join(memberSemester).on(memberSemester.id.eq(memberActivity.id))
 			.where(
 				cursorLt(condition.cursor()),
-				semesterIdIn(condition.semesterId()),
-				jobFamilyIn(condition.jobFamilies()),
-				careerDetailsIn(condition.careerDetails()),
-				teamIdIn(condition.teamIds()),
-				recruitTypeDetailIn(condition.recruitTypeDetails()),
-				statusIn(condition.statuses()),
+				semesterIdEq(condition.semesterId()),
+				jobFamilyEq(condition.jobFamily()),
+				careerDetailsEq(condition.careerDetails()),
+				teamIdEq(condition.teamId()),
+				recruitTypeDetailEq(condition.recruitTypeDetail()),
+				statusEq(condition.status()),
 				member.isDeleted.isFalse(),
 				memberActivity.isDeleted.isFalse(),
 				memberActivity.memberType.eq(MemberType.SEMESTER)
@@ -68,12 +68,12 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 			.join(member).on(member.id.eq(memberActivity.memberId))
 			.join(memberSemester).on(memberSemester.id.eq(memberActivity.id))
 			.where(
-				semesterIdIn(condition.semesterId()),
-				jobFamilyIn(condition.jobFamilies()),
-				careerDetailsIn(condition.careerDetails()),
-				teamIdIn(condition.teamIds()),
-				recruitTypeDetailIn(condition.recruitTypeDetails()),
-				statusIn(condition.statuses()),
+				semesterIdEq(condition.semesterId()),
+				jobFamilyEq(condition.jobFamily()),
+				careerDetailsEq(condition.careerDetails()),
+				teamIdEq(condition.teamId()),
+				recruitTypeDetailEq(condition.recruitTypeDetail()),
+				statusEq(condition.status()),
 				member.isDeleted.isFalse(),
 				memberActivity.isDeleted.isFalse(),
 				memberActivity.memberType.eq(MemberType.SEMESTER)
@@ -120,38 +120,33 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 		return cursor == null ? null : memberActivity.id.lt(cursor);
 	}
 
-	private BooleanExpression semesterIdIn(Long semesterId) {
+	private BooleanExpression semesterIdEq(Long semesterId) {
 		return semesterId == null ? null
 			: memberSemester.semesterId.eq(semesterId);
 	}
 
-	private BooleanExpression jobFamilyIn(List<JobFamily> jobFamilies) {
-		return jobFamilies == null || jobFamilies.isEmpty()
-			? null
-			: memberActivity.jobFamily.in(jobFamilies);
+	private BooleanExpression jobFamilyEq(JobFamily jobFamily) {
+		return jobFamily == null ? null
+			: memberActivity.jobFamily.eq(jobFamily);
 	}
 
-	private BooleanExpression careerDetailsIn(List<CareerDetails> careerDetails) {
-		return careerDetails == null || careerDetails.isEmpty()
-			? null
-			: memberActivity.careerDetails.in(careerDetails);
+	private BooleanExpression careerDetailsEq(CareerDetails careerDetails) {
+		return careerDetails == null ? null
+			: memberActivity.careerDetails.eq(careerDetails);
 	}
 
-	private BooleanExpression teamIdIn(List<Long> teamIds) {
-		return teamIds == null || teamIds.isEmpty()
-			? null
-			: memberSemester.teamId.in(teamIds);
+	private BooleanExpression teamIdEq(Long teamId) {
+		return teamId == null ? null
+			: memberSemester.teamId.eq(teamId);
 	}
 
-	private BooleanExpression recruitTypeDetailIn(List<RecruitTypeDetail> recruitTypeDetails) {
-		return recruitTypeDetails == null || recruitTypeDetails.isEmpty()
-			? null
-			: memberActivity.recruitTypeDetail.in(recruitTypeDetails);
+	private BooleanExpression recruitTypeDetailEq(RecruitTypeDetail recruitTypeDetail) {
+		return recruitTypeDetail == null ? null
+			: memberActivity.recruitTypeDetail.eq(recruitTypeDetail);
 	}
 
-	private BooleanExpression statusIn(List<ActivityStatus> statuses) {
-		return statuses == null || statuses.isEmpty()
-			? null
-			: memberActivity.activityStatus.in(statuses);
+	private BooleanExpression statusEq(ActivityStatus status) {
+		return status == null ? null
+			: memberActivity.activityStatus.eq(status);
 	}
 }

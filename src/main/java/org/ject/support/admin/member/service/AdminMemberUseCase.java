@@ -2,9 +2,7 @@ package org.ject.support.admin.member.service;
 
 import static org.ject.support.domain.member.exception.MemberErrorCode.*;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
@@ -35,7 +33,7 @@ public class AdminMemberUseCase {
 	public void createMemberSemester(CreateMemberSemesterRequest request) {
 		// 유효성 검증
 		semesterInquiryUsecase.getSemester(request.semesterId());
-		validateTeam(request.semesterId(), request.teamId());
+		validateCreateTeam(request.semesterId(), request.teamId());
 
 		// email 기준 기존 Member 조회 또는 신규 생성
 		Long memberId = adminMemberService.findOrCreateMember(request);
@@ -52,8 +50,8 @@ public class AdminMemberUseCase {
 	) {
 		// 유효성 검증
 		validateSemester(condition.semesterId());
-		validateTeams(condition.semesterId(), condition.teamIds());
-		validateStatuses(condition.statuses(), MemberType.SEMESTER);
+		validateSearchTeam(condition.semesterId(), condition.teamId());
+		validateStatus(condition.status(), MemberType.SEMESTER);
 		// size만큼 조회 + 전체 행 수 조회
 		SearchMemberSemesterPageResult pageResult = adminMemberActivityService.searchMemberSemesterList(condition);
 		// 페이징 값 처리
@@ -95,7 +93,7 @@ public class AdminMemberUseCase {
 	}
 
 	// 선택한 팀의 기수 소속 검증
-	private void validateTeam(Long semesterId, Long teamId) {
+	private void validateCreateTeam(Long semesterId, Long teamId) {
 		if (teamId == null) {
 			return;
 		}
@@ -105,9 +103,9 @@ public class AdminMemberUseCase {
 		}
 	}
 
-	// 넘겨받은 팀 목록 전체의 기수 소속 및 유효성 검증
-	private void validateTeams(Long semesterId, List<Long> teamIds) {
-		if(teamIds == null || teamIds.isEmpty()){
+	// 조회 필터 팀의 기수 소속 및 유효성 검증
+	private void validateSearchTeam(Long semesterId, Long teamId) {
+		if(teamId == null){
 			return;
 		}
 
@@ -116,18 +114,15 @@ public class AdminMemberUseCase {
 			throw new MemberException(REQUIRED_SEMESTER_FOR_TEAM_FILTER);
 		}
 
-		Set<Long> validTeamIds = new HashSet<>(
-			adminMemberTeamService.getTeamIdsBySemesterId(semesterId)
-		);
-
-		if(!validTeamIds.containsAll(teamIds)) {
+		List<Long> validTeamIds = adminMemberTeamService.getTeamIdsBySemesterId(semesterId);
+		if(!validTeamIds.contains(teamId)) {
 			throw new MemberException(NOT_FOUND_TEAM_OF_SEMESTER);
 		}
 	}
 
 	// 구성원 유형에서 허용되는 활동 상태인지 검증
-	private void validateStatuses(List<ActivityStatus> statuses, MemberType type) {
-		if (!ActivityStatus.isAllAvailableFor(statuses, type)) {
+	private void validateStatus(ActivityStatus status, MemberType type) {
+		if (status != null && !status.isAvailableFor(type)) {
 			throw new MemberException(INVALID_ACTIVITY_STATUS);
 		}
 	}

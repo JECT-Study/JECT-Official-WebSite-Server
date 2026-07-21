@@ -68,15 +68,15 @@ class AdminMemberUseCaseTest {
 		);
 	}
 
-	private MemberSemesterSearchCondition searchCondition(Integer size, Long semesterId, List<Long> teamIds) {
-		return searchCondition(size, semesterId, teamIds, null);
+	private MemberSemesterSearchCondition searchCondition(Integer size, Long semesterId, Long teamId) {
+		return searchCondition(size, semesterId, teamId, null);
 	}
 
 	private MemberSemesterSearchCondition searchCondition(
 		Integer size,
 		Long semesterId,
-		List<Long> teamIds,
-		List<ActivityStatus> statuses
+		Long teamId,
+		ActivityStatus status
 	) {
 		return new MemberSemesterSearchCondition(
 			null,
@@ -85,8 +85,8 @@ class AdminMemberUseCaseTest {
 			null,
 			null,
 			null,
-			teamIds,
-			statuses
+			teamId,
+			status
 		);
 	}
 
@@ -255,7 +255,7 @@ class AdminMemberUseCaseTest {
 	@DisplayName("팀 필터만 있으면 예외가 발생한다")
 	void 팀_필터만_있으면_예외가_발생한다() {
 		// given
-		MemberSemesterSearchCondition condition = searchCondition(3, null, List.of(1L));
+		MemberSemesterSearchCondition condition = searchCondition(3, null, 1L);
 
 		// when
 		Throwable throwable = catchThrowable(() -> adminMemberUseCase.searchMemberSemester(condition));
@@ -272,7 +272,7 @@ class AdminMemberUseCaseTest {
 	@DisplayName("해당 기수에 없는 팀으로 조회하면 예외가 발생한다")
 	void 해당_기수에_없는_팀으로_조회하면_예외가_발생한다() {
 		// given
-		MemberSemesterSearchCondition condition = searchCondition(3, 1L, List.of(9L));
+		MemberSemesterSearchCondition condition = searchCondition(3, 1L, 9L);
 		given(adminMemberTeamService.getTeamIdsBySemesterId(condition.semesterId()))
 			.willReturn(List.of(1L, 2L, 3L));
 
@@ -292,7 +292,7 @@ class AdminMemberUseCaseTest {
 	@DisplayName("일반 구성원에서 사용할 수 없는 활동 상태로 조회하면 예외가 발생한다")
 	void 일반_구성원에서_사용할_수_없는_활동_상태로_조회하면_예외가_발생한다() {
 		// given
-		MemberSemesterSearchCondition condition = searchCondition(3, null, null, List.of(ActivityStatus.DROPOUT));
+		MemberSemesterSearchCondition condition = searchCondition(3, null, null, ActivityStatus.DROPOUT);
 
 		// when
 		Throwable throwable = catchThrowable(() -> adminMemberUseCase.searchMemberSemester(condition));
@@ -309,7 +309,7 @@ class AdminMemberUseCaseTest {
 	@DisplayName("일반 구성원에서 탈퇴 상태로 목록을 조회한다")
 	void 일반_구성원에서_탈퇴_상태로_목록을_조회한다() {
 		// given
-		MemberSemesterSearchCondition condition = searchCondition(3, null, null, List.of(ActivityStatus.WITHDRAWN));
+		MemberSemesterSearchCondition condition = searchCondition(3, null, null, ActivityStatus.WITHDRAWN);
 		SearchMemberSemesterPageResult pageResult = new SearchMemberSemesterPageResult(List.of(), 0L);
 		given(adminMemberActivityService.searchMemberSemesterList(condition)).willReturn(pageResult);
 
