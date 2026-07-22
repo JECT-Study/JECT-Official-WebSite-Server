@@ -1,7 +1,9 @@
 package org.ject.support.domain.member.repository;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
@@ -20,4 +22,6 @@ public interface MemberActivityQueryRepository {
 	List<MemberMakersListProjection> findMemberMakersList(Long cursor, Integer limit);
 
 	long countMemberMakersList();
+
+	Optional<MemberMakersDetailProjection> findMemberMakersDetail(Long memberActivityId);
 }

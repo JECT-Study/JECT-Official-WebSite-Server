@@ -6,7 +6,9 @@ import static org.ject.support.domain.member.entity.QMemberMakers.*;
 import static org.ject.support.domain.member.entity.QMemberSemester.*;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
@@ -26,6 +28,8 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRepository {
+
+	//Todo: 구성원 관리의모든 dto 필드명을 엔티티 기준으로 재정렬
 
 	private final JPAQueryFactory jpaQueryFactory;
 
@@ -152,6 +156,47 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 			).fetchOne();
 
 		return count == null ? 0L : count;
+	}
+
+	@Override
+	public Optional<MemberMakersDetailProjection> findMemberMakersDetail(Long memberActivityId) {
+		return Optional.ofNullable(
+			jpaQueryFactory
+				.select(Projections.constructor(
+					MemberMakersDetailProjection.class,
+					memberActivity.id,
+					member.name,
+					member.email,
+					member.phoneNumber,
+					memberActivity.jobFamily,
+					memberActivity.careerDetails,
+					memberMakers.makersTeam,
+					memberActivity.recruitTypeDetail,
+					member.region,
+					member.interestedDomains,
+					memberActivity.experiencePeriod,
+					memberMakers.mentoringAvailability,
+					memberMakers.projectSupplementAvailability,
+					memberMakers.speakerAvailability,
+					memberMakers.careerLevel,
+					memberActivity.activityStatus,
+					memberMakers.skills,
+					memberMakers.company,
+					memberMakers.expertTopics,
+					memberMakers.activityCertNumber,
+					memberActivity.memo
+				))
+				.from(memberActivity)
+				.join(member).on(member.id.eq(memberActivity.memberId))
+				.join(memberMakers).on(memberActivity.id.eq(memberMakers.id))
+				.where(
+					memberActivity.id.eq(memberActivityId),
+					member.isDeleted.isFalse(),
+					memberActivity.isDeleted.isFalse(),
+					memberActivity.memberType.eq(MemberType.MAKERS)
+				)
+				.fetchOne()
+		);
 	}
 
 	// 조회 결과에서 지정 직군의 이름만 분리
