@@ -1,5 +1,8 @@
 package org.ject.support.admin.member.service;
 
+import static org.ject.support.domain.member.exception.MemberErrorCode.*;
+
+import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
@@ -16,9 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-
-import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_ACTIVE_MEMBER_MAKERS_ACTIVITY;
-import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER_SEMESTER_ACTIVITY;
 
 import java.util.List;
 
@@ -91,6 +91,11 @@ public class AdminMemberActivityService {
 		return new MemberMakersListPageResult(projections, count);
 	}
 
+	// 메이커스팀 구성원 상세 조회
+	public MemberMakersDetailProjection getMemberMakersDetail(Long memberActivityId) {
+		return memberActivityRepository.findMemberMakersDetail(memberActivityId)
+			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+	}
 	/*
 	유틸, 검증 함수
 	 */

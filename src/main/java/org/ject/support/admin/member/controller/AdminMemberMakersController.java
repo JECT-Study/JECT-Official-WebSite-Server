@@ -2,11 +2,13 @@ package org.ject.support.admin.member.controller;
 
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
+import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.admin.member.service.AdminMemberMakersUseCase;
 import org.ject.support.common.response.CursorPageResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,4 +38,11 @@ public class AdminMemberMakersController implements AdminMemberMakersApiSpec{
 		@ModelAttribute @Valid MemberMakersListRequest request) {
 		return adminMemberMakersUseCase.getMemberMakersList(request);
 	}
+
+	@Override
+	@GetMapping("/{memberActivityId}")
+	public MemberMakersDetailResponse getAdminMemberMakersDetail(@PathVariable(name = "memberActivityId") Long memberActivityId) {
+		return adminMemberMakersUseCase.getMemberMakersDetail(memberActivityId);
+	}
+
 }
