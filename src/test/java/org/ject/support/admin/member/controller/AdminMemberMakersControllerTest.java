@@ -231,6 +231,33 @@ class AdminMemberMakersControllerTest {
 			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
 	}
 
+	@Test
+	@DisplayName("메이커스팀 구성원 상세를 조회한다")
+	void 메이커스팀_구성원_상세를_조회한다() throws Exception {
+		// given
+		MemberActivity memberActivity = saveMakersActivity(uniqueEmail("detail"), JobFamily.FE, MakersTeam.TEAM_1);
+
+		// when & then
+		mockMvc.perform(get("/admin/members/makers/{memberActivityId}", memberActivity.getId()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"))
+			.andExpect(jsonPath("$.data.id").value(memberActivity.getId()))
+			.andExpect(jsonPath("$.data.name").value("김젝트"))
+			.andExpect(jsonPath("$.data.email").exists())
+			.andExpect(jsonPath("$.data.jobFamily").value(JobFamily.FE.name()))
+			.andExpect(jsonPath("$.data.makersTeam").value(MakersTeam.TEAM_1.name()))
+			.andExpect(jsonPath("$.data.activityStatus").value(ActivityStatus.ACTIVE.name()));
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 메이커스팀 구성원 상세를 조회하지 않는다")
+	void 존재하지_않는_메이커스팀_구성원_상세를_조회하지_않는다() throws Exception {
+		// when & then
+		mockMvc.perform(get("/admin/members/makers/{memberActivityId}", 999999999L))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER.getCode()));
+	}
+
 	private CreateMemberMakersRequest createMemberMakersRequest(String email) {
 		return new CreateMemberMakersRequest(
 			"김메이커",

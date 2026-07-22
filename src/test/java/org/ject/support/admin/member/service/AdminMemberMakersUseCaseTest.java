@@ -5,14 +5,21 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.verify;
 
 import java.util.List;
+import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
+import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.admin.member.dto.result.MemberMakersListPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
+import org.ject.support.domain.member.Availability;
+import org.ject.support.domain.member.CareerDetails;
+import org.ject.support.domain.member.CareerLevel;
+import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
+import org.ject.support.domain.member.Region;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -88,6 +95,26 @@ class AdminMemberMakersUseCaseTest {
 		assertThat(response.totalCount()).isEqualTo(2L);
 	}
 
+	@Test
+	@DisplayName("메이커스팀 구성원 상세를 조회해 응답으로 가공 후 반환한다")
+	void 메이커스팀_구성원_상세를_조회해_응답으로_가궁_후_변환한다() {
+		// given
+		Long memberActivityId = 1L;
+		MemberMakersDetailProjection projection = makersDetailProjection(memberActivityId);
+		given(adminMemberActivityService.getMemberMakersDetail(memberActivityId)).willReturn(projection);
+
+		// when
+		MemberMakersDetailResponse response = adminMemberMakersUseCase.getMemberMakersDetail(memberActivityId);
+
+		// then
+		assertThat(response.id()).isEqualTo(projection.id());
+		assertThat(response.name()).isEqualTo(projection.name());
+		assertThat(response.email()).isEqualTo(projection.email());
+		assertThat(response.makersTeam()).isEqualTo(projection.makersTeam());
+		assertThat(response.activityStatus()).isEqualTo(projection.activityStatus());
+		verify(adminMemberActivityService).getMemberMakersDetail(memberActivityId);
+	}
+
 	private MemberMakersListProjection makersProjection(Long memberActivityId, String name) {
 		return new MemberMakersListProjection(
 			memberActivityId,
@@ -98,6 +125,32 @@ class AdminMemberMakersUseCaseTest {
 			MakersTeam.TEAM_1,
 			RecruitTypeDetail.REGULAR,
 			ActivityStatus.ACTIVE,
+			"memo"
+		);
+	}
+
+	private MemberMakersDetailProjection makersDetailProjection(Long memberActivityId) {
+		return new MemberMakersDetailProjection(
+			memberActivityId,
+			"김메이커",
+			"maker@ject.kr",
+			"01087654321",
+			JobFamily.FE,
+			CareerDetails.EMPLOYEE,
+			MakersTeam.TEAM_1,
+			RecruitTypeDetail.REGULAR,
+			Region.SEOUL,
+			List.of("HEALTHCARE"),
+			ExperiencePeriod.ONE_TO_TWO,
+			Availability.HIGHLY_AVAILABLE,
+			Availability.AVAILABLE_BY_TOPIC,
+			Availability.CONSIDER_LATER,
+			CareerLevel.JUNIOR,
+			ActivityStatus.ACTIVE,
+			"Spring",
+			"JECT",
+			"백오피스",
+			"MK-001",
 			"memo"
 		);
 	}

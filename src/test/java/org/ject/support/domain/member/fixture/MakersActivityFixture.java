@@ -14,6 +14,7 @@ public final class MakersActivityFixture {
     private Long memberId = 1L;
     private JobFamily jobFamily = JobFamily.FE;
     private MakersTeam makersTeam = MakersTeam.TEAM_1;
+    private boolean deleted = false;
 
     private MakersActivityFixture() {
     }
@@ -37,8 +38,13 @@ public final class MakersActivityFixture {
         return this;
     }
 
+    public MakersActivityFixture deleted() {
+        this.deleted = true;
+        return this;
+    }
+
     public MemberActivity build() {
-        return MemberActivity.createMakersActivity(
+        MemberActivity memberActivity = MemberActivity.createMakersActivity(
             memberId,
             jobFamily,
             RecruitTypeDetail.REGULAR,
@@ -55,5 +61,9 @@ public final class MakersActivityFixture {
             "백오피스",
             "MK-001"
         );
+        if (deleted) {
+            memberActivity.delete();
+        }
+        return memberActivity;
     }
 }

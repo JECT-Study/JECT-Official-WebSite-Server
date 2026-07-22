@@ -9,6 +9,7 @@ import jakarta.persistence.EntityManager;
 import java.util.List;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
+import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.domain.member.ActivityStatus;
@@ -925,5 +926,69 @@ class MemberActivityRepositoryTest {
                 secondActivity.getId(),
                 firstActivity.getId()
             );
+    }
+
+    @Test
+    @DisplayName("메이커스팀 구성원 상세를 조회한다")
+    void 메이커스팀_구성원_상세를_조회한다() {
+        // given
+        Member member = memberRepository.save(member()
+            .email("makers-detail@test.com")
+            .build());
+        MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+            makersActivity().memberId(member.getId()).build()
+        );
+
+        // when
+        MemberMakersDetailProjection projection = memberActivityRepository.findMemberMakersDetail(memberActivity.getId())
+            .orElseThrow();
+
+        // then
+        assertThat(projection.id()).isEqualTo(memberActivity.getId());
+        assertThat(projection.name()).isEqualTo(member.getName());
+        assertThat(projection.email()).isEqualTo(member.getEmail());
+        assertThat(projection.jobFamily()).isEqualTo(memberActivity.getJobFamily());
+        assertThat(projection.makersTeam()).isEqualTo(memberActivity.getMemberMakers().getMakersTeam());
+        assertThat(projection.activityStatus()).isEqualTo(memberActivity.getActivityStatus());
+    }
+
+    @Test
+    @DisplayName("삭제된 메이커스팀 활동은 상세 조회하지 않는다")
+    void 삭제된_메이커스팀_활동은_상세_조회하지_않는다() {
+        // given
+        Member member = memberRepository.save(member()
+            .email("del-act@test.com")
+            .build());
+        MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+            makersActivity()
+                .memberId(member.getId())
+                .deleted()
+                .build()
+        );
+
+        // when
+        boolean exists = memberActivityRepository.findMemberMakersDetail(memberActivity.getId()).isPresent();
+
+        // then
+        assertThat(exists).isFalse();
+    }
+
+    @Test
+    @DisplayName("삭제된 구성원의 메이커스팀 활동은 상세 조회하지 않는다")
+    void 삭제된_구성원의_메이커스팀_활동은_상세_조회하지_않는다() {
+        // given
+        Member member = memberRepository.save(member()
+            .email("del-mem@test.com")
+            .deleted()
+            .build());
+        MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+            makersActivity().memberId(member.getId()).build()
+        );
+
+        // when
+        boolean exists = memberActivityRepository.findMemberMakersDetail(memberActivity.getId()).isPresent();
+
+        // then
+        assertThat(exists).isFalse();
     }
 }
