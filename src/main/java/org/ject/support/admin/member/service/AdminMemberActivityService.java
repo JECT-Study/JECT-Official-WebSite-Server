@@ -1,9 +1,12 @@
 package org.ject.support.admin.member.service;
 
+import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
+import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
+import org.ject.support.admin.member.dto.result.MemberMakersListPageResult;
 import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.entity.MemberActivity;
@@ -45,6 +48,7 @@ public class AdminMemberActivityService {
 		memberActivityRepository.save(memberActivity);
 	}
 
+	// 메이커스팀 구성원 추가
 	public void createMemberMakersActivity(CreateMemberMakersRequest request, Long memberId) {
 		// 추가하려는 대상이 이미 활동 중인 상태인지 검증
 		validateDuplicateActiveMakersActivity(memberId);
@@ -80,6 +84,12 @@ public class AdminMemberActivityService {
 		return new SearchMemberSemesterPageResult(projections, totalCount);
 	}
 
+	// 메이커스팀 구성원 목록 조회
+	public MemberMakersListPageResult getMemberMakersList(MemberMakersListRequest request) {
+		List<MemberMakersListProjection> projections = memberActivityRepository.findMemberMakersList(request.cursor(), request.getSizeOrDefault()+1);
+		long count = memberActivityRepository.countMemberMakersList();
+		return new MemberMakersListPageResult(projections, count);
+	}
 
 	/*
 	유틸, 검증 함수

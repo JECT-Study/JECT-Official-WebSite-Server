@@ -1,11 +1,14 @@
 package org.ject.support.domain.member.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.ject.support.domain.member.fixture.MakersActivityFixture.*;
 import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 
 import jakarta.persistence.EntityManager;
 import java.util.List;
+
+import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.domain.member.ActivityStatus;
@@ -834,5 +837,93 @@ class MemberActivityRepositoryTest {
 
         // then
         assertThat(result.backendDevelopers()).containsExactly("정상 구성원");
+    }
+    @Test
+    @DisplayName("메이커스팀 구성원 목록을 최신순으로 조회한다")
+    void 메이커스팀_구성원_목록을_최신순으로_조회한다() {
+        // given
+        Member first = memberRepository.save(member().email("makers1@test.com").build());
+        Member second = memberRepository.save(member().email("makers2@test.com").build());
+        Member third = memberRepository.save(member().email("makers3@test.com").build());
+
+        MemberActivity firstAcivity = memberActivityRepository.saveAndFlush(makersActivity().memberId(first.getId()).build());
+        MemberActivity secondAcivity = memberActivityRepository.saveAndFlush(makersActivity().memberId(second.getId()).build());
+        MemberActivity thirdAcivity = memberActivityRepository.saveAndFlush(makersActivity().memberId(third.getId()).build());
+        // when
+        List<MemberMakersListProjection> projections = memberActivityRepository.findMemberMakersList(null,4);
+        // then
+        assertThat(projections).hasSize(3);
+        assertThat(projections)
+            .extracting(MemberMakersListProjection::memberActivityId)
+            .containsExactly(
+                thirdAcivity.getId(),
+                secondAcivity.getId(),
+                firstAcivity.getId()
+            );
+    }
+
+    @Test
+    @DisplayName("cursor 이후 메이커스팀 구성원 목록을 조회한다")
+    void cursor_이후_메이커스팀_구성원_목록을_조회한다() {
+        // given
+        Member first = memberRepository.save(member().email("makers1@test.com").build());
+        Member second = memberRepository.save(member().email("makers2@test.com").build());
+        Member third = memberRepository.save(member().email("makers3@test.com").build());
+
+        MemberActivity firstAcivity = memberActivityRepository.saveAndFlush(makersActivity().memberId(first.getId()).build());
+        MemberActivity secondAcivity = memberActivityRepository.saveAndFlush(makersActivity().memberId(second.getId()).build());
+        MemberActivity thirdAcivity = memberActivityRepository.saveAndFlush(makersActivity().memberId(third.getId()).build());
+
+        Long cursor = thirdAcivity.getId().longValue();
+        // when
+        List<MemberMakersListProjection> projections = memberActivityRepository.findMemberMakersList(cursor,4);
+        // then
+        assertThat(projections).hasSize(2);
+        assertThat(projections)
+            .extracting(MemberMakersListProjection::memberActivityId)
+            .containsExactly(
+                secondAcivity.getId(),
+                firstAcivity.getId()
+            );
+    }
+
+    @Test
+    @DisplayName("메이커스팀 구성원 목록 전체 개수를 조회한다")
+    void 메이커스팀_구성원_목록_전체_개수를_조회한다() {
+        // given
+        Member first = memberRepository.save(member().email("makers1@test.com").build());
+        Member second = memberRepository.save(member().email("makers2@test.com").build());
+        Member third = memberRepository.save(member().email("makers3@test.com").build());
+
+        memberActivityRepository.saveAndFlush(makersActivity().memberId(first.getId()).build());
+        memberActivityRepository.saveAndFlush(makersActivity().memberId(second.getId()).build());
+        memberActivityRepository.saveAndFlush(makersActivity().memberId(third.getId()).build());
+        // when
+        long count = memberActivityRepository.countMemberMakersList();
+        // then
+        assertThat(count).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("일반 구성원 활동은 메이커스팀 목록에서 제외한다")
+    void 일반_구성원_활동은_메이커스팀_목록에서_제외한다() {
+        // given
+        Member first = memberRepository.save(member().email("makers1@test.com").build());
+        Member second = memberRepository.save(member().email("makers2@test.com").build());
+        Member semester = memberRepository.save(member().email("semester1@test.com").build());
+
+        MemberActivity firstActivity = memberActivityRepository.saveAndFlush(makersActivity().memberId(first.getId()).build());
+        MemberActivity secondActivity = memberActivityRepository.saveAndFlush(makersActivity().memberId(second.getId()).build());
+        MemberActivity semesterActivity = memberActivityRepository.saveAndFlush(semesterActivity().memberId(semester.getId()).build());
+        // when
+        List<MemberMakersListProjection> projections = memberActivityRepository.findMemberMakersList(null,4);
+        // then
+        assertThat(projections).hasSize(2);
+        assertThat(projections)
+            .extracting(MemberMakersListProjection::memberActivityId)
+            .containsExactly(
+                secondActivity.getId(),
+                firstActivity.getId()
+            );
     }
 }
