@@ -1,7 +1,10 @@
 package org.ject.support.admin.member.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
+import static org.ject.support.domain.member.fixture.MakersActivityFixture.makersActivity;
 import static org.ject.support.domain.member.fixture.MemberFixture.member;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -145,6 +148,89 @@ class AdminMemberMakersControllerTest {
 		assertThat(memberActivity.getMemberMakers().getMakersTeam()).isEqualTo(request.makersTeam());
 	}
 
+	@Test
+	@DisplayName("메이커스팀 구성원 목록을 조회한다")
+	void 메이커스팀_구성원_목록을_조회한다() throws Exception {
+		// given
+		MemberActivity firstActivity = saveMakersActivity(uniqueEmail("list1"), JobFamily.FE, MakersTeam.TEAM_1);
+		MemberActivity secondActivity = saveMakersActivity(uniqueEmail("list2"), JobFamily.BE, MakersTeam.TEAM_2);
+
+		// when & then
+		mockMvc.perform(get("/admin/members/makers")
+				.param("size", "30"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"))
+			.andExpect(jsonPath("$.data.content").isArray())
+			.andExpect(jsonPath("$.data.content[0].memberActivityId").value(secondActivity.getId()))
+			.andExpect(jsonPath("$.data.content[0].jobFamily").value(JobFamily.BE.name()))
+			.andExpect(jsonPath("$.data.content[0].makersTeam").value(MakersTeam.TEAM_2.name()))
+			.andExpect(jsonPath("$.data.content[1].memberActivityId").value(firstActivity.getId()))
+			.andExpect(jsonPath("$.data.size").value(30))
+			.andExpect(jsonPath("$.data.hasNext").value(false))
+			.andExpect(jsonPath("$.data.nextCursor").value(nullValue()))
+			.andExpect(jsonPath("$.data.totalCount").value(2));
+	}
+
+	@Test
+	@DisplayName("cursor 이후 메이커스팀 구성원 목록을 조회한다")
+	void cursor_이후_메이커스팀_구성원_목록을_조회한다() throws Exception {
+		// given
+		MemberActivity firstActivity = saveMakersActivity(uniqueEmail("cursor1"), JobFamily.FE, MakersTeam.TEAM_1);
+		MemberActivity secondActivity = saveMakersActivity(uniqueEmail("cursor2"), JobFamily.BE, MakersTeam.TEAM_1);
+		MemberActivity thirdActivity = saveMakersActivity(uniqueEmail("cursor3"), JobFamily.PM, MakersTeam.TEAM_2);
+
+		mockMvc.perform(get("/admin/members/makers")
+				.param("size", "2"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.content[0].memberActivityId").value(thirdActivity.getId()))
+			.andExpect(jsonPath("$.data.content[1].memberActivityId").value(secondActivity.getId()))
+			.andExpect(jsonPath("$.data.hasNext").value(true))
+			.andExpect(jsonPath("$.data.nextCursor").value(secondActivity.getId()))
+			.andExpect(jsonPath("$.data.totalCount").value(3));
+
+		// when & then
+		mockMvc.perform(get("/admin/members/makers")
+				.param("cursor", String.valueOf(secondActivity.getId()))
+				.param("size", "2"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"))
+			.andExpect(jsonPath("$.data.content[0].memberActivityId").value(firstActivity.getId()))
+			.andExpect(jsonPath("$.data.hasNext").value(false))
+			.andExpect(jsonPath("$.data.nextCursor").value(nullValue()))
+			.andExpect(jsonPath("$.data.totalCount").value(3));
+	}
+
+	@Test
+	@DisplayName("size가 1보다 작으면 메이커스팀 구성원 목록을 조회하지 않는다")
+	void size가_1보다_작으면_메이커스팀_구성원_목록을_조회하지_않는다() throws Exception {
+		// when & then
+		mockMvc.perform(get("/admin/members/makers")
+				.param("size", "0"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+	}
+
+	@Test
+	@DisplayName("size가 100보다 크면 메이커스팀 구성원 목록을 조회하지 않는다")
+	void size가_100보다_크면_메이커스팀_구성원_목록을_조회하지_않는다() throws Exception {
+		// when & then
+		mockMvc.perform(get("/admin/members/makers")
+				.param("size", "101"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+	}
+
+	@Test
+	@DisplayName("cursor가 1보다 작으면 메이커스팀 구성원 목록을 조회하지 않는다")
+	void cursor가_1보다_작으면_메이커스팀_구성원_목록을_조회하지_않는다() throws Exception {
+		// when & then
+		mockMvc.perform(get("/admin/members/makers")
+				.param("cursor", "0")
+				.param("size", "2"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+	}
+
 	private CreateMemberMakersRequest createMemberMakersRequest(String email) {
 		return new CreateMemberMakersRequest(
 			"김메이커",
@@ -176,6 +262,18 @@ class AdminMemberMakersControllerTest {
 
 		assertThat(activities).hasSize(1);
 		return activities.get(0);
+	}
+
+	private MemberActivity saveMakersActivity(String email, JobFamily jobFamily, MakersTeam makersTeam) {
+		Member member = memberRepository.save(member()
+			.email(email)
+			.build());
+
+		return memberActivityRepository.saveAndFlush(makersActivity()
+			.memberId(member.getId())
+			.jobFamily(jobFamily)
+			.makersTeam(makersTeam)
+			.build());
 	}
 
 	private String uniqueEmail(String prefix) {
