@@ -144,6 +144,7 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 		Long count = jpaQueryFactory.select(memberActivity.id.count())
 			.from(memberActivity)
 			.join(member).on(member.id.eq(memberActivity.memberId))
+			.join(memberMakers).on(memberActivity.id.eq(memberMakers.id))
 			.where(
 				member.isDeleted.isFalse(),
 				memberActivity.isDeleted.isFalse(),
