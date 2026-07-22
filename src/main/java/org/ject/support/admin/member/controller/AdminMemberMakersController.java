@@ -41,7 +41,7 @@ public class AdminMemberMakersController implements AdminMemberMakersApiSpec{
 
 	@Override
 	@GetMapping("/{memberActivityId}")
-	public MemberMakersDetailResponse getAdminMemberMakersDetail(@PathVariable(name = "memberActivityId") Long memberActivityId) {
+	public MemberMakersDetailResponse getAdminMemberMakersDetail(@PathVariable Long memberActivityId) {
 		return adminMemberMakersUseCase.getMemberMakersDetail(memberActivityId);
 	}
 
