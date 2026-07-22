@@ -23,4 +23,13 @@ public interface MemberActivityRepository extends JpaRepository<MemberActivity, 
 		@Param("memberType") MemberType memberType,
 		@Param("semesterId") Long semesterId
 	);
+
+	@Query("""
+		select count(ma) > 0
+		from MemberActivity ma
+		where ma.memberId = :memberId
+		  and ma.memberType = org.ject.support.domain.member.MemberType.MAKERS
+		  and ma.activityStatus = org.ject.support.domain.member.ActivityStatus.ACTIVE
+		""")
+	boolean existsActiveMakersActivityByMemberId(@Param("memberId") Long memberId);
 }

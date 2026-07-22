@@ -9,9 +9,12 @@ import java.util.List;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.domain.member.ActivityStatus;
+import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.CareerDetails;
+import org.ject.support.domain.member.CareerLevel;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Member;
@@ -121,6 +124,29 @@ class MemberActivityRepositoryTest {
             ActivityStatus.ACTIVE
         );
     }
+
+    private MemberActivity createMakersActivity(Long memberId, ActivityStatus activityStatus) {
+        MemberActivity memberActivity = MemberActivity.createMakersActivity(
+            memberId,
+            JobFamily.FE,
+            RecruitTypeDetail.REGULAR,
+            CareerDetails.EMPLOYEE,
+            ExperiencePeriod.ONE_TO_TWO,
+            "테스트 메모",
+            MakersTeam.TEAM_1,
+            Availability.HIGHLY_AVAILABLE,
+            Availability.AVAILABLE_BY_TOPIC,
+            Availability.CONSIDER_LATER,
+            CareerLevel.JUNIOR,
+            "Spring",
+            "JECT",
+            "백오피스",
+            "MK-001"
+        );
+        memberActivity.updateActivityStatus(activityStatus);
+        return memberActivity;
+    }
+
     /**
      * 일반 구성원 추가 테스트
      */
@@ -230,6 +256,34 @@ class MemberActivityRepositoryTest {
             MemberType.MAKERS,
             SEMESTER_ID
         );
+
+        // then
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("메이커스팀으로 활동 중인 이력이 존재하면 true를 반환한다")
+    void 메이커스팀으로_활동_중인_이력이_존재하면_true를_반환한다() {
+        // given
+        Member member = memberRepository.save(member().email("makers@test.com").build());
+        memberActivityRepository.saveAndFlush(createMakersActivity(member.getId(), ActivityStatus.ACTIVE));
+
+        // when
+        boolean result = memberActivityRepository.existsActiveMakersActivityByMemberId(member.getId());
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("메이커스팀으로 활동 중인 이력이 없으면 false를 반환한다")
+    void 메이커스팀으로_활동_중인_이력이_없으면_false를_반환한다() {
+        // given
+        Member member = memberRepository.save(member().email("completed-makers@test.com").build());
+        memberActivityRepository.saveAndFlush(createMakersActivity(member.getId(), ActivityStatus.ENDED));
+
+        // when
+        boolean result = memberActivityRepository.existsActiveMakersActivityByMemberId(member.getId());
 
         // then
         assertThat(result).isFalse();

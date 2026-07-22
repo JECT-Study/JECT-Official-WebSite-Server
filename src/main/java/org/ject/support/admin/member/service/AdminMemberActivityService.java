@@ -1,6 +1,7 @@
 package org.ject.support.admin.member.service;
 
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
+import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
+import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_ACTIVE_MEMBER_MAKERS_ACTIVITY;
 import static org.ject.support.domain.member.exception.MemberErrorCode.ALREADY_EXIST_MEMBER_SEMESTER_ACTIVITY;
 
 import java.util.List;
@@ -43,6 +45,32 @@ public class AdminMemberActivityService {
 		memberActivityRepository.save(memberActivity);
 	}
 
+	public void createMemberMakersActivity(CreateMemberMakersRequest request, Long memberId) {
+		// 추가하려는 대상이 이미 활동 중인 상태인지 검증
+		validateDuplicateActiveMakersActivity(memberId);
+
+		// MemberActivity생성, 내부에서 MemberMakers 생성
+		MemberActivity memberActivity = MemberActivity.createMakersActivity(
+			memberId,
+			request.jobFamily(),
+			request.recruitTypeDetail(),
+			request.careerDetails(),
+			request.experiencePeriod(),
+			request.memo(),
+			request.makersTeam(),
+			request.mentoringAvailability(),
+			request.projectSupplementAvailability(),
+			request.speakerAvailability(),
+			request.careerLevel(),
+			request.skills(),
+			request.company(),
+			request.expertTopics(),
+			request.activityCertNumber()
+		);
+
+		memberActivityRepository.save(memberActivity);
+	}
+
 	// 동적 필터로 일반 구성원 목록 조회
 	public SearchMemberSemesterPageResult searchMemberSemesterList(MemberSemesterSearchCondition condition) {
 		// size+1로 조회 (다음 페이지 유무 확인)
@@ -61,6 +89,13 @@ public class AdminMemberActivityService {
 	private void validateDuplicateSemesterActivity(Long memberId, Long semesterId) {
 		if (memberActivityRepository.existsSemesterActivity(memberId, MemberType.SEMESTER, semesterId)) {
 			throw new MemberException(ALREADY_EXIST_MEMBER_SEMESTER_ACTIVITY);
+		}
+	}
+
+	// ACTIVE 상태인 메이커스팀 활동 존재 여부 검증(메이커스팀 활동은 반드시 1개만 활성 상태여야 함)
+	private void validateDuplicateActiveMakersActivity(Long memberId) {
+		if (memberActivityRepository.existsActiveMakersActivityByMemberId(memberId)) {
+			throw new MemberException(ALREADY_EXIST_ACTIVE_MEMBER_MAKERS_ACTIVITY);
 		}
 	}
 }

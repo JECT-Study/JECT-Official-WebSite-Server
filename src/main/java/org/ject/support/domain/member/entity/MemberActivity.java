@@ -18,9 +18,12 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.ActivityStatus;
+import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.CareerDetails;
+import org.ject.support.domain.member.CareerLevel;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -82,6 +85,9 @@ public class MemberActivity extends BaseTimeEntity {
     @OneToOne(mappedBy = "memberActivity", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     private MemberSemester memberSemester;
 
+    @OneToOne(mappedBy = "memberActivity", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    private MemberMakers memberMakers;
+
     // 일반 구성원 활동과 관리 항목 생성
     public static MemberActivity createSemesterActivity(
         Long memberId,
@@ -108,7 +114,48 @@ public class MemberActivity extends BaseTimeEntity {
         return memberActivity;
     }
 
-    //Todo: 메이커스 구성원 활동과 관리 항목 생성
+    // 메이커스팀 구성원 활동과 관리 항목 생성
+    public static MemberActivity createMakersActivity(
+        Long memberId,
+        JobFamily jobFamily,
+        RecruitTypeDetail recruitTypeDetail,
+        CareerDetails careerDetails,
+        ExperiencePeriod experiencePeriod,
+        String memo,
+        MakersTeam makersTeam,
+        Availability mentoringAvailability,
+        Availability projectSupplementAvailability,
+        Availability speakerAvailability,
+        CareerLevel careerLevel,
+        String skills,
+        String company,
+        String expertTopics,
+        String activityCertNumber
+    ){
+        MemberActivity memberActivity = MemberActivity.builder()
+            .memberId(memberId)
+            .memberType(MemberType.MAKERS)
+            .jobFamily(jobFamily)
+            .recruitTypeDetail(recruitTypeDetail)
+            .careerDetails(careerDetails)
+            .experiencePeriod(experiencePeriod)
+            .memo(memo)
+            .build();
+        // 애그리거트 루트인 MemberActivity쪽에서 식별 관계인 엔티티 생성 책임
+        memberActivity.memberMakers = MemberMakers.create(
+            memberActivity,
+            makersTeam,
+            mentoringAvailability,
+            projectSupplementAvailability,
+            speakerAvailability,
+            careerLevel,
+            skills,
+            company,
+            expertTopics,
+            activityCertNumber
+        );
+        return memberActivity;
+    }
 
     //Todo: 운영 서포터즈 구성원 활동과 관리 항목 생성
 

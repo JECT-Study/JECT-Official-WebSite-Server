@@ -2,6 +2,8 @@ package org.ject.support.domain.member.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -10,6 +12,9 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.*;
 import org.ject.support.domain.base.BaseTimeEntity;
+import org.ject.support.domain.member.Availability;
+import org.ject.support.domain.member.MakersTeam;
+import org.ject.support.domain.member.CareerLevel;
 
 @Entity
 @Getter
@@ -27,20 +32,25 @@ public class MemberMakers extends BaseTimeEntity {
     @JoinColumn(name = "id", nullable = false)
     private MemberActivity memberActivity;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
-    private String teamName;
+    private MakersTeam makersTeam;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30)
-    private String mentoringAvailability;
+    private Availability mentoringAvailability;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30)
-    private String projectSupplementAvailability;
+    private Availability projectSupplementAvailability;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30)
-    private String speakerAvailability;
+    private Availability speakerAvailability;
 
+    @Enumerated(EnumType.STRING)
     @Column(length = 30)
-    private String careerLevel;
+    private CareerLevel careerLevel;
 
     @Column(length = 255)
     private String skills;
@@ -53,4 +63,30 @@ public class MemberMakers extends BaseTimeEntity {
 
     @Column(length = 20)
     private String activityCertNumber;
+
+    public static MemberMakers create(
+        MemberActivity memberActivity,
+        MakersTeam makersTeam,
+        Availability mentoringAvailability,
+        Availability projectSupplementAvailability,
+        Availability speakerAvailability,
+        CareerLevel careerLevel,
+        String skills,
+        String company,
+        String expertTopics,
+        String activityCertNumber
+    ){
+        return MemberMakers.builder()
+            .memberActivity(memberActivity)
+            .makersTeam(makersTeam)
+            .mentoringAvailability(mentoringAvailability)
+            .projectSupplementAvailability(projectSupplementAvailability)
+            .speakerAvailability(speakerAvailability)
+            .careerLevel(careerLevel)
+            .skills(skills)
+            .company(company)
+            .expertTopics(expertTopics)
+            .activityCertNumber(activityCertNumber)
+            .build();
+    }
 }

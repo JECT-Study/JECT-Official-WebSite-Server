@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class AdminMemberUseCase {
+public class AdminMemberSemesterUseCase {
 
 	private final AdminMemberService adminMemberService;
 	private final AdminMemberActivityService adminMemberActivityService;

@@ -10,14 +10,18 @@ import static org.mockito.BDDMockito.verify;
 import java.util.List;
 
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
+import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
+import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.CareerDetails;
+import org.ject.support.domain.member.CareerLevel;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.entity.MemberActivity;
@@ -100,6 +104,61 @@ class AdminMemberActivityServiceTest {
         verify(memberActivityRepository, never()).save(any(MemberActivity.class));
     }
 
+    @Test
+    @DisplayName("메이커스팀으로 활동 중인 이력이 없으면 신규 메이커스팀 활동 이력을 생성한다")
+    void 메이커스팀으로_활동_중인_이력이_없으면_신규_메이커스팀_활동_이력을_생성한다() {
+        // given
+        CreateMemberMakersRequest request = createMemberMakersRequest();
+        Long memberId = 1L;
+        given(memberActivityRepository.existsActiveMakersActivityByMemberId(memberId)).willReturn(false);
+
+        // when
+        adminMemberActivityService.createMemberMakersActivity(request, memberId);
+
+        // then
+        ArgumentCaptor<MemberActivity> captor = ArgumentCaptor.forClass(MemberActivity.class);
+        verify(memberActivityRepository).save(captor.capture());
+
+        MemberActivity memberActivity = captor.getValue();
+        assertThat(memberActivity.getMemberId()).isEqualTo(memberId);
+        assertThat(memberActivity.getMemberType()).isEqualTo(MemberType.MAKERS);
+        assertThat(memberActivity.getJobFamily()).isEqualTo(request.jobFamily());
+        assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(request.recruitTypeDetail());
+        assertThat(memberActivity.getCareerDetails()).isEqualTo(request.careerDetails());
+        assertThat(memberActivity.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
+        assertThat(memberActivity.getMemo()).isEqualTo(request.memo());
+        assertThat(memberActivity.getMemberMakers().getMakersTeam()).isEqualTo(request.makersTeam());
+        assertThat(memberActivity.getMemberMakers().getMentoringAvailability()).isEqualTo(request.mentoringAvailability());
+        assertThat(memberActivity.getMemberMakers().getProjectSupplementAvailability()).isEqualTo(request.projectSupplementAvailability());
+        assertThat(memberActivity.getMemberMakers().getSpeakerAvailability()).isEqualTo(request.speakerAvailability());
+        assertThat(memberActivity.getMemberMakers().getCareerLevel()).isEqualTo(request.careerLevel());
+        assertThat(memberActivity.getMemberMakers().getSkills()).isEqualTo(request.skills());
+        assertThat(memberActivity.getMemberMakers().getCompany()).isEqualTo(request.company());
+        assertThat(memberActivity.getMemberMakers().getExpertTopics()).isEqualTo(request.expertTopics());
+        assertThat(memberActivity.getMemberMakers().getActivityCertNumber()).isEqualTo(request.activityCertNumber());
+    }
+
+    @Test
+    @DisplayName("메이커스팀으로 활동 중인 이력이 있으면 예외가 발생한다")
+    void 메이커스팀으로_활동_중인_이력이_있으면_예외가_발생한다() {
+        // given
+        CreateMemberMakersRequest request = createMemberMakersRequest();
+        Long memberId = 1L;
+        given(memberActivityRepository.existsActiveMakersActivityByMemberId(memberId)).willReturn(true);
+
+        // when
+        Throwable throwable = catchThrowable(() ->
+            adminMemberActivityService.createMemberMakersActivity(request, memberId)
+        );
+
+        // then
+        assertThat(throwable)
+            .isInstanceOf(MemberException.class)
+            .extracting("errorCode")
+            .isEqualTo(MemberErrorCode.ALREADY_EXIST_ACTIVE_MEMBER_MAKERS_ACTIVITY);
+        verify(memberActivityRepository, never()).save(any(MemberActivity.class));
+    }
+
     /**
      * 일반 구성원 목록 조회 테스트
      */
@@ -156,6 +215,30 @@ class AdminMemberActivityServiceTest {
             "memo",
             List.of("HEALTHCARE", "FINTECH", "AI"),
             Region.SEOUL
+        );
+    }
+
+    private CreateMemberMakersRequest createMemberMakersRequest() {
+        return new CreateMemberMakersRequest(
+            "김메이커",
+            "maker@ject.kr",
+            "01087654321",
+            JobFamily.FE,
+            CareerDetails.EMPLOYEE,
+            MakersTeam.TEAM_1,
+            RecruitTypeDetail.REGULAR,
+            Region.SEOUL,
+            List.of("HEALTHCARE", "FINTECH", "AI"),
+            ExperiencePeriod.ONE_TO_TWO,
+            Availability.HIGHLY_AVAILABLE,
+            Availability.AVAILABLE_BY_TOPIC,
+            Availability.CONSIDER_LATER,
+            CareerLevel.JUNIOR,
+            "Spring",
+            "JECT",
+            "백오피스",
+            "MK-001",
+            "memo"
         );
     }
 
