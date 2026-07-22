@@ -2,10 +2,12 @@ package org.ject.support.domain.member.repository;
 
 import static org.ject.support.domain.member.entity.QMember.*;
 import static org.ject.support.domain.member.entity.QMemberActivity.*;
+import static org.ject.support.domain.member.entity.QMemberMakers.*;
 import static org.ject.support.domain.member.entity.QMemberSemester.*;
 
 import java.util.List;
 
+import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.domain.member.ActivityStatus;
@@ -107,6 +109,48 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 			findNamesByJobFamily(teamMembers, JobFamily.FE),
 			findNamesByJobFamily(teamMembers, JobFamily.BE)
 		);
+	}
+
+	@Override
+	public List<MemberMakersListProjection> findMemberMakersList(Long cursor, Integer limit) {
+		return jpaQueryFactory.select(Projections.constructor(
+			MemberMakersListProjection.class,
+			memberActivity.id,
+			member.name,
+			member.email,
+			member.phoneNumber,
+			memberActivity.jobFamily,
+			memberMakers.makersTeam,
+			memberActivity.recruitTypeDetail,
+			memberActivity.activityStatus,
+			memberActivity.memo
+		))
+			.from(member)
+			.join(memberActivity).on(member.id.eq(memberActivity.memberId))
+			.join(memberMakers).on(memberActivity.id.eq(memberMakers.id))
+			.where(
+				cursorLt(cursor),
+				member.isDeleted.isFalse(),
+				memberActivity.isDeleted.isFalse(),
+				memberActivity.memberType.eq(MemberType.MAKERS)
+			).orderBy(memberActivity.id.desc())
+			.limit(limit)
+			.fetch();
+
+	}
+
+	@Override
+	public long countMemberMakersList() {
+		Long count = jpaQueryFactory.select(memberActivity.id.count())
+			.from(memberActivity)
+			.join(member).on(member.id.eq(memberActivity.memberId))
+			.where(
+				member.isDeleted.isFalse(),
+				memberActivity.isDeleted.isFalse(),
+				memberActivity.memberType.eq(MemberType.MAKERS)
+			).fetchOne();
+
+		return count == null ? 0L : count;
 	}
 
 	// 조회 결과에서 지정 직군의 이름만 분리
