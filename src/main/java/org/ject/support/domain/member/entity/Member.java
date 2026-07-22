@@ -95,4 +95,9 @@ public class Member extends BaseTimeEntity {
         this.interestedDomains = interestedDomains;
         this.region = region;
     }
+
+    // 구성원 삭제 처리
+    public void delete(){
+        this.isDeleted = true;
+    }
 }

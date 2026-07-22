@@ -167,4 +167,9 @@ public class MemberActivity extends BaseTimeEntity {
 
         this.activityStatus = activityStatus;
     }
+
+    // 구성원 활동 삭제 처리
+    public void delete(){
+        this.isDeleted = true;
+    }
 }
