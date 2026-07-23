@@ -2,9 +2,11 @@ package org.ject.support.admin.member.service;
 
 import java.util.List;
 
+import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
+import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.admin.member.dto.result.MemberMakersListPageResult;
 import org.ject.support.common.response.CursorPageResponse;
@@ -31,6 +33,7 @@ public class AdminMemberMakersUseCase {
 		adminMemberActivityService.createMemberMakersActivity(request, memberId);
 	}
 
+	// 메이커스팀 구성원 목록 조회(커서 기반 페이징)
 	@Transactional(readOnly = true)
 	public CursorPageResponse<MemberMakersListResponse> getMemberMakersList(MemberMakersListRequest request) {
 		// 목록 조회
@@ -59,5 +62,12 @@ public class AdminMemberMakersUseCase {
 			nextCursor,
 			totalCount
 		);
+	}
+
+	// 메이커스팀 구성원 상세조회
+	@Transactional(readOnly = true)
+	public MemberMakersDetailResponse getMemberMakersDetail(Long memberActivityId) {
+		MemberMakersDetailProjection projection = adminMemberActivityService.getMemberMakersDetail(memberActivityId);
+		return MemberMakersDetailResponse.from(projection);
 	}
 }

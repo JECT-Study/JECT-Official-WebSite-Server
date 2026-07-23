@@ -18,6 +18,7 @@ public final class SemesterActivityFixture {
     private String memo = "테스트 메모";
     private Long semesterId = 2L;
     private Long teamId = 3L;
+    private boolean deleted = false;
 
     private SemesterActivityFixture() {
     }
@@ -71,6 +72,11 @@ public final class SemesterActivityFixture {
         return this;
     }
 
+    public SemesterActivityFixture deleted() {
+        this.deleted = true;
+        return this;
+    }
+
     public MemberActivity build() {
         MemberActivity memberActivity = MemberActivity.createSemesterActivity(
             memberId,
@@ -83,6 +89,9 @@ public final class SemesterActivityFixture {
             teamId
         );
         memberActivity.updateActivityStatus(activityStatus);
+        if (deleted) {
+            memberActivity.delete();
+        }
         return memberActivity;
     }
 }

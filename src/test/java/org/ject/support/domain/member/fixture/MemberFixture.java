@@ -11,6 +11,7 @@ public final class MemberFixture {
     private String phoneNumber = "01012345678";
     private List<String> interestedDomains = List.of("커머스");
     private Region region = Region.SEOUL;
+    private boolean deleted = false;
 
     private MemberFixture() {
     }
@@ -44,7 +45,16 @@ public final class MemberFixture {
         return this;
     }
 
+    public MemberFixture deleted() {
+        this.deleted = true;
+        return this;
+    }
+
     public Member build() {
-        return Member.create(name, email, phoneNumber, interestedDomains, region);
+        Member member = Member.create(name, email, phoneNumber, interestedDomains, region);
+        if (deleted) {
+            member.delete();
+        }
+        return member;
     }
 }

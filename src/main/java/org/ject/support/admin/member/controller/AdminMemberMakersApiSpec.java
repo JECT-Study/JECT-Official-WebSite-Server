@@ -2,9 +2,11 @@ package org.ject.support.admin.member.controller;
 
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
+import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.common.response.CursorPageResponse;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,4 +26,10 @@ public interface AdminMemberMakersApiSpec {
 		description = "메이커스팀 구성원 목록을 조회합니다."
 	)
 	CursorPageResponse<MemberMakersListResponse> getAdminMemberMakersList(@ModelAttribute MemberMakersListRequest request);
+
+	@Operation(
+		summary = "메이커스팀 구성원 상세 조회",
+		description = "메이커스팀 구성원을 상세 조회합니다."
+	)
+	MemberMakersDetailResponse getAdminMemberMakersDetail(@PathVariable Long memberActivityId);
 }

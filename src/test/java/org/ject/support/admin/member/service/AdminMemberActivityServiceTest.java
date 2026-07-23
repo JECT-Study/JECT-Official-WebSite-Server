@@ -8,7 +8,9 @@ import static org.mockito.BDDMockito.never;
 import static org.mockito.BDDMockito.verify;
 
 import java.util.List;
+import java.util.Optional;
 
+import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
@@ -201,6 +203,40 @@ class AdminMemberActivityServiceTest {
         verify(memberActivityRepository).countMemberSemesters(condition);
     }
 
+    @Test
+    @DisplayName("메이커스팀 구성원 상세를 조회한다")
+    void 메이커스팀_구성원_상세를_조회한다() {
+        // given
+        Long memberActivityId = 1L;
+        MemberMakersDetailProjection projection = memberMakersDetailProjection(memberActivityId);
+        given(memberActivityRepository.findMemberMakersDetail(memberActivityId)).willReturn(Optional.of(projection));
+
+        // when
+        MemberMakersDetailProjection result = adminMemberActivityService.getMemberMakersDetail(memberActivityId);
+
+        // then
+        assertThat(result).isEqualTo(projection);
+        verify(memberActivityRepository).findMemberMakersDetail(memberActivityId);
+    }
+
+    @Test
+    @DisplayName("메이커스팀 구성원 상세가 없으면 예외가 발생한다")
+    void 메이커스팀_구성원_상세가_없으면_예외가_발생한다() {
+        // given
+        Long memberActivityId = 1L;
+        given(memberActivityRepository.findMemberMakersDetail(memberActivityId)).willReturn(Optional.empty());
+
+        // when
+        Throwable throwable = catchThrowable(() -> adminMemberActivityService.getMemberMakersDetail(memberActivityId));
+
+        // then
+        assertThat(throwable)
+            .isInstanceOf(MemberException.class)
+            .extracting("errorCode")
+            .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+        verify(memberActivityRepository).findMemberMakersDetail(memberActivityId);
+    }
+
     private CreateMemberSemesterRequest createMemberSemesterRequest() {
         return new CreateMemberSemesterRequest(
             "김젝트",
@@ -234,6 +270,32 @@ class AdminMemberActivityServiceTest {
             Availability.AVAILABLE_BY_TOPIC,
             Availability.CONSIDER_LATER,
             CareerLevel.JUNIOR,
+            "Spring",
+            "JECT",
+            "백오피스",
+            "MK-001",
+            "memo"
+        );
+    }
+
+    private MemberMakersDetailProjection memberMakersDetailProjection(Long memberActivityId) {
+        return new MemberMakersDetailProjection(
+            memberActivityId,
+            "김메이커",
+            "maker@ject.kr",
+            "01087654321",
+            JobFamily.FE,
+            CareerDetails.EMPLOYEE,
+            MakersTeam.TEAM_1,
+            RecruitTypeDetail.REGULAR,
+            Region.SEOUL,
+            List.of("HEALTHCARE"),
+            ExperiencePeriod.ONE_TO_TWO,
+            Availability.HIGHLY_AVAILABLE,
+            Availability.AVAILABLE_BY_TOPIC,
+            Availability.CONSIDER_LATER,
+            CareerLevel.JUNIOR,
+            ActivityStatus.ACTIVE,
             "Spring",
             "JECT",
             "백오피스",
