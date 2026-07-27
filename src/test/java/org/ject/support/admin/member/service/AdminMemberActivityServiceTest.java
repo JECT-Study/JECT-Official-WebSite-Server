@@ -168,7 +168,6 @@ class AdminMemberActivityServiceTest {
         // given
         CreateMemberSupportersRequest request = createMemberSupportersRequest();
         Long memberId = 1L;
-        given(memberActivityRepository.existsActiveSupportersActivityByMemberId(memberId)).willReturn(false);
 
         // when
         adminMemberActivityService.createMemberSupportersActivity(request, memberId);
@@ -187,13 +186,27 @@ class AdminMemberActivityServiceTest {
         assertThat(memberActivity.getEndDate()).isEqualTo(request.endDate());
         assertThat(memberActivity.getMemo()).isEqualTo(request.memo());
         assertThat(memberActivity.getMemberSupporters().getActivityCertNumber()).isEqualTo(request.activityCertNumber());
+        verify(memberActivityRepository, never()).existsActiveSupportersActivityByMemberId(memberId);
     }
 
     @Test
-    @DisplayName("운영 서포터즈로 활동 중인 이력이 있으면 예외가 발생한다")
-    void 운영_서포터즈로_활동_중인_이력이_있으면_예외가_발생한다() {
+    @DisplayName("활동 중 상태로 운영 서포터즈를 추가할 때 기존 활동 중 이력이 있으면 예외가 발생한다")
+    void 활동_중_상태로_운영_서포터즈를_추가할_때_기존_활동_중_이력이_있으면_예외가_발생한다() {
         // given
-        CreateMemberSupportersRequest request = createMemberSupportersRequest();
+        CreateMemberSupportersRequest original = createMemberSupportersRequest();
+        CreateMemberSupportersRequest request = new CreateMemberSupportersRequest(
+            original.name(),
+            original.phoneNumber(),
+            original.email(),
+            original.memberType(),
+            original.jobFamily(),
+            original.recruitTypeDetail(),
+            ActivityStatus.ACTIVE,
+            original.startDate(),
+            original.endDate(),
+            original.activityCertNumber(),
+            original.memo()
+        );
         Long memberId = 1L;
         given(memberActivityRepository.existsActiveSupportersActivityByMemberId(memberId)).willReturn(true);
 
