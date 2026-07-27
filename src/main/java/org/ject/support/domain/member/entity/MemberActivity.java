@@ -177,6 +177,7 @@ public class MemberActivity extends BaseTimeEntity {
     ){
         validateJobFamily(MemberType.SUPPORTERS, jobFamily);
         validateActivityStatus(MemberType.SUPPORTERS, activityStatus);
+        validateActivityPeriod(startDate, endDate);
 
         MemberActivity memberActivity = MemberActivity.builder()
             .memberId(memberId)
@@ -207,15 +208,25 @@ public class MemberActivity extends BaseTimeEntity {
 
     // 구성원 유형별 활동 상태 검증
     private static void validateActivityStatus(MemberType memberType, ActivityStatus activityStatus) {
-        if (!activityStatus.isAvailableFor(memberType)) {
+        if (activityStatus == null || !activityStatus.isAvailableFor(memberType)) {
             throw new MemberException(MemberErrorCode.INVALID_ACTIVITY_STATUS);
         }
     }
 
     // 구성원 유형별 포지션 검증
     private static void validateJobFamily(MemberType memberType, JobFamily jobFamily) {
-        if (!jobFamily.isAvailableFor(memberType)) {
+        if (jobFamily == null || !jobFamily.isAvailableFor(memberType)) {
             throw new MemberException(MemberErrorCode.INVALID_JOB_FAMILY);
+        }
+    }
+
+    // 활동 시작일과 종료일 순서 검증
+    private static void validateActivityPeriod(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null && endDate != null) {
+            throw new MemberException(MemberErrorCode.INVALID_ACTIVITY_PERIOD);
+        }
+        if (startDate != null && endDate != null && endDate.isBefore(startDate)) {
+            throw new MemberException(MemberErrorCode.INVALID_ACTIVITY_PERIOD);
         }
     }
 }

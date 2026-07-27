@@ -12,6 +12,7 @@ import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.result.MemberMakersListPageResult;
 import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.exception.MemberException;
@@ -79,7 +80,9 @@ public class AdminMemberActivityService {
 	public void createMemberSupportersActivity(CreateMemberSupportersRequest request, Long memberId) {
 		// 운영 서포터즈 타입과 ACTIVE 중복 여부 검증
 		validateSupportersMemberType(request.memberType());
-		validateDuplicateActiveSupportersActivity(memberId);
+		if (request.activityStatus() == ActivityStatus.ACTIVE) {
+			validateDuplicateActiveSupportersActivity(memberId);
+		}
 
 		// MemberActivity생성, 내부에서 MemberSupporters 생성
 		MemberActivity memberActivity = MemberActivity.createSupportersActivity(

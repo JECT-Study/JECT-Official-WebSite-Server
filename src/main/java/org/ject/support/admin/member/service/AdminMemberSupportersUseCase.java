@@ -16,6 +16,7 @@ public class AdminMemberSupportersUseCase {
 	// 운영 서포터즈 구성원 추가
 	@Transactional
 	public void createMemberSupporters(CreateMemberSupportersRequest request) {
+		// TODO: ACTIVE 구성원 동시 등록 경쟁 조건 점검 및 해결 필요
 		// email 기준 기존 Member 조회 또는 신규 생성
 		Long memberId = adminMemberService.findOrCreateMember(request);
 
