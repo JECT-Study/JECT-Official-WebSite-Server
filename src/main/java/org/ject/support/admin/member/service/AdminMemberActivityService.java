@@ -53,7 +53,7 @@ public class AdminMemberActivityService {
 	// 메이커스팀 구성원 추가
 	public void createMemberMakersActivity(CreateMemberMakersRequest request, Long memberId) {
 		// ACTIVE 상태로 추가할 때 기존 활동 중 이력 검증
-		if (request.activityStatus() == ActivityStatus.ACTIVE) {
+		if (ActivityStatus.isActive(request.activityStatus())) {
 			validateDuplicateActiveMakersActivity(memberId);
 		}
 
@@ -83,8 +83,7 @@ public class AdminMemberActivityService {
 	// 운영 서포터즈 구성원 추가
 	public void createMemberSupportersActivity(CreateMemberSupportersRequest request, Long memberId) {
 		// 운영 서포터즈 타입과 ACTIVE 중복 여부 검증
-		validateSupportersMemberType(request.memberType());
-		if (request.activityStatus() == ActivityStatus.ACTIVE) {
+		if (ActivityStatus.isActive(request.activityStatus())) {
 			validateDuplicateActiveSupportersActivity(memberId);
 		}
 
@@ -139,13 +138,6 @@ public class AdminMemberActivityService {
 	private void validateDuplicateActiveMakersActivity(Long memberId) {
 		if (memberActivityRepository.existsActiveMakersActivityByMemberId(memberId)) {
 			throw new MemberException(ALREADY_EXIST_ACTIVE_MEMBER_MAKERS_ACTIVITY);
-		}
-	}
-
-	// 운영 서포터즈 구성원 타입 검증
-	private void validateSupportersMemberType(MemberType memberType) {
-		if (memberType != MemberType.SUPPORTERS) {
-			throw new MemberException(INVALID_MEMBER_TYPE);
 		}
 	}
 

@@ -10,6 +10,36 @@ import org.junit.jupiter.api.Test;
 class ActivityStatusTest {
 
     @Test
+    @DisplayName("활동 상태가 ACTIVE이면 true를 반환한다")
+    void 활동_상태가_ACTIVE이면_true를_반환한다() {
+        // when
+        boolean result = ActivityStatus.isActive(ActivityStatus.ACTIVE);
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("활동 상태가 ACTIVE가 아니면 false를 반환한다")
+    void 활동_상태가_ACTIVE가_아니면_false를_반환한다() {
+        // when
+        boolean result = ActivityStatus.isActive(ActivityStatus.ENDED);
+
+        // then
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("활동 상태가 null이면 false를 반환한다")
+    void 활동_상태가_null이면_false를_반환한다() {
+        // when
+        boolean result = ActivityStatus.isActive(null);
+
+        // then
+        assertThat(result).isFalse();
+    }
+
+    @Test
     @DisplayName("일반 구성원은 활동 중 완주 탈퇴 상태를 사용할 수 있다")
     void 일반_구성원은_활동_중_완주_탈퇴_상태를_사용할_수_있다() {
         // given

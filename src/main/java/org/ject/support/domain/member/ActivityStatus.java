@@ -32,4 +32,8 @@ public enum ActivityStatus {
         return statuses.stream()
             .allMatch(status -> status.isAvailableFor(type));
     }
+
+    public static boolean isActive(ActivityStatus status) {
+        return status == ACTIVE;
+    }
 }

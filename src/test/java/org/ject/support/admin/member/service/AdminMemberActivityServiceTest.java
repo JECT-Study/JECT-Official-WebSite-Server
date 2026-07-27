@@ -225,38 +225,6 @@ class AdminMemberActivityServiceTest {
         verify(memberActivityRepository, never()).save(any(MemberActivity.class));
     }
 
-    @Test
-    @DisplayName("운영 서포터즈가 아닌 구성원 유형이면 활동 이력을 생성하지 않는다")
-    void 운영_서포터즈가_아닌_구성원_유형이면_활동_이력을_생성하지_않는다() {
-        // given
-        CreateMemberSupportersRequest original = createMemberSupportersRequest();
-        CreateMemberSupportersRequest request = new CreateMemberSupportersRequest(
-            original.name(),
-            original.phoneNumber(),
-            original.email(),
-            MemberType.MAKERS,
-            original.jobFamily(),
-            original.recruitTypeDetail(),
-            original.activityStatus(),
-            original.startDate(),
-            original.endDate(),
-            original.activityCertNumber(),
-            original.memo()
-        );
-
-        // when
-        Throwable throwable = catchThrowable(() ->
-            adminMemberActivityService.createMemberSupportersActivity(request, 1L)
-        );
-
-        // then
-        assertThat(throwable)
-            .isInstanceOf(MemberException.class)
-            .extracting("errorCode")
-            .isEqualTo(MemberErrorCode.INVALID_MEMBER_TYPE);
-        verify(memberActivityRepository, never()).save(any(MemberActivity.class));
-    }
-
     /**
      * 일반 구성원 목록 조회 테스트
      */
