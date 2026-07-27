@@ -20,4 +20,12 @@ public enum JobFamily {
 
     private final String description;
     private final boolean portfolioRequired;
+
+    public boolean isAvailableFor(MemberType memberType) {
+        return switch (memberType) {
+            case SEMESTER -> this == PM || this == PD || this == FE || this == BE || this == APP;
+            case MAKERS -> this == PM || this == PD || this == FE || this == BE;
+            case SUPPORTERS -> this == OPS || this == INFRA || this == BX || this == ER;
+        };
+    }
 }

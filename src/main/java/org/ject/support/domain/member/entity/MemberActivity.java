@@ -88,6 +88,9 @@ public class MemberActivity extends BaseTimeEntity {
     @OneToOne(mappedBy = "memberActivity", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     private MemberMakers memberMakers;
 
+    @OneToOne(mappedBy = "memberActivity", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
+    private MemberSupporters memberSupporters;
+
     // 일반 구성원 활동과 관리 항목 생성
     public static MemberActivity createSemesterActivity(
         Long memberId,
@@ -99,6 +102,8 @@ public class MemberActivity extends BaseTimeEntity {
         Long semesterId,
         Long teamId
     ){
+        validateJobFamily(MemberType.SEMESTER, jobFamily);
+
         MemberActivity memberActivity = MemberActivity.builder()
             .memberId(memberId)
             .memberType(MemberType.SEMESTER)
@@ -132,6 +137,8 @@ public class MemberActivity extends BaseTimeEntity {
         String expertTopics,
         String activityCertNumber
     ){
+        validateJobFamily(MemberType.MAKERS, jobFamily);
+
         MemberActivity memberActivity = MemberActivity.builder()
             .memberId(memberId)
             .memberType(MemberType.MAKERS)
@@ -157,13 +164,38 @@ public class MemberActivity extends BaseTimeEntity {
         return memberActivity;
     }
 
-    //Todo: 운영 서포터즈 구성원 활동과 관리 항목 생성
+    // 운영 서포터즈 구성원 활동과 관리 항목 생성
+    public static MemberActivity createSupportersActivity(
+        Long memberId,
+        JobFamily jobFamily,
+        RecruitTypeDetail recruitTypeDetail,
+        ActivityStatus activityStatus,
+        LocalDate startDate,
+        LocalDate endDate,
+        String activityCertNumber,
+        String memo
+    ){
+        validateJobFamily(MemberType.SUPPORTERS, jobFamily);
+        validateActivityStatus(MemberType.SUPPORTERS, activityStatus);
+
+        MemberActivity memberActivity = MemberActivity.builder()
+            .memberId(memberId)
+            .memberType(MemberType.SUPPORTERS)
+            .jobFamily(jobFamily)
+            .recruitTypeDetail(recruitTypeDetail)
+            .activityStatus(activityStatus)
+            .startDate(startDate)
+            .endDate(endDate)
+            .memo(memo)
+            .build();
+        // 애그리거트 루트인 MemberActivity쪽에서 식별 관계인 엔티티 생성 책임
+        memberActivity.memberSupporters = MemberSupporters.create(memberActivity, activityCertNumber);
+        return memberActivity;
+    }
 
     // 구성원 유형에 맞는 활동 상태로 변경
     public void updateActivityStatus(ActivityStatus activityStatus) {
-        if (!activityStatus.isAvailableFor(memberType)) {
-            throw new MemberException(MemberErrorCode.INVALID_ACTIVITY_STATUS);
-        }
+        validateActivityStatus(memberType, activityStatus);
 
         this.activityStatus = activityStatus;
     }
@@ -171,5 +203,19 @@ public class MemberActivity extends BaseTimeEntity {
     // 구성원 활동 삭제 처리
     public void delete(){
         this.isDeleted = true;
+    }
+
+    // 구성원 유형별 활동 상태 검증
+    private static void validateActivityStatus(MemberType memberType, ActivityStatus activityStatus) {
+        if (!activityStatus.isAvailableFor(memberType)) {
+            throw new MemberException(MemberErrorCode.INVALID_ACTIVITY_STATUS);
+        }
+    }
+
+    // 구성원 유형별 포지션 검증
+    private static void validateJobFamily(MemberType memberType, JobFamily jobFamily) {
+        if (!jobFamily.isAvailableFor(memberType)) {
+            throw new MemberException(MemberErrorCode.INVALID_JOB_FAMILY);
+        }
     }
 }

@@ -13,7 +13,7 @@ import org.ject.support.domain.base.BaseTimeEntity;
 
 @Entity
 @Getter
-@Builder
+@Builder(access = AccessLevel.PRIVATE)
 @Table(name = "member_supporters")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -29,4 +29,12 @@ public class MemberSupporters extends BaseTimeEntity {
 
     @Column(length = 20)
     private String activityCertNumber;
+
+    // 운영 서포터즈 관리 항목 생성
+    public static MemberSupporters create(MemberActivity memberActivity, String activityCertNumber) {
+        return MemberSupporters.builder()
+            .memberActivity(memberActivity)
+            .activityCertNumber(activityCertNumber)
+            .build();
+    }
 }
