@@ -2,6 +2,7 @@ package org.ject.support.admin.member.dto.request;
 
 import java.util.List;
 
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.CareerLevel;
@@ -19,7 +20,7 @@ import jakarta.validation.constraints.Size;
 
 public record CreateMemberMakersRequest(
 
-	// 필수 항목: 이름, 전화번호, 이메일, 직군(포자션), 지원자 신분, 소속, 모집단위
+	// 필수 항목: 이름, 전화번호, 이메일, 직군(포지션), 활동 상태, 지원자 신분, 소속, 모집단위
 
 	@NotBlank(message = "이름을 입력해주세요")
 	@Size(max = 20, message = "이름은 20자 이하로 입력해주세요.")
@@ -46,6 +47,9 @@ public record CreateMemberMakersRequest(
 
 	@NotNull(message = "모집 단위를 선택해주세요")
 	RecruitTypeDetail recruitTypeDetail,
+
+	@NotNull(message = "활동 상태를 선택해주세요")
+	ActivityStatus activityStatus,
 
 	// 선택 항목: 거주지역, 관심도메인, 직무관련경험, 멘토링 가능 여부, 프로젝트 충원 가능 여부, 연사 가능 여부, 경력, 기술, 회사, 공유 가능한 전문 주제, 활동 증명서 번호, 비고
 
