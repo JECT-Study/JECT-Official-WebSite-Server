@@ -20,6 +20,10 @@ public enum MemberErrorCode implements ErrorCode {
     REQUIRED_SEMESTER_FOR_TEAM_FILTER(BAD_REQUEST, "MEMBER-8", "팀 필터를 사용할 때는 기수를 함께 선택해야 합니다."),
     INVALID_ACTIVITY_STATUS(BAD_REQUEST, "MEMBER-9", "구성원 유형에 맞지 않는 활동 상태입니다."),
     ALREADY_EXIST_ACTIVE_MEMBER_MAKERS_ACTIVITY(CONFLICT, "MEMBER-10", "이미 활동 중인 메이커스팀 구성원입니다."),
+    INVALID_MEMBER_TYPE(BAD_REQUEST, "MEMBER-11", "구성원 유형이 올바르지 않습니다."),
+    INVALID_JOB_FAMILY(BAD_REQUEST, "MEMBER-12", "구성원 유형에 맞지 않는 직군입니다."),
+    ALREADY_EXIST_ACTIVE_MEMBER_SUPPORTERS_ACTIVITY(CONFLICT, "MEMBER-13", "이미 활동 중인 운영 서포터즈 구성원입니다."),
+    INVALID_ACTIVITY_PERIOD(BAD_REQUEST, "MEMBER-14", "활동 기간이 올바르지 않습니다."),
     ;
 
     private final HttpStatus httpStatus;

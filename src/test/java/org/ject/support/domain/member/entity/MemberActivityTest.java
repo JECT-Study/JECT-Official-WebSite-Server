@@ -1,7 +1,9 @@
 package org.ject.support.domain.member.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.ject.support.domain.member.fixture.MakersActivityFixture.makersActivity;
 import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 
 import org.ject.support.domain.member.ActivityStatus;
@@ -40,15 +42,17 @@ class MemberActivityTest {
 	}
 
 	@Test
-	@DisplayName("일반 구성원 활동은 ACTIVE 상태로 생성된다")
-	void 일반_구성원_활동은_ACTIVE_상태로_생성된다() {
+	@DisplayName("일반 구성원 활동은 요청한 상태로 생성된다")
+	void 일반_구성원_활동은_요청한_상태로_생성된다() {
 		// given
 
 		// when
-		MemberActivity memberActivity = semesterActivity().build();
+		MemberActivity memberActivity = semesterActivity()
+			.activityStatus(ActivityStatus.COMPLETED)
+			.build();
 
 		// then
-		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ACTIVE);
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.COMPLETED);
 		assertThat(memberActivity.getIsDeleted()).isFalse();
 	}
 
@@ -76,6 +80,7 @@ class MemberActivityTest {
 			1L,
 			JobFamily.FE,
 			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ENDED,
 			CareerDetails.EMPLOYEE,
 			ExperiencePeriod.ONE_TO_TWO,
 			"테스트 메모",
@@ -96,6 +101,7 @@ class MemberActivityTest {
 		assertThat(memberActivity.getMemberType()).isEqualTo(MemberType.MAKERS);
 		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.FE);
 		assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REGULAR);
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ENDED);
 		assertThat(memberActivity.getCareerDetails()).isEqualTo(CareerDetails.EMPLOYEE);
 		assertThat(memberActivity.getExperiencePeriod()).isEqualTo(ExperiencePeriod.ONE_TO_TWO);
 		assertThat(memberActivity.getMemo()).isEqualTo("테스트 메모");
@@ -110,6 +116,217 @@ class MemberActivityTest {
 		assertThat(memberMakers.getCompany()).isEqualTo("JECT");
 		assertThat(memberMakers.getExpertTopics()).isEqualTo("백오피스");
 		assertThat(memberMakers.getActivityCertNumber()).isEqualTo("MK-001");
+	}
+
+	@Test
+	@DisplayName("일반 구성원에 맞지 않는 활동 상태로 생성하면 예외가 발생한다")
+	void 일반_구성원에_맞지_않는_활동_상태로_생성하면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> semesterActivity()
+			.activityStatus(ActivityStatus.DROPOUT)
+			.build());
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
+	}
+
+	@Test
+	@DisplayName("메이커스팀에 맞지 않는 활동 상태로 생성하면 예외가 발생한다")
+	void 메이커스팀에_맞지_않는_활동_상태로_생성하면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> makersActivity()
+			.activityStatus(ActivityStatus.COMPLETED)
+			.build());
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
+	}
+
+	@Test
+	@DisplayName("운영 서포터즈 활동을 생성하면 관리 항목이 함께 생성된다")
+	void 운영_서포터즈_활동을_생성하면_관리_항목이_함께_생성된다() {
+		// when
+		MemberActivity memberActivity = MemberActivity.createSupportersActivity(
+			1L,
+			JobFamily.OPS,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ENDED,
+			java.time.LocalDate.of(2025, 5, 19),
+			java.time.LocalDate.of(2025, 12, 19),
+			"SP-001",
+			"운영 서포터즈 메모"
+		);
+		MemberSupporters memberSupporters = memberActivity.getMemberSupporters();
+
+		// then
+		assertThat(memberActivity.getMemberId()).isEqualTo(1L);
+		assertThat(memberActivity.getMemberType()).isEqualTo(MemberType.SUPPORTERS);
+		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.OPS);
+		assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REGULAR);
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ENDED);
+		assertThat(memberActivity.getStartDate()).isEqualTo(java.time.LocalDate.of(2025, 5, 19));
+		assertThat(memberActivity.getEndDate()).isEqualTo(java.time.LocalDate.of(2025, 12, 19));
+		assertThat(memberActivity.getMemo()).isEqualTo("운영 서포터즈 메모");
+		assertThat(memberSupporters).isNotNull();
+		assertThat(memberSupporters.getMemberActivity()).isSameAs(memberActivity);
+		assertThat(memberSupporters.getActivityCertNumber()).isEqualTo("SP-001");
+	}
+
+	@Test
+	@DisplayName("구성원 유형에 맞지 않는 포지션으로 활동을 생성하면 예외가 발생한다")
+	void 구성원_유형에_맞지_않는_포지션으로_활동을_생성하면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> MemberActivity.createSupportersActivity(
+			1L,
+			JobFamily.FE,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ACTIVE,
+			null,
+			null,
+			null,
+			null
+		));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_JOB_FAMILY);
+	}
+
+	@Test
+	@DisplayName("운영 서포터즈에 맞지 않는 활동 상태로 생성하면 예외가 발생한다")
+	void 운영_서포터즈에_맞지_않는_활동_상태로_생성하면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> MemberActivity.createSupportersActivity(
+			1L,
+			JobFamily.OPS,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.COMPLETED,
+			null,
+			null,
+			null,
+			null
+		));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
+	}
+
+	@Test
+	@DisplayName("직군이 없으면 예외가 발생한다")
+	void 직군이_없으면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> MemberActivity.createSupportersActivity(
+			1L,
+			null,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ACTIVE,
+			null,
+			null,
+			null,
+			null
+		));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_JOB_FAMILY);
+	}
+
+	@Test
+	@DisplayName("활동 상태가 없으면 예외가 발생한다")
+	void 활동_상태가_없으면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> MemberActivity.createSupportersActivity(
+			1L,
+			JobFamily.OPS,
+			RecruitTypeDetail.REGULAR,
+			null,
+			null,
+			null,
+			null,
+			null
+		));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
+	}
+
+	@Test
+	@DisplayName("활동 종료일이 시작일보다 빠르면 예외가 발생한다")
+	void 활동_종료일이_시작일보다_빠르면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> MemberActivity.createSupportersActivity(
+			1L,
+			JobFamily.OPS,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ENDED,
+			java.time.LocalDate.of(2025, 12, 19),
+			java.time.LocalDate.of(2025, 5, 19),
+			null,
+			null
+		));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_PERIOD);
+	}
+
+	@Test
+	@DisplayName("시작일 없이 종료일만 있으면 예외가 발생한다")
+	void 시작일_없이_종료일만_있으면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> MemberActivity.createSupportersActivity(
+			1L,
+			JobFamily.OPS,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ENDED,
+			null,
+			java.time.LocalDate.of(2025, 12, 19),
+			null,
+			null
+		));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_PERIOD);
+	}
+
+	@Test
+	@DisplayName("종료일이 없거나 시작일과 같으면 활동 기간을 허용한다")
+	void 종료일이_없거나_시작일과_같으면_활동_기간을_허용한다() {
+		java.time.LocalDate activityDate = java.time.LocalDate.of(2025, 5, 19);
+
+		assertThatCode(() -> MemberActivity.createSupportersActivity(
+			1L, JobFamily.OPS, RecruitTypeDetail.REGULAR, ActivityStatus.ACTIVE,
+			null, null, null, null
+		)).doesNotThrowAnyException();
+		assertThatCode(() -> MemberActivity.createSupportersActivity(
+			1L, JobFamily.OPS, RecruitTypeDetail.REGULAR, ActivityStatus.ACTIVE,
+			activityDate, null, null, null
+		)).doesNotThrowAnyException();
+		assertThatCode(() -> MemberActivity.createSupportersActivity(
+			1L, JobFamily.OPS, RecruitTypeDetail.REGULAR, ActivityStatus.ENDED,
+			activityDate, activityDate, null, null
+		)).doesNotThrowAnyException();
 	}
 
 	@Test

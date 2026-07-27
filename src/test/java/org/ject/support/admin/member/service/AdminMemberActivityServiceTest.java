@@ -14,6 +14,7 @@ import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
+import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
 import org.ject.support.common.response.CursorPageResponse;
@@ -74,6 +75,7 @@ class AdminMemberActivityServiceTest {
         assertThat(memberActivity.getMemberId()).isEqualTo(memberId);
         assertThat(memberActivity.getJobFamily()).isEqualTo(request.jobFamily());
         assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(request.recruitTypeDetail());
+        assertThat(memberActivity.getActivityStatus()).isEqualTo(request.activityStatus());
         assertThat(memberActivity.getCareerDetails()).isEqualTo(request.careerDetails());
         assertThat(memberActivity.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
         assertThat(memberActivity.getMemo()).isEqualTo(request.memo());
@@ -107,12 +109,11 @@ class AdminMemberActivityServiceTest {
     }
 
     @Test
-    @DisplayName("메이커스팀으로 활동 중인 이력이 없으면 신규 메이커스팀 활동 이력을 생성한다")
-    void 메이커스팀으로_활동_중인_이력이_없으면_신규_메이커스팀_활동_이력을_생성한다() {
+    @DisplayName("활동 종료 상태로 메이커스팀을 추가하면 기존 활동 중 이력을 조회하지 않고 저장한다")
+    void 활동_종료_상태로_메이커스팀을_추가하면_기존_활동_중_이력을_조회하지_않고_저장한다() {
         // given
         CreateMemberMakersRequest request = createMemberMakersRequest();
         Long memberId = 1L;
-        given(memberActivityRepository.existsActiveMakersActivityByMemberId(memberId)).willReturn(false);
 
         // when
         adminMemberActivityService.createMemberMakersActivity(request, memberId);
@@ -126,6 +127,7 @@ class AdminMemberActivityServiceTest {
         assertThat(memberActivity.getMemberType()).isEqualTo(MemberType.MAKERS);
         assertThat(memberActivity.getJobFamily()).isEqualTo(request.jobFamily());
         assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(request.recruitTypeDetail());
+        assertThat(memberActivity.getActivityStatus()).isEqualTo(request.activityStatus());
         assertThat(memberActivity.getCareerDetails()).isEqualTo(request.careerDetails());
         assertThat(memberActivity.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
         assertThat(memberActivity.getMemo()).isEqualTo(request.memo());
@@ -138,13 +140,14 @@ class AdminMemberActivityServiceTest {
         assertThat(memberActivity.getMemberMakers().getCompany()).isEqualTo(request.company());
         assertThat(memberActivity.getMemberMakers().getExpertTopics()).isEqualTo(request.expertTopics());
         assertThat(memberActivity.getMemberMakers().getActivityCertNumber()).isEqualTo(request.activityCertNumber());
+        verify(memberActivityRepository, never()).existsActiveMakersActivityByMemberId(memberId);
     }
 
     @Test
-    @DisplayName("메이커스팀으로 활동 중인 이력이 있으면 예외가 발생한다")
-    void 메이커스팀으로_활동_중인_이력이_있으면_예외가_발생한다() {
+    @DisplayName("활동 중 상태로 메이커스팀을 추가할 때 기존 활동 중 이력이 있으면 예외가 발생한다")
+    void 활동_중_상태로_메이커스팀을_추가할_때_기존_활동_중_이력이_있으면_예외가_발생한다() {
         // given
-        CreateMemberMakersRequest request = createMemberMakersRequest();
+        CreateMemberMakersRequest request = createMemberMakersRequest(ActivityStatus.ACTIVE);
         Long memberId = 1L;
         given(memberActivityRepository.existsActiveMakersActivityByMemberId(memberId)).willReturn(true);
 
@@ -158,6 +161,67 @@ class AdminMemberActivityServiceTest {
             .isInstanceOf(MemberException.class)
             .extracting("errorCode")
             .isEqualTo(MemberErrorCode.ALREADY_EXIST_ACTIVE_MEMBER_MAKERS_ACTIVITY);
+        verify(memberActivityRepository, never()).save(any(MemberActivity.class));
+    }
+
+    @Test
+    @DisplayName("운영 서포터즈로 활동 중인 이력이 없으면 신규 운영 서포터즈 활동 이력을 생성한다")
+    void 운영_서포터즈로_활동_중인_이력이_없으면_신규_운영_서포터즈_활동_이력을_생성한다() {
+        // given
+        CreateMemberSupportersRequest request = createMemberSupportersRequest();
+        Long memberId = 1L;
+
+        // when
+        adminMemberActivityService.createMemberSupportersActivity(request, memberId);
+
+        // then
+        ArgumentCaptor<MemberActivity> captor = ArgumentCaptor.forClass(MemberActivity.class);
+        verify(memberActivityRepository).save(captor.capture());
+
+        MemberActivity memberActivity = captor.getValue();
+        assertThat(memberActivity.getMemberId()).isEqualTo(memberId);
+        assertThat(memberActivity.getMemberType()).isEqualTo(MemberType.SUPPORTERS);
+        assertThat(memberActivity.getJobFamily()).isEqualTo(request.jobFamily());
+        assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(request.recruitTypeDetail());
+        assertThat(memberActivity.getActivityStatus()).isEqualTo(request.activityStatus());
+        assertThat(memberActivity.getStartDate()).isEqualTo(request.startDate());
+        assertThat(memberActivity.getEndDate()).isEqualTo(request.endDate());
+        assertThat(memberActivity.getMemo()).isEqualTo(request.memo());
+        assertThat(memberActivity.getMemberSupporters().getActivityCertNumber()).isEqualTo(request.activityCertNumber());
+        verify(memberActivityRepository, never()).existsActiveSupportersActivityByMemberId(memberId);
+    }
+
+    @Test
+    @DisplayName("활동 중 상태로 운영 서포터즈를 추가할 때 기존 활동 중 이력이 있으면 예외가 발생한다")
+    void 활동_중_상태로_운영_서포터즈를_추가할_때_기존_활동_중_이력이_있으면_예외가_발생한다() {
+        // given
+        CreateMemberSupportersRequest original = createMemberSupportersRequest();
+        CreateMemberSupportersRequest request = new CreateMemberSupportersRequest(
+            original.name(),
+            original.phoneNumber(),
+            original.email(),
+            original.memberType(),
+            original.jobFamily(),
+            original.recruitTypeDetail(),
+            ActivityStatus.ACTIVE,
+            original.startDate(),
+            original.endDate(),
+            original.activityCertNumber(),
+            original.memo()
+        );
+        Long memberId = 1L;
+        given(memberActivityRepository.existsActiveSupportersActivityByMemberId(memberId)).willReturn(true);
+
+        // when
+        Throwable throwable = catchThrowable(() ->
+            adminMemberActivityService.createMemberSupportersActivity(request, memberId)
+        );
+
+        // then
+        assertThat(throwable)
+            .isInstanceOf(MemberException.class)
+            .extracting("errorCode")
+            .isEqualTo(MemberErrorCode.ALREADY_EXIST_ACTIVE_MEMBER_SUPPORTERS_ACTIVITY);
         verify(memberActivityRepository, never()).save(any(MemberActivity.class));
     }
 
@@ -244,6 +308,7 @@ class AdminMemberActivityServiceTest {
             "01012345678",
             JobFamily.BE,
             RecruitTypeDetail.REGULAR,
+            ActivityStatus.COMPLETED,
             CareerDetails.EMPLOYEE,
             1L,
             2L,
@@ -255,6 +320,10 @@ class AdminMemberActivityServiceTest {
     }
 
     private CreateMemberMakersRequest createMemberMakersRequest() {
+        return createMemberMakersRequest(ActivityStatus.ENDED);
+    }
+
+    private CreateMemberMakersRequest createMemberMakersRequest(ActivityStatus activityStatus) {
         return new CreateMemberMakersRequest(
             "김메이커",
             "maker@ject.kr",
@@ -263,6 +332,7 @@ class AdminMemberActivityServiceTest {
             CareerDetails.EMPLOYEE,
             MakersTeam.TEAM_1,
             RecruitTypeDetail.REGULAR,
+            activityStatus,
             Region.SEOUL,
             List.of("HEALTHCARE", "FINTECH", "AI"),
             ExperiencePeriod.ONE_TO_TWO,
@@ -274,6 +344,22 @@ class AdminMemberActivityServiceTest {
             "JECT",
             "백오피스",
             "MK-001",
+            "memo"
+        );
+    }
+
+    private CreateMemberSupportersRequest createMemberSupportersRequest() {
+        return new CreateMemberSupportersRequest(
+            "김서포터",
+            "01012341234",
+            "supporter@ject.kr",
+            MemberType.SUPPORTERS,
+            JobFamily.OPS,
+            RecruitTypeDetail.REGULAR,
+            ActivityStatus.ENDED,
+            java.time.LocalDate.of(2025, 5, 19),
+            java.time.LocalDate.of(2025, 12, 19),
+            "SP-001",
             "memo"
         );
     }

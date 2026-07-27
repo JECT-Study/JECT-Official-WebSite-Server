@@ -32,4 +32,13 @@ public interface MemberActivityRepository extends JpaRepository<MemberActivity, 
 		  and ma.activityStatus = org.ject.support.domain.member.ActivityStatus.ACTIVE
 		""")
 	boolean existsActiveMakersActivityByMemberId(@Param("memberId") Long memberId);
+
+	@Query("""
+		select count(ma) > 0
+		from MemberActivity ma
+		where ma.memberId = :memberId
+		  and ma.memberType = org.ject.support.domain.member.MemberType.SUPPORTERS
+		  and ma.activityStatus = org.ject.support.domain.member.ActivityStatus.ACTIVE
+		""")
+	boolean existsActiveSupportersActivityByMemberId(@Param("memberId") Long memberId);
 }

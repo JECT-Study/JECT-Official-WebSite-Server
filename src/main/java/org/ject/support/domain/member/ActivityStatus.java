@@ -19,7 +19,8 @@ public enum ActivityStatus {
     public boolean isAvailableFor(MemberType type) {
         return switch (type) {
             case SEMESTER -> this == ACTIVE || this == COMPLETED || this == WITHDRAWN;
-            case MAKERS, SUPPORTERS -> this == ACTIVE || this == ENDED || this == DROPOUT;
+            case MAKERS -> this == ACTIVE || this == ENDED || this == DROPOUT;
+            case SUPPORTERS -> this == ACTIVE || this == ENDED || this == DROPOUT;
         };
     }
 
@@ -30,5 +31,9 @@ public enum ActivityStatus {
 
         return statuses.stream()
             .allMatch(status -> status.isAvailableFor(type));
+    }
+
+    public static boolean isActive(ActivityStatus status) {
+        return status == ACTIVE;
     }
 }

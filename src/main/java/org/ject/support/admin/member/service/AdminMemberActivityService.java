@@ -7,16 +7,17 @@ import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
+import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.result.MemberMakersListPageResult;
 import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberActivityRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
@@ -38,6 +39,7 @@ public class AdminMemberActivityService {
 			memberId,
 			request.jobFamily(),
 			request.recruitTypeDetail(),
+			request.activityStatus(),
 			request.careerDetails(),
 			request.experiencePeriod(),
 			request.memo(),
@@ -50,14 +52,17 @@ public class AdminMemberActivityService {
 
 	// 메이커스팀 구성원 추가
 	public void createMemberMakersActivity(CreateMemberMakersRequest request, Long memberId) {
-		// 추가하려는 대상이 이미 활동 중인 상태인지 검증
-		validateDuplicateActiveMakersActivity(memberId);
+		// ACTIVE 상태로 추가할 때 기존 활동 중 이력 검증
+		if (ActivityStatus.isActive(request.activityStatus())) {
+			validateDuplicateActiveMakersActivity(memberId);
+		}
 
 		// MemberActivity생성, 내부에서 MemberMakers 생성
 		MemberActivity memberActivity = MemberActivity.createMakersActivity(
 			memberId,
 			request.jobFamily(),
 			request.recruitTypeDetail(),
+			request.activityStatus(),
 			request.careerDetails(),
 			request.experiencePeriod(),
 			request.memo(),
@@ -70,6 +75,28 @@ public class AdminMemberActivityService {
 			request.company(),
 			request.expertTopics(),
 			request.activityCertNumber()
+		);
+
+		memberActivityRepository.save(memberActivity);
+	}
+
+	// 운영 서포터즈 구성원 추가
+	public void createMemberSupportersActivity(CreateMemberSupportersRequest request, Long memberId) {
+		// 운영 서포터즈 타입과 ACTIVE 중복 여부 검증
+		if (ActivityStatus.isActive(request.activityStatus())) {
+			validateDuplicateActiveSupportersActivity(memberId);
+		}
+
+		// MemberActivity생성, 내부에서 MemberSupporters 생성
+		MemberActivity memberActivity = MemberActivity.createSupportersActivity(
+			memberId,
+			request.jobFamily(),
+			request.recruitTypeDetail(),
+			request.activityStatus(),
+			request.startDate(),
+			request.endDate(),
+			request.activityCertNumber(),
+			request.memo()
 		);
 
 		memberActivityRepository.save(memberActivity);
@@ -111,6 +138,13 @@ public class AdminMemberActivityService {
 	private void validateDuplicateActiveMakersActivity(Long memberId) {
 		if (memberActivityRepository.existsActiveMakersActivityByMemberId(memberId)) {
 			throw new MemberException(ALREADY_EXIST_ACTIVE_MEMBER_MAKERS_ACTIVITY);
+		}
+	}
+
+	// ACTIVE 상태인 운영 서포터즈 활동 존재 여부 검증
+	private void validateDuplicateActiveSupportersActivity(Long memberId) {
+		if (memberActivityRepository.existsActiveSupportersActivityByMemberId(memberId)) {
+			throw new MemberException(ALREADY_EXIST_ACTIVE_MEMBER_SUPPORTERS_ACTIVITY);
 		}
 	}
 }

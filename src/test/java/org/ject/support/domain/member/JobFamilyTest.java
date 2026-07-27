@@ -2,6 +2,8 @@ package org.ject.support.domain.member;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -80,5 +82,32 @@ class JobFamilyTest {
     @DisplayName("프로덕트 디자이너는 포트폴리오가 필수다")
     void 프로덕트_디자이너는_포트폴리오가_필수다() {
         assertThat(JobFamily.PD.isPortfolioRequired()).isTrue();
+    }
+
+    @Test
+    @DisplayName("정규 기수에서 사용할 수 있는 직군을 반환한다")
+    void 정규_기수에서_사용할_수_있는_직군을_반환한다() {
+        assertThat(availableJobFamilies(MemberType.SEMESTER))
+            .containsExactlyInAnyOrder(JobFamily.PM, JobFamily.PD, JobFamily.FE, JobFamily.BE, JobFamily.APP);
+    }
+
+    @Test
+    @DisplayName("메이커스에서 사용할 수 있는 직군을 반환한다")
+    void 메이커스에서_사용할_수_있는_직군을_반환한다() {
+        assertThat(availableJobFamilies(MemberType.MAKERS))
+            .containsExactlyInAnyOrder(JobFamily.PM, JobFamily.PD, JobFamily.FE, JobFamily.BE);
+    }
+
+    @Test
+    @DisplayName("운영 서포터즈에서 사용할 수 있는 직군을 반환한다")
+    void 운영_서포터즈에서_사용할_수_있는_직군을_반환한다() {
+        assertThat(availableJobFamilies(MemberType.SUPPORTERS))
+            .containsExactlyInAnyOrder(JobFamily.OPS, JobFamily.INFRA, JobFamily.BX, JobFamily.ER);
+    }
+
+    private JobFamily[] availableJobFamilies(MemberType memberType) {
+        return Arrays.stream(JobFamily.values())
+            .filter(jobFamily -> jobFamily.isAvailableFor(memberType))
+            .toArray(JobFamily[]::new);
     }
 }
