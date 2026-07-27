@@ -18,8 +18,7 @@ import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
-import org.ject.support.admin.member.dto.result.MemberSupportersListPageResult;
-import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
+import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.Availability;
@@ -66,7 +65,7 @@ class AdminMemberActivityServiceTest {
         given(memberActivityRepository.countMemberSupportersList()).willReturn(5L);
 
         // when
-        MemberSupportersListPageResult result =
+        MemberPageResult<MemberSupportersListProjection> result =
             adminMemberActivityService.getMemberSupportersList(request);
 
         // then
@@ -286,7 +285,8 @@ class AdminMemberActivityServiceTest {
         given(memberActivityRepository.countMemberSemesters(condition)).willReturn(1L);
 
         // when
-        SearchMemberSemesterPageResult pageResult = adminMemberActivityService.searchMemberSemesterList(condition);
+        MemberPageResult<SearchMemberSemesterProjection> pageResult =
+            adminMemberActivityService.searchMemberSemesterList(condition);
         // then
         assertThat(pageResult.content()).isEqualTo(projections);
         assertThat(pageResult.totalCount()).isEqualTo(1L);

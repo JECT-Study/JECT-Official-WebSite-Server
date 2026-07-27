@@ -9,7 +9,7 @@ import java.util.List;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
-import org.ject.support.admin.member.dto.result.MemberSupportersListPageResult;
+import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.JobFamily;
@@ -38,7 +38,7 @@ class AdminMemberSupportersUseCaseTest {
 	void 조회_결과가_size보다_많으면_다음_커서를_반환한다() {
 		// given
 		MemberSupportersListRequest request = new MemberSupportersListRequest(null, 2);
-		MemberSupportersListPageResult pageResult = new MemberSupportersListPageResult(
+		MemberPageResult<MemberSupportersListProjection> pageResult = MemberPageResult.of(
 			List.of(
 				supportersProjection(5L, "첫번째"),
 				supportersProjection(4L, "두번째"),
@@ -67,7 +67,7 @@ class AdminMemberSupportersUseCaseTest {
 	void 조회_결과가_size_이하면_다음_커서를_반환하지_않는다() {
 		// given
 		MemberSupportersListRequest request = new MemberSupportersListRequest(4L, 3);
-		MemberSupportersListPageResult pageResult = new MemberSupportersListPageResult(
+		MemberPageResult<MemberSupportersListProjection> pageResult = MemberPageResult.of(
 			List.of(
 				supportersProjection(3L, "첫번째"),
 				supportersProjection(2L, "두번째")
