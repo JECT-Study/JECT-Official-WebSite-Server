@@ -96,6 +96,7 @@ public class MemberActivity extends BaseTimeEntity {
         Long memberId,
         JobFamily jobFamily,
         RecruitTypeDetail recruitTypeDetail,
+        ActivityStatus activityStatus,
         CareerDetails careerDetails,
         ExperiencePeriod experiencePeriod,
         String memo,
@@ -103,12 +104,14 @@ public class MemberActivity extends BaseTimeEntity {
         Long teamId
     ){
         validateJobFamily(MemberType.SEMESTER, jobFamily);
+        validateActivityStatus(MemberType.SEMESTER, activityStatus);
 
         MemberActivity memberActivity = MemberActivity.builder()
             .memberId(memberId)
             .memberType(MemberType.SEMESTER)
             .jobFamily(jobFamily)
             .recruitTypeDetail(recruitTypeDetail)
+            .activityStatus(activityStatus)
             .careerDetails(careerDetails)
             .experiencePeriod(experiencePeriod)
             .memo(memo)
@@ -124,6 +127,7 @@ public class MemberActivity extends BaseTimeEntity {
         Long memberId,
         JobFamily jobFamily,
         RecruitTypeDetail recruitTypeDetail,
+        ActivityStatus activityStatus,
         CareerDetails careerDetails,
         ExperiencePeriod experiencePeriod,
         String memo,
@@ -138,12 +142,14 @@ public class MemberActivity extends BaseTimeEntity {
         String activityCertNumber
     ){
         validateJobFamily(MemberType.MAKERS, jobFamily);
+        validateActivityStatus(MemberType.MAKERS, activityStatus);
 
         MemberActivity memberActivity = MemberActivity.builder()
             .memberId(memberId)
             .memberType(MemberType.MAKERS)
             .jobFamily(jobFamily)
             .recruitTypeDetail(recruitTypeDetail)
+            .activityStatus(activityStatus)
             .careerDetails(careerDetails)
             .experiencePeriod(experiencePeriod)
             .memo(memo)

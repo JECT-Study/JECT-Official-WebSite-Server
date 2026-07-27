@@ -39,6 +39,7 @@ public class AdminMemberActivityService {
 			memberId,
 			request.jobFamily(),
 			request.recruitTypeDetail(),
+			request.activityStatus(),
 			request.careerDetails(),
 			request.experiencePeriod(),
 			request.memo(),
@@ -51,14 +52,17 @@ public class AdminMemberActivityService {
 
 	// 메이커스팀 구성원 추가
 	public void createMemberMakersActivity(CreateMemberMakersRequest request, Long memberId) {
-		// 추가하려는 대상이 이미 활동 중인 상태인지 검증
-		validateDuplicateActiveMakersActivity(memberId);
+		// ACTIVE 상태로 추가할 때 기존 활동 중 이력 검증
+		if (request.activityStatus() == ActivityStatus.ACTIVE) {
+			validateDuplicateActiveMakersActivity(memberId);
+		}
 
 		// MemberActivity생성, 내부에서 MemberMakers 생성
 		MemberActivity memberActivity = MemberActivity.createMakersActivity(
 			memberId,
 			request.jobFamily(),
 			request.recruitTypeDetail(),
+			request.activityStatus(),
 			request.careerDetails(),
 			request.experiencePeriod(),
 			request.memo(),
