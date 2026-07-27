@@ -12,9 +12,7 @@ import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
-import org.ject.support.admin.member.dto.result.MemberMakersListPageResult;
-import org.ject.support.admin.member.dto.result.MemberSupportersListPageResult;
-import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
+import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.entity.MemberActivity;
@@ -106,29 +104,31 @@ public class AdminMemberActivityService {
 	}
 
 	// 동적 필터로 일반 구성원 목록 조회
-	public SearchMemberSemesterPageResult searchMemberSemesterList(MemberSemesterSearchCondition condition) {
+	public MemberPageResult<SearchMemberSemesterProjection> searchMemberSemesterList(
+		MemberSemesterSearchCondition condition
+	) {
 		// size+1로 조회 (다음 페이지 유무 확인)
 		List<SearchMemberSemesterProjection> projections =
 			memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
 		long totalCount = memberActivityRepository.countMemberSemesters(condition);
-		return new SearchMemberSemesterPageResult(projections, totalCount);
+		return MemberPageResult.of(projections, totalCount);
 	}
 
 	// 메이커스팀 구성원 목록 조회
-	public MemberMakersListPageResult getMemberMakersList(MemberMakersListRequest request) {
+	public MemberPageResult<MemberMakersListProjection> getMemberMakersList(MemberMakersListRequest request) {
 		List<MemberMakersListProjection> projections = memberActivityRepository.findMemberMakersList(request.cursor(), request.getSizeOrDefault()+1);
 		long count = memberActivityRepository.countMemberMakersList();
-		return new MemberMakersListPageResult(projections, count);
+		return MemberPageResult.of(projections, count);
 	}
 
 	// 운영 서포터즈 구성원 목록 조회
-	public MemberSupportersListPageResult getMemberSupportersList(MemberSupportersListRequest request) {
+	public MemberPageResult<MemberSupportersListProjection> getMemberSupportersList(MemberSupportersListRequest request) {
 		List<MemberSupportersListProjection> projections = memberActivityRepository.findMemberSupportersList(
 			request.cursor(),
 			request.getSizeOrDefault() + 1
 		);
 		long count = memberActivityRepository.countMemberSupportersList();
-		return new MemberSupportersListPageResult(projections, count);
+		return MemberPageResult.of(projections, count);
 	}
 
 	// 메이커스팀 구성원 상세 조회

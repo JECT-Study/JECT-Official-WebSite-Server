@@ -8,7 +8,7 @@ import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjecti
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
-import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
+import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
@@ -53,7 +53,8 @@ public class AdminMemberSemesterUseCase {
 		validateSearchTeam(condition.semesterId(), condition.teamId());
 		validateStatus(condition.status(), MemberType.SEMESTER);
 		// size만큼 조회 + 전체 행 수 조회
-		SearchMemberSemesterPageResult pageResult = adminMemberActivityService.searchMemberSemesterList(condition);
+		MemberPageResult<SearchMemberSemesterProjection> pageResult =
+			adminMemberActivityService.searchMemberSemesterList(condition);
 		// 페이징 값 처리
 		boolean hasNext = pageResult.content().size() > condition.getSizeOrDefault();
 		long totalCount = pageResult.totalCount();

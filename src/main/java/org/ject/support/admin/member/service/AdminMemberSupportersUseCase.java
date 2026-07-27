@@ -6,7 +6,7 @@ import org.ject.support.admin.member.dto.projection.MemberSupportersListProjecti
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
-import org.ject.support.admin.member.dto.result.MemberSupportersListPageResult;
+import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +34,8 @@ public class AdminMemberSupportersUseCase {
 	@Transactional(readOnly = true)
 	public CursorPageResponse<MemberSupportersListResponse> getMemberSupportersList(MemberSupportersListRequest request) {
 		// 목록 조회
-		MemberSupportersListPageResult pageResult = adminMemberActivityService.getMemberSupportersList(request);
+		MemberPageResult<MemberSupportersListProjection> pageResult =
+			adminMemberActivityService.getMemberSupportersList(request);
 
 		// 페이징 값 처리
 		boolean hasNext = pageResult.content().size() > request.getSizeOrDefault();
