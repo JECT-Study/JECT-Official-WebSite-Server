@@ -1,6 +1,7 @@
 package org.ject.support.domain.member.fixture;
 
 import org.ject.support.domain.member.Availability;
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.CareerLevel;
 import org.ject.support.domain.member.ExperiencePeriod;
@@ -14,6 +15,7 @@ public final class MakersActivityFixture {
     private Long memberId = 1L;
     private JobFamily jobFamily = JobFamily.FE;
     private MakersTeam makersTeam = MakersTeam.TEAM_1;
+    private ActivityStatus activityStatus = ActivityStatus.ACTIVE;
     private boolean deleted = false;
 
     private MakersActivityFixture() {
@@ -38,6 +40,11 @@ public final class MakersActivityFixture {
         return this;
     }
 
+    public MakersActivityFixture activityStatus(ActivityStatus activityStatus) {
+        this.activityStatus = activityStatus;
+        return this;
+    }
+
     public MakersActivityFixture deleted() {
         this.deleted = true;
         return this;
@@ -48,6 +55,7 @@ public final class MakersActivityFixture {
             memberId,
             jobFamily,
             RecruitTypeDetail.REGULAR,
+            activityStatus,
             CareerDetails.EMPLOYEE,
             ExperiencePeriod.ONE_TO_TWO,
             "테스트 메모",

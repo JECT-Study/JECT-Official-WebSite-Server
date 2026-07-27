@@ -75,6 +75,7 @@ class AdminMemberActivityServiceTest {
         assertThat(memberActivity.getMemberId()).isEqualTo(memberId);
         assertThat(memberActivity.getJobFamily()).isEqualTo(request.jobFamily());
         assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(request.recruitTypeDetail());
+        assertThat(memberActivity.getActivityStatus()).isEqualTo(request.activityStatus());
         assertThat(memberActivity.getCareerDetails()).isEqualTo(request.careerDetails());
         assertThat(memberActivity.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
         assertThat(memberActivity.getMemo()).isEqualTo(request.memo());
@@ -108,12 +109,11 @@ class AdminMemberActivityServiceTest {
     }
 
     @Test
-    @DisplayName("메이커스팀으로 활동 중인 이력이 없으면 신규 메이커스팀 활동 이력을 생성한다")
-    void 메이커스팀으로_활동_중인_이력이_없으면_신규_메이커스팀_활동_이력을_생성한다() {
+    @DisplayName("활동 종료 상태로 메이커스팀을 추가하면 기존 활동 중 이력을 조회하지 않고 저장한다")
+    void 활동_종료_상태로_메이커스팀을_추가하면_기존_활동_중_이력을_조회하지_않고_저장한다() {
         // given
         CreateMemberMakersRequest request = createMemberMakersRequest();
         Long memberId = 1L;
-        given(memberActivityRepository.existsActiveMakersActivityByMemberId(memberId)).willReturn(false);
 
         // when
         adminMemberActivityService.createMemberMakersActivity(request, memberId);
@@ -127,6 +127,7 @@ class AdminMemberActivityServiceTest {
         assertThat(memberActivity.getMemberType()).isEqualTo(MemberType.MAKERS);
         assertThat(memberActivity.getJobFamily()).isEqualTo(request.jobFamily());
         assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(request.recruitTypeDetail());
+        assertThat(memberActivity.getActivityStatus()).isEqualTo(request.activityStatus());
         assertThat(memberActivity.getCareerDetails()).isEqualTo(request.careerDetails());
         assertThat(memberActivity.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
         assertThat(memberActivity.getMemo()).isEqualTo(request.memo());
@@ -139,13 +140,14 @@ class AdminMemberActivityServiceTest {
         assertThat(memberActivity.getMemberMakers().getCompany()).isEqualTo(request.company());
         assertThat(memberActivity.getMemberMakers().getExpertTopics()).isEqualTo(request.expertTopics());
         assertThat(memberActivity.getMemberMakers().getActivityCertNumber()).isEqualTo(request.activityCertNumber());
+        verify(memberActivityRepository, never()).existsActiveMakersActivityByMemberId(memberId);
     }
 
     @Test
-    @DisplayName("메이커스팀으로 활동 중인 이력이 있으면 예외가 발생한다")
-    void 메이커스팀으로_활동_중인_이력이_있으면_예외가_발생한다() {
+    @DisplayName("활동 중 상태로 메이커스팀을 추가할 때 기존 활동 중 이력이 있으면 예외가 발생한다")
+    void 활동_중_상태로_메이커스팀을_추가할_때_기존_활동_중_이력이_있으면_예외가_발생한다() {
         // given
-        CreateMemberMakersRequest request = createMemberMakersRequest();
+        CreateMemberMakersRequest request = createMemberMakersRequest(ActivityStatus.ACTIVE);
         Long memberId = 1L;
         given(memberActivityRepository.existsActiveMakersActivityByMemberId(memberId)).willReturn(true);
 
@@ -338,6 +340,7 @@ class AdminMemberActivityServiceTest {
             "01012345678",
             JobFamily.BE,
             RecruitTypeDetail.REGULAR,
+            ActivityStatus.COMPLETED,
             CareerDetails.EMPLOYEE,
             1L,
             2L,
@@ -349,6 +352,10 @@ class AdminMemberActivityServiceTest {
     }
 
     private CreateMemberMakersRequest createMemberMakersRequest() {
+        return createMemberMakersRequest(ActivityStatus.ENDED);
+    }
+
+    private CreateMemberMakersRequest createMemberMakersRequest(ActivityStatus activityStatus) {
         return new CreateMemberMakersRequest(
             "김메이커",
             "maker@ject.kr",
@@ -357,6 +364,7 @@ class AdminMemberActivityServiceTest {
             CareerDetails.EMPLOYEE,
             MakersTeam.TEAM_1,
             RecruitTypeDetail.REGULAR,
+            activityStatus,
             Region.SEOUL,
             List.of("HEALTHCARE", "FINTECH", "AI"),
             ExperiencePeriod.ONE_TO_TWO,

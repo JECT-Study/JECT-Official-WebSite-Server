@@ -3,6 +3,7 @@ package org.ject.support.domain.member.entity;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.ject.support.domain.member.fixture.MakersActivityFixture.makersActivity;
 import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 
 import org.ject.support.domain.member.ActivityStatus;
@@ -41,15 +42,17 @@ class MemberActivityTest {
 	}
 
 	@Test
-	@DisplayName("일반 구성원 활동은 ACTIVE 상태로 생성된다")
-	void 일반_구성원_활동은_ACTIVE_상태로_생성된다() {
+	@DisplayName("일반 구성원 활동은 요청한 상태로 생성된다")
+	void 일반_구성원_활동은_요청한_상태로_생성된다() {
 		// given
 
 		// when
-		MemberActivity memberActivity = semesterActivity().build();
+		MemberActivity memberActivity = semesterActivity()
+			.activityStatus(ActivityStatus.COMPLETED)
+			.build();
 
 		// then
-		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ACTIVE);
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.COMPLETED);
 		assertThat(memberActivity.getIsDeleted()).isFalse();
 	}
 
@@ -77,6 +80,7 @@ class MemberActivityTest {
 			1L,
 			JobFamily.FE,
 			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ENDED,
 			CareerDetails.EMPLOYEE,
 			ExperiencePeriod.ONE_TO_TWO,
 			"테스트 메모",
@@ -97,6 +101,7 @@ class MemberActivityTest {
 		assertThat(memberActivity.getMemberType()).isEqualTo(MemberType.MAKERS);
 		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.FE);
 		assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REGULAR);
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ENDED);
 		assertThat(memberActivity.getCareerDetails()).isEqualTo(CareerDetails.EMPLOYEE);
 		assertThat(memberActivity.getExperiencePeriod()).isEqualTo(ExperiencePeriod.ONE_TO_TWO);
 		assertThat(memberActivity.getMemo()).isEqualTo("테스트 메모");
@@ -111,6 +116,36 @@ class MemberActivityTest {
 		assertThat(memberMakers.getCompany()).isEqualTo("JECT");
 		assertThat(memberMakers.getExpertTopics()).isEqualTo("백오피스");
 		assertThat(memberMakers.getActivityCertNumber()).isEqualTo("MK-001");
+	}
+
+	@Test
+	@DisplayName("일반 구성원에 맞지 않는 활동 상태로 생성하면 예외가 발생한다")
+	void 일반_구성원에_맞지_않는_활동_상태로_생성하면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> semesterActivity()
+			.activityStatus(ActivityStatus.DROPOUT)
+			.build());
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
+	}
+
+	@Test
+	@DisplayName("메이커스팀에 맞지 않는 활동 상태로 생성하면 예외가 발생한다")
+	void 메이커스팀에_맞지_않는_활동_상태로_생성하면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> makersActivity()
+			.activityStatus(ActivityStatus.COMPLETED)
+			.build());
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
 	}
 
 	@Test

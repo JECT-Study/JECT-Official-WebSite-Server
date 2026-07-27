@@ -82,7 +82,7 @@ class AdminMemberMakersControllerTest {
 		assertThat(member.getInterestedDomains()).containsExactlyElementsOf(request.interestedDomains());
 		assertThat(member.getRegion()).isEqualTo(request.region());
 		assertThat(memberActivity.getMemberType()).isEqualTo(MemberType.MAKERS);
-		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ACTIVE);
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(request.activityStatus());
 		assertThat(memberActivity.getJobFamily()).isEqualTo(request.jobFamily());
 		assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(request.recruitTypeDetail());
 		assertThat(memberActivity.getCareerDetails()).isEqualTo(request.careerDetails());
@@ -267,6 +267,7 @@ class AdminMemberMakersControllerTest {
 			CareerDetails.EMPLOYEE,
 			MakersTeam.TEAM_1,
 			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ACTIVE,
 			Region.SEOUL,
 			List.of("HEALTHCARE", "FINTECH", "AI"),
 			ExperiencePeriod.ONE_TO_TWO,

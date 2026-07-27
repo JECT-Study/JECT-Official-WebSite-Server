@@ -134,6 +134,7 @@ class MemberActivityRepositoryTest {
             memberId,
             JobFamily.FE,
             RecruitTypeDetail.REGULAR,
+            activityStatus,
             CareerDetails.EMPLOYEE,
             ExperiencePeriod.ONE_TO_TWO,
             "테스트 메모",
@@ -147,7 +148,6 @@ class MemberActivityRepositoryTest {
             "백오피스",
             "MK-001"
         );
-        memberActivity.updateActivityStatus(activityStatus);
         return memberActivity;
     }
 

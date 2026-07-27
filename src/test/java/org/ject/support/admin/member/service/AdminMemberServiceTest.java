@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
@@ -39,6 +40,7 @@ class AdminMemberServiceTest {
 			"01012345678",
 			JobFamily.BE,
 			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ACTIVE,
 			CareerDetails.EMPLOYEE,
 			1L,
 			null,

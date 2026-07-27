@@ -91,6 +91,11 @@ class AdminMemberSemesterControllerTest {
 			MemberType.SEMESTER,
 			semester.getId()
 		)).isTrue();
+		MemberActivity memberActivity = memberActivityRepository.findAll().stream()
+			.filter(activity -> activity.getMemberId().equals(member.getId()))
+			.findFirst()
+			.orElseThrow();
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(request.activityStatus());
 	}
 
 	@Test
@@ -129,6 +134,7 @@ class AdminMemberSemesterControllerTest {
 			"01012345678",
 			JobFamily.BE,
 			RecruitTypeDetail.REGULAR,
+			ActivityStatus.COMPLETED,
 			CareerDetails.EMPLOYEE,
 			semester.getId(),
 			null,
@@ -279,6 +285,7 @@ class AdminMemberSemesterControllerTest {
 			"01012345678",
 			JobFamily.BE,
 			RecruitTypeDetail.REGULAR,
+			ActivityStatus.COMPLETED,
 			CareerDetails.EMPLOYEE,
 			semesterId,
 			teamId,
