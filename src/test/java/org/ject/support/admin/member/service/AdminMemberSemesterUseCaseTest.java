@@ -58,6 +58,7 @@ class AdminMemberSemesterUseCaseTest {
 			"01012345678",
 			JobFamily.BE,
 			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ACTIVE,
 			CareerDetails.EMPLOYEE,
 			1L,
 			teamId,

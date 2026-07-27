@@ -82,13 +82,13 @@ public final class SemesterActivityFixture {
             memberId,
             jobFamily,
             recruitTypeDetail,
+            activityStatus,
             careerDetails,
             experiencePeriod,
             memo,
             semesterId,
             teamId
         );
-        memberActivity.updateActivityStatus(activityStatus);
         if (deleted) {
             memberActivity.delete();
         }

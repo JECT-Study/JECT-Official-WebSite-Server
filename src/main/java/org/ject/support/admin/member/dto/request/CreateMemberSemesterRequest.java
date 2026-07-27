@@ -2,6 +2,7 @@ package org.ject.support.admin.member.dto.request;
 
 import java.util.List;
 
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
@@ -17,7 +18,7 @@ import jakarta.validation.constraints.Size;
 public record CreateMemberSemesterRequest(
 
 	/*
-	필수 항목: 이름, 전화번호, 이메일, 직군(포지션), 지원자 신분, 모집단위, 기수id
+	필수 항목: 이름, 전화번호, 이메일, 직군(포지션), 활동 상태, 지원자 신분, 모집단위, 기수id
 	선택 항목: 팀id, 비고, 관심도메인, 거주지역, 직무 관련 경험
 	 */
 	@NotBlank(message = "이름을 입력해주세요")
@@ -39,6 +40,9 @@ public record CreateMemberSemesterRequest(
 
 	@NotNull(message = "모집 단위를 선택해주세요")
 	RecruitTypeDetail recruitTypeDetail,
+
+	@NotNull(message = "활동 상태를 선택해주세요")
+	ActivityStatus activityStatus,
 
 	@NotNull(message = "지원자 신분을 선택해주세요")
 	CareerDetails careerDetails,
