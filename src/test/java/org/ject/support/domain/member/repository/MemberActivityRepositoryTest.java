@@ -151,6 +151,19 @@ class MemberActivityRepositoryTest {
         return memberActivity;
     }
 
+    private MemberActivity createSupportersActivity(Long memberId, ActivityStatus activityStatus) {
+        return MemberActivity.createSupportersActivity(
+            memberId,
+            JobFamily.OPS,
+            RecruitTypeDetail.REGULAR,
+            activityStatus,
+            null,
+            null,
+            "SP-001",
+            "테스트 메모"
+        );
+    }
+
     /**
      * 일반 구성원 추가 테스트
      */
@@ -288,6 +301,48 @@ class MemberActivityRepositoryTest {
 
         // when
         boolean result = memberActivityRepository.existsActiveMakersActivityByMemberId(member.getId());
+
+        // then
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("운영 서포터즈로 활동 중인 이력이 존재하면 true를 반환한다")
+    void 운영_서포터즈로_활동_중인_이력이_존재하면_true를_반환한다() {
+        // given
+        Member member = memberRepository.save(member().email("supporters@test.com").build());
+        memberActivityRepository.saveAndFlush(createSupportersActivity(member.getId(), ActivityStatus.ACTIVE));
+
+        // when
+        boolean result = memberActivityRepository.existsActiveSupportersActivityByMemberId(member.getId());
+
+        // then
+        assertThat(result).isTrue();
+    }
+
+    @Test
+    @DisplayName("운영 서포터즈 활동이 ACTIVE가 아니면 false를 반환한다")
+    void 운영_서포터즈_활동이_ACTIVE가_아니면_false를_반환한다() {
+        // given
+        Member member = memberRepository.save(member().email("ended-supporters@test.com").build());
+        memberActivityRepository.saveAndFlush(createSupportersActivity(member.getId(), ActivityStatus.ENDED));
+
+        // when
+        boolean result = memberActivityRepository.existsActiveSupportersActivityByMemberId(member.getId());
+
+        // then
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    @DisplayName("다른 유형의 ACTIVE 활동이면 운영 서포터즈 활동 조회에서 false를 반환한다")
+    void 다른_유형의_ACTIVE_활동이면_운영_서포터즈_활동_조회에서_false를_반환한다() {
+        // given
+        Member member = memberRepository.save(member().email("active-makers@test.com").build());
+        memberActivityRepository.saveAndFlush(createMakersActivity(member.getId(), ActivityStatus.ACTIVE));
+
+        // when
+        boolean result = memberActivityRepository.existsActiveSupportersActivityByMemberId(member.getId());
 
         // then
         assertThat(result).isFalse();

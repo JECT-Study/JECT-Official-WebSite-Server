@@ -113,6 +113,80 @@ class MemberActivityTest {
 	}
 
 	@Test
+	@DisplayName("운영 서포터즈 활동을 생성하면 관리 항목이 함께 생성된다")
+	void 운영_서포터즈_활동을_생성하면_관리_항목이_함께_생성된다() {
+		// when
+		MemberActivity memberActivity = MemberActivity.createSupportersActivity(
+			1L,
+			JobFamily.OPS,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ENDED,
+			java.time.LocalDate.of(2025, 5, 19),
+			java.time.LocalDate.of(2025, 12, 19),
+			"SP-001",
+			"운영 서포터즈 메모"
+		);
+		MemberSupporters memberSupporters = memberActivity.getMemberSupporters();
+
+		// then
+		assertThat(memberActivity.getMemberId()).isEqualTo(1L);
+		assertThat(memberActivity.getMemberType()).isEqualTo(MemberType.SUPPORTERS);
+		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.OPS);
+		assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REGULAR);
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ENDED);
+		assertThat(memberActivity.getStartDate()).isEqualTo(java.time.LocalDate.of(2025, 5, 19));
+		assertThat(memberActivity.getEndDate()).isEqualTo(java.time.LocalDate.of(2025, 12, 19));
+		assertThat(memberActivity.getMemo()).isEqualTo("운영 서포터즈 메모");
+		assertThat(memberSupporters).isNotNull();
+		assertThat(memberSupporters.getMemberActivity()).isSameAs(memberActivity);
+		assertThat(memberSupporters.getActivityCertNumber()).isEqualTo("SP-001");
+	}
+
+	@Test
+	@DisplayName("구성원 유형에 맞지 않는 포지션으로 활동을 생성하면 예외가 발생한다")
+	void 구성원_유형에_맞지_않는_포지션으로_활동을_생성하면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> MemberActivity.createSupportersActivity(
+			1L,
+			JobFamily.FE,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ACTIVE,
+			null,
+			null,
+			null,
+			null
+		));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_JOB_FAMILY);
+	}
+
+	@Test
+	@DisplayName("운영 서포터즈에 맞지 않는 활동 상태로 생성하면 예외가 발생한다")
+	void 운영_서포터즈에_맞지_않는_활동_상태로_생성하면_예외가_발생한다() {
+		// when
+		Throwable throwable = catchThrowable(() -> MemberActivity.createSupportersActivity(
+			1L,
+			JobFamily.OPS,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.COMPLETED,
+			null,
+			null,
+			null,
+			null
+		));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
+	}
+
+	@Test
 	@DisplayName("팀을 선택하지 않으면 팀 정보 없이 일반 구성원 활동을 생성한다")
 	void 팀을_선택하지_않으면_팀_정보_없이_일반_구성원_활동을_생성한다() {
 		// given
