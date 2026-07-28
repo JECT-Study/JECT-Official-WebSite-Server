@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
+import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
@@ -1125,5 +1126,87 @@ class MemberActivityRepositoryTest {
 
         // then
         assertThat(exists).isFalse();
+    }
+
+    @Test
+    @DisplayName("운영 서포터즈 구성원의 상세정보를 조회한다")
+    void 운영_서포터즈_구성원의_상세정보를_조회한다() {
+        // given
+        Member member = memberRepository.save(member()
+            .email("supporters-detail@test.com")
+            .build());
+        MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(member.getId(), ActivityStatus.ACTIVE));
+
+        // when
+        MemberSupportersDetailProjection projection =
+            memberActivityRepository.findMemberSupportersDetail(memberActivity.getId()).orElseThrow();
+
+        // then
+        assertThat(projection.memberActivityId()).isEqualTo(memberActivity.getId());
+        assertThat(projection.name()).isEqualTo(member.getName());
+        assertThat(projection.phoneNumber()).isEqualTo(member.getPhoneNumber());
+        assertThat(projection.email()).isEqualTo(member.getEmail());
+        assertThat(projection.memberType()).isEqualTo(MemberType.SUPPORTERS);
+        assertThat(projection.jobFamily()).isEqualTo(memberActivity.getJobFamily());
+        assertThat(projection.recruitTypeDetail()).isEqualTo(memberActivity.getRecruitTypeDetail());
+        assertThat(projection.activityStatus()).isEqualTo(memberActivity.getActivityStatus());
+        assertThat(projection.startDate()).isEqualTo(memberActivity.getStartDate());
+        assertThat(projection.endDate()).isEqualTo(memberActivity.getEndDate());
+        assertThat(projection.activityCertNumber())
+            .isEqualTo(memberActivity.getMemberSupporters().getActivityCertNumber());
+        assertThat(projection.memo()).isEqualTo(memberActivity.getMemo());
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 활동 이력을 조회하면 빈 결과를 반환한다")
+    void 존재하지_않는_활동_이력을_조회하면_빈_결과를_반환한다() {
+        assertThat(memberActivityRepository.findMemberSupportersDetail(999999999L)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("삭제된 구성원은 상세조회에서 제외한다")
+    void 삭제된_구성원은_상세조회에서_제외한다() {
+        // given
+        Member member = memberRepository.save(member()
+            .email("deleted-supporters@test.com")
+            .deleted()
+            .build());
+        MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(member.getId(), ActivityStatus.ACTIVE));
+
+        // when & then
+        assertThat(memberActivityRepository.findMemberSupportersDetail(memberActivity.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("삭제된 활동 이력은 상세조회에서 제외한다")
+    void 삭제된_활동_이력은_상세조회에서_제외한다() {
+        // given
+        Member member = memberRepository.save(member()
+            .email("deleted-activity@test.com")
+            .build());
+        MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(member.getId(), ActivityStatus.ACTIVE));
+        memberActivityRepository.delete(memberActivity);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when & then
+        assertThat(memberActivityRepository.findMemberSupportersDetail(memberActivity.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("다른 유형의 구성원은 운영 서포터즈 상세조회에서 제외한다")
+    void 다른_유형의_구성원은_운영_서포터즈_상세조회에서_제외한다() {
+        // given
+        Member member = memberRepository.save(member()
+            .email("makers-not-supporters@test.com")
+            .build());
+        MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+            makersActivity().memberId(member.getId()).build());
+
+        // when & then
+        assertThat(memberActivityRepository.findMemberSupportersDetail(memberActivity.getId())).isEmpty();
     }
 }

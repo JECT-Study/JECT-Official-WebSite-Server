@@ -172,6 +172,37 @@ class AdminMemberSupportersControllerTest {
 			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
 	}
 
+	@Test
+	@DisplayName("운영 서포터즈 구성원의 상세정보를 조회한다")
+	void 운영_서포터즈_구성원의_상세정보를_조회한다() throws Exception {
+		// given
+		MemberActivity memberActivity = saveSupportersActivity(uniqueEmail("detail"), ActivityStatus.ENDED);
+
+		// when & then
+		mockMvc.perform(get("/admin/members/supporters/{memberActivityId}", memberActivity.getId()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"))
+			.andExpect(jsonPath("$.data.memberActivityId").value(memberActivity.getId()))
+			.andExpect(jsonPath("$.data.name").value("김젝트"))
+			.andExpect(jsonPath("$.data.phoneNumber").value("01012345678"))
+			.andExpect(jsonPath("$.data.email").exists())
+			.andExpect(jsonPath("$.data.memberType").value(MemberType.SUPPORTERS.name()))
+			.andExpect(jsonPath("$.data.jobFamily").value(JobFamily.OPS.name()))
+			.andExpect(jsonPath("$.data.recruitTypeDetail").value(RecruitTypeDetail.REGULAR.name()))
+			.andExpect(jsonPath("$.data.activityStatus").value(ActivityStatus.ENDED.name()))
+			.andExpect(jsonPath("$.data.activityCertNumber").value("SP-001"))
+			.andExpect(jsonPath("$.data.memo").value("memo"));
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 운영 서포터즈 구성원을 조회하면 404를 반환한다")
+	void 존재하지_않는_운영_서포터즈_구성원을_조회하면_404를_반환한다() throws Exception {
+		// when & then
+		mockMvc.perform(get("/admin/members/supporters/{memberActivityId}", 999999999L))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER.getCode()));
+	}
+
 	private CreateMemberSupportersRequest createMemberSupportersRequest(String email, JobFamily jobFamily, String memo) {
 		return new CreateMemberSupportersRequest(
 			"김서포터",
