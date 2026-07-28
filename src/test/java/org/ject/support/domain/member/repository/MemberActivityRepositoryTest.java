@@ -1038,12 +1038,18 @@ class MemberActivityRepositoryTest {
         // given
         Member supporters = memberRepository.save(member().email("supporters@test.com").build());
         Member deletedMember = memberRepository.save(member().email("deleted-member@test.com").deleted().build());
+        Member deletedActivityMember = memberRepository.save(member().email("deleted-activity@test.com").build());
         Member makers = memberRepository.save(member().email("makers@test.com").build());
         MemberActivity supportersActivity = memberActivityRepository.saveAndFlush(
             createSupportersActivity(supporters.getId(), ActivityStatus.ACTIVE));
         memberActivityRepository.saveAndFlush(
             createSupportersActivity(deletedMember.getId(), ActivityStatus.ACTIVE));
+        MemberActivity deletedActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(deletedActivityMember.getId(), ActivityStatus.ACTIVE));
         memberActivityRepository.saveAndFlush(createMakersActivity(makers.getId(), ActivityStatus.ACTIVE));
+        memberActivityRepository.delete(deletedActivity);
+        entityManager.flush();
+        entityManager.clear();
 
         // when
         List<MemberSupportersListProjection> projections =
