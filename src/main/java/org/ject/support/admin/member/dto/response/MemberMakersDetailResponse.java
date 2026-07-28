@@ -14,7 +14,7 @@ import org.ject.support.domain.member.Region;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
 public record MemberMakersDetailResponse(
-	Long id,
+	Long memberActivityId,
 
 	String name,
 
@@ -59,7 +59,7 @@ public record MemberMakersDetailResponse(
 ) {
 	public static MemberMakersDetailResponse from(MemberMakersDetailProjection projection) {
 		return new MemberMakersDetailResponse(
-			projection.id(),
+			projection.memberActivityId(),
 			projection.name(),
 			projection.email(),
 			projection.phoneNumber(),

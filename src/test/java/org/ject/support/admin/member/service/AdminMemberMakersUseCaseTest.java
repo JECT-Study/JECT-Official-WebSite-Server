@@ -107,7 +107,7 @@ class AdminMemberMakersUseCaseTest {
 		MemberMakersDetailResponse response = adminMemberMakersUseCase.getMemberMakersDetail(memberActivityId);
 
 		// then
-		assertThat(response.id()).isEqualTo(projection.id());
+		assertThat(response.memberActivityId()).isEqualTo(projection.memberActivityId());
 		assertThat(response.name()).isEqualTo(projection.name());
 		assertThat(response.email()).isEqualTo(projection.email());
 		assertThat(response.makersTeam()).isEqualTo(projection.makersTeam());
