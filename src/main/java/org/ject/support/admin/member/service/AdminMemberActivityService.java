@@ -4,6 +4,7 @@ import static org.ject.support.domain.member.exception.MemberErrorCode.*;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
+import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
@@ -29,7 +30,6 @@ import java.util.List;
 public class AdminMemberActivityService {
 
 	private final MemberActivityRepository memberActivityRepository;
-
 
 	public void createMemberSemesterActivity(CreateMemberSemesterRequest request, Long memberId) {
 		// 추가하려는 대상이 같은 기수에 이미 등록되어있는지 중복 검증
@@ -136,6 +136,13 @@ public class AdminMemberActivityService {
 		return memberActivityRepository.findMemberMakersDetail(memberActivityId)
 			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
 	}
+
+	// 운영 서포터즈 구성원 상세 조회
+	public MemberSupportersDetailProjection getMemberSupportersDetail(Long memberActivityId) {
+		return memberActivityRepository.findMemberSupportersDetail(memberActivityId)
+			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+	}
+
 	/*
 	유틸, 검증 함수
 	 */
