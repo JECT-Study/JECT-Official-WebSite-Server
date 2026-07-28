@@ -55,28 +55,10 @@ public class AdminMemberSemesterUseCase {
 		// size만큼 조회 + 전체 행 수 조회
 		MemberPageResult<SearchMemberSemesterProjection> pageResult =
 			adminMemberActivityService.searchMemberSemesterList(condition);
-		// 페이징 값 처리
-		boolean hasNext = pageResult.content().size() > condition.getSizeOrDefault();
-		long totalCount = pageResult.totalCount();
-		List<SearchMemberSemesterProjection> content = hasNext
-			? pageResult.content().subList(0,condition.getSizeOrDefault())
-			: pageResult.content();
-
-		List<SearchMemberSemesterResponse> responses = content.stream()
-			.map(SearchMemberSemesterResponse::from)
-			.toList();
-
-		Long nextCursor = hasNext && !content.isEmpty()
-			? content.get(content.size()-1).memberActivityId()
-			: null;
-
-		// 응답
-		return CursorPageResponse.of(
-			responses,
+		return pageResult.toCursorPageResponse(
 			condition.getSizeOrDefault(),
-			hasNext,
-			nextCursor,
-			totalCount
+			SearchMemberSemesterResponse::from,
+			SearchMemberSemesterProjection::memberActivityId
 		);
 	}
 

@@ -1,7 +1,5 @@
 package org.ject.support.admin.member.service;
 
-import java.util.List;
-
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
@@ -37,28 +35,10 @@ public class AdminMemberSupportersUseCase {
 		MemberPageResult<MemberSupportersListProjection> pageResult =
 			adminMemberActivityService.getMemberSupportersList(request);
 
-		// 페이징 값 처리
-		boolean hasNext = pageResult.content().size() > request.getSizeOrDefault();
-		long totalCount = pageResult.totalCount();
-		List<MemberSupportersListProjection> content = hasNext
-			? pageResult.content().subList(0, request.getSizeOrDefault())
-			: pageResult.content();
-
-		List<MemberSupportersListResponse> responses = content.stream()
-			.map(MemberSupportersListResponse::from)
-			.toList();
-
-		Long nextCursor = hasNext && !content.isEmpty()
-			? content.get(content.size() - 1).memberActivityId()
-			: null;
-
-		// 응답
-		return CursorPageResponse.of(
-			responses,
+		return pageResult.toCursorPageResponse(
 			request.getSizeOrDefault(),
-			hasNext,
-			nextCursor,
-			totalCount
+			MemberSupportersListResponse::from,
+			MemberSupportersListProjection::memberActivityId
 		);
 	}
 }
