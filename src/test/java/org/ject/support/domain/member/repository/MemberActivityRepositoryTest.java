@@ -10,6 +10,7 @@ import java.util.List;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
+import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.domain.member.ActivityStatus;
@@ -981,6 +982,85 @@ class MemberActivityRepositoryTest {
                 secondActivity.getId(),
                 firstActivity.getId()
             );
+    }
+
+    @Test
+    @DisplayName("운영 서포터즈 구성원 목록을 최신순으로 조회한다")
+    void 운영_서포터즈_구성원_목록을_최신순으로_조회한다() {
+        // given
+        Member first = memberRepository.save(member().email("supporters1@test.com").build());
+        Member second = memberRepository.save(member().email("supporters2@test.com").build());
+        Member third = memberRepository.save(member().email("supporters3@test.com").build());
+        MemberActivity firstActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(first.getId(), ActivityStatus.ACTIVE));
+        MemberActivity secondActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(second.getId(), ActivityStatus.ENDED));
+        MemberActivity thirdActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(third.getId(), ActivityStatus.ACTIVE));
+
+        // when
+        List<MemberSupportersListProjection> projections =
+            memberActivityRepository.findMemberSupportersList(null, 3);
+
+        // then
+        assertThat(projections)
+            .extracting(MemberSupportersListProjection::memberActivityId)
+            .containsExactly(thirdActivity.getId(), secondActivity.getId(), firstActivity.getId());
+    }
+
+    @Test
+    @DisplayName("cursor 이후 운영 서포터즈 구성원 목록을 조회한다")
+    void cursor_이후_운영_서포터즈_구성원_목록을_조회한다() {
+        // given
+        Member first = memberRepository.save(member().email("supporters1@test.com").build());
+        Member second = memberRepository.save(member().email("supporters2@test.com").build());
+        Member third = memberRepository.save(member().email("supporters3@test.com").build());
+        MemberActivity firstActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(first.getId(), ActivityStatus.ACTIVE));
+        MemberActivity secondActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(second.getId(), ActivityStatus.ENDED));
+        MemberActivity thirdActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(third.getId(), ActivityStatus.ACTIVE));
+
+        // when
+        List<MemberSupportersListProjection> projections =
+            memberActivityRepository.findMemberSupportersList(thirdActivity.getId(), 3);
+
+        // then
+        assertThat(projections)
+            .extracting(MemberSupportersListProjection::memberActivityId)
+            .containsExactly(secondActivity.getId(), firstActivity.getId());
+    }
+
+    @Test
+    @DisplayName("운영 서포터즈 목록과 전체 개수에서 다른 활동과 삭제 데이터를 제외한다")
+    void 운영_서포터즈_목록과_전체_개수에서_다른_활동과_삭제_데이터를_제외한다() {
+        // given
+        Member supporters = memberRepository.save(member().email("supporters@test.com").build());
+        Member deletedMember = memberRepository.save(member().email("deleted-member@test.com").deleted().build());
+        Member deletedActivityMember = memberRepository.save(member().email("deleted-activity@test.com").build());
+        Member makers = memberRepository.save(member().email("makers@test.com").build());
+        MemberActivity supportersActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(supporters.getId(), ActivityStatus.ACTIVE));
+        memberActivityRepository.saveAndFlush(
+            createSupportersActivity(deletedMember.getId(), ActivityStatus.ACTIVE));
+        MemberActivity deletedActivity = memberActivityRepository.saveAndFlush(
+            createSupportersActivity(deletedActivityMember.getId(), ActivityStatus.ACTIVE));
+        memberActivityRepository.saveAndFlush(createMakersActivity(makers.getId(), ActivityStatus.ACTIVE));
+        memberActivityRepository.delete(deletedActivity);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        List<MemberSupportersListProjection> projections =
+            memberActivityRepository.findMemberSupportersList(null, 10);
+        long totalCount = memberActivityRepository.countMemberSupportersList();
+
+        // then
+        assertThat(projections)
+            .extracting(MemberSupportersListProjection::memberActivityId)
+            .containsExactly(supportersActivity.getId());
+        assertThat(totalCount).isEqualTo(1L);
     }
 
     @Test

@@ -10,7 +10,7 @@ import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
-import org.ject.support.admin.member.dto.result.MemberMakersListPageResult;
+import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.Availability;
@@ -45,7 +45,7 @@ class AdminMemberMakersUseCaseTest {
 	void 조회_결과가_size보다_많으면_다음_커서를_반환한다() {
 		// given
 		MemberMakersListRequest request = new MemberMakersListRequest(null, 2);
-		MemberMakersListPageResult pageResult = new MemberMakersListPageResult(
+		MemberPageResult<MemberMakersListProjection> pageResult = MemberPageResult.of(
 			List.of(
 				makersProjection(5L, "첫번째"),
 				makersProjection(4L, "두번째"),
@@ -75,7 +75,7 @@ class AdminMemberMakersUseCaseTest {
 	void 조회_결과가_size보다_적으면_다음_커서를_반환하지_않는다() {
 		// given
 		MemberMakersListRequest request = new MemberMakersListRequest(4L, 3);
-		MemberMakersListPageResult pageResult = new MemberMakersListPageResult(
+		MemberPageResult<MemberMakersListProjection> pageResult = MemberPageResult.of(
 			List.of(
 				makersProjection(3L, "첫번째"),
 				makersProjection(2L, "두번째")

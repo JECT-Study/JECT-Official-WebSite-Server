@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
+import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.domain.member.ActivityStatus;
@@ -197,6 +198,44 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 				)
 				.fetchOne()
 		);
+	}
+
+	@Override
+	public List<MemberSupportersListProjection> findMemberSupportersList(Long cursor, int limit) {
+		return jpaQueryFactory.select(Projections.constructor(
+			MemberSupportersListProjection.class,
+			memberActivity.id,
+			member.name,
+			member.phoneNumber,
+			memberActivity.jobFamily,
+			memberActivity.recruitTypeDetail,
+			memberActivity.activityStatus,
+			memberActivity.memo
+		)).from(memberActivity)
+			.join(member).on(member.id.eq(memberActivity.memberId))
+			.where(
+				cursorLt(cursor),
+				member.isDeleted.isFalse(),
+				memberActivity.isDeleted.isFalse(),
+				memberActivity.memberType.eq(MemberType.SUPPORTERS)
+			)
+			.orderBy(memberActivity.id.desc())
+			.limit(limit)
+			.fetch();
+	}
+
+	@Override
+	public long countMemberSupportersList() {
+		Long count = jpaQueryFactory.select(memberActivity.id.count())
+			.from(memberActivity)
+			.join(member).on(member.id.eq(memberActivity.memberId))
+			.where(
+				member.isDeleted.isFalse(),
+				memberActivity.isDeleted.isFalse(),
+				memberActivity.memberType.eq(MemberType.SUPPORTERS)
+			).fetchOne();
+
+		return count == null ? 0L : count;
 	}
 
 	// 조회 결과에서 지정 직군의 이름만 분리

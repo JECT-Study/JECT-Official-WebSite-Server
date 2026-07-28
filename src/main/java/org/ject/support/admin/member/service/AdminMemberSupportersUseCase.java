@@ -1,6 +1,11 @@
 package org.ject.support.admin.member.service;
 
+import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
+import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
+import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
+import org.ject.support.admin.member.dto.result.MemberPageResult;
+import org.ject.support.common.response.CursorPageResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,5 +27,18 @@ public class AdminMemberSupportersUseCase {
 
 		// memberId 기준 MemberActivity와 MemberSupporters 생성 및 저장
 		adminMemberActivityService.createMemberSupportersActivity(request, memberId);
+	}
+
+	@Transactional(readOnly = true)
+	public CursorPageResponse<MemberSupportersListResponse> getMemberSupportersList(MemberSupportersListRequest request) {
+		// 목록 조회
+		MemberPageResult<MemberSupportersListProjection> pageResult =
+			adminMemberActivityService.getMemberSupportersList(request);
+
+		return pageResult.toCursorPageResponse(
+			request.getSizeOrDefault(),
+			MemberSupportersListResponse::from,
+			MemberSupportersListProjection::memberActivityId
+		);
 	}
 }

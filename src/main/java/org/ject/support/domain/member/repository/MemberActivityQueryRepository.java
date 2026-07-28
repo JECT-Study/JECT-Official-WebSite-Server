@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
+import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.domain.member.dto.TeamMemberNames;
@@ -24,4 +25,8 @@ public interface MemberActivityQueryRepository {
 	long countMemberMakersList();
 
 	Optional<MemberMakersDetailProjection> findMemberMakersDetail(Long memberActivityId);
+
+	List<MemberSupportersListProjection> findMemberSupportersList(Long cursor, int limit);
+
+	long countMemberSupportersList();
 }

@@ -2,6 +2,8 @@ package org.ject.support.admin.member.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.ject.support.domain.member.fixture.MemberFixture.member;
+import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -125,6 +127,51 @@ class AdminMemberSupportersControllerTest {
 				.value(MemberErrorCode.ALREADY_EXIST_ACTIVE_MEMBER_SUPPORTERS_ACTIVITY.getCode()));
 	}
 
+	@Test
+	@DisplayName("운영 서포터즈 구성원 목록을 커서 기반으로 조회한다")
+	void 운영_서포터즈_구성원_목록을_커서_기반으로_조회한다() throws Exception {
+		// given
+		MemberActivity firstActivity = saveSupportersActivity(uniqueEmail("list1"), ActivityStatus.ACTIVE);
+		MemberActivity secondActivity = saveSupportersActivity(uniqueEmail("list2"), ActivityStatus.ENDED);
+		MemberActivity thirdActivity = saveSupportersActivity(uniqueEmail("list3"), ActivityStatus.ACTIVE);
+
+		mockMvc.perform(get("/admin/members/supporters")
+				.param("size", "2"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.data.content[0].memberActivityId").value(thirdActivity.getId()))
+			.andExpect(jsonPath("$.data.content[1].memberActivityId").value(secondActivity.getId()))
+			.andExpect(jsonPath("$.data.hasNext").value(true))
+			.andExpect(jsonPath("$.data.nextCursor").value(secondActivity.getId()))
+			.andExpect(jsonPath("$.data.totalCount").value(3));
+
+		// when & then
+		mockMvc.perform(get("/admin/members/supporters")
+				.param("cursor", String.valueOf(secondActivity.getId()))
+				.param("size", "2"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"))
+			.andExpect(jsonPath("$.data.content[0].memberActivityId").value(firstActivity.getId()))
+			.andExpect(jsonPath("$.data.hasNext").value(false))
+			.andExpect(jsonPath("$.data.nextCursor").value(nullValue()))
+			.andExpect(jsonPath("$.data.totalCount").value(3));
+	}
+
+	@Test
+	@DisplayName("유효하지 않은 페이징 값이면 운영 서포터즈 목록을 조회하지 않는다")
+	void 유효하지_않은_페이징_값이면_운영_서포터즈_목록을_조회하지_않는다() throws Exception {
+		mockMvc.perform(get("/admin/members/supporters").param("size", "0"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+
+		mockMvc.perform(get("/admin/members/supporters").param("size", "101"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+
+		mockMvc.perform(get("/admin/members/supporters").param("cursor", "0"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+	}
+
 	private CreateMemberSupportersRequest createMemberSupportersRequest(String email, JobFamily jobFamily, String memo) {
 		return new CreateMemberSupportersRequest(
 			"김서포터",
@@ -148,6 +195,20 @@ class AdminMemberSupportersControllerTest {
 
 		assertThat(activities).hasSize(1);
 		return activities.get(0);
+	}
+
+	private MemberActivity saveSupportersActivity(String email, ActivityStatus activityStatus) {
+		Member member = memberRepository.save(member().email(email).build());
+		return memberActivityRepository.saveAndFlush(MemberActivity.createSupportersActivity(
+			member.getId(),
+			JobFamily.OPS,
+			RecruitTypeDetail.REGULAR,
+			activityStatus,
+			null,
+			null,
+			"SP-001",
+			"memo"
+		));
 	}
 
 	private String uniqueEmail(String prefix) {

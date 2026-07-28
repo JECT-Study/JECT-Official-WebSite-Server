@@ -9,7 +9,7 @@ import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjecti
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
-import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
+import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
@@ -192,7 +192,7 @@ class AdminMemberSemesterUseCaseTest {
 	void 조회_결과가_size보다_많으면_다음_커서를_반환한다() {
 		// given
 		MemberSemesterSearchCondition condition = searchCondition(2, null, null);
-		SearchMemberSemesterPageResult pageResult = new SearchMemberSemesterPageResult(
+		MemberPageResult<SearchMemberSemesterProjection> pageResult = MemberPageResult.of(
 			List.of(searchProjection(5L), searchProjection(4L), searchProjection(3L)),
 			3L
 		);
@@ -216,7 +216,7 @@ class AdminMemberSemesterUseCaseTest {
 	void 조회_결과가_size보다_적으면_다음_커서를_반환하지_않는다() {
 		// given
 		MemberSemesterSearchCondition condition = searchCondition(3, null, null);
-		SearchMemberSemesterPageResult pageResult = new SearchMemberSemesterPageResult(
+		MemberPageResult<SearchMemberSemesterProjection> pageResult = MemberPageResult.of(
 			List.of(searchProjection(5L), searchProjection(4L)),
 			2L
 		);
@@ -238,7 +238,7 @@ class AdminMemberSemesterUseCaseTest {
 	void 조회_결과가_없으면_빈_응답을_반환한다() {
 		// given
 		MemberSemesterSearchCondition condition = searchCondition(3, null, null);
-		SearchMemberSemesterPageResult pageResult = new SearchMemberSemesterPageResult(List.of(), 0L);
+		MemberPageResult<SearchMemberSemesterProjection> pageResult = MemberPageResult.of(List.of(), 0L);
 		given(adminMemberActivityService.searchMemberSemesterList(condition)).willReturn(pageResult);
 
 		// when
@@ -311,7 +311,7 @@ class AdminMemberSemesterUseCaseTest {
 	void 일반_구성원에서_탈퇴_상태로_목록을_조회한다() {
 		// given
 		MemberSemesterSearchCondition condition = searchCondition(3, null, null, ActivityStatus.WITHDRAWN);
-		SearchMemberSemesterPageResult pageResult = new SearchMemberSemesterPageResult(List.of(), 0L);
+		MemberPageResult<SearchMemberSemesterProjection> pageResult = MemberPageResult.of(List.of(), 0L);
 		given(adminMemberActivityService.searchMemberSemesterList(condition)).willReturn(pageResult);
 
 		// when

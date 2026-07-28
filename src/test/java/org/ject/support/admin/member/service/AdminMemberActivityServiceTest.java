@@ -11,12 +11,14 @@ import java.util.List;
 import java.util.Optional;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
+import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
-import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
+import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
+import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.Availability;
@@ -48,6 +50,30 @@ class AdminMemberActivityServiceTest {
 
     @InjectMocks
     private AdminMemberActivityService adminMemberActivityService;
+
+    @Test
+    @DisplayName("운영 서포터즈 목록을 size보다 한 건 더 조회하고 전체 개수를 반환한다")
+    void 운영_서포터즈_목록을_size보다_한_건_더_조회하고_전체_개수를_반환한다() {
+        // given
+        MemberSupportersListRequest request = new MemberSupportersListRequest(10L, 2);
+        List<MemberSupportersListProjection> projections = List.of(
+            supportersProjection(9L),
+            supportersProjection(8L),
+            supportersProjection(7L)
+        );
+        given(memberActivityRepository.findMemberSupportersList(10L, 3)).willReturn(projections);
+        given(memberActivityRepository.countMemberSupportersList()).willReturn(5L);
+
+        // when
+        MemberPageResult<MemberSupportersListProjection> result =
+            adminMemberActivityService.getMemberSupportersList(request);
+
+        // then
+        assertThat(result.content()).isEqualTo(projections);
+        assertThat(result.totalCount()).isEqualTo(5L);
+        verify(memberActivityRepository).findMemberSupportersList(10L, 3);
+        verify(memberActivityRepository).countMemberSupportersList();
+    }
 
     /**
      * 일반 구성원 추가 테스트
@@ -259,7 +285,8 @@ class AdminMemberActivityServiceTest {
         given(memberActivityRepository.countMemberSemesters(condition)).willReturn(1L);
 
         // when
-        SearchMemberSemesterPageResult pageResult = adminMemberActivityService.searchMemberSemesterList(condition);
+        MemberPageResult<SearchMemberSemesterProjection> pageResult =
+            adminMemberActivityService.searchMemberSemesterList(condition);
         // then
         assertThat(pageResult.content()).isEqualTo(projections);
         assertThat(pageResult.totalCount()).isEqualTo(1L);
@@ -390,5 +417,16 @@ class AdminMemberActivityServiceTest {
         );
     }
 
+    private MemberSupportersListProjection supportersProjection(Long memberActivityId) {
+        return new MemberSupportersListProjection(
+            memberActivityId,
+            "김서포터",
+            "01012341234",
+            JobFamily.OPS,
+            RecruitTypeDetail.REGULAR,
+            ActivityStatus.ACTIVE,
+            "memo"
+        );
+    }
 
 }

@@ -8,7 +8,7 @@ import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjecti
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
-import org.ject.support.admin.member.dto.result.SearchMemberSemesterPageResult;
+import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
@@ -53,29 +53,12 @@ public class AdminMemberSemesterUseCase {
 		validateSearchTeam(condition.semesterId(), condition.teamId());
 		validateStatus(condition.status(), MemberType.SEMESTER);
 		// size만큼 조회 + 전체 행 수 조회
-		SearchMemberSemesterPageResult pageResult = adminMemberActivityService.searchMemberSemesterList(condition);
-		// 페이징 값 처리
-		boolean hasNext = pageResult.content().size() > condition.getSizeOrDefault();
-		long totalCount = pageResult.totalCount();
-		List<SearchMemberSemesterProjection> content = hasNext
-			? pageResult.content().subList(0,condition.getSizeOrDefault())
-			: pageResult.content();
-
-		List<SearchMemberSemesterResponse> responses = content.stream()
-			.map(SearchMemberSemesterResponse::from)
-			.toList();
-
-		Long nextCursor = hasNext && !content.isEmpty()
-			? content.get(content.size()-1).memberActivityId()
-			: null;
-
-		// 응답
-		return CursorPageResponse.of(
-			responses,
+		MemberPageResult<SearchMemberSemesterProjection> pageResult =
+			adminMemberActivityService.searchMemberSemesterList(condition);
+		return pageResult.toCursorPageResponse(
 			condition.getSizeOrDefault(),
-			hasNext,
-			nextCursor,
-			totalCount
+			SearchMemberSemesterResponse::from,
+			SearchMemberSemesterProjection::memberActivityId
 		);
 	}
 
