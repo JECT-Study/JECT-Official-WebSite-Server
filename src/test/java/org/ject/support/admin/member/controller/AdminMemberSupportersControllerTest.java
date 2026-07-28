@@ -161,11 +161,13 @@ class AdminMemberSupportersControllerTest {
 	void 유효하지_않은_페이징_값이면_운영_서포터즈_목록을_조회하지_않는다() throws Exception {
 		mockMvc.perform(get("/admin/members/supporters").param("size", "0"))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"))
+			.andExpect(jsonPath("$.data[0]").value("조회 개수는 1개 이상이어야 합니다."));
 
 		mockMvc.perform(get("/admin/members/supporters").param("size", "101"))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"))
+			.andExpect(jsonPath("$.data[0]").value("조회 개수는 100개 이하여야 합니다."));
 
 		mockMvc.perform(get("/admin/members/supporters").param("cursor", "0"))
 			.andExpect(status().isBadRequest())

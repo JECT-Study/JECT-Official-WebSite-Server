@@ -207,7 +207,8 @@ class AdminMemberMakersControllerTest {
 		mockMvc.perform(get("/admin/members/makers")
 				.param("size", "0"))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"))
+			.andExpect(jsonPath("$.data[0]").value("조회 개수는 1개 이상이어야 합니다."));
 	}
 
 	@Test
@@ -217,7 +218,8 @@ class AdminMemberMakersControllerTest {
 		mockMvc.perform(get("/admin/members/makers")
 				.param("size", "101"))
 			.andExpect(status().isBadRequest())
-			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"))
+			.andExpect(jsonPath("$.data[0]").value("조회 개수는 100개 이하여야 합니다."));
 	}
 
 	@Test
