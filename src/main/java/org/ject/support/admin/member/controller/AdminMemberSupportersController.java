@@ -6,6 +6,7 @@ import org.ject.support.admin.member.dto.response.MemberSupportersDetailResponse
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
 import org.ject.support.admin.member.service.AdminMemberSupportersUseCase;
 import org.ject.support.common.response.CursorPageResponse;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,7 +36,7 @@ public class AdminMemberSupportersController implements AdminMemberSupportersApi
 	@Override
 	@GetMapping
 	public CursorPageResponse<MemberSupportersListResponse> getAdminMemberSupportersList(
-		@ModelAttribute @Valid MemberSupportersListRequest request) {
+		@ParameterObject  @ModelAttribute @Valid MemberSupportersListRequest request) {
 		return adminMemberSupportersUseCase.getMemberSupportersList(request);
 	}
 
