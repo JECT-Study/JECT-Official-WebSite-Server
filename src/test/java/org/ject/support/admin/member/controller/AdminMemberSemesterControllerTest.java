@@ -250,6 +250,28 @@ class AdminMemberSemesterControllerTest {
 	}
 
 	@Test
+	@DisplayName("조회 개수가 1개보다 작으면 일반 구성원 목록을 조회하지 않는다")
+	void 조회_개수가_1개보다_작으면_일반_구성원_목록을_조회하지_않는다() throws Exception {
+		// when & then
+		mockMvc.perform(get("/admin/members/semester")
+				.param("size", "0"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"))
+			.andExpect(jsonPath("$.data[0]").value("조회 개수는 1개 이상이어야 합니다."));
+	}
+
+	@Test
+	@DisplayName("조회 개수가 100개보다 크면 일반 구성원 목록을 조회하지 않는다")
+	void 조회_개수가_100개보다_크면_일반_구성원_목록을_조회하지_않는다() throws Exception {
+		// when & then
+		mockMvc.perform(get("/admin/members/semester")
+				.param("size", "101"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"))
+			.andExpect(jsonPath("$.data[0]").value("조회 개수는 100개 이하여야 합니다."));
+	}
+
+	@Test
 	@DisplayName("팀 필터만 있으면 일반 구성원 목록을 조회하지 않는다")
 	void 팀_필터만_있으면_일반_구성원_목록을_조회하지_않는다() throws Exception {
 		// when & then
