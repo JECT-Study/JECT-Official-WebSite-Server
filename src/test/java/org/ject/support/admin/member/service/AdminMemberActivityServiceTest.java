@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
+import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
@@ -328,6 +329,44 @@ class AdminMemberActivityServiceTest {
         verify(memberActivityRepository).findMemberMakersDetail(memberActivityId);
     }
 
+    @Test
+    @DisplayName("운영 서포터즈 구성원의 상세정보를 조회한다")
+    void 운영_서포터즈_구성원의_상세정보를_조회한다() {
+        // given
+        Long memberActivityId = 1L;
+        MemberSupportersDetailProjection projection = memberSupportersDetailProjection(memberActivityId);
+        given(memberActivityRepository.findMemberSupportersDetail(memberActivityId))
+            .willReturn(Optional.of(projection));
+
+        // when
+        MemberSupportersDetailProjection result =
+            adminMemberActivityService.getMemberSupportersDetail(memberActivityId);
+
+        // then
+        assertThat(result).isEqualTo(projection);
+        verify(memberActivityRepository).findMemberSupportersDetail(memberActivityId);
+    }
+
+    @Test
+    @DisplayName("운영 서포터즈 구성원을 찾을 수 없으면 예외가 발생한다")
+    void 운영_서포터즈_구성원을_찾을_수_없으면_예외가_발생한다() {
+        // given
+        Long memberActivityId = 1L;
+        given(memberActivityRepository.findMemberSupportersDetail(memberActivityId))
+            .willReturn(Optional.empty());
+
+        // when
+        Throwable throwable =
+            catchThrowable(() -> adminMemberActivityService.getMemberSupportersDetail(memberActivityId));
+
+        // then
+        assertThat(throwable)
+            .isInstanceOf(MemberException.class)
+            .extracting("errorCode")
+            .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+        verify(memberActivityRepository).findMemberSupportersDetail(memberActivityId);
+    }
+
     private CreateMemberSemesterRequest createMemberSemesterRequest() {
         return new CreateMemberSemesterRequest(
             "김젝트",
@@ -413,6 +452,23 @@ class AdminMemberActivityServiceTest {
             "JECT",
             "백오피스",
             "MK-001",
+            "memo"
+        );
+    }
+
+    private MemberSupportersDetailProjection memberSupportersDetailProjection(Long memberActivityId) {
+        return new MemberSupportersDetailProjection(
+            memberActivityId,
+            "김서포터",
+            "01012341234",
+            "supporter@ject.kr",
+            MemberType.SUPPORTERS,
+            JobFamily.OPS,
+            RecruitTypeDetail.REGULAR,
+            ActivityStatus.ACTIVE,
+            java.time.LocalDate.of(2025, 5, 19),
+            java.time.LocalDate.of(2025, 12, 19),
+            "SP-001",
             "memo"
         );
     }
