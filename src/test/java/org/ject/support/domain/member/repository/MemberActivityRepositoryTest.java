@@ -1079,7 +1079,7 @@ class MemberActivityRepositoryTest {
             .orElseThrow();
 
         // then
-        assertThat(projection.id()).isEqualTo(memberActivity.getId());
+        assertThat(projection.memberActivityId()).isEqualTo(memberActivity.getId());
         assertThat(projection.name()).isEqualTo(member.getName());
         assertThat(projection.email()).isEqualTo(member.getEmail());
         assertThat(projection.jobFamily()).isEqualTo(memberActivity.getJobFamily());

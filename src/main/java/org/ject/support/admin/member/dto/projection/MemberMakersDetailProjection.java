@@ -13,7 +13,7 @@ import org.ject.support.domain.member.Region;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
 public record MemberMakersDetailProjection(
-	Long id,
+	Long memberActivityId,
 
 	String name,
 

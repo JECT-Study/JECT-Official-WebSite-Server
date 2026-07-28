@@ -241,7 +241,7 @@ class AdminMemberMakersControllerTest {
 		mockMvc.perform(get("/admin/members/makers/{memberActivityId}", memberActivity.getId()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("SUCCESS"))
-			.andExpect(jsonPath("$.data.id").value(memberActivity.getId()))
+			.andExpect(jsonPath("$.data.memberActivityId").value(memberActivity.getId()))
 			.andExpect(jsonPath("$.data.name").value("김젝트"))
 			.andExpect(jsonPath("$.data.email").exists())
 			.andExpect(jsonPath("$.data.jobFamily").value(JobFamily.FE.name()))
