@@ -18,8 +18,8 @@ public record MemberSemesterSearchCondition(
 	Long cursor,
 
 	// 정책 변경에 대비해 여유롭게 설정
-	@Min(1)
-	@Max(100)
+	@Min(value = 1, message = "조회 개수는 1개 이상이어야 합니다.")
+	@Max(value = 100, message = "조회 개수는 100개 이하여야 합니다.")
 	Integer size,
 
 	//-- 필터 --
