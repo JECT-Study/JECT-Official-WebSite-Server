@@ -4,12 +4,14 @@ import static org.ject.support.domain.member.entity.QMember.*;
 import static org.ject.support.domain.member.entity.QMemberActivity.*;
 import static org.ject.support.domain.member.entity.QMemberMakers.*;
 import static org.ject.support.domain.member.entity.QMemberSemester.*;
+import static org.ject.support.domain.member.entity.QMemberSupporters.*;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
+import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
@@ -34,9 +36,7 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 
 	private final JPAQueryFactory jpaQueryFactory;
 
-	// 단일 값 기준으로 일반 구성원 필터링
-	//id기준 내림차순 - 최신순
-	//size+1개 조회
+	// 일반 구성원 목록 조회(단일 값 동적 필터)
 	@Override
 	public List<SearchMemberSemesterProjection> searchMemberSemesters(MemberSemesterSearchCondition condition, int limit) {
 		return jpaQueryFactory.select(Projections.constructor(
@@ -68,6 +68,7 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 			.fetch();
 	}
 
+	// 일반 구성원 수 조회(필터 적용)
 	@Override
 	public long countMemberSemesters(MemberSemesterSearchCondition condition) {
 		Long count = jpaQueryFactory.select(memberActivity.id.count())
@@ -116,6 +117,7 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 		);
 	}
 
+	// 메이커스팀 구성원 목록 조회(커서 기반 페이징)
 	@Override
 	public List<MemberMakersListProjection> findMemberMakersList(Long cursor, Integer limit) {
 		return jpaQueryFactory.select(Projections.constructor(
@@ -144,6 +146,7 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 
 	}
 
+	// 메이커스팀 구성원 수 조회
 	@Override
 	public long countMemberMakersList() {
 		Long count = jpaQueryFactory.select(memberActivity.id.count())
@@ -159,6 +162,7 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 		return count == null ? 0L : count;
 	}
 
+	// 메이커스팀 구성원 상세 조회
 	@Override
 	public Optional<MemberMakersDetailProjection> findMemberMakersDetail(Long memberActivityId) {
 		return Optional.ofNullable(
@@ -200,6 +204,7 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 		);
 	}
 
+	// 운영 서포터즈 구성원 목록 조회(커서 기반 페이징)
 	@Override
 	public List<MemberSupportersListProjection> findMemberSupportersList(Long cursor, int limit) {
 		return jpaQueryFactory.select(Projections.constructor(
@@ -224,6 +229,7 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 			.fetch();
 	}
 
+	// 운영 서포터즈 수 조회
 	@Override
 	public long countMemberSupportersList() {
 		Long count = jpaQueryFactory.select(memberActivity.id.count())
@@ -236,6 +242,39 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 			).fetchOne();
 
 		return count == null ? 0L : count;
+	}
+
+	// 운영 서포터즈 구성원 상세 조회
+	@Override
+	public Optional<MemberSupportersDetailProjection> findMemberSupportersDetail(Long memberActivityId) {
+		return Optional.ofNullable(
+			jpaQueryFactory
+				.select(Projections.constructor(
+					MemberSupportersDetailProjection.class,
+					memberActivity.id,
+					member.name,
+					member.phoneNumber,
+					member.email,
+					memberActivity.memberType,
+					memberActivity.jobFamily,
+					memberActivity.recruitTypeDetail,
+					memberActivity.activityStatus,
+					memberActivity.startDate,
+					memberActivity.endDate,
+					memberSupporters.activityCertNumber,
+					memberActivity.memo
+				))
+				.from(memberActivity)
+				.join(member).on(member.id.eq(memberActivity.memberId))
+				.join(memberSupporters).on(memberActivity.id.eq(memberSupporters.id))
+				.where(
+					memberActivity.id.eq(memberActivityId),
+					member.isDeleted.isFalse(),
+					memberActivity.isDeleted.isFalse(),
+					memberActivity.memberType.eq(MemberType.SUPPORTERS)
+				)
+				.fetchOne()
+		);
 	}
 
 	// 조회 결과에서 지정 직군의 이름만 분리
