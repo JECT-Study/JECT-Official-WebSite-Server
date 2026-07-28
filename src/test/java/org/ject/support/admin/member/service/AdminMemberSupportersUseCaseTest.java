@@ -6,13 +6,16 @@ import static org.mockito.BDDMockito.verify;
 
 import java.util.List;
 
+import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
+import org.ject.support.admin.member.dto.response.MemberSupportersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -87,6 +90,23 @@ class AdminMemberSupportersUseCaseTest {
 		assertThat(response.totalCount()).isEqualTo(2L);
 	}
 
+	@Test
+	@DisplayName("운영 서포터즈 구성원의 상세정보를 응답으로 변환한다")
+	void 운영_서포터즈_구성원의_상세정보를_응답으로_변환한다() {
+		// given
+		Long memberActivityId = 1L;
+		MemberSupportersDetailProjection projection = supportersDetailProjection(memberActivityId);
+		given(adminMemberActivityService.getMemberSupportersDetail(memberActivityId)).willReturn(projection);
+
+		// when
+		MemberSupportersDetailResponse response =
+			adminMemberSupportersUseCase.getMemberSupportersDetail(memberActivityId);
+
+		// then
+		assertThat(response).isEqualTo(MemberSupportersDetailResponse.from(projection));
+		verify(adminMemberActivityService).getMemberSupportersDetail(memberActivityId);
+	}
+
 	private MemberSupportersListProjection supportersProjection(Long memberActivityId, String name) {
 		return new MemberSupportersListProjection(
 			memberActivityId,
@@ -95,6 +115,23 @@ class AdminMemberSupportersUseCaseTest {
 			JobFamily.OPS,
 			RecruitTypeDetail.REGULAR,
 			ActivityStatus.ACTIVE,
+			"memo"
+		);
+	}
+
+	private MemberSupportersDetailProjection supportersDetailProjection(Long memberActivityId) {
+		return new MemberSupportersDetailProjection(
+			memberActivityId,
+			"김서포터",
+			"01012345678",
+			"supporters@ject.kr",
+			MemberType.SUPPORTERS,
+			JobFamily.OPS,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ACTIVE,
+			java.time.LocalDate.of(2025, 5, 19),
+			java.time.LocalDate.of(2025, 12, 19),
+			"SP-001",
 			"memo"
 		);
 	}
