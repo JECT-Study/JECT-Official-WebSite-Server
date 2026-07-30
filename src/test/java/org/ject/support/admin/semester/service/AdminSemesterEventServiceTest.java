@@ -152,8 +152,8 @@ class AdminSemesterEventServiceTest extends UnitTestSupport {
     }
 
     @Test
-    @DisplayName("행사가 최대 개수만큼 등록되어 있어도 기존 행사 이름을 수정한다")
-    void 행사가_최대_개수만큼_등록되어_있어도_기존_행사_이름을_수정한다() {
+    @DisplayName("기존 행사 이름만 수정하면 등록 개수를 조회하지 않는다")
+    void 기존_행사_이름만_수정하면_등록_개수를_조회하지_않는다() {
         // given
         SemesterEvent semesterEvent = semesterEvent(1L, 4L, "오리엔테이션");
         given(semesterEventRepository.findAllByIdInAndSemesterIdAndType(List.of(1L), 4L, EVENT)).willReturn(List.of(semesterEvent));
