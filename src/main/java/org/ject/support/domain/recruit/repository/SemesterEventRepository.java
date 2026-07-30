@@ -1,5 +1,6 @@
 package org.ject.support.domain.recruit.repository;
 
+import java.util.Collection;
 import java.util.List;
 import org.ject.support.domain.recruit.domain.SemesterEvent;
 import org.ject.support.domain.recruit.domain.SemesterEventType;
@@ -12,4 +13,11 @@ public interface SemesterEventRepository extends JpaRepository<SemesterEvent, Lo
             SemesterEventType type
     );
 
+    List<SemesterEvent> findAllByIdInAndSemesterIdAndType(
+            Collection<Long> ids,
+            Long semesterId,
+            SemesterEventType type
+    );
+
+    long countBySemesterIdAndType(Long semesterId, SemesterEventType type);
 }
