@@ -36,4 +36,34 @@ class SemesterEventRepositoryTest {
         assertThat(result).containsExactly(first, second);
     }
 
+    @Test
+    @DisplayName("다른 기수나 행사 유형의 행사는 수정 대상에서 제외한다")
+    void 다른_기수나_행사_유형의_행사는_수정_대상에서_제외한다() {
+        // given
+        SemesterEvent target = semesterEventRepository.save(SemesterEvent.create(4L, EVENT, "오리엔테이션"));
+        SemesterEvent otherType = semesterEventRepository.save(SemesterEvent.create(4L, SURVEY, "만족도 조사"));
+        SemesterEvent otherSemester = semesterEventRepository.save(SemesterEvent.create(5L, EVENT, "다른 기수 행사"));
+
+        // when
+        List<SemesterEvent> result = semesterEventRepository.findAllByIdInAndSemesterIdAndType(List.of(target.getId(), otherType.getId(), otherSemester.getId()), 4L, EVENT);
+
+        // then
+        assertThat(result).containsExactly(target);
+    }
+
+    @Test
+    @DisplayName("기수와 행사 유형별 행사 개수를 조회한다")
+    void 기수와_행사_유형별_행사_개수를_조회한다() {
+        // given
+        semesterEventRepository.save(SemesterEvent.create(4L, EVENT, "오리엔테이션"));
+        semesterEventRepository.save(SemesterEvent.create(4L, EVENT, "중간 발표"));
+        semesterEventRepository.save(SemesterEvent.create(4L, SURVEY, "만족도 조사"));
+        semesterEventRepository.save(SemesterEvent.create(5L, EVENT, "다른 기수 행사"));
+
+        // when
+        long count = semesterEventRepository.countBySemesterIdAndType(4L, EVENT);
+
+        // then
+        assertThat(count).isEqualTo(2L);
+    }
 }
