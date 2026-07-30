@@ -34,7 +34,7 @@ public class SemesterEvent extends BaseTimeEntity {
     @Column(columnDefinition = "varchar(45)", nullable = false)
     private SemesterEventType type;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 25, nullable = false)
     private String name;
 
     @Column(nullable = false)
