@@ -102,11 +102,7 @@ public class AdminAccountService {
                 .map(request -> adminMemberComponent.getRequiredBackofficeMemberById(request.memberId()))
                 .toList();
 
-        for (int i = 0; i < requests.size(); i++) {
-            final AdminAccountActiveUpdateRequest request = requests.get(i);
-            final MemberStatus status = toMemberStatus(request.active());
-            adminMemberComponent.changeMemberStatus(applicants.get(i), status);
-        }
+        adminMemberComponent.changeMemberStatuses(applicants, MemberStatus.LOCKED);
     }
 
     private MemberStatus toMemberStatus(final Boolean active) {
@@ -123,7 +119,7 @@ public class AdminAccountService {
 
     private void validateBulkUpdateRequest(final Long requesterId,
                                            final AdminAccountActiveUpdateRequest request) {
-        if (request.memberId() == null) {
+        if (request == null || request.memberId() == null) {
             throw new AdminException(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ID);
         }
         if (!Boolean.FALSE.equals(request.active())) {

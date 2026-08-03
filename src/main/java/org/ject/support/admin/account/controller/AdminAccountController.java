@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.account.dto.AdminAccountResponse;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
@@ -89,7 +90,7 @@ public class AdminAccountController {
             summary = "관리자 계정 일괄 비활성화",
             description = "관리자 계정을 일괄 비활성화합니다.")
     public void updateActive(@Parameter(hidden = true) @AuthPrincipal final Long requesterId,
-                             @RequestBody @Valid @NotEmpty final List<@Valid AdminAccountActiveUpdateRequest> requests) {
+                             @RequestBody @Valid @NotEmpty final List<@NotNull @Valid AdminAccountActiveUpdateRequest> requests) {
         adminAccountService.updateActive(requesterId, requests);
     }
 

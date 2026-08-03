@@ -24,6 +24,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -431,8 +432,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // then
         verify(adminMemberComponent).getRequiredBackofficeMemberById(firstRequest.memberId());
         verify(adminMemberComponent).getRequiredBackofficeMemberById(secondRequest.memberId());
-        verify(adminMemberComponent).changeMemberStatus(eq(firstApplicant), eq(MemberStatus.LOCKED));
-        verify(adminMemberComponent).changeMemberStatus(eq(secondApplicant), eq(MemberStatus.LOCKED));
+        verify(adminMemberComponent).changeMemberStatuses(eq(List.of(firstApplicant, secondApplicant)), eq(MemberStatus.LOCKED));
     }
 
     @Test
@@ -476,6 +476,34 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ACTIVE);
+
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
+    }
+
+    @Test
+    void 관리자_계정_일괄_비활성화_실패_memberId_누락() {
+        // given
+        var request = new AdminAccountActiveUpdateRequest(null, false);
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateActive(2L, List.of(request)))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ID);
+
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
+    }
+
+    @Test
+    void 관리자_계정_일괄_비활성화_실패_요청_항목_null() {
+        // given
+        var requests = Collections.singletonList((AdminAccountActiveUpdateRequest) null);
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateActive(2L, requests))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ID);
 
         verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
     }
