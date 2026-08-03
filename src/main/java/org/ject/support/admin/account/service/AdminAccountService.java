@@ -88,9 +88,29 @@ public class AdminAccountService {
         validateNotLockingSelf(requesterId, memberId, request.active());
 
         final Applicant applicant = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
-        final MemberStatus status = request.active() ? MemberStatus.ACTIVE : MemberStatus.LOCKED;
+        final MemberStatus status = toMemberStatus(request.active());
 
         adminMemberComponent.changeMemberStatus(applicant, status);
+    }
+
+    @Transactional
+    public void updateActive(final Long requesterId,
+                             final List<AdminAccountActiveUpdateRequest> requests) {
+        requests.forEach(request -> validateBulkUpdateRequest(requesterId, request));
+
+        final List<Applicant> applicants = requests.stream()
+                .map(request -> adminMemberComponent.getRequiredBackofficeMemberById(request.memberId()))
+                .toList();
+
+        for (int i = 0; i < requests.size(); i++) {
+            final AdminAccountActiveUpdateRequest request = requests.get(i);
+            final MemberStatus status = toMemberStatus(request.active());
+            adminMemberComponent.changeMemberStatus(applicants.get(i), status);
+        }
+    }
+
+    private MemberStatus toMemberStatus(final Boolean active) {
+        return active ? MemberStatus.ACTIVE : MemberStatus.LOCKED;
     }
 
     private void validateNotLockingSelf(final Long requesterId,
@@ -99,6 +119,17 @@ public class AdminAccountService {
         if (!active && requesterId.equals(memberId)) {
             throw new AdminException(AdminErrorCode.CANNOT_LOCK_SELF);
         }
+    }
+
+    private void validateBulkUpdateRequest(final Long requesterId,
+                                           final AdminAccountActiveUpdateRequest request) {
+        if (request.memberId() == null) {
+            throw new AdminException(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ID);
+        }
+        if (!Boolean.FALSE.equals(request.active())) {
+            throw new AdminException(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ACTIVE);
+        }
+        validateNotLockingSelf(requesterId, request.memberId(), request.active());
     }
 
     private void validateNotChangingOwnAdminRole(final Long requesterId,

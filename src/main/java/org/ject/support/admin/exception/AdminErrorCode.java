@@ -15,7 +15,9 @@ public enum AdminErrorCode implements ErrorCode {
     DUPLICATE_ADMIN_EMAIL(HttpStatus.CONFLICT, "ADMIN-8", "이미 사용중인 이메일 입니다."),
     INVALID_ADMIN_ACCOUNT_ROLE(HttpStatus.BAD_REQUEST, "ADMIN-9", "관리자 계정 유형만 선택할 수 있습니다."),
     CANNOT_LOCK_SELF(HttpStatus.BAD_REQUEST, "ADMIN-10", "본인 계정은 비활성화할 수 없습니다."),
-    CANNOT_CHANGE_OWN_ADMIN_ROLE(HttpStatus.BAD_REQUEST, "ADMIN-11", "본인 계정의 관리자 권한은 변경할 수 없습니다.");
+    CANNOT_CHANGE_OWN_ADMIN_ROLE(HttpStatus.BAD_REQUEST, "ADMIN-11", "본인 계정의 관리자 권한은 변경할 수 없습니다."),
+    INVALID_ADMIN_ACCOUNT_ID(HttpStatus.BAD_REQUEST, "ADMIN-12", "관리자 계정 ID는 필수입니다."),
+    INVALID_ADMIN_ACCOUNT_ACTIVE(HttpStatus.BAD_REQUEST, "ADMIN-13", "일괄 비활성화 요청의 active 값은 false여야 합니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

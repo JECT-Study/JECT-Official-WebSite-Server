@@ -400,6 +400,87 @@ class AdminAccountServiceTest extends UnitTestSupport {
     }
 
     @Test
+    void 관리자_계정_활성화_상태_일괄_수정_성공() {
+        // given
+        var requesterId = 3L;
+        var firstRequest = new AdminAccountActiveUpdateRequest(1L, false);
+        var secondRequest = new AdminAccountActiveUpdateRequest(2L, false);
+        var firstApplicant = Applicant.builder()
+                .id(firstRequest.memberId())
+                .email("first@ject.kr")
+                .role(Role.OPERATIONS)
+                .status(MemberStatus.ACTIVE)
+                .semesterId(1L)
+                .build();
+        var secondApplicant = Applicant.builder()
+                .id(secondRequest.memberId())
+                .email("second@ject.kr")
+                .role(Role.SUPPORTER)
+                .status(MemberStatus.ACTIVE)
+                .semesterId(1L)
+                .build();
+
+        given(adminMemberComponent.getRequiredBackofficeMemberById(firstRequest.memberId()))
+                .willReturn(firstApplicant);
+        given(adminMemberComponent.getRequiredBackofficeMemberById(secondRequest.memberId()))
+                .willReturn(secondApplicant);
+
+        // when
+        adminAccountService.updateActive(requesterId, List.of(firstRequest, secondRequest));
+
+        // then
+        verify(adminMemberComponent).getRequiredBackofficeMemberById(firstRequest.memberId());
+        verify(adminMemberComponent).getRequiredBackofficeMemberById(secondRequest.memberId());
+        verify(adminMemberComponent).changeMemberStatus(eq(firstApplicant), eq(MemberStatus.LOCKED));
+        verify(adminMemberComponent).changeMemberStatus(eq(secondApplicant), eq(MemberStatus.LOCKED));
+    }
+
+    @Test
+    void 관리자_계정_활성화_상태_일괄_수정_실패_본인_계정_비활성화() {
+        // given
+        var requesterId = 1L;
+        var requests = List.of(
+                new AdminAccountActiveUpdateRequest(2L, false),
+                new AdminAccountActiveUpdateRequest(requesterId, false));
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateActive(requesterId, requests))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.CANNOT_LOCK_SELF);
+
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
+    }
+
+    @Test
+    void 관리자_계정_활성화_상태_일괄_수정_실패_active_누락() {
+        // given
+        var request = new AdminAccountActiveUpdateRequest(1L, null);
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateActive(2L, List.of(request)))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ACTIVE);
+
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
+    }
+
+    @Test
+    void 관리자_계정_일괄_비활성화_실패_active_true() {
+        // given
+        var request = new AdminAccountActiveUpdateRequest(1L, true);
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.updateActive(2L, List.of(request)))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ACTIVE);
+
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
+    }
+
+    @Test
     void 관리자_계정_활성화_상태_수정_실패_존재하지_않는_관리자() {
         // given
         var requesterId = 1L;

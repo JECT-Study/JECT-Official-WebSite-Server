@@ -34,6 +34,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -276,6 +277,27 @@ class AdminAccountControllerTest extends UnitTestSupport {
     }
 
     @Test
+    void 관리자_계정_활성화_상태_일괄_수정_성공() throws Exception {
+        // given
+        var requesterId = 3L;
+        var requests = List.of(
+                new AdminAccountActiveUpdateRequest(1L, false),
+                new AdminAccountActiveUpdateRequest(2L, false));
+        setAuthentication(requesterId);
+
+        doNothing().when(adminAccountService).updateActive(eq(requesterId), anyList());
+
+        // when, then
+        mockMvc.perform(patch("/admin/accounts/members/active")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requests)))
+                .andExpect(status().isOk())
+                .andDo(print());
+
+        verify(adminAccountService).updateActive(eq(requesterId), anyList());
+    }
+
+    @Test
     void 관리자_계정_활성화_상태_수정은_ADMIN_권한만_허용한다() throws Exception {
         // when
         PreAuthorize preAuthorize = AdminAccountController.class
@@ -283,6 +305,18 @@ class AdminAccountControllerTest extends UnitTestSupport {
                 .getAnnotation(PreAuthorize.class);
 
         // when, then
+        assertThat(preAuthorize).isNotNull();
+        assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
+    }
+
+    @Test
+    void 관리자_계정_활성화_상태_일괄_수정은_ADMIN_권한만_허용한다() throws Exception {
+        // when
+        PreAuthorize preAuthorize = AdminAccountController.class
+                .getMethod("updateActive", Long.class, List.class)
+                .getAnnotation(PreAuthorize.class);
+
+        // then
         assertThat(preAuthorize).isNotNull();
         assertThat(preAuthorize.value()).isEqualTo("hasAuthority('ROLE_ADMIN')");
     }
