@@ -10,10 +10,16 @@ import lombok.RequiredArgsConstructor;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import io.swagger.v3.core.jackson.ModelResolver;
 
 @Configuration
 @RequiredArgsConstructor
 public class SpringdocConfig {
+
+    static {
+        // 모든 enum을 공통 Schema로 등록
+        ModelResolver.enumsAsRef = true;
+    }
 
     private final SuccessResponseCustomizer successResponseCustomizer;
     private final ErrorResponseCustomizer errorResponseCustomizer;

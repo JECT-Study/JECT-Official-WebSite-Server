@@ -17,7 +17,7 @@ import org.ject.support.domain.base.BaseTimeEntity;
 
 @Entity
 @Getter
-@Builder
+@Builder(access = AccessLevel.PRIVATE)
 @Table(name = "semester_event")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -34,10 +34,28 @@ public class SemesterEvent extends BaseTimeEntity {
     @Column(columnDefinition = "varchar(45)", nullable = false)
     private SemesterEventType type;
 
-    @Column(length = 100, nullable = false)
+    @Column(length = 25, nullable = false)
     private String name;
 
     @Column(nullable = false)
     @Builder.Default
     private Boolean isRequired = true;
+
+    // 기수별 행사 생성
+    public static SemesterEvent create(
+            Long semesterId,
+            SemesterEventType type,
+            String name
+    ) {
+        return SemesterEvent.builder()
+                .semesterId(semesterId)
+                .type(type)
+                .name(name)
+                .build();
+    }
+
+    // 기수별 행사 이름 변경
+    public void updateName(String name) {
+        this.name = name;
+    }
 }

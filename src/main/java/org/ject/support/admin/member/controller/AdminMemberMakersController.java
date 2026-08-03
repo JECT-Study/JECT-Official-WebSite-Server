@@ -6,6 +6,7 @@ import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.admin.member.service.AdminMemberMakersUseCase;
 import org.ject.support.common.response.CursorPageResponse;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,7 +36,7 @@ public class AdminMemberMakersController implements AdminMemberMakersApiSpec{
 	@Override
 	@GetMapping
 	public CursorPageResponse<MemberMakersListResponse> getAdminMemberMakersList(
-		@ModelAttribute @Valid MemberMakersListRequest request) {
+		@ParameterObject @ModelAttribute @Valid MemberMakersListRequest request) {
 		return adminMemberMakersUseCase.getMemberMakersList(request);
 	}
 

@@ -5,6 +5,7 @@ import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.service.AdminMemberSemesterUseCase;
 import org.ject.support.common.response.CursorPageResponse;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,7 +35,7 @@ public class AdminMemberSemesterController implements AdminMemberSemesterApiSpec
 	@Override
 	@GetMapping
 	public CursorPageResponse<SearchMemberSemesterResponse> searchAdminMemberSemesterList(
-		@ModelAttribute @Valid MemberSemesterSearchCondition request) {
+		@ParameterObject @ModelAttribute @Valid MemberSemesterSearchCondition request) {
 		return adminMemberUsecase.searchMemberSemester(request);
 	}
 }

@@ -1,0 +1,2 @@
+ALTER TABLE semester_event
+    MODIFY COLUMN name VARCHAR(25) NOT NULL;
