@@ -2,6 +2,7 @@ package org.ject.support.admin.account.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountBulkDeactivateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountResponse;
@@ -94,9 +95,9 @@ public class AdminAccountService {
     }
 
     @Transactional
-    public void updateActive(final Long requesterId,
-                             final List<AdminAccountActiveUpdateRequest> requests) {
-        requests.forEach(request -> validateBulkUpdateRequest(requesterId, request));
+    public void deactivateAccounts(final Long requesterId,
+                                   final List<AdminAccountBulkDeactivateRequest> requests) {
+        requests.forEach(request -> validateNotLockingSelf(requesterId, request.memberId(), false));
 
         final List<Applicant> applicants = requests.stream()
                 .map(request -> adminMemberComponent.getRequiredBackofficeMemberById(request.memberId()))
@@ -115,17 +116,6 @@ public class AdminAccountService {
         if (!active && requesterId.equals(memberId)) {
             throw new AdminException(AdminErrorCode.CANNOT_LOCK_SELF);
         }
-    }
-
-    private void validateBulkUpdateRequest(final Long requesterId,
-                                           final AdminAccountActiveUpdateRequest request) {
-        if (request == null || request.memberId() == null) {
-            throw new AdminException(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ID);
-        }
-        if (!Boolean.FALSE.equals(request.active())) {
-            throw new AdminException(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ACTIVE);
-        }
-        validateNotLockingSelf(requesterId, request.memberId(), request.active());
     }
 
     private void validateNotChangingOwnAdminRole(final Long requesterId,

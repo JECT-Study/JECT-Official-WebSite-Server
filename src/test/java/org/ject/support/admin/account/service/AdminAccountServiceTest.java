@@ -1,6 +1,7 @@
 package org.ject.support.admin.account.service;
 
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountBulkDeactivateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountResponse;
@@ -24,7 +25,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -401,11 +401,11 @@ class AdminAccountServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 관리자_계정_활성화_상태_일괄_수정_성공() {
+    void 관리자_계정_일괄_비활성화_성공() {
         // given
         var requesterId = 3L;
-        var firstRequest = new AdminAccountActiveUpdateRequest(1L, false);
-        var secondRequest = new AdminAccountActiveUpdateRequest(2L, false);
+        var firstRequest = new AdminAccountBulkDeactivateRequest(1L);
+        var secondRequest = new AdminAccountBulkDeactivateRequest(2L);
         var firstApplicant = Applicant.builder()
                 .id(firstRequest.memberId())
                 .email("first@ject.kr")
@@ -427,7 +427,7 @@ class AdminAccountServiceTest extends UnitTestSupport {
                 .willReturn(secondApplicant);
 
         // when
-        adminAccountService.updateActive(requesterId, List.of(firstRequest, secondRequest));
+        adminAccountService.deactivateAccounts(requesterId, List.of(firstRequest, secondRequest));
 
         // then
         verify(adminMemberComponent).getRequiredBackofficeMemberById(firstRequest.memberId());
@@ -436,74 +436,18 @@ class AdminAccountServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 관리자_계정_활성화_상태_일괄_수정_실패_본인_계정_비활성화() {
+    void 관리자_계정_일괄_비활성화_실패_본인_계정() {
         // given
         var requesterId = 1L;
         var requests = List.of(
-                new AdminAccountActiveUpdateRequest(2L, false),
-                new AdminAccountActiveUpdateRequest(requesterId, false));
+                new AdminAccountBulkDeactivateRequest(2L),
+                new AdminAccountBulkDeactivateRequest(requesterId));
 
         // when, then
-        assertThatThrownBy(() -> adminAccountService.updateActive(requesterId, requests))
+        assertThatThrownBy(() -> adminAccountService.deactivateAccounts(requesterId, requests))
                 .isInstanceOf(AdminException.class)
                 .extracting(e -> ((AdminException) e).getErrorCode())
                 .isEqualTo(AdminErrorCode.CANNOT_LOCK_SELF);
-
-        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
-    }
-
-    @Test
-    void 관리자_계정_활성화_상태_일괄_수정_실패_active_누락() {
-        // given
-        var request = new AdminAccountActiveUpdateRequest(1L, null);
-
-        // when, then
-        assertThatThrownBy(() -> adminAccountService.updateActive(2L, List.of(request)))
-                .isInstanceOf(AdminException.class)
-                .extracting(e -> ((AdminException) e).getErrorCode())
-                .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ACTIVE);
-
-        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
-    }
-
-    @Test
-    void 관리자_계정_일괄_비활성화_실패_active_true() {
-        // given
-        var request = new AdminAccountActiveUpdateRequest(1L, true);
-
-        // when, then
-        assertThatThrownBy(() -> adminAccountService.updateActive(2L, List.of(request)))
-                .isInstanceOf(AdminException.class)
-                .extracting(e -> ((AdminException) e).getErrorCode())
-                .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ACTIVE);
-
-        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
-    }
-
-    @Test
-    void 관리자_계정_일괄_비활성화_실패_memberId_누락() {
-        // given
-        var request = new AdminAccountActiveUpdateRequest(null, false);
-
-        // when, then
-        assertThatThrownBy(() -> adminAccountService.updateActive(2L, List.of(request)))
-                .isInstanceOf(AdminException.class)
-                .extracting(e -> ((AdminException) e).getErrorCode())
-                .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ID);
-
-        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
-    }
-
-    @Test
-    void 관리자_계정_일괄_비활성화_실패_요청_항목_null() {
-        // given
-        var requests = Collections.singletonList((AdminAccountActiveUpdateRequest) null);
-
-        // when, then
-        assertThatThrownBy(() -> adminAccountService.updateActive(2L, requests))
-                .isInstanceOf(AdminException.class)
-                .extracting(e -> ((AdminException) e).getErrorCode())
-                .isEqualTo(AdminErrorCode.INVALID_ADMIN_ACCOUNT_ID);
 
         verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
     }

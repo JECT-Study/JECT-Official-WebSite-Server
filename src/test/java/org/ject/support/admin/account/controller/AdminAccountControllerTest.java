@@ -1,6 +1,7 @@
 package org.ject.support.admin.account.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ject.support.admin.account.dto.AdminAccountBulkDeactivateRequest;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
@@ -277,15 +278,15 @@ class AdminAccountControllerTest extends UnitTestSupport {
     }
 
     @Test
-    void 관리자_계정_활성화_상태_일괄_수정_성공() throws Exception {
+    void 관리자_계정_일괄_비활성화_성공() throws Exception {
         // given
         var requesterId = 3L;
         var requests = List.of(
-                new AdminAccountActiveUpdateRequest(1L, false),
-                new AdminAccountActiveUpdateRequest(2L, false));
+                new AdminAccountBulkDeactivateRequest(1L),
+                new AdminAccountBulkDeactivateRequest(2L));
         setAuthentication(requesterId);
 
-        doNothing().when(adminAccountService).updateActive(eq(requesterId), anyList());
+        doNothing().when(adminAccountService).deactivateAccounts(eq(requesterId), anyList());
 
         // when, then
         mockMvc.perform(patch("/admin/accounts/members/active")
@@ -294,7 +295,7 @@ class AdminAccountControllerTest extends UnitTestSupport {
                 .andExpect(status().isOk())
                 .andDo(print());
 
-        verify(adminAccountService).updateActive(eq(requesterId), anyList());
+        verify(adminAccountService).deactivateAccounts(eq(requesterId), anyList());
     }
 
     @Test
@@ -310,10 +311,10 @@ class AdminAccountControllerTest extends UnitTestSupport {
     }
 
     @Test
-    void 관리자_계정_활성화_상태_일괄_수정은_ADMIN_권한만_허용한다() throws Exception {
+    void 관리자_계정_일괄_비활성화는_ADMIN_권한만_허용한다() throws Exception {
         // when
         PreAuthorize preAuthorize = AdminAccountController.class
-                .getMethod("updateActive", Long.class, List.class)
+                .getMethod("deactivateAccounts", Long.class, List.class)
                 .getAnnotation(PreAuthorize.class);
 
         // then
