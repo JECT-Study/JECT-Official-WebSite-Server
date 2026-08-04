@@ -1,6 +1,7 @@
 package org.ject.support.admin.account.service;
 
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountBulkDeactivateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountResponse;
@@ -397,6 +398,58 @@ class AdminAccountServiceTest extends UnitTestSupport {
         // then
         verify(adminMemberComponent).getRequiredBackofficeMemberById(memberId);
         verify(adminMemberComponent).changeMemberStatus(eq(applicant), eq(MemberStatus.ACTIVE));
+    }
+
+    @Test
+    void 관리자_계정_일괄_비활성화_성공() {
+        // given
+        var requesterId = 3L;
+        var firstRequest = new AdminAccountBulkDeactivateRequest(1L);
+        var secondRequest = new AdminAccountBulkDeactivateRequest(2L);
+        var firstApplicant = Applicant.builder()
+                .id(firstRequest.memberId())
+                .email("first@ject.kr")
+                .role(Role.OPERATIONS)
+                .status(MemberStatus.ACTIVE)
+                .semesterId(1L)
+                .build();
+        var secondApplicant = Applicant.builder()
+                .id(secondRequest.memberId())
+                .email("second@ject.kr")
+                .role(Role.SUPPORTER)
+                .status(MemberStatus.ACTIVE)
+                .semesterId(1L)
+                .build();
+
+        given(adminMemberComponent.getRequiredBackofficeMemberById(firstRequest.memberId()))
+                .willReturn(firstApplicant);
+        given(adminMemberComponent.getRequiredBackofficeMemberById(secondRequest.memberId()))
+                .willReturn(secondApplicant);
+
+        // when
+        adminAccountService.deactivateAccounts(requesterId, List.of(firstRequest, secondRequest));
+
+        // then
+        verify(adminMemberComponent).getRequiredBackofficeMemberById(firstRequest.memberId());
+        verify(adminMemberComponent).getRequiredBackofficeMemberById(secondRequest.memberId());
+        verify(adminMemberComponent).changeMemberStatuses(eq(List.of(firstApplicant, secondApplicant)), eq(MemberStatus.LOCKED));
+    }
+
+    @Test
+    void 관리자_계정_일괄_비활성화_실패_본인_계정() {
+        // given
+        var requesterId = 1L;
+        var requests = List.of(
+                new AdminAccountBulkDeactivateRequest(2L),
+                new AdminAccountBulkDeactivateRequest(requesterId));
+
+        // when, then
+        assertThatThrownBy(() -> adminAccountService.deactivateAccounts(requesterId, requests))
+                .isInstanceOf(AdminException.class)
+                .extracting(e -> ((AdminException) e).getErrorCode())
+                .isEqualTo(AdminErrorCode.CANNOT_LOCK_SELF);
+
+        verify(adminMemberComponent, never()).getRequiredBackofficeMemberById(any(Long.class));
     }
 
     @Test

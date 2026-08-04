@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -37,6 +38,15 @@ public class AdminMemberComponent {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void changeMemberStatus(Applicant applicant, MemberStatus status) {
+        changeMemberStatusInternal(applicant, status);
+    }
+
+    @Transactional
+    public void changeMemberStatuses(List<Applicant> applicants, MemberStatus status) {
+        applicants.forEach(applicant -> changeMemberStatusInternal(applicant, status));
+    }
+
+    private void changeMemberStatusInternal(Applicant applicant, MemberStatus status) {
         if (applicant.getStatus() == status)  {
             return;
         }

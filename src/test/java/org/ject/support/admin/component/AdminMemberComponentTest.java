@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -179,5 +180,31 @@ class AdminMemberComponentTest extends UnitTestSupport {
         // then
         verify(applicantRepository, never()).save(applicant);
         assertEquals(MemberStatus.ACTIVE, applicant.getStatus());
+    }
+
+    @Test
+    void 여러_회원의_상태를_변경할_경우_변경된_상태로_저장된다() {
+        // given
+        Applicant firstApplicant = Applicant.builder()
+                .id(1L)
+                .email("first@test.com")
+                .status(MemberStatus.ACTIVE)
+                .role(Role.ADMIN)
+                .build();
+        Applicant secondApplicant = Applicant.builder()
+                .id(2L)
+                .email("second@test.com")
+                .status(MemberStatus.ACTIVE)
+                .role(Role.OPERATIONS)
+                .build();
+
+        // when
+        adminMemberComponent.changeMemberStatuses(List.of(firstApplicant, secondApplicant), MemberStatus.LOCKED);
+
+        // then
+        verify(applicantRepository).save(firstApplicant);
+        verify(applicantRepository).save(secondApplicant);
+        assertEquals(MemberStatus.LOCKED, firstApplicant.getStatus());
+        assertEquals(MemberStatus.LOCKED, secondApplicant.getStatus());
     }
 }

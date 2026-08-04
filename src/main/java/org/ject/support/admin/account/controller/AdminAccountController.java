@@ -4,9 +4,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.account.dto.AdminAccountResponse;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountBulkDeactivateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountUpdateRequest;
@@ -80,6 +83,16 @@ public class AdminAccountController {
     public void updateRole(@PathVariable final Long memberId,
                            @RequestBody @Valid final AdminAccountRoleUpdateRequest request) {
         adminAccountService.updateRole(memberId, request);
+    }
+
+    @PatchMapping("/members/active")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @Operation(
+            summary = "관리자 계정 일괄 비활성화",
+            description = "요청한 관리자 계정을 일괄 비활성화합니다. 활성화는 단건 API를 사용합니다.")
+    public void deactivateAccounts(@Parameter(hidden = true) @AuthPrincipal final Long requesterId,
+                                   @RequestBody @Valid @NotEmpty final List<@NotNull @Valid AdminAccountBulkDeactivateRequest> requests) {
+        adminAccountService.deactivateAccounts(requesterId, requests);
     }
 
     @PatchMapping("/{memberId}/active")

@@ -2,6 +2,7 @@ package org.ject.support.admin.account.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.account.dto.AdminAccountActiveUpdateRequest;
+import org.ject.support.admin.account.dto.AdminAccountBulkDeactivateRequest;
 import org.ject.support.admin.account.dto.AdminAccountCreateRequest;
 import org.ject.support.admin.account.dto.AdminAccountRoleUpdateRequest;
 import org.ject.support.admin.account.dto.AdminAccountResponse;
@@ -88,9 +89,25 @@ public class AdminAccountService {
         validateNotLockingSelf(requesterId, memberId, request.active());
 
         final Applicant applicant = adminMemberComponent.getRequiredBackofficeMemberById(memberId);
-        final MemberStatus status = request.active() ? MemberStatus.ACTIVE : MemberStatus.LOCKED;
+        final MemberStatus status = toMemberStatus(request.active());
 
         adminMemberComponent.changeMemberStatus(applicant, status);
+    }
+
+    @Transactional
+    public void deactivateAccounts(final Long requesterId,
+                                   final List<AdminAccountBulkDeactivateRequest> requests) {
+        requests.forEach(request -> validateNotLockingSelf(requesterId, request.memberId(), false));
+
+        final List<Applicant> applicants = requests.stream()
+                .map(request -> adminMemberComponent.getRequiredBackofficeMemberById(request.memberId()))
+                .toList();
+
+        adminMemberComponent.changeMemberStatuses(applicants, MemberStatus.LOCKED);
+    }
+
+    private MemberStatus toMemberStatus(final Boolean active) {
+        return active ? MemberStatus.ACTIVE : MemberStatus.LOCKED;
     }
 
     private void validateNotLockingSelf(final Long requesterId,
