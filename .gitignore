@@ -56,3 +56,8 @@ CODEX.md
 .windsurf/
 .roo/
 .roo-rules/
+.agents/
+.codex/
+
+### scratch ###
+tmp/
