@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
  * 메일 시나리오 조회/중복 검증을 담당하는 리포지토리입니다.
  */
 @Repository
-public interface MailScenarioRepository extends JpaRepository<MailScenario, Long> {
+public interface MailScenarioRepository extends JpaRepository<MailScenario, Long>, MailScenarioQueryRepository {
 
     boolean existsByScenarioCode(String scenarioCode);
 

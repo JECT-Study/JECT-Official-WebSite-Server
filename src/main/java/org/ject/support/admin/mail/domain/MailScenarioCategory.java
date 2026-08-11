@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 public enum MailScenarioCategory {
 
     GENERAL("공통"),
-    CLUB_MEMBER("동아리원"),
+    CLUB_MEMBER("일반 구성원"),
     MAKERS("메이커스"),
     SUPPORTERS("운영 서포터즈");
 

@@ -7,7 +7,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.mail.domain.MailScenario;
+import org.ject.support.admin.mail.domain.MailScenarioCategory;
 import org.ject.support.admin.mail.domain.MailScenarioRepository;
+import org.ject.support.admin.mail.domain.MailScenarioType;
 import org.ject.support.admin.mail.domain.MailScenarioVariable;
 import org.ject.support.admin.mail.domain.ReservedMailVariable;
 import org.ject.support.admin.mail.dto.MailScenarioRequest;
@@ -15,6 +17,9 @@ import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
+import org.ject.support.common.data.PageResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,10 +35,14 @@ public class MailScenarioService {
     private final MailTemplateEngine mailTemplateEngine;
     private final MailTemplateValidator mailTemplateValidator;
 
-    public List<MailScenarioResponse> getScenarios() {
-        return mailScenarioRepository.findAll().stream()
+    public Page<MailScenarioResponse> getScenarios(MailScenarioCategory category,
+                                                   MailScenarioType type,
+                                                   Pageable pageable) {
+        Page<MailScenario> scenarioPage = mailScenarioRepository.findScenarios(category, type, pageable);
+        List<MailScenarioResponse> content = scenarioPage.getContent().stream()
                 .map(MailScenarioResponse::from)
                 .toList();
+        return PageResponse.from(content, pageable, scenarioPage.getTotalElements());
     }
 
     public MailScenarioVariableResponse getScenarioVariables(Long scenarioId) {
