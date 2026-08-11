@@ -52,7 +52,7 @@ class MailScenarioQueryRepositoryTest {
         mailScenarioRepository.saveAll(List.of(
                 scenario("첫 번째", MailScenarioCategory.GENERAL, MailScenarioType.ETC, 1),
                 scenario("두 번째", MailScenarioCategory.GENERAL, MailScenarioType.ETC, 2),
-                scenario("세 번째", MailScenarioCategory.GENERAL, MailScenarioType.ETC, 3)
+                scenario("세 번째", MailScenarioCategory.GENERAL, MailScenarioType.ETC, 2)
         ));
 
         // when
@@ -62,6 +62,8 @@ class MailScenarioQueryRepositoryTest {
         // then
         assertThat(result.getContent()).extracting(MailScenario::getName)
                 .containsExactly("세 번째", "두 번째");
+        assertThat(result.getContent().get(0).getId())
+                .isGreaterThan(result.getContent().get(1).getId());
         assertThat(result.getTotalElements()).isEqualTo(3);
         assertThat(result.getTotalPages()).isEqualTo(2);
         assertThat(result.hasNext()).isTrue();
