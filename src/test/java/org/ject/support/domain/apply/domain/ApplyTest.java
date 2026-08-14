@@ -34,6 +34,20 @@ class ApplyTest extends TestSupport {
     }
 
     @Test
+    void 제출하면_제출_시각을_기록한다() {
+        // given
+        Apply apply = Apply.createApply(Applicant.builder().build(), Recruit.builder()
+                .jobFamily(JobFamily.BE)
+                .build());
+
+        // when
+        apply.submit(ApplicationForm.builder().build());
+
+        // then
+        assertThat(apply.getSubmittedAt()).isNotNull();
+    }
+
+    @Test
     void 포트폴리오가_필수인_직군은_포트폴리오가_있으면_제출할_수_있다() {
         // given
         Recruit recruit = Recruit.builder()
@@ -212,6 +226,18 @@ class ApplyTest extends TestSupport {
         // then
         assertThat(apply.getSelectionResult()).isEqualTo(SelectionResult.UNDECIDED);
         assertThat(apply.getWaitlistNumber()).isNull();
+    }
+
+    @Test
+    void 반려하면_제출_시각을_초기화한다() {
+        // given
+        Apply apply = submittedApply();
+
+        // when
+        apply.reject();
+
+        // then
+        assertThat(apply.getSubmittedAt()).isNull();
     }
 
     @Test

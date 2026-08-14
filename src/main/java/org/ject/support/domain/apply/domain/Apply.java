@@ -28,6 +28,8 @@ import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.recruit.domain.Recruit;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @Builder
@@ -60,6 +62,9 @@ public class Apply extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(50)", nullable = false)
     private ApplyStatus status;
+
+    @Column(name = "submitted_at")
+    private LocalDateTime submittedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "selection_result", columnDefinition = "varchar(50)", nullable = false)
@@ -94,6 +99,9 @@ public class Apply extends BaseTimeEntity {
 
     public void updateStatus(ApplyStatus status) {
         this.status = status;
+        if (!status.equals(ApplyStatus.SUBMITTED)) {
+            this.submittedAt = null;
+        }
     }
 
     public boolean isNotTempSaved() {
@@ -118,6 +126,7 @@ public class Apply extends BaseTimeEntity {
     public void reject() {
         this.applicationForm = null;
         this.status = ApplyStatus.REJECTED;
+        this.submittedAt = null;
         this.selectionResult = SelectionResult.UNDECIDED;
         this.waitlistNumber = null;
     }
@@ -173,6 +182,7 @@ public class Apply extends BaseTimeEntity {
 
         this.applicationForm = applicationForm;
         this.status = ApplyStatus.SUBMITTED;
+        this.submittedAt = LocalDateTime.now();
     }
 
 }
