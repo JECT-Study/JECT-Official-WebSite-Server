@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
+import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.service.AdminApplyService;
@@ -21,6 +22,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -67,6 +69,14 @@ public class AdminApplyController {
     public void editSubmittedApply(@PathVariable("applyId") final Long applyId,
                                    @RequestBody @Valid final SubmittedApplyEditRequest request) {
         adminApplyService.updateSubmittedApply(applyId, request);
+    }
+
+    @PatchMapping("/selection-results")
+    @Operation(
+            summary = "지원자 선정 결과 일괄 변경",
+            description = "제출 완료된 지원자들의 선정 결과와 예비 번호를 일괄 변경합니다.")
+    public int updateSelectionResults(@RequestBody @Valid final SelectionResultUpdateRequest request) {
+        return adminApplyService.updateSelectionResults(request);
     }
 
     @DeleteMapping("/{applyId}")

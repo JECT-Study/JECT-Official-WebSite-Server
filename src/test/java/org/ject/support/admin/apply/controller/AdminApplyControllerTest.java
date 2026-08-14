@@ -5,6 +5,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
@@ -71,5 +73,27 @@ class AdminApplyControllerTest extends UnitTestSupport {
                 .andExpect(status().isOk());
 
         verify(adminApplyService).findApplies(eq(condition), any(Pageable.class));
+    }
+
+    @Test
+    void 선정_결과_일괄_변경_요청을_처리한다() throws Exception {
+        // given
+        given(adminApplyService.updateSelectionResults(any())).willReturn(1);
+
+        // when, then
+        mockMvc.perform(patch("/admin/applies/selection-results")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "recruitId": 1,
+                                  "selectionResults": [
+                                    {"applyId": 1, "selectionResult": "PASSED", "waitlistNumber": null}
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(content().string("1"));
+
+        verify(adminApplyService).updateSelectionResults(any());
     }
 }

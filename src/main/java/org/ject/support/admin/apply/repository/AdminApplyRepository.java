@@ -17,8 +17,13 @@ public interface AdminApplyRepository extends JpaRepository<Apply, Long>, AdminA
     @Query("SELECT a FROM Apply a JOIN FETCH a.applicant LEFT JOIN FETCH a.applicationForm WHERE a.id IN :ids")
     List<Apply> findAllByIdWithApplicant(@Param("ids") List<Long> ids);
 
+    @Query("SELECT a FROM Apply a JOIN FETCH a.applicant JOIN FETCH a.recruit LEFT JOIN FETCH a.applicationForm "
+            + "WHERE a.recruit.id = :recruitId AND a.id IN :applyIds")
+    List<Apply> findAllByRecruitIdAndIdInWithApplicant(@Param("recruitId") Long recruitId,
+                                                       @Param("applyIds") List<Long> applyIds);
+
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Apply a SET a.isDeleted = true WHERE a.id IN :ids")
+    @Query("UPDATE Apply a SET a.isDeleted = true, a.waitlistNumber = null WHERE a.id IN :ids")
     void deleteAllByIds(@Param("ids") Iterable<Long> ids);
 
     @Query("select a from Apply a join fetch a.applicant m where a.id = :applyId and a.status = :status")

@@ -2,10 +2,13 @@ package org.ject.support.admin.apply.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
+import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.common.data.PageResponse;
@@ -24,6 +27,7 @@ import org.ject.support.domain.recruit.exception.QuestionErrorCode;
 import org.ject.support.domain.recruit.exception.QuestionException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,6 +100,80 @@ public class AdminApplyService {
         return applyIds.size();
     }
 
+    @Transactional
+    public int updateSelectionResults(final SelectionResultUpdateRequest request) {
+        List<SelectionResultUpdateRequest.SelectionResultItem> items = request.selectionResults();
+        validateDuplicateApplyIds(items);
+        validateSelectionResults(items);
+
+        List<Long> applyIds = items.stream()
+                .map(SelectionResultUpdateRequest.SelectionResultItem::applyId)
+                .toList();
+        List<Apply> applies = adminApplyRepository.findAllByRecruitIdAndIdInWithApplicant(
+                request.recruitId(), applyIds);
+        if (applies.size() != applyIds.size()) {
+            throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);
+        }
+
+        Map<Long, SelectionResultUpdateRequest.SelectionResultItem> itemsByApplyId = items.stream()
+                .collect(Collectors.toMap(
+                        SelectionResultUpdateRequest.SelectionResultItem::applyId,
+                        Function.identity()));
+        applies.forEach(apply -> {
+            SelectionResultUpdateRequest.SelectionResultItem item = itemsByApplyId.get(apply.getId());
+            apply.validateSelectionResult(item.selectionResult(), item.waitlistNumber());
+        });
+        applies.forEach(Apply::clearWaitlistNumber);
+        adminApplyRepository.flush();
+
+        applies.forEach(apply -> {
+            SelectionResultUpdateRequest.SelectionResultItem item = itemsByApplyId.get(apply.getId());
+            apply.decideSelectionResult(item.selectionResult(), item.waitlistNumber());
+        });
+
+        try {
+            adminApplyRepository.flush();
+        } catch (DataIntegrityViolationException e) {
+            throw new ApplyException(ApplyErrorCode.DUPLICATE_WAITLIST_NUMBER);
+        }
+        return applies.size();
+    }
+
+    private void validateSelectionResults(List<SelectionResultUpdateRequest.SelectionResultItem> items) {
+        items.forEach(item -> {
+            if (item.selectionResult().isWaitlisted() && item.waitlistNumber() == null) {
+                throw new ApplyException(ApplyErrorCode.WAITLIST_NUMBER_REQUIRED);
+            }
+            if (item.selectionResult().isWaitlisted() && item.waitlistNumber() <= 0) {
+                throw new ApplyException(ApplyErrorCode.INVALID_WAITLIST_NUMBER);
+            }
+            if (!item.selectionResult().isWaitlisted() && item.waitlistNumber() != null) {
+                throw new ApplyException(ApplyErrorCode.WAITLIST_NUMBER_NOT_ALLOWED);
+            }
+        });
+
+        long waitlistedCount = items.stream()
+                .filter(item -> item.selectionResult().isWaitlisted())
+                .count();
+        long distinctWaitlistNumberCount = items.stream()
+                .filter(item -> item.selectionResult().isWaitlisted())
+                .map(SelectionResultUpdateRequest.SelectionResultItem::waitlistNumber)
+                .distinct()
+                .count();
+        if (waitlistedCount != distinctWaitlistNumberCount) {
+            throw new ApplyException(ApplyErrorCode.DUPLICATE_WAITLIST_NUMBER);
+        }
+    }
+
+    private void validateDuplicateApplyIds(List<SelectionResultUpdateRequest.SelectionResultItem> items) {
+        long distinctApplyIdCount = items.stream()
+                .map(SelectionResultUpdateRequest.SelectionResultItem::applyId)
+                .distinct()
+                .count();
+        if (items.size() != distinctApplyIdCount) {
+            throw new ApplyException(ApplyErrorCode.DUPLICATE_APPLY_ID);
+        }
+    }
 
     private void validateQuestions(final Map<String, String> answers, final Recruit recruit) {
         answers.keySet().stream()

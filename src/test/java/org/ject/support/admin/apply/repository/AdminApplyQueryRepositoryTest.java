@@ -1,6 +1,7 @@
 package org.ject.support.admin.apply.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
 import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
 import static org.ject.support.domain.member.JobFamily.BE;
@@ -8,12 +9,14 @@ import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PM;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
+import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
+import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
@@ -34,6 +37,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @Import({QueryDslTestConfig.class, AdminApplyQueryRepositoryImpl.class})
 @DataJpaTest
@@ -53,6 +57,9 @@ class AdminApplyQueryRepositoryTest {
 
     @Autowired
     org.ject.support.domain.apply.repository.ApplyRepository applyRepository;
+
+    @Autowired
+    EntityManager entityManager;
 
     Semester semester;
     Recruit beRecruit;
@@ -381,6 +388,48 @@ class AdminApplyQueryRepositoryTest {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().getFirst().getRecruit()).isEqualTo(beRecruit);
+    }
+
+    @Test
+    void 모집_공고와_지원ID로_지원서를_조회한다() {
+        // given
+        Applicant applicant = createApplicant("selection@test.com", BE);
+        applicantRepository.save(applicant);
+        Apply savedApply = applyRepository.save(getApply(applicant, beRecruit, SUBMITTED));
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        List<Apply> result = adminApplyRepository.findAllByRecruitIdAndIdInWithApplicant(
+                beRecruit.getId(), List.of(savedApply.getId()));
+
+        // then
+        assertThat(result).singleElement()
+                .satisfies(apply -> {
+                    assertThat(apply.getId()).isEqualTo(savedApply.getId());
+                    assertThat(apply.getApplicant().getId()).isEqualTo(applicant.getId());
+                    assertThat(apply.getRecruit().getId()).isEqualTo(beRecruit.getId());
+                });
+    }
+
+    @Test
+    void 같은_모집_공고에서_예비_번호_중복을_DB가_막는다() {
+        // given
+        Applicant applicant1 = createApplicant("duplicate-selection-1@test.com", BE);
+        Applicant applicant2 = createApplicant("duplicate-selection-2@test.com", BE);
+        applicantRepository.saveAll(List.of(applicant1, applicant2));
+
+        Apply apply1 = getApply(applicant1, beRecruit, SUBMITTED);
+        Apply apply2 = getApply(applicant2, beRecruit, SUBMITTED);
+        apply1.decideSelectionResult(SelectionResult.WAITLISTED, 1);
+        apply2.decideSelectionResult(SelectionResult.WAITLISTED, 1);
+
+        // when, then
+        assertThatThrownBy(() -> {
+            applyRepository.saveAll(List.of(apply1, apply2));
+            entityManager.flush();
+        })
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     private Recruit getRecruit(JobFamily jobFamily) {

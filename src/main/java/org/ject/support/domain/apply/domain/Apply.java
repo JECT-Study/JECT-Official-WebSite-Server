@@ -12,6 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -29,7 +31,11 @@ import org.ject.support.domain.recruit.domain.Recruit;
 @Entity
 @Getter
 @Builder
-@SQLDelete(sql = "UPDATE apply SET is_deleted = true, version = version + 1 WHERE id = ? AND version = ?")
+@Table(name = "apply", uniqueConstraints = @UniqueConstraint(
+        name = "uk_apply_recruit_waitlist_number",
+        columnNames = {"recruit_id", "waitlist_number"}))
+@SQLDelete(sql = "UPDATE apply SET is_deleted = true, waitlist_number = NULL, version = version + 1 "
+        + "WHERE id = ? AND version = ?")
 @SQLRestriction("is_deleted = false")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -53,6 +59,14 @@ public class Apply extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(50)", nullable = false)
     private ApplyStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "selection_result", columnDefinition = "varchar(50)", nullable = false)
+    @Builder.Default
+    private SelectionResult selectionResult = SelectionResult.UNDECIDED;
+
+    @Column(name = "waitlist_number")
+    private Integer waitlistNumber;
 
     @Column(columnDefinition = "varchar(500) default ''", nullable = false)
     @Builder.Default
@@ -90,6 +104,7 @@ public class Apply extends BaseTimeEntity {
     public boolean isNotSubmitted() {
         return status.equals(ApplyStatus.JOINED)
                 || status.equals(ApplyStatus.TEMP_SAVED)
+                || status.equals(ApplyStatus.REJECTED)
                 || (status.equals(ApplyStatus.SUBMITTED) && applicationForm == null);
     }
 
@@ -102,6 +117,8 @@ public class Apply extends BaseTimeEntity {
     public void reject() {
         this.applicationForm = null;
         this.status = ApplyStatus.REJECTED;
+        this.selectionResult = SelectionResult.UNDECIDED;
+        this.waitlistNumber = null;
     }
 
     public boolean isTempSaved() {
@@ -110,6 +127,38 @@ public class Apply extends BaseTimeEntity {
 
     public boolean isSubmitted() {
         return status.equals(ApplyStatus.SUBMITTED);
+    }
+
+    /**
+     * 선정 결과를 정한다. 지원 상태와는 별도의 축이므로 상태나 지원서는 건드리지 않는다.
+     */
+    public void decideSelectionResult(SelectionResult selectionResult, Integer waitlistNumber) {
+        validateSelectionResult(selectionResult, waitlistNumber);
+
+        this.selectionResult = selectionResult;
+        this.waitlistNumber = waitlistNumber;
+    }
+
+    public void validateSelectionResult(SelectionResult selectionResult, Integer waitlistNumber) {
+        if (isNotSubmitted()) {
+            throw new ApplyException(ApplyErrorCode.NOT_SUBMITTED);
+        }
+
+        if (selectionResult.isWaitlisted() && waitlistNumber == null) {
+            throw new ApplyException(ApplyErrorCode.WAITLIST_NUMBER_REQUIRED);
+        }
+
+        if (selectionResult.isWaitlisted() && waitlistNumber <= 0) {
+            throw new ApplyException(ApplyErrorCode.INVALID_WAITLIST_NUMBER);
+        }
+
+        if (!selectionResult.isWaitlisted() && waitlistNumber != null) {
+            throw new ApplyException(ApplyErrorCode.WAITLIST_NUMBER_NOT_ALLOWED);
+        }
+    }
+
+    public void clearWaitlistNumber() {
+        this.waitlistNumber = null;
     }
 
     public void submit(ApplicationForm applicationForm) {
