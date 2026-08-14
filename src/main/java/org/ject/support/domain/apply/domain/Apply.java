@@ -34,7 +34,8 @@ import org.ject.support.domain.recruit.domain.Recruit;
 @Table(name = "apply", uniqueConstraints = @UniqueConstraint(
         name = "uk_apply_recruit_waitlist_number",
         columnNames = {"recruit_id", "waitlist_number"}))
-@SQLDelete(sql = "UPDATE apply SET is_deleted = true, waitlist_number = NULL, version = version + 1 "
+@SQLDelete(sql = "UPDATE apply SET is_deleted = true, selection_result = 'UNDECIDED', waitlist_number = NULL, "
+        + "version = version + 1 "
         + "WHERE id = ? AND version = ?")
 @SQLRestriction("is_deleted = false")
 @AllArgsConstructor(access = AccessLevel.PRIVATE)

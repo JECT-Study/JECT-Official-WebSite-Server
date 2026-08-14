@@ -176,6 +176,18 @@ class ApplyTest extends TestSupport {
     }
 
     @Test
+    void 음수_예비_번호는_허용하지_않는다() {
+        // given
+        Apply apply = submittedApply();
+
+        // when & then
+        assertThatThrownBy(() -> apply.decideSelectionResult(SelectionResult.WAITLISTED, -1))
+                .isInstanceOf(ApplyException.class)
+                .extracting("errorCode")
+                .isEqualTo(ApplyErrorCode.INVALID_WAITLIST_NUMBER);
+    }
+
+    @Test
     void 반려된_지원은_선정_결과를_정할_수_없다() {
         // given
         Apply apply = submittedApply();

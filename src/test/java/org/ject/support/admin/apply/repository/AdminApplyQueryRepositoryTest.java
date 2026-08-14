@@ -432,6 +432,54 @@ class AdminApplyQueryRepositoryTest {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    @Test
+    void 다건_삭제하면_선정_결과와_예비_번호를_초기화한다() {
+        // given
+        Applicant applicant = createApplicant("bulk-delete@test.com", BE);
+        applicantRepository.save(applicant);
+        Apply apply = getApply(applicant, beRecruit, SUBMITTED);
+        apply.decideSelectionResult(SelectionResult.WAITLISTED, 1);
+        Apply savedApply = applyRepository.save(apply);
+        entityManager.flush();
+
+        // when
+        adminApplyRepository.deleteAllByIds(List.of(savedApply.getId()));
+        entityManager.flush();
+
+        // then
+        Object[] state = (Object[]) entityManager.createNativeQuery(
+                        "SELECT selection_result, waitlist_number FROM apply WHERE id = :id")
+                .setParameter("id", savedApply.getId())
+                .getSingleResult();
+        assertThat(state[0]).isEqualTo("UNDECIDED");
+        assertThat(state[1]).isNull();
+        assertThat(adminApplyRepository.findById(savedApply.getId())).isEmpty();
+    }
+
+    @Test
+    void 단건_삭제하면_선정_결과와_예비_번호를_초기화한다() {
+        // given
+        Applicant applicant = createApplicant("single-delete@test.com", BE);
+        applicantRepository.save(applicant);
+        Apply apply = getApply(applicant, beRecruit, SUBMITTED);
+        apply.decideSelectionResult(SelectionResult.WAITLISTED, 1);
+        Apply savedApply = applyRepository.save(apply);
+        entityManager.flush();
+
+        // when
+        adminApplyRepository.delete(savedApply);
+        entityManager.flush();
+
+        // then
+        Object[] state = (Object[]) entityManager.createNativeQuery(
+                        "SELECT selection_result, waitlist_number FROM apply WHERE id = :id")
+                .setParameter("id", savedApply.getId())
+                .getSingleResult();
+        assertThat(state[0]).isEqualTo("UNDECIDED");
+        assertThat(state[1]).isNull();
+        assertThat(adminApplyRepository.findById(savedApply.getId())).isEmpty();
+    }
+
     private Recruit getRecruit(JobFamily jobFamily) {
         return Recruit.builder()
                 .semester(semester)

@@ -23,7 +23,9 @@ public interface AdminApplyRepository extends JpaRepository<Apply, Long>, AdminA
                                                        @Param("applyIds") List<Long> applyIds);
 
     @Modifying(clearAutomatically = true)
-    @Query("UPDATE Apply a SET a.isDeleted = true, a.waitlistNumber = null WHERE a.id IN :ids")
+    @Query("UPDATE Apply a SET a.isDeleted = true, "
+            + "a.selectionResult = org.ject.support.domain.apply.domain.SelectionResult.UNDECIDED, "
+            + "a.waitlistNumber = null WHERE a.id IN :ids")
     void deleteAllByIds(@Param("ids") Iterable<Long> ids);
 
     @Query("select a from Apply a join fetch a.applicant m where a.id = :applyId and a.status = :status")
