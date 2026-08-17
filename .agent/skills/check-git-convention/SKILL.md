@@ -12,11 +12,12 @@ description: Git 변경 흐름을 프로젝트 Git 컨벤션과 비교해 브랜
 ## 검토 절차
 
 ```bash
-git fetch origin dev
+base_ref="$(gh pr view --json baseRefName --jq '.baseRefName')"
+git fetch origin "${base_ref}"
 git branch --show-current
 gh pr view --json baseRefName,headRefName,body
-git log --oneline origin/dev..HEAD
-git diff --name-only origin/dev...HEAD
+git log --oneline "origin/${base_ref}..HEAD"
+git diff --name-only "origin/${base_ref}...HEAD"
 git diff --name-only
 git diff --name-only --cached
 git ls-files --others --exclude-standard
@@ -30,7 +31,7 @@ git ls-files --others --exclude-standard
 4. 관련 이슈, 주요 변경 내용, 검증 결과가 PR에 포함되는지 확인합니다.
 5. CI, 최소 한 명 승인, unresolved thread, squash merge 조건을 확인합니다.
 6. hotfix가 `main`과 `dev`에 순서대로 반영되는지 확인합니다.
-7. PR 전체와 로컬 변경에 포함된 Flyway migration을 최신 `dev`와 비교합니다.
+7. 실제 PR base와 로컬 변경에 포함된 Flyway migration을 수집하고 migration 번호는 최신 `dev`와 비교합니다.
 8. 선행 PR이 병합된 의존 PR은 base가 `dev`로 변경되었고 선행 작업의 커밋과 변경이 중복되지 않는지 확인합니다.
 
 ## 결과 작성

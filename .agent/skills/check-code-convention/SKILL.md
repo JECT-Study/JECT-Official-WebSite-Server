@@ -14,8 +14,9 @@ description: 코드 변경을 프로젝트 코드 컨벤션과 비교해 Control
 PR 전체 변경과 로컬 변경을 모두 확인합니다.
 
 ```bash
-git fetch origin dev
-git diff --name-only origin/dev...HEAD
+base_ref="$(gh pr view --json baseRefName --jq '.baseRefName')"
+git fetch origin "${base_ref}"
+git diff --name-only "origin/${base_ref}...HEAD"
 git diff --name-only
 git diff --name-only --cached
 git ls-files --others --exclude-standard
