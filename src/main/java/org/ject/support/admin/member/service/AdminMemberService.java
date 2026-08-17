@@ -1,7 +1,14 @@
 package org.ject.support.admin.member.service;
 
+import static org.ject.support.domain.member.exception.MemberErrorCode.NOT_FOUND_MEMBER;
+
+import java.util.List;
+import java.util.Set;
+
 import org.ject.support.admin.member.dto.request.CreateMemberRequest;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.exception.MemberException;
+import org.ject.support.domain.member.repository.MemberActivityRepository;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class AdminMemberService {
 
 	private final MemberRepository memberRepository;
+	private final MemberActivityRepository memberActivityRepository;
 
 	/*
 	(2026.06.23)
@@ -55,6 +63,30 @@ public class AdminMemberService {
 
 		Member savedMember = memberRepository.save(member);
 		return savedMember.getId();
+	}
+
+	// 남은 구성원 활동이 없으면 구성원 삭제
+	public void deleteMemberIfNoActivity(Long memberId) {
+		if (memberActivityRepository.existsByMemberId(memberId)) {
+			return;
+		}
+		Member member = memberRepository.findById(memberId)
+			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+		memberRepository.delete(member);
+	}
+
+	// 남은 구성원 활동이 없는 구성원 일괄 삭제
+	public void deleteMembersIfNoActivity(Set<Long> memberIds) {
+		Set<Long> activeMemberIds = memberActivityRepository.findMemberIdsWithActivity(memberIds);
+		List<Long> deleteMemberIds = memberIds.stream().filter(id -> !activeMemberIds.contains(id)).toList();
+		if (deleteMemberIds.isEmpty()) {
+			return;
+		}
+		List<Member> members = memberRepository.findAllById(deleteMemberIds);
+		if (deleteMemberIds.size() != members.size()) {
+			throw new MemberException(NOT_FOUND_MEMBER);
+		}
+		memberRepository.deleteAll(members);
 	}
 
 }

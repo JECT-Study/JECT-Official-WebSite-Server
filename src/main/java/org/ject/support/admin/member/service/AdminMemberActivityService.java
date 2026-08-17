@@ -2,6 +2,11 @@ package org.ject.support.admin.member.service;
 
 import static org.ject.support.domain.member.exception.MemberErrorCode.*;
 
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
@@ -22,11 +27,11 @@ import org.ject.support.domain.member.repository.MemberActivityRepository;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AdminMemberActivityService {
 
 	private final MemberActivityRepository memberActivityRepository;
@@ -135,6 +140,32 @@ public class AdminMemberActivityService {
 	public MemberMakersDetailProjection getMemberMakersDetail(Long memberActivityId) {
 		return memberActivityRepository.findMemberMakersDetail(memberActivityId)
 			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+	}
+
+	// 메이커스팀 구성원 활동 단건 삭제
+	public Long deleteMemberMakersActivity(Long memberActivityId) {
+		MemberActivity memberActivity = memberActivityRepository.findByIdAndMemberType(memberActivityId, MemberType.MAKERS)
+			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER_MAKERS_ACTIVITY));
+		memberActivityRepository.delete(memberActivity);
+		return memberActivity.getMemberId();
+	}
+
+	// 메이커스팀 구성원 활동 전체 검증 후 일괄 삭제
+	public Set<Long> deleteMemberMakersActivities(Set<Long> memberActivityIds) {
+		List<MemberActivity> memberActivities = memberActivityRepository.findAllByIdInAndMemberType(
+			memberActivityIds,
+			MemberType.MAKERS
+		);
+		Set<Long> foundIds = memberActivities.stream().map(MemberActivity::getId).collect(Collectors.toSet());
+		memberActivityIds.stream().filter(id -> !foundIds.contains(id)).findFirst().ifPresent(invalidId -> {
+			log.warn("메이커스팀 구성원 일괄 삭제 검증 실패: invalidMemberActivityId={}", invalidId);
+			throw new MemberException(NOT_FOUND_MEMBER_MAKERS_ACTIVITY);
+		});
+		Set<Long> memberIds = memberActivities.stream()
+			.map(MemberActivity::getMemberId)
+			.collect(Collectors.toCollection(LinkedHashSet::new));
+		memberActivityRepository.deleteAll(memberActivities);
+		return memberIds;
 	}
 
 	// 운영 서포터즈 구성원 상세 조회

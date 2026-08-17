@@ -1,12 +1,14 @@
 package org.ject.support.admin.member.controller;
 
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.admin.member.service.AdminMemberMakersUseCase;
 import org.ject.support.common.response.CursorPageResponse;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/admin/members/makers")
 @RequiredArgsConstructor
-public class AdminMemberMakersController implements AdminMemberMakersApiSpec{
+public class AdminMemberMakersController implements AdminMemberMakersApiSpec {
 
 	private final AdminMemberMakersUseCase adminMemberMakersUseCase;
 
@@ -44,6 +46,18 @@ public class AdminMemberMakersController implements AdminMemberMakersApiSpec{
 	@GetMapping("/{memberActivityId}")
 	public MemberMakersDetailResponse getAdminMemberMakersDetail(@PathVariable Long memberActivityId) {
 		return adminMemberMakersUseCase.getMemberMakersDetail(memberActivityId);
+	}
+
+	@Override
+	@DeleteMapping("/{memberActivityId}")
+	public void deleteAdminMemberMakers(@PathVariable Long memberActivityId) {
+		adminMemberMakersUseCase.deleteMemberMakers(memberActivityId);
+	}
+
+	@Override
+	@DeleteMapping
+	public void deleteAdminMemberMakersList(@RequestBody @Valid DeleteMemberMakersRequest request) {
+		adminMemberMakersUseCase.deleteMemberMakersList(request);
 	}
 
 }

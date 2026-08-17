@@ -1,8 +1,11 @@
 package org.ject.support.admin.member.service;
 
+import java.util.Set;
+
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
@@ -50,5 +53,19 @@ public class AdminMemberMakersUseCase {
 	public MemberMakersDetailResponse getMemberMakersDetail(Long memberActivityId) {
 		MemberMakersDetailProjection projection = adminMemberActivityService.getMemberMakersDetail(memberActivityId);
 		return MemberMakersDetailResponse.from(projection);
+	}
+
+	// 메이커스팀 구성원 단건 삭제
+	@Transactional
+	public void deleteMemberMakers(Long memberActivityId) {
+		Long memberId = adminMemberActivityService.deleteMemberMakersActivity(memberActivityId);
+		adminMemberService.deleteMemberIfNoActivity(memberId);
+	}
+
+	// 메이커스팀 구성원 일괄 삭제
+	@Transactional
+	public void deleteMemberMakersList(DeleteMemberMakersRequest request) {
+		Set<Long> memberIds = adminMemberActivityService.deleteMemberMakersActivities(request.memberActivityIds());
+		adminMemberService.deleteMembersIfNoActivity(memberIds);
 	}
 }
