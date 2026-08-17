@@ -7,6 +7,7 @@ import static org.ject.support.domain.member.fixture.SemesterActivityFixture.sem
 
 import jakarta.persistence.EntityManager;
 import java.util.List;
+import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
@@ -1209,4 +1210,115 @@ class MemberActivityRepositoryTest {
         // when & then
         assertThat(memberActivityRepository.findMemberSupportersDetail(memberActivity.getId())).isEmpty();
     }
+
+	@Test
+	@DisplayName("ID와 유형이 일치하는 구성원 활동을 조회한다")
+	void ID와_유형이_일치하는_구성원_활동을_조회한다() {
+		// given
+		Member member = memberRepository.save(member().email("makers-type@test.com").build());
+		MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+			makersActivity().memberId(member.getId()).build()
+		);
+
+		// when & then
+		assertThat(memberActivityRepository.findByIdAndMemberType(memberActivity.getId(), MemberType.MAKERS))
+			.contains(memberActivity);
+	}
+
+	@Test
+	@DisplayName("ID가 같아도 유형이 다르면 조회하지 않는다")
+	void ID가_같아도_유형이_다르면_조회하지_않는다() {
+		// given
+		Member member = memberRepository.save(member().email("semester-type@test.com").build());
+		MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+			semesterActivity().memberId(member.getId()).build()
+		);
+
+		// when & then
+		assertThat(memberActivityRepository.findByIdAndMemberType(memberActivity.getId(), MemberType.MAKERS))
+			.isEmpty();
+	}
+
+	@Test
+	@DisplayName("선택한 ID에 해당하는 메이커스팀 활동만 조회한다")
+	void 선택한_ID에_해당하는_메이커스팀_활동만_조회한다() {
+		// given
+		Member makersMember = memberRepository.save(member().email("makers-list@test.com").build());
+		Member semesterMember = memberRepository.save(member().email("semester-list@test.com").build());
+		MemberActivity makers = memberActivityRepository.saveAndFlush(
+			makersActivity().memberId(makersMember.getId()).build()
+		);
+		MemberActivity semester = memberActivityRepository.saveAndFlush(
+			semesterActivity().memberId(semesterMember.getId()).build()
+		);
+
+		// when
+		List<MemberActivity> result = memberActivityRepository.findAllByIdInAndMemberType(
+			Set.of(makers.getId(), semester.getId()),
+			MemberType.MAKERS
+		);
+
+		// then
+		assertThat(result).containsExactly(makers);
+	}
+
+	@Test
+	@DisplayName("구성원에게 활동이 남아 있으면 true를 반환한다")
+	void 구성원에게_활동이_남아_있으면_true를_반환한다() {
+		// given
+		Member member = memberRepository.save(member().email("activity-exists@test.com").build());
+		memberActivityRepository.saveAndFlush(makersActivity().memberId(member.getId()).build());
+
+		// when & then
+		assertThat(memberActivityRepository.existsByMemberId(member.getId())).isTrue();
+	}
+
+	@Test
+	@DisplayName("삭제된 활동만 있으면 false를 반환한다")
+	void 삭제된_활동만_있으면_false를_반환한다() {
+		// given
+		Member member = memberRepository.save(member().email("activity-deleted@test.com").build());
+		MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+			makersActivity().memberId(member.getId()).build()
+		);
+		memberActivityRepository.delete(memberActivity);
+		memberActivityRepository.flush();
+		entityManager.clear();
+
+		// when & then
+		assertThat(memberActivityRepository.existsByMemberId(member.getId())).isFalse();
+	}
+
+	@Test
+	@DisplayName("활동이 남아 있는 구성원 ID만 조회한다")
+	void 활동이_남아_있는_구성원_ID만_조회한다() {
+		// given
+		Member activeMember = memberRepository.save(member().email("active-member@test.com").build());
+		Member inactiveMember = memberRepository.save(member().email("inactive-member@test.com").build());
+		memberActivityRepository.saveAndFlush(makersActivity().memberId(activeMember.getId()).build());
+
+		// when
+		Set<Long> memberIds = memberActivityRepository.findMemberIdsWithActivity(
+			Set.of(activeMember.getId(), inactiveMember.getId())
+		);
+
+		// then
+		assertThat(memberIds).containsExactly(activeMember.getId());
+	}
+
+	@Test
+	@DisplayName("삭제된 활동의 구성원 ID는 조회하지 않는다")
+	void 삭제된_활동의_구성원_ID는_조회하지_않는다() {
+		// given
+		Member member = memberRepository.save(member().email("deleted-member-id@test.com").build());
+		MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+			makersActivity().memberId(member.getId()).build()
+		);
+		memberActivityRepository.delete(memberActivity);
+		memberActivityRepository.flush();
+		entityManager.clear();
+
+		// when & then
+		assertThat(memberActivityRepository.findMemberIdsWithActivity(Set.of(member.getId()))).isEmpty();
+	}
 }

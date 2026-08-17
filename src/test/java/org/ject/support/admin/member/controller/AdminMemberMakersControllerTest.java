@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.nullValue;
 import static org.ject.support.domain.member.fixture.MakersActivityFixture.makersActivity;
 import static org.ject.support.domain.member.fixture.MemberFixture.member;
+import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -11,7 +13,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
+import java.util.Set;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMemberMakersRequest;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.CareerDetails;
@@ -258,6 +262,156 @@ class AdminMemberMakersControllerTest {
 		mockMvc.perform(get("/admin/members/makers/{memberActivityId}", 999999999L))
 			.andExpect(status().isNotFound())
 			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER.getCode()));
+	}
+
+	@Test
+	@DisplayName("메이커스팀 구성원을 삭제하고 남은 활동이 없으면 구성원도 삭제한다")
+	void 메이커스팀_구성원을_삭제하고_남은_활동이_없으면_구성원도_삭제한다() throws Exception {
+		// given
+		MemberActivity memberActivity = saveMakersActivity(uniqueEmail("delete"), JobFamily.FE, MakersTeam.TEAM_1);
+		Long memberId = memberActivity.getMemberId();
+
+		// when
+		mockMvc.perform(delete("/admin/members/makers/{memberActivityId}", memberActivity.getId()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"));
+
+		// then
+		assertThat(memberActivityRepository.findById(memberActivity.getId())).isEmpty();
+		assertThat(memberRepository.findById(memberId)).isEmpty();
+	}
+
+	@Test
+	@DisplayName("메이커스팀 활동을 삭제해도 다른 활동이 남아 있으면 구성원을 유지한다")
+	void 메이커스팀_활동을_삭제해도_다른_활동이_남아_있으면_구성원을_유지한다() throws Exception {
+		// given
+		Member member = memberRepository.save(member().email(uniqueEmail("remain")).build());
+		MemberActivity makers = memberActivityRepository.saveAndFlush(makersActivity().memberId(member.getId()).build());
+		MemberActivity semester = memberActivityRepository.saveAndFlush(semesterActivity().memberId(member.getId()).build());
+
+		// when
+		mockMvc.perform(delete("/admin/members/makers/{memberActivityId}", makers.getId()))
+			.andExpect(status().isOk());
+
+		// then
+		assertThat(memberActivityRepository.findById(makers.getId())).isEmpty();
+		assertThat(memberActivityRepository.findById(semester.getId())).isPresent();
+		assertThat(memberRepository.findById(member.getId())).isPresent();
+	}
+
+	@Test
+	@DisplayName("메이커스팀이 아닌 활동은 삭제하지 않는다")
+	void 메이커스팀이_아닌_활동은_삭제하지_않는다() throws Exception {
+		// given
+		Member member = memberRepository.save(member().email(uniqueEmail("invalid-type")).build());
+		MemberActivity semester = memberActivityRepository.saveAndFlush(semesterActivity().memberId(member.getId()).build());
+
+		// when & then
+		mockMvc.perform(delete("/admin/members/makers/{memberActivityId}", semester.getId()))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER_MAKERS_ACTIVITY.getCode()));
+		assertThat(memberActivityRepository.findById(semester.getId())).isPresent();
+		assertThat(memberRepository.findById(member.getId())).isPresent();
+	}
+
+	@Test
+	@DisplayName("선택한 메이커스팀 구성원을 모두 삭제한다")
+	void 선택한_메이커스팀_구성원을_모두_삭제한다() throws Exception {
+		// given
+		MemberActivity first = saveMakersActivity(uniqueEmail("bulk1"), JobFamily.FE, MakersTeam.TEAM_1);
+		MemberActivity second = saveMakersActivity(uniqueEmail("bulk2"), JobFamily.BE, MakersTeam.TEAM_2);
+		DeleteMemberMakersRequest request = new DeleteMemberMakersRequest(Set.of(first.getId(), second.getId()));
+
+		// when
+		mockMvc.perform(delete("/admin/members/makers")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"));
+
+		// then
+		assertThat(memberActivityRepository.findAllById(List.of(first.getId(), second.getId()))).isEmpty();
+		assertThat(memberRepository.findAllById(List.of(first.getMemberId(), second.getMemberId()))).isEmpty();
+	}
+
+	@Test
+	@DisplayName("일괄 삭제 대상에 존재하지 않는 활동이 있으면 아무도 삭제하지 않는다")
+	void 일괄_삭제_대상에_존재하지_않는_활동이_있으면_아무도_삭제하지_않는다() throws Exception {
+		// given
+		MemberActivity memberActivity = saveMakersActivity(uniqueEmail("bulk-invalid"), JobFamily.FE, MakersTeam.TEAM_1);
+		DeleteMemberMakersRequest request = new DeleteMemberMakersRequest(Set.of(memberActivity.getId(), 999999999L));
+
+		// when
+		mockMvc.perform(delete("/admin/members/makers")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER_MAKERS_ACTIVITY.getCode()));
+
+		// then
+		assertThat(memberActivityRepository.findById(memberActivity.getId())).isPresent();
+		assertThat(memberRepository.findById(memberActivity.getMemberId())).isPresent();
+	}
+
+	@Test
+	@DisplayName("일괄 삭제 대상에 메이커스팀이 아닌 활동이 포함되면 모든 활동을 유지한다")
+	void 일괄_삭제_대상에_메이커스팀이_아닌_활동이_포함되면_모든_활동을_유지한다() throws Exception {
+		// given
+		MemberActivity makers = saveMakersActivity(uniqueEmail("bulk-makers"), JobFamily.FE, MakersTeam.TEAM_1);
+		Member member = memberRepository.save(member().email(uniqueEmail("bulk-semester")).build());
+		MemberActivity semester = memberActivityRepository.saveAndFlush(semesterActivity().memberId(member.getId()).build());
+		DeleteMemberMakersRequest request = new DeleteMemberMakersRequest(Set.of(makers.getId(), semester.getId()));
+
+		// when
+		mockMvc.perform(delete("/admin/members/makers")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER_MAKERS_ACTIVITY.getCode()));
+
+		// then
+		assertThat(memberActivityRepository.findById(makers.getId())).isPresent();
+		assertThat(memberActivityRepository.findById(semester.getId())).isPresent();
+	}
+
+	@Test
+	@DisplayName("중복된 활동 ID는 하나로 처리해 메이커스팀 구성원을 삭제한다")
+	void 중복된_활동_ID는_하나로_처리해_메이커스팀_구성원을_삭제한다() throws Exception {
+		// given
+		MemberActivity memberActivity = saveMakersActivity(uniqueEmail("bulk-duplicate"), JobFamily.FE, MakersTeam.TEAM_1);
+		String request = "{\"memberActivityIds\":[%d,%d]}".formatted(memberActivity.getId(), memberActivity.getId());
+
+		// when
+		mockMvc.perform(delete("/admin/members/makers")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(request))
+			.andExpect(status().isOk());
+
+		// then
+		assertThat(memberActivityRepository.findById(memberActivity.getId())).isEmpty();
+		assertThat(memberRepository.findById(memberActivity.getMemberId())).isEmpty();
+	}
+
+	@Test
+	@DisplayName("삭제할 메이커스팀 구성원이 없으면 일괄 삭제하지 않는다")
+	void 삭제할_메이커스팀_구성원이_없으면_일괄_삭제하지_않는다() throws Exception {
+		// when & then
+		mockMvc.perform(delete("/admin/members/makers")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"memberActivityIds\":[]}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+	}
+
+	@Test
+	@DisplayName("삭제할 메이커스팀 구성원 ID에 빈 값이 있으면 일괄 삭제하지 않는다")
+	void 삭제할_메이커스팀_구성원_ID에_빈_값이_있으면_일괄_삭제하지_않는다() throws Exception {
+		// when & then
+		mockMvc.perform(delete("/admin/members/makers")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"memberActivityIds\":[null]}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
 	}
 
 	private CreateMemberMakersRequest createMemberMakersRequest(String email) {

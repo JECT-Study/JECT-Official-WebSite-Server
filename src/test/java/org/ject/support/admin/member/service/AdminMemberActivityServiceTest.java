@@ -6,9 +6,11 @@ import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.never;
 import static org.mockito.BDDMockito.verify;
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
@@ -349,7 +351,7 @@ class AdminMemberActivityServiceTest {
 
     @Test
     @DisplayName("운영 서포터즈 구성원을 찾을 수 없으면 예외가 발생한다")
-    void 운영_서포터즈_구성원을_찾을_수_없으면_예외가_발생한다() {
+	void 운영_서포터즈_구성원을_찾을_수_없으면_예외가_발생한다() {
         // given
         Long memberActivityId = 1L;
         given(memberActivityRepository.findMemberSupportersDetail(memberActivityId))
@@ -364,10 +366,102 @@ class AdminMemberActivityServiceTest {
             .isInstanceOf(MemberException.class)
             .extracting("errorCode")
             .isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
-        verify(memberActivityRepository).findMemberSupportersDetail(memberActivityId);
-    }
+		verify(memberActivityRepository).findMemberSupportersDetail(memberActivityId);
+	}
 
-    private CreateMemberSemesterRequest createMemberSemesterRequest() {
+	@Test
+	@DisplayName("메이커스팀 활동이 존재하면 삭제된다")
+	void 메이커스팀_활동이_존재하면_삭제된다() {
+		// given
+		Long memberActivityId = 1L;
+		MemberActivity memberActivity = mock(MemberActivity.class);
+		given(memberActivity.getMemberId()).willReturn(10L);
+		given(memberActivityRepository.findByIdAndMemberType(memberActivityId, MemberType.MAKERS))
+			.willReturn(Optional.of(memberActivity));
+
+		// when
+		Long memberId = adminMemberActivityService.deleteMemberMakersActivity(memberActivityId);
+
+		// then
+		assertThat(memberId).isEqualTo(10L);
+		verify(memberActivityRepository).delete(memberActivity);
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 활동은 삭제하지 않는다")
+	void 존재하지_않는_활동은_삭제하지_않는다() {
+		// given
+		Long memberActivityId = 1L;
+		given(memberActivityRepository.findByIdAndMemberType(memberActivityId, MemberType.MAKERS))
+			.willReturn(Optional.empty());
+
+		// when
+		Throwable throwable = catchThrowable(() ->
+			adminMemberActivityService.deleteMemberMakersActivity(memberActivityId)
+		);
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_MAKERS_ACTIVITY);
+		verify(memberActivityRepository, never()).delete(any(MemberActivity.class));
+	}
+
+	@Test
+	@DisplayName("선택한 메이커스팀 활동을 모두 삭제한다")
+	void 선택한_메이커스팀_활동을_모두_삭제한다() {
+		// given
+		Set<Long> memberActivityIds = Set.of(1L, 2L);
+		MemberActivity first = memberActivity(1L, 10L);
+		MemberActivity second = memberActivity(2L, 20L);
+		List<MemberActivity> memberActivities = List.of(first, second);
+		given(memberActivityRepository.findAllByIdInAndMemberType(memberActivityIds, MemberType.MAKERS))
+			.willReturn(memberActivities);
+
+		// when
+		Set<Long> memberIds = adminMemberActivityService.deleteMemberMakersActivities(memberActivityIds);
+
+		// then
+		assertThat(memberIds).containsExactlyInAnyOrder(10L, 20L);
+		verify(memberActivityRepository).deleteAll(memberActivities);
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 활동이 포함되면 모든 활동을 유지한다")
+	void 존재하지_않는_활동이_포함되면_모든_활동을_유지한다() {
+		// given
+		Set<Long> memberActivityIds = Set.of(1L, 2L);
+		MemberActivity memberActivity = memberActivity(1L);
+		given(memberActivityRepository.findAllByIdInAndMemberType(memberActivityIds, MemberType.MAKERS))
+			.willReturn(List.of(memberActivity));
+
+		// when
+		Throwable throwable = catchThrowable(() ->
+			adminMemberActivityService.deleteMemberMakersActivities(memberActivityIds)
+		);
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_MAKERS_ACTIVITY);
+		verify(memberActivityRepository, never()).deleteAll(any());
+	}
+
+	private MemberActivity memberActivity(Long memberActivityId) {
+		MemberActivity memberActivity = mock(MemberActivity.class);
+		given(memberActivity.getId()).willReturn(memberActivityId);
+		return memberActivity;
+	}
+
+	private MemberActivity memberActivity(Long memberActivityId, Long memberId) {
+		MemberActivity memberActivity = memberActivity(memberActivityId);
+		given(memberActivity.getMemberId()).willReturn(memberId);
+		return memberActivity;
+	}
+
+	private CreateMemberSemesterRequest createMemberSemesterRequest() {
         return new CreateMemberSemesterRequest(
             "김젝트",
             "jectkim@ject.kr",
