@@ -25,6 +25,8 @@ public enum MemberErrorCode implements ErrorCode {
     ALREADY_EXIST_ACTIVE_MEMBER_SUPPORTERS_ACTIVITY(CONFLICT, "MEMBER-13", "이미 활동 중인 운영 서포터즈 구성원입니다."),
     INVALID_ACTIVITY_PERIOD(BAD_REQUEST, "MEMBER-14", "활동 기간이 올바르지 않습니다."),
     NOT_FOUND_MEMBER_MAKERS_ACTIVITY(NOT_FOUND, "MEMBER-15", "메이커스팀 구성원 활동을 찾을 수 없습니다."),
+    NOT_FOUND_MEMBER_SEMESTER_ACTIVITY(NOT_FOUND, "MEMBER-16", "일반 구성원 활동을 찾을 수 없습니다."),
+    NOT_FOUND_MEMBER_SUPPORTERS_ACTIVITY(NOT_FOUND, "MEMBER-17", "운영 서포터즈 구성원 활동을 찾을 수 없습니다."),
     ;
 
     private final HttpStatus httpStatus;

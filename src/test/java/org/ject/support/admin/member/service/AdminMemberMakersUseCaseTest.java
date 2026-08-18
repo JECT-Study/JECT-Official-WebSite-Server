@@ -22,6 +22,7 @@ import org.ject.support.domain.member.CareerLevel;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.junit.jupiter.api.DisplayName;
@@ -124,7 +125,7 @@ class AdminMemberMakersUseCaseTest {
 		// given
 		Long memberActivityId = 1L;
 		Long memberId = 10L;
-		given(adminMemberActivityService.deleteMemberMakersActivity(memberActivityId)).willReturn(memberId);
+		given(adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.MAKERS)).willReturn(memberId);
 
 		// when
 		adminMemberMakersUseCase.deleteMemberMakers(memberActivityId);
@@ -139,7 +140,7 @@ class AdminMemberMakersUseCaseTest {
 		// given
 		DeleteMemberMakersRequest request = new DeleteMemberMakersRequest(Set.of(1L, 2L));
 		Set<Long> memberIds = Set.of(10L, 20L);
-		given(adminMemberActivityService.deleteMemberMakersActivities(request.memberActivityIds()))
+		given(adminMemberActivityService.deleteMemberActivities(request.memberActivityIds(), MemberType.MAKERS))
 			.willReturn(memberIds);
 
 		// when

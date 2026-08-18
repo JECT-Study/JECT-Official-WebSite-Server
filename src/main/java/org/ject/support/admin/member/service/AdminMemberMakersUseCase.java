@@ -11,6 +11,7 @@ import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.domain.member.MemberType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,14 +59,17 @@ public class AdminMemberMakersUseCase {
 	// 메이커스팀 구성원 단건 삭제
 	@Transactional
 	public void deleteMemberMakers(Long memberActivityId) {
-		Long memberId = adminMemberActivityService.deleteMemberMakersActivity(memberActivityId);
+		Long memberId = adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.MAKERS);
 		adminMemberService.deleteMemberIfNoActivity(memberId);
 	}
 
 	// 메이커스팀 구성원 일괄 삭제
 	@Transactional
 	public void deleteMemberMakersList(DeleteMemberMakersRequest request) {
-		Set<Long> memberIds = adminMemberActivityService.deleteMemberMakersActivities(request.memberActivityIds());
+		Set<Long> memberIds = adminMemberActivityService.deleteMemberActivities(
+			request.memberActivityIds(),
+			MemberType.MAKERS
+		);
 		adminMemberService.deleteMembersIfNoActivity(memberIds);
 	}
 }

@@ -380,7 +380,7 @@ class AdminMemberActivityServiceTest {
 			.willReturn(Optional.of(memberActivity));
 
 		// when
-		Long memberId = adminMemberActivityService.deleteMemberMakersActivity(memberActivityId);
+		Long memberId = adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.MAKERS);
 
 		// then
 		assertThat(memberId).isEqualTo(10L);
@@ -397,7 +397,7 @@ class AdminMemberActivityServiceTest {
 
 		// when
 		Throwable throwable = catchThrowable(() ->
-			adminMemberActivityService.deleteMemberMakersActivity(memberActivityId)
+			adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.MAKERS)
 		);
 
 		// then
@@ -405,6 +405,48 @@ class AdminMemberActivityServiceTest {
 			.isInstanceOf(MemberException.class)
 			.extracting("errorCode")
 			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_MAKERS_ACTIVITY);
+		verify(memberActivityRepository, never()).delete(any(MemberActivity.class));
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 일반 구성원 활동은 삭제하지 않는다")
+	void 존재하지_않는_일반_구성원_활동은_삭제하지_않는다() {
+		// given
+		Long memberActivityId = 1L;
+		given(memberActivityRepository.findByIdAndMemberType(memberActivityId, MemberType.SEMESTER))
+			.willReturn(Optional.empty());
+
+		// when
+		Throwable throwable = catchThrowable(() ->
+			adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.SEMESTER)
+		);
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_SEMESTER_ACTIVITY);
+		verify(memberActivityRepository, never()).delete(any(MemberActivity.class));
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 운영 서포터즈 활동은 삭제하지 않는다")
+	void 존재하지_않는_운영_서포터즈_활동은_삭제하지_않는다() {
+		// given
+		Long memberActivityId = 1L;
+		given(memberActivityRepository.findByIdAndMemberType(memberActivityId, MemberType.SUPPORTERS))
+			.willReturn(Optional.empty());
+
+		// when
+		Throwable throwable = catchThrowable(() ->
+			adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.SUPPORTERS)
+		);
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_SUPPORTERS_ACTIVITY);
 		verify(memberActivityRepository, never()).delete(any(MemberActivity.class));
 	}
 
@@ -420,7 +462,7 @@ class AdminMemberActivityServiceTest {
 			.willReturn(memberActivities);
 
 		// when
-		Set<Long> memberIds = adminMemberActivityService.deleteMemberMakersActivities(memberActivityIds);
+		Set<Long> memberIds = adminMemberActivityService.deleteMemberActivities(memberActivityIds, MemberType.MAKERS);
 
 		// then
 		assertThat(memberIds).containsExactlyInAnyOrder(10L, 20L);
@@ -438,7 +480,7 @@ class AdminMemberActivityServiceTest {
 
 		// when
 		Throwable throwable = catchThrowable(() ->
-			adminMemberActivityService.deleteMemberMakersActivities(memberActivityIds)
+			adminMemberActivityService.deleteMemberActivities(memberActivityIds, MemberType.MAKERS)
 		);
 
 		// then
