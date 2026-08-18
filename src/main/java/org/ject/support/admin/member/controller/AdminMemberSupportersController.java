@@ -1,7 +1,7 @@
 package org.ject.support.admin.member.controller;
 
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
-import org.ject.support.admin.member.dto.request.DeleteMemberSupportersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.response.MemberSupportersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
@@ -56,7 +56,7 @@ public class AdminMemberSupportersController implements AdminMemberSupportersApi
 
 	@Override
 	@DeleteMapping
-	public void deleteAdminMemberSupportersList(@RequestBody @Valid DeleteMemberSupportersRequest request) {
+	public void deleteAdminMemberSupportersList(@RequestBody @Valid DeleteMembersRequest request) {
 		adminMemberSupportersUseCase.deleteMemberSupportersList(request);
 	}
 }

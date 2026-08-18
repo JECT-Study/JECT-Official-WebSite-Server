@@ -1,7 +1,7 @@
 package org.ject.support.admin.member.controller;
 
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
-import org.ject.support.admin.member.dto.request.DeleteMemberMakersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
@@ -56,7 +56,7 @@ public class AdminMemberMakersController implements AdminMemberMakersApiSpec {
 
 	@Override
 	@DeleteMapping
-	public void deleteAdminMemberMakersList(@RequestBody @Valid DeleteMemberMakersRequest request) {
+	public void deleteAdminMemberMakersList(@RequestBody @Valid DeleteMembersRequest request) {
 		adminMemberMakersUseCase.deleteMemberMakersList(request);
 	}
 

@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Set;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
-import org.ject.support.admin.member.dto.request.DeleteMemberSupportersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
@@ -273,7 +273,7 @@ class AdminMemberSupportersControllerTest {
 		// given
 		MemberActivity first = saveSupportersActivity(uniqueEmail("bulk1"), ActivityStatus.ENDED);
 		MemberActivity second = saveSupportersActivity(uniqueEmail("bulk2"), ActivityStatus.ENDED);
-		DeleteMemberSupportersRequest request = new DeleteMemberSupportersRequest(Set.of(first.getId(), second.getId()));
+		DeleteMembersRequest request = new DeleteMembersRequest(Set.of(first.getId(), second.getId()));
 
 		// when
 		mockMvc.perform(delete("/admin/members/supporters")
@@ -292,7 +292,7 @@ class AdminMemberSupportersControllerTest {
 	void 유효하지_않은_구성원이_포함되면_모든_운영_서포터즈_구성원을_유지한다() throws Exception {
 		// given
 		MemberActivity memberActivity = saveSupportersActivity(uniqueEmail("bulk-invalid"), ActivityStatus.ENDED);
-		DeleteMemberSupportersRequest request = new DeleteMemberSupportersRequest(
+		DeleteMembersRequest request = new DeleteMembersRequest(
 			Set.of(memberActivity.getId(), 999999999L)
 		);
 
@@ -319,7 +319,7 @@ class AdminMemberSupportersControllerTest {
 				.memberId(member.getId())
 				.build()
 		);
-		DeleteMemberSupportersRequest request = new DeleteMemberSupportersRequest(
+		DeleteMembersRequest request = new DeleteMembersRequest(
 			Set.of(supporters.getId(), semester.getId())
 		);
 

@@ -5,7 +5,7 @@ import java.util.Set;
 import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
-import org.ject.support.admin.member.dto.request.DeleteMemberSupportersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.response.MemberSupportersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
@@ -64,7 +64,7 @@ public class AdminMemberSupportersUseCase {
 
 	// 운영 서포터즈 구성원 일괄 삭제
 	@Transactional
-	public void deleteMemberSupportersList(DeleteMemberSupportersRequest request) {
+	public void deleteMemberSupportersList(DeleteMembersRequest request) {
 		Set<Long> memberIds = adminMemberActivityService.deleteMemberActivities(
 			request.memberActivityIds(),
 			MemberType.SUPPORTERS

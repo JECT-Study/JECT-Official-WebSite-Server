@@ -9,7 +9,7 @@ import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
-import org.ject.support.admin.member.dto.request.DeleteMemberMakersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
@@ -138,7 +138,7 @@ class AdminMemberMakersUseCaseTest {
 	@DisplayName("선택한 메이커스팀 구성원을 모두 삭제한다")
 	void 선택한_메이커스팀_구성원을_모두_삭제한다() {
 		// given
-		DeleteMemberMakersRequest request = new DeleteMemberMakersRequest(Set.of(1L, 2L));
+		DeleteMembersRequest request = new DeleteMembersRequest(Set.of(1L, 2L));
 		Set<Long> memberIds = Set.of(10L, 20L);
 		given(adminMemberActivityService.deleteMemberActivities(request.memberActivityIds(), MemberType.MAKERS))
 			.willReturn(memberIds);

@@ -9,7 +9,7 @@ import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
-import org.ject.support.admin.member.dto.request.DeleteMemberSupportersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.response.MemberSupportersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
@@ -129,7 +129,7 @@ class AdminMemberSupportersUseCaseTest {
 	@DisplayName("선택한 운영 서포터즈 구성원을 모두 삭제한다")
 	void 선택한_운영_서포터즈_구성원을_모두_삭제한다() {
 		// given
-		DeleteMemberSupportersRequest request = new DeleteMemberSupportersRequest(Set.of(1L, 2L));
+		DeleteMembersRequest request = new DeleteMembersRequest(Set.of(1L, 2L));
 		Set<Long> memberIds = Set.of(10L, 20L);
 		given(adminMemberActivityService.deleteMemberActivities(request.memberActivityIds(), MemberType.SUPPORTERS))
 			.willReturn(memberIds);
