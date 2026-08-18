@@ -2,14 +2,19 @@ package org.ject.support.admin.member.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.ject.support.domain.member.fixture.MemberFixture.member;
+import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
+import java.util.Set;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMemberSupportersRequest;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
@@ -205,6 +210,151 @@ class AdminMemberSupportersControllerTest {
 			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER.getCode()));
 	}
 
+	@Test
+	@DisplayName("운영 서포터즈 구성원을 삭제하고 남은 활동이 없으면 구성원도 삭제한다")
+	void 운영_서포터즈_구성원을_삭제하고_남은_활동이_없으면_구성원도_삭제한다() throws Exception {
+		// given
+		MemberActivity memberActivity = saveSupportersActivity(uniqueEmail("delete"), ActivityStatus.ENDED);
+
+		// when
+		mockMvc.perform(delete("/admin/members/supporters/{memberActivityId}", memberActivity.getId()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"));
+
+		// then
+		assertThat(memberActivityRepository.findById(memberActivity.getId())).isEmpty();
+		assertThat(memberRepository.findById(memberActivity.getMemberId())).isEmpty();
+	}
+
+	@Test
+	@DisplayName("운영 서포터즈 활동을 삭제해도 다른 활동이 남아 있으면 구성원을 유지한다")
+	void 운영_서포터즈_활동을_삭제해도_다른_활동이_남아_있으면_구성원을_유지한다() throws Exception {
+		// given
+		Member member = memberRepository.save(member().email(uniqueEmail("remain")).build());
+		MemberActivity supporters = saveSupportersActivity(member.getId(), ActivityStatus.ENDED);
+		MemberActivity semester = memberActivityRepository.saveAndFlush(
+			semesterActivity()
+				.memberId(member.getId())
+				.build()
+		);
+
+		// when
+		mockMvc.perform(delete("/admin/members/supporters/{memberActivityId}", supporters.getId()))
+			.andExpect(status().isOk());
+
+		// then
+		assertThat(memberActivityRepository.findById(supporters.getId())).isEmpty();
+		assertThat(memberActivityRepository.findById(semester.getId())).isPresent();
+		assertThat(memberRepository.findById(member.getId())).isPresent();
+	}
+
+	@Test
+	@DisplayName("운영 서포터즈가 아닌 구성원은 삭제할 수 없다")
+	void 운영_서포터즈가_아닌_구성원은_삭제할_수_없다() throws Exception {
+		// given
+		Member member = memberRepository.save(member().email(uniqueEmail("invalid-type")).build());
+		MemberActivity semester = memberActivityRepository.saveAndFlush(
+			semesterActivity()
+				.memberId(member.getId())
+				.build()
+		);
+
+		// when & then
+		mockMvc.perform(delete("/admin/members/supporters/{memberActivityId}", semester.getId()))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER_SUPPORTERS_ACTIVITY.getCode()));
+		assertThat(memberActivityRepository.findById(semester.getId())).isPresent();
+		assertThat(memberRepository.findById(member.getId())).isPresent();
+	}
+
+	@Test
+	@DisplayName("선택한 운영 서포터즈 구성원을 모두 삭제한다")
+	void 선택한_운영_서포터즈_구성원을_모두_삭제한다() throws Exception {
+		// given
+		MemberActivity first = saveSupportersActivity(uniqueEmail("bulk1"), ActivityStatus.ENDED);
+		MemberActivity second = saveSupportersActivity(uniqueEmail("bulk2"), ActivityStatus.ENDED);
+		DeleteMemberSupportersRequest request = new DeleteMemberSupportersRequest(Set.of(first.getId(), second.getId()));
+
+		// when
+		mockMvc.perform(delete("/admin/members/supporters")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"));
+
+		// then
+		assertThat(memberActivityRepository.findAllById(List.of(first.getId(), second.getId()))).isEmpty();
+		assertThat(memberRepository.findAllById(List.of(first.getMemberId(), second.getMemberId()))).isEmpty();
+	}
+
+	@Test
+	@DisplayName("유효하지 않은 구성원이 포함되면 모든 운영 서포터즈 구성원을 유지한다")
+	void 유효하지_않은_구성원이_포함되면_모든_운영_서포터즈_구성원을_유지한다() throws Exception {
+		// given
+		MemberActivity memberActivity = saveSupportersActivity(uniqueEmail("bulk-invalid"), ActivityStatus.ENDED);
+		DeleteMemberSupportersRequest request = new DeleteMemberSupportersRequest(
+			Set.of(memberActivity.getId(), 999999999L)
+		);
+
+		// when
+		mockMvc.perform(delete("/admin/members/supporters")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER_SUPPORTERS_ACTIVITY.getCode()));
+
+		// then
+		assertThat(memberActivityRepository.findById(memberActivity.getId())).isPresent();
+		assertThat(memberRepository.findById(memberActivity.getMemberId())).isPresent();
+	}
+
+	@Test
+	@DisplayName("운영 서포터즈가 아닌 구성원이 포함되면 모든 구성원을 유지한다")
+	void 운영_서포터즈가_아닌_구성원이_포함되면_모든_구성원을_유지한다() throws Exception {
+		// given
+		MemberActivity supporters = saveSupportersActivity(uniqueEmail("bulk-supporters"), ActivityStatus.ENDED);
+		Member member = memberRepository.save(member().email(uniqueEmail("bulk-semester")).build());
+		MemberActivity semester = memberActivityRepository.saveAndFlush(
+			semesterActivity()
+				.memberId(member.getId())
+				.build()
+		);
+		DeleteMemberSupportersRequest request = new DeleteMemberSupportersRequest(
+			Set.of(supporters.getId(), semester.getId())
+		);
+
+		// when
+		mockMvc.perform(delete("/admin/members/supporters")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER_SUPPORTERS_ACTIVITY.getCode()));
+
+		// then
+		assertThat(memberActivityRepository.findById(supporters.getId())).isPresent();
+		assertThat(memberActivityRepository.findById(semester.getId())).isPresent();
+	}
+
+	@Test
+	@DisplayName("삭제할 운영 서포터즈 구성원이 없으면 요청에 실패한다")
+	void 삭제할_운영_서포터즈_구성원이_없으면_요청에_실패한다() throws Exception {
+		mockMvc.perform(delete("/admin/members/supporters")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"memberActivityIds\":[]}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+	}
+
+	@Test
+	@DisplayName("삭제할 운영 서포터즈 구성원 ID에 빈 값이 있으면 요청에 실패한다")
+	void 삭제할_운영_서포터즈_구성원_ID에_빈_값이_있으면_요청에_실패한다() throws Exception {
+		mockMvc.perform(delete("/admin/members/supporters")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"memberActivityIds\":[null]}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
+	}
+
 	private CreateMemberSupportersRequest createMemberSupportersRequest(String email, JobFamily jobFamily, String memo) {
 		return new CreateMemberSupportersRequest(
 			"김서포터",
@@ -232,8 +382,12 @@ class AdminMemberSupportersControllerTest {
 
 	private MemberActivity saveSupportersActivity(String email, ActivityStatus activityStatus) {
 		Member member = memberRepository.save(member().email(email).build());
+		return saveSupportersActivity(member.getId(), activityStatus);
+	}
+
+	private MemberActivity saveSupportersActivity(Long memberId, ActivityStatus activityStatus) {
 		return memberActivityRepository.saveAndFlush(MemberActivity.createSupportersActivity(
-			member.getId(),
+			memberId,
 			JobFamily.OPS,
 			RecruitTypeDetail.REGULAR,
 			activityStatus,
