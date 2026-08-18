@@ -1,6 +1,7 @@
 package org.ject.support.admin.member.controller;
 
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.response.MemberSupportersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
@@ -33,4 +34,16 @@ public interface AdminMemberSupportersApiSpec {
 		description = "운영 서포터즈 구성원을 상세 조회합니다."
 	)
 	MemberSupportersDetailResponse getAdminMemberSupportersDetail(@PathVariable Long memberActivityId);
+
+	@Operation(
+		summary = "운영 서포터즈 구성원 삭제",
+		description = "전달한 활동 ID에 해당하는 운영 서포터즈 구성원을 삭제합니다."
+	)
+	void deleteAdminMemberSupporters(@PathVariable Long memberActivityId);
+
+	@Operation(
+		summary = "운영 서포터즈 구성원 일괄 삭제",
+		description = "선택한 운영 서포터즈 구성원을 일괄 삭제합니다. 유효하지 않은 ID가 있으면 전체 요청이 실패합니다."
+	)
+	void deleteAdminMemberSupportersList(@RequestBody @Valid DeleteMemberSupportersRequest request);
 }

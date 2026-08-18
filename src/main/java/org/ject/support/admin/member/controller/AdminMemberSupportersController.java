@@ -1,12 +1,14 @@
 package org.ject.support.admin.member.controller;
 
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.response.MemberSupportersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
 import org.ject.support.admin.member.service.AdminMemberSupportersUseCase;
 import org.ject.support.common.response.CursorPageResponse;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,7 +38,7 @@ public class AdminMemberSupportersController implements AdminMemberSupportersApi
 	@Override
 	@GetMapping
 	public CursorPageResponse<MemberSupportersListResponse> getAdminMemberSupportersList(
-		@ParameterObject  @ModelAttribute @Valid MemberSupportersListRequest request) {
+		@ParameterObject @ModelAttribute @Valid MemberSupportersListRequest request) {
 		return adminMemberSupportersUseCase.getMemberSupportersList(request);
 	}
 
@@ -44,5 +46,17 @@ public class AdminMemberSupportersController implements AdminMemberSupportersApi
 	@GetMapping("/{memberActivityId}")
 	public MemberSupportersDetailResponse getAdminMemberSupportersDetail(@PathVariable Long memberActivityId) {
 		return adminMemberSupportersUseCase.getMemberSupportersDetail(memberActivityId);
+	}
+
+	@Override
+	@DeleteMapping("/{memberActivityId}")
+	public void deleteAdminMemberSupporters(@PathVariable Long memberActivityId) {
+		adminMemberSupportersUseCase.deleteMemberSupporters(memberActivityId);
+	}
+
+	@Override
+	@DeleteMapping
+	public void deleteAdminMemberSupportersList(@RequestBody @Valid DeleteMemberSupportersRequest request) {
+		adminMemberSupportersUseCase.deleteMemberSupportersList(request);
 	}
 }
