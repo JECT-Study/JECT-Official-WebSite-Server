@@ -1,7 +1,5 @@
 package org.ject.support.admin.apply.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
@@ -32,15 +30,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin/applies")
-@Tag(name = "Admin Apply", description = "[관리자] 지원서 관리 API")
-public class AdminApplyController {
+public class AdminApplyController implements AdminApplyApiSpec {
 
     private final AdminApplyService adminApplyService;
 
+    @Override
     @GetMapping
-    @Operation(
-            summary = "지원서 목록 조회",
-            description = "지원서들의 목록을 조회합니다. 모집 공고, 모집 유형, 모집 사유, 기수, 직군, 지원 상태로 필터링할 수 있습니다.")
     public Page<AdminApplyResponse> findApplies(@RequestParam(required = false) final ApplyStatus applyStatus,
                                                 @RequestParam(required = false) final Long semesterId,
                                                 @RequestParam(required = false) final JobFamily jobFamily,
@@ -53,44 +48,34 @@ public class AdminApplyController {
         return adminApplyService.findApplies(condition, pageable);
     }
 
+    @Override
     @GetMapping("/{applyId}")
-    @Operation(
-            summary = "지원서 상세 조회",
-            description = "전달한 ID에 해당하는 지원서의 상세 정보를 조회합니다.")
     public AdminApplyDetailResponse findApply(@PathVariable final Long applyId,
                                               @RequestParam(required = false) final ApplyStatus applyStatus) {
         return adminApplyService.findApply(applyId, applyStatus);
     }
 
+    @Override
     @PutMapping("/{applyId}")
-    @Operation(
-            summary = "제출된 지원서 수정",
-            description = "전달한 ID에 해당하는 제출된 지원서의 정보를 수정 합니다.")
     public void editSubmittedApply(@PathVariable("applyId") final Long applyId,
                                    @RequestBody @Valid final SubmittedApplyEditRequest request) {
         adminApplyService.updateSubmittedApply(applyId, request);
     }
 
+    @Override
     @PatchMapping("/selection-results")
-    @Operation(
-            summary = "지원자 선정 결과 일괄 변경",
-            description = "제출 완료된 지원자들의 선정 결과와 예비 번호를 일괄 변경합니다.")
     public int updateSelectionResults(@RequestBody @Valid final SelectionResultUpdateRequest request) {
         return adminApplyService.updateSelectionResults(request);
     }
 
+    @Override
     @DeleteMapping("/{applyId}")
-    @Operation(
-            summary = "지원서 삭제",
-            description = "전달한 ID에 해당하는 지원서를 삭제합니다.")
     public void deleteApply(@PathVariable final Long applyId) {
         adminApplyService.deleteApply(applyId);
     }
 
+    @Override
     @DeleteMapping
-    @Operation(
-            summary = "지원서 다수 삭제",
-            description = "선택한 다수의 지원서들을 삭제합니다. 삭제한 수를 반환합니다.")
     public int deleteSubmittedApplies(@RequestBody @Valid final SubmittedApplyBulkDeleteRequest request) {
         return adminApplyService.deleteApplies(request.applyIds());
     }
