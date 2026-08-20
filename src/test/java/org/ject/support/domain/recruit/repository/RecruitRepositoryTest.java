@@ -1,5 +1,7 @@
 package org.ject.support.domain.recruit.repository;
 
+import jakarta.persistence.EntityManager;
+import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
@@ -11,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,6 +34,9 @@ class RecruitRepositoryTest {
 
     @Autowired
     private SemesterRepository semesterRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Test
     void 특정_직군의_마감되지_않은_모집_정보가_존재하면_true를_반환한다() {
@@ -110,6 +116,31 @@ class RecruitRepositoryTest {
     }
 
     @Test
+    void 메일_발송용_모집_공고를_등록일_내림차순으로_조회하고_동일하면_ID_내림차순으로_조회한다() {
+        // given
+        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+        Recruit oldestRecruit = saveRecruit(savedSemester, PM);
+        Recruit firstTieRecruit = saveRecruit(savedSemester, BE);
+        Recruit secondTieRecruit = saveRecruit(savedSemester, FE);
+        Recruit latestRecruit = saveRecruit(savedSemester, SUPPORTER);
+        entityManager.flush();
+        setCreatedAt(oldestRecruit, LocalDateTime.of(2026, 8, 1, 10, 0));
+        setCreatedAt(firstTieRecruit, LocalDateTime.of(2026, 8, 2, 10, 0));
+        setCreatedAt(secondTieRecruit, LocalDateTime.of(2026, 8, 2, 10, 0));
+        setCreatedAt(latestRecruit, LocalDateTime.of(2026, 8, 3, 10, 0));
+        entityManager.clear();
+
+        // when
+        List<Recruit> result = recruitRepository.findAllForMailDispatch();
+
+        // then
+        assertThat(result)
+                .extracting(Recruit::getId)
+                .containsExactly(latestRecruit.getId(), secondTieRecruit.getId(), firstTieRecruit.getId(), oldestRecruit.getId());
+        assertThat(org.hibernate.Hibernate.isInitialized(result.getFirst().getSemester())).isTrue();
+    }
+
+    @Test
     void 허용되지_않은_모집_유형과_모집_사유_조합은_저장할_수_없다() {
         // given
         Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
@@ -126,5 +157,22 @@ class RecruitRepositoryTest {
         assertThatThrownBy(() -> recruitRepository.saveAndFlush(recruit))
                 .isInstanceOf(RecruitException.class)
                 .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.INVALID_RECRUIT_TYPE_DETAIL);
+    }
+
+    private Recruit saveRecruit(Semester semester, JobFamily jobFamily) {
+        return recruitRepository.save(Recruit.builder()
+                .semester(semester)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
+                .jobFamily(jobFamily)
+                .build());
+    }
+
+    private void setCreatedAt(Recruit recruit, LocalDateTime createdAt) {
+        entityManager.createNativeQuery("UPDATE recruit SET created_at = :createdAt WHERE id = :recruitId")
+                .setParameter("createdAt", createdAt)
+                .setParameter("recruitId", recruit.getId())
+                .executeUpdate();
+        ReflectionTestUtils.setField(recruit, "createdAt", createdAt);
     }
 }
