@@ -10,6 +10,8 @@ import static org.ject.support.domain.member.JobFamily.PM;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.OptimisticLockException;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
@@ -38,6 +40,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.transaction.TestTransaction;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Import({QueryDslTestConfig.class, AdminApplyQueryRepositoryImpl.class})
 @DataJpaTest
@@ -60,6 +66,12 @@ class AdminApplyQueryRepositoryTest {
 
     @Autowired
     EntityManager entityManager;
+
+    @Autowired
+    EntityManagerFactory entityManagerFactory;
+
+    @Autowired
+    PlatformTransactionManager transactionManager;
 
     Semester semester;
     Recruit beRecruit;
@@ -441,6 +453,10 @@ class AdminApplyQueryRepositoryTest {
         apply.decideSelectionResult(SelectionResult.WAITLISTED, 1);
         Apply savedApply = applyRepository.save(apply);
         entityManager.flush();
+        long versionBeforeDelete = ((Number) entityManager.createNativeQuery(
+                        "SELECT version FROM apply WHERE id = :id")
+                .setParameter("id", savedApply.getId())
+                .getSingleResult()).longValue();
 
         // when
         adminApplyRepository.deleteAllByIds(List.of(savedApply.getId()));
@@ -448,12 +464,47 @@ class AdminApplyQueryRepositoryTest {
 
         // then
         Object[] state = (Object[]) entityManager.createNativeQuery(
-                        "SELECT selection_result, waitlist_number FROM apply WHERE id = :id")
+                        "SELECT selection_result, waitlist_number, version FROM apply WHERE id = :id")
                 .setParameter("id", savedApply.getId())
                 .getSingleResult();
         assertThat(state[0]).isEqualTo("UNDECIDED");
         assertThat(state[1]).isNull();
+        assertThat(((Number) state[2]).longValue()).isEqualTo(versionBeforeDelete + 1);
         assertThat(adminApplyRepository.findById(savedApply.getId())).isEmpty();
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void 다건_삭제와_동시에_수정하면_낙관적_락_예외가_발생한다() {
+        // given
+        Applicant applicant = createApplicant("bulk-delete-lock@test.com", BE);
+        applicantRepository.save(applicant);
+        Apply savedApply = applyRepository.save(getApply(applicant, beRecruit, SUBMITTED));
+        entityManager.flush();
+        Long applyId = savedApply.getId();
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+
+        EntityManager staleEntityManager = entityManagerFactory.createEntityManager();
+        try {
+            staleEntityManager.getTransaction().begin();
+            Apply staleApply = staleEntityManager.find(Apply.class, applyId);
+
+            new TransactionTemplate(transactionManager).executeWithoutResult(transactionStatus ->
+                    adminApplyRepository.deleteAllByIds(List.of(applyId)));
+
+            // when, then
+            staleApply.saveTemporarily();
+            assertThatThrownBy(staleEntityManager::flush)
+                    .isInstanceOf(OptimisticLockException.class);
+        } finally {
+            if (staleEntityManager.getTransaction().isActive()) {
+                staleEntityManager.getTransaction().rollback();
+            }
+            staleEntityManager.close();
+            TestTransaction.start();
+        }
     }
 
     @Test
