@@ -39,7 +39,6 @@ import java.util.Optional;
 
 import static org.ject.support.domain.apply.domain.ApplyStatus.JOINED;
 import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
-import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
 import static org.ject.support.domain.apply.exception.ApplyErrorCode.ALREADY_SUBMITTED;
 import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_FOUND_APPLY;
 
@@ -108,7 +107,7 @@ public class ApplyService implements ApplyUsecase {
             applicationFormRepository.save(applicationForm);
 
             apply.updateApplicationForm(applicationForm);
-            apply.updateStatus(TEMP_SAVED);
+            apply.saveTemporarily();
             return;
         }
 
@@ -132,7 +131,7 @@ public class ApplyService implements ApplyUsecase {
 
         // 임시 저장한 지원서 제거 및 상태 변경
         apply.deleteApplicationForm();
-        apply.updateStatus(JOINED);
+        apply.resetToJoined();
 
         // 프로필 제거
         Applicant applicant = apply.getApplicant();

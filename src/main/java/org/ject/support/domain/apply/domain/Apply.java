@@ -97,11 +97,14 @@ public class Apply extends BaseTimeEntity {
         this.applicationForm = newApplicationForm;
     }
 
-    public void updateStatus(ApplyStatus status) {
-        this.status = status;
-        if (!status.equals(ApplyStatus.SUBMITTED)) {
-            this.submittedAt = null;
-        }
+    public void saveTemporarily() {
+        this.status = ApplyStatus.TEMP_SAVED;
+        this.submittedAt = null;
+    }
+
+    public void resetToJoined() {
+        this.status = ApplyStatus.JOINED;
+        this.submittedAt = null;
     }
 
     public boolean isNotTempSaved() {

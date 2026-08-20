@@ -271,7 +271,7 @@ class ApplyTest extends TestSupport {
                 .jobFamily(JobFamily.BE)
                 .build();
         Apply apply = Apply.createApply(Applicant.builder().build(), recruit);
-        apply.updateStatus(SUBMITTED); // 이미 제출된 상태
+        apply.submit(ApplicationForm.builder().build()); // 이미 제출된 상태
 
         ApplicationForm form = ApplicationForm.builder().build();
 
