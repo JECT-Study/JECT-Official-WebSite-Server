@@ -1,6 +1,7 @@
 package org.ject.support.admin.apply.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
 import static org.ject.support.domain.apply.domain.ApplyStatus.TEMP_SAVED;
 import static org.ject.support.domain.member.JobFamily.BE;
@@ -8,12 +9,16 @@ import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PM;
 import static org.springframework.test.util.ReflectionTestUtils.setField;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.OptimisticLockException;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
+import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
@@ -34,6 +39,11 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.transaction.TestTransaction;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Import({QueryDslTestConfig.class, AdminApplyQueryRepositoryImpl.class})
 @DataJpaTest
@@ -53,6 +63,15 @@ class AdminApplyQueryRepositoryTest {
 
     @Autowired
     org.ject.support.domain.apply.repository.ApplyRepository applyRepository;
+
+    @Autowired
+    EntityManager entityManager;
+
+    @Autowired
+    EntityManagerFactory entityManagerFactory;
+
+    @Autowired
+    PlatformTransactionManager transactionManager;
 
     Semester semester;
     Recruit beRecruit;
@@ -381,6 +400,135 @@ class AdminApplyQueryRepositoryTest {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getContent().getFirst().getRecruit()).isEqualTo(beRecruit);
+    }
+
+    @Test
+    void 모집_공고와_지원ID로_지원서를_조회한다() {
+        // given
+        Applicant applicant = createApplicant("selection@test.com", BE);
+        applicantRepository.save(applicant);
+        Apply savedApply = applyRepository.save(getApply(applicant, beRecruit, SUBMITTED));
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        List<Apply> result = adminApplyRepository.findAllByRecruitIdAndIdInWithApplicant(
+                beRecruit.getId(), List.of(savedApply.getId()));
+
+        // then
+        assertThat(result).singleElement()
+                .satisfies(apply -> {
+                    assertThat(apply.getId()).isEqualTo(savedApply.getId());
+                    assertThat(apply.getApplicant().getId()).isEqualTo(applicant.getId());
+                    assertThat(apply.getRecruit().getId()).isEqualTo(beRecruit.getId());
+                });
+    }
+
+    @Test
+    void 같은_모집_공고에서_예비_번호_중복을_DB가_막는다() {
+        // given
+        Applicant applicant1 = createApplicant("duplicate-selection-1@test.com", BE);
+        Applicant applicant2 = createApplicant("duplicate-selection-2@test.com", BE);
+        applicantRepository.saveAll(List.of(applicant1, applicant2));
+
+        Apply apply1 = getApply(applicant1, beRecruit, SUBMITTED);
+        Apply apply2 = getApply(applicant2, beRecruit, SUBMITTED);
+        apply1.decideSelectionResult(SelectionResult.WAITLISTED, 1);
+        apply2.decideSelectionResult(SelectionResult.WAITLISTED, 1);
+
+        // when, then
+        assertThatThrownBy(() -> {
+            applyRepository.saveAll(List.of(apply1, apply2));
+            entityManager.flush();
+        })
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    void 다건_삭제하면_선정_결과와_예비_번호를_초기화한다() {
+        // given
+        Applicant applicant = createApplicant("bulk-delete@test.com", BE);
+        applicantRepository.save(applicant);
+        Apply apply = getApply(applicant, beRecruit, SUBMITTED);
+        apply.decideSelectionResult(SelectionResult.WAITLISTED, 1);
+        Apply savedApply = applyRepository.save(apply);
+        entityManager.flush();
+        long versionBeforeDelete = ((Number) entityManager.createNativeQuery(
+                        "SELECT version FROM apply WHERE id = :id")
+                .setParameter("id", savedApply.getId())
+                .getSingleResult()).longValue();
+
+        // when
+        adminApplyRepository.deleteAllByIds(List.of(savedApply.getId()));
+        entityManager.flush();
+
+        // then
+        Object[] state = (Object[]) entityManager.createNativeQuery(
+                        "SELECT selection_result, waitlist_number, version FROM apply WHERE id = :id")
+                .setParameter("id", savedApply.getId())
+                .getSingleResult();
+        assertThat(state[0]).isEqualTo("UNDECIDED");
+        assertThat(state[1]).isNull();
+        assertThat(((Number) state[2]).longValue()).isEqualTo(versionBeforeDelete + 1);
+        assertThat(adminApplyRepository.findById(savedApply.getId())).isEmpty();
+    }
+
+    @Test
+    @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
+    void 다건_삭제와_동시에_수정하면_낙관적_락_예외가_발생한다() {
+        // given
+        Applicant applicant = createApplicant("bulk-delete-lock@test.com", BE);
+        applicantRepository.save(applicant);
+        Apply savedApply = applyRepository.save(getApply(applicant, beRecruit, SUBMITTED));
+        entityManager.flush();
+        Long applyId = savedApply.getId();
+
+        TestTransaction.flagForCommit();
+        TestTransaction.end();
+
+        EntityManager staleEntityManager = entityManagerFactory.createEntityManager();
+        try {
+            staleEntityManager.getTransaction().begin();
+            Apply staleApply = staleEntityManager.find(Apply.class, applyId);
+
+            new TransactionTemplate(transactionManager).executeWithoutResult(transactionStatus ->
+                    adminApplyRepository.deleteAllByIds(List.of(applyId)));
+
+            // when, then
+            staleApply.saveTemporarily();
+            assertThatThrownBy(staleEntityManager::flush)
+                    .isInstanceOf(OptimisticLockException.class);
+        } finally {
+            if (staleEntityManager.getTransaction().isActive()) {
+                staleEntityManager.getTransaction().rollback();
+            }
+            staleEntityManager.close();
+            TestTransaction.start();
+        }
+    }
+
+    @Test
+    void 단건_삭제하면_선정_결과와_예비_번호를_초기화한다() {
+        // given
+        Applicant applicant = createApplicant("single-delete@test.com", BE);
+        applicantRepository.save(applicant);
+        Apply apply = getApply(applicant, beRecruit, SUBMITTED);
+        apply.decideSelectionResult(SelectionResult.WAITLISTED, 1);
+        Apply savedApply = applyRepository.save(apply);
+        entityManager.flush();
+
+        // when
+        adminApplyRepository.delete(savedApply);
+        entityManager.flush();
+
+        // then
+        Object[] state = (Object[]) entityManager.createNativeQuery(
+                        "SELECT selection_result, waitlist_number FROM apply WHERE id = :id")
+                .setParameter("id", savedApply.getId())
+                .getSingleResult();
+        assertThat(state[0]).isEqualTo("UNDECIDED");
+        assertThat(state[1]).isNull();
+        assertThat(adminApplyRepository.findById(savedApply.getId())).isEmpty();
     }
 
     private Recruit getRecruit(JobFamily jobFamily) {

@@ -4,6 +4,7 @@ import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
+import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.JobFamily;
@@ -60,6 +61,9 @@ class ApplyPassServiceTest extends UnitTestSupport {
         assertThat(applicant1.getMemberType()).isEqualTo(MemberType.SEMESTER);
         assertThat(applicant2.getMemberType()).isEqualTo(MemberType.SEMESTER);
         assertThat(applicant3.getMemberType()).isEqualTo(MemberType.SEMESTER);
+        assertThat(apply1.getSelectionResult()).isEqualTo(SelectionResult.PASSED);
+        assertThat(apply2.getSelectionResult()).isEqualTo(SelectionResult.PASSED);
+        assertThat(apply3.getSelectionResult()).isEqualTo(SelectionResult.PASSED);
     }
 
     @Test

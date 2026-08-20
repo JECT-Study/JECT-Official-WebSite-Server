@@ -3,6 +3,7 @@ package org.ject.support.admin.apply.service;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,8 @@ public class ApplyPassService {
             if (apply.isNotSubmitted()) {
                 throw new ApplyException(NOT_SUBMITTED);
             }
+
+            apply.decideSelectionResult(SelectionResult.PASSED, null);
 
             // 지원자 role 승격
             Applicant applicant = apply.getApplicant();

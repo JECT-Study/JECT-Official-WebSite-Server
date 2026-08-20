@@ -4,7 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
 import java.util.Map;
@@ -12,6 +15,7 @@ import java.util.Optional;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
+import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.base.UnitTestSupport;
@@ -19,6 +23,7 @@ import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
+import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
@@ -82,6 +87,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .build();
 
         var recruit = Recruit.builder()
+                .id(1L)
                 .semester(semester)
                 .questions(List.of(question1, question2))
                 .recruitType(org.ject.support.domain.recruit.domain.RecruitType.REGULAR)
@@ -95,6 +101,150 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .note("Test note")
                 .applicationForm(ApplicationForm.builder().build())
                 .build();
+    }
+
+    @Test
+    void 제출된_지원들의_선정_결과를_일괄_변경한다() {
+        // given
+        var secondApply = Apply.builder()
+                .id(2L)
+                .applicant(Applicant.builder().name("김젝트2").build())
+                .recruit(submittedApply.getRecruit())
+                .status(ApplyStatus.SUBMITTED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+        var request = new SelectionResultUpdateRequest(
+                1L,
+                List.of(
+                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.WAITLISTED, 1),
+                        new SelectionResultUpdateRequest.SelectionResultItem(2L, SelectionResult.PASSED, null)
+                )
+        );
+        given(adminApplyRepository.findAllByRecruitIdAndIdInWithApplicant(1L, List.of(1L, 2L)))
+                .willReturn(List.of(submittedApply, secondApply));
+
+        // when
+        int updatedCount = adminApplyService.updateSelectionResults(request);
+
+        // then
+        assertThat(updatedCount).isEqualTo(2);
+        assertThat(submittedApply.getSelectionResult()).isEqualTo(SelectionResult.WAITLISTED);
+        assertThat(submittedApply.getWaitlistNumber()).isEqualTo(1);
+        assertThat(secondApply.getSelectionResult()).isEqualTo(SelectionResult.PASSED);
+        assertThat(secondApply.getWaitlistNumber()).isNull();
+        verify(adminApplyRepository, times(2)).flush();
+    }
+
+    @Test
+    void 기존_예비_번호를_서로_교체할_수_있다() {
+        // given
+        var secondApply = Apply.builder()
+                .id(2L)
+                .applicant(Applicant.builder().name("김젝트2").build())
+                .recruit(submittedApply.getRecruit())
+                .status(ApplyStatus.SUBMITTED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+        submittedApply.decideSelectionResult(SelectionResult.WAITLISTED, 1);
+        secondApply.decideSelectionResult(SelectionResult.WAITLISTED, 2);
+        var request = new SelectionResultUpdateRequest(
+                1L,
+                List.of(
+                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.WAITLISTED, 2),
+                        new SelectionResultUpdateRequest.SelectionResultItem(2L, SelectionResult.WAITLISTED, 1)
+                )
+        );
+        given(adminApplyRepository.findAllByRecruitIdAndIdInWithApplicant(1L, List.of(1L, 2L)))
+                .willReturn(List.of(submittedApply, secondApply));
+
+        // when
+        adminApplyService.updateSelectionResults(request);
+
+        // then
+        assertThat(submittedApply.getWaitlistNumber()).isEqualTo(2);
+        assertThat(secondApply.getWaitlistNumber()).isEqualTo(1);
+        verify(adminApplyRepository, times(2)).flush();
+    }
+
+    @Test
+    void 모집_공고가_다르거나_존재하지_않는_지원이_포함되면_일괄_변경하지_않는다() {
+        // given
+        var request = new SelectionResultUpdateRequest(
+                1L,
+                List.of(new SelectionResultUpdateRequest.SelectionResultItem(999L, SelectionResult.PASSED, null))
+        );
+        given(adminApplyRepository.findAllByRecruitIdAndIdInWithApplicant(1L, List.of(999L)))
+                .willReturn(List.of());
+
+        // when & then
+        assertThatThrownBy(() -> adminApplyService.updateSelectionResults(request))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
+        assertThat(submittedApply.getSelectionResult()).isEqualTo(SelectionResult.UNDECIDED);
+    }
+
+    @Test
+    void 요청에_같은_지원이_중복되면_일괄_변경하지_않는다() {
+        // given
+        var request = new SelectionResultUpdateRequest(
+                1L,
+                List.of(
+                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.PASSED, null),
+                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.FAILED, null)
+                )
+        );
+
+        // when & then
+        assertThatThrownBy(() -> adminApplyService.updateSelectionResults(request))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.DUPLICATE_APPLY_ID);
+        verifyNoInteractions(adminApplyRepository);
+    }
+
+    @Test
+    void 같은_모집_공고에서_예비_번호가_중복되면_일괄_변경하지_않는다() {
+        // given
+        var request = new SelectionResultUpdateRequest(
+                1L,
+                List.of(
+                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.WAITLISTED, 1),
+                        new SelectionResultUpdateRequest.SelectionResultItem(2L, SelectionResult.WAITLISTED, 1)
+                )
+        );
+
+        // when & then
+        assertThatThrownBy(() -> adminApplyService.updateSelectionResults(request))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.DUPLICATE_WAITLIST_NUMBER);
+        verifyNoInteractions(adminApplyRepository);
+    }
+
+    @Test
+    void 제출되지_않은_지원이_하나라도_있으면_일괄_변경하지_않는다() {
+        // given
+        var tempApply = Apply.builder()
+                .id(2L)
+                .applicant(Applicant.builder().name("김젝트2").build())
+                .recruit(submittedApply.getRecruit())
+                .status(ApplyStatus.TEMP_SAVED)
+                .applicationForm(ApplicationForm.builder().build())
+                .build();
+        var request = new SelectionResultUpdateRequest(
+                1L,
+                List.of(
+                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.PASSED, null),
+                        new SelectionResultUpdateRequest.SelectionResultItem(2L, SelectionResult.PASSED, null)
+                )
+        );
+        given(adminApplyRepository.findAllByRecruitIdAndIdInWithApplicant(1L, List.of(1L, 2L)))
+                .willReturn(List.of(submittedApply, tempApply));
+
+        // when & then
+        assertThatThrownBy(() -> adminApplyService.updateSelectionResults(request))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_SUBMITTED);
+        assertThat(submittedApply.getSelectionResult()).isEqualTo(SelectionResult.UNDECIDED);
+        verify(adminApplyRepository, never()).flush();
     }
 
     @Test
