@@ -130,7 +130,7 @@ public class MailScenarioService {
     @Transactional(readOnly = true)
     public String renderScenario(Long scenarioId, Map<String, Object> variables) {
         MailScenario scenario = findScenarioById(scenarioId);
-        mailTemplateValidator.validateRequiredCommonVariables(scenario.getCustomVariables(), variables);
+        mailTemplateValidator.validateVariables(scenario.getCustomVariables(), variables);
         return mailTemplateEngine.render(scenario.getBodyTemplate(), variables);
     }
 
