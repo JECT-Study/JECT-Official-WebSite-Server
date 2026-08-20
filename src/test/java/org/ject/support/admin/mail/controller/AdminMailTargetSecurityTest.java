@@ -45,7 +45,7 @@ class AdminMailTargetSecurityTest extends ApplicationPeriodTest {
     @Test
     @AuthenticatedUser(isAdmin = true)
     void 관리자는_메일_발송_대상을_조회할_수_있다() throws Exception {
-        given(mailTargetService.getTargets(1L, null)).willReturn(List.of(
+        given(mailTargetService.searchTargets(1L, null)).willReturn(List.of(
                 new MailTargetResponse(1L, "홍길동", "01012345678", "test@test.com", SelectionResult.PASSED, null)));
 
         mockMvc.perform(get("/admin/mails/targets").param("recruitId", "1"))

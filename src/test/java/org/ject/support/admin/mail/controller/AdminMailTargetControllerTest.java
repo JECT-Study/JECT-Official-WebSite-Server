@@ -23,11 +23,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.beanvalidation.OptionalValidatorFactoryBean;
 
 @ExtendWith(MockitoExtension.class)
 class AdminMailTargetControllerTest {
 
     private MockMvc mockMvc;
+
+    private final OptionalValidatorFactoryBean validator = new OptionalValidatorFactoryBean();
 
     @Mock
     private MailTargetService mailTargetService;
@@ -39,6 +42,7 @@ class AdminMailTargetControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(adminMailTargetController)
                 .setControllerAdvice(new GlobalExceptionHandler(), new ResponseWrapper())
+                .setValidator(validator)
                 .build();
     }
 
@@ -47,7 +51,7 @@ class AdminMailTargetControllerTest {
         // given
         MailTargetResponse response = new MailTargetResponse(
                 10L, "홍길동", "01012345678", "test@test.com", SelectionResult.WAITLISTED, 2);
-        given(mailTargetService.getTargets(1L, SelectionResult.WAITLISTED)).willReturn(List.of(response));
+        given(mailTargetService.searchTargets(1L, SelectionResult.WAITLISTED)).willReturn(List.of(response));
 
         // when & then
         mockMvc.perform(get("/admin/mails/targets")
@@ -60,19 +64,19 @@ class AdminMailTargetControllerTest {
                 .andExpect(jsonPath("$.data[0].email").value("test@test.com"))
                 .andExpect(jsonPath("$.data[0].selectionResult").value("WAITLISTED"))
                 .andExpect(jsonPath("$.data[0].waitlistNumber").value(2));
-        then(mailTargetService).should().getTargets(1L, SelectionResult.WAITLISTED);
+        then(mailTargetService).should().searchTargets(1L, SelectionResult.WAITLISTED);
     }
 
     @Test
     void 선정_결과_없이_전체_메일_발송_대상을_조회한다() throws Exception {
         // given
-        given(mailTargetService.getTargets(1L, null)).willReturn(List.of());
+        given(mailTargetService.searchTargets(1L, null)).willReturn(List.of());
 
         // when & then
         mockMvc.perform(get("/admin/mails/targets").param("recruitId", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").isEmpty());
-        then(mailTargetService).should().getTargets(1L, null);
+        then(mailTargetService).should().searchTargets(1L, null);
     }
 
     @Test
@@ -86,12 +90,19 @@ class AdminMailTargetControllerTest {
     @Test
     void 존재하지_않는_모집_공고면_404를_반환한다() throws Exception {
         // given
-        given(mailTargetService.getTargets(999L, null))
+        given(mailTargetService.searchTargets(999L, null))
                 .willThrow(new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
 
         // when & then
         mockMvc.perform(get("/admin/mails/targets").param("recruitId", "999"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value("RECRUIT-1"));
+    }
+
+    @Test
+    void 모집_공고_ID가_양수가_아니면_400을_반환한다() throws Exception {
+        mockMvc.perform(get("/admin/mails/targets").param("recruitId", "0"))
+                .andExpect(status().isBadRequest());
+        then(mailTargetService).shouldHaveNoInteractions();
     }
 }

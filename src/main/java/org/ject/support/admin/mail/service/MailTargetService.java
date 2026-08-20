@@ -19,7 +19,7 @@ public class MailTargetService {
     private final RecruitRepository recruitRepository;
     private final MailTargetQueryRepository mailTargetQueryRepository;
 
-    public List<MailTargetResponse> getTargets(Long recruitId, SelectionResult selectionResult) {
+    public List<MailTargetResponse> searchTargets(Long recruitId, SelectionResult selectionResult) {
         if (!recruitRepository.existsById(recruitId)) {
             throw new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT);
         }

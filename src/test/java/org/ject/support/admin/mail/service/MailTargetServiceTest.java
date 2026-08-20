@@ -41,7 +41,7 @@ class MailTargetServiceTest {
                 .willReturn(List.of(response));
 
         // when
-        List<MailTargetResponse> result = mailTargetService.getTargets(recruitId, SelectionResult.PASSED);
+        List<MailTargetResponse> result = mailTargetService.searchTargets(recruitId, SelectionResult.PASSED);
 
         // then
         assertThat(result).containsExactly(response);
@@ -54,7 +54,7 @@ class MailTargetServiceTest {
         given(recruitRepository.existsById(recruitId)).willReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> mailTargetService.getTargets(recruitId, null))
+        assertThatThrownBy(() -> mailTargetService.searchTargets(recruitId, null))
                 .isInstanceOf(RecruitException.class)
                 .extracting("errorCode")
                 .isEqualTo(RecruitErrorCode.NOT_FOUND_RECRUIT);
