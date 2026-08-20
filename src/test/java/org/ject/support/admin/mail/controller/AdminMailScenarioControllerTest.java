@@ -1,8 +1,11 @@
 package org.ject.support.admin.mail.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,21 +26,25 @@ import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
 import org.ject.support.admin.mail.service.MailScenarioService;
+import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.exception.GlobalExceptionHandler;
 import org.ject.support.common.response.ResponseWrapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-@ExtendWith(MockitoExtension.class)
-class AdminMailScenarioControllerTest {
+class AdminMailScenarioControllerTest extends UnitTestSupport {
 
     private MockMvc mockMvc;
 
@@ -52,28 +59,78 @@ class AdminMailScenarioControllerTest {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(adminMailScenarioController)
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .setControllerAdvice(new GlobalExceptionHandler(), new ResponseWrapper())
                 .build();
     }
 
     @Test
-    @DisplayName("시나리오 목록을 성공적으로 조회한다")
-    void getScenarios() throws Exception {
+    @DisplayName("메일 템플릿 목록을 기본 페이지 조건으로 조회한다")
+    void 메일_템플릿_목록을_기본_페이지_조건으로_조회한다() throws Exception {
         // given
         MailScenarioResponse scenarioResponse = new MailScenarioResponse(
                 1L, "테스트 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC,
                 "TEST_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${name}", true, LocalDateTime.now(),
                 List.of(new MailScenarioResponse.CustomVariableResponse("RECRUIT_NAME", "모집명", "TEXT", true, null))
         );
-        given(mailScenarioService.getScenarios()).willReturn(List.of(scenarioResponse));
+        given(mailScenarioService.searchScenarios(
+                isNull(MailScenarioCategory.class),
+                isNull(MailScenarioType.class),
+                any(Pageable.class)
+        )).willReturn(new PageImpl<>(List.of(scenarioResponse), PageRequest.of(0, 10), 1));
 
         // when & then
         mockMvc.perform(get("/admin/mails/scenarios"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data[0].id").value(scenarioResponse.id()))
-                .andExpect(jsonPath("$.data[0].name").value(scenarioResponse.name()))
-                .andExpect(jsonPath("$.data[0].category").value(scenarioResponse.category().name()))
-                .andExpect(jsonPath("$.data[0].type").value(scenarioResponse.type().name()));
+                .andExpect(jsonPath("$.data.content[0].id").value(scenarioResponse.id()))
+                .andExpect(jsonPath("$.data.content[0].name").value(scenarioResponse.name()))
+                .andExpect(jsonPath("$.data.content[0].category").value(scenarioResponse.category().name()))
+                .andExpect(jsonPath("$.data.content[0].type").value(scenarioResponse.type().name()));
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(mailScenarioService).searchScenarios(
+                isNull(MailScenarioCategory.class),
+                isNull(MailScenarioType.class),
+                pageableCaptor.capture()
+        );
+        Pageable pageable = pageableCaptor.getValue();
+        assertThat(pageable.getPageSize()).isEqualTo(10);
+        assertThat(pageable.getSort())
+                .containsExactly(Sort.Order.desc("createdAt"));
+    }
+
+    @Test
+    @DisplayName("메일 템플릿 목록을 구분과 타입으로 필터링한다")
+    void 메일_템플릿_목록을_구분과_타입으로_필터링한다() throws Exception {
+        // given
+        MailScenarioResponse scenarioResponse = new MailScenarioResponse(
+                1L, "테스트 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.REJECT,
+                "TEST_SCENARIO", "제목", "본문", true, LocalDateTime.now(), List.of()
+        );
+        given(mailScenarioService.searchScenarios(
+                eq(MailScenarioCategory.CLUB_MEMBER),
+                eq(MailScenarioType.REJECT),
+                any(Pageable.class)
+        )).willReturn(new PageImpl<>(List.of(scenarioResponse), PageRequest.of(1, 10), 11));
+
+        // when & then
+        mockMvc.perform(get("/admin/mails/scenarios")
+                        .param("category", MailScenarioCategory.CLUB_MEMBER.name())
+                        .param("type", MailScenarioType.REJECT.name())
+                        .param("page", "1")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].type").value(MailScenarioType.REJECT.name()))
+                .andExpect(jsonPath("$.data.number").value(1))
+                .andExpect(jsonPath("$.data.size").value(10));
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(mailScenarioService).searchScenarios(
+                eq(MailScenarioCategory.CLUB_MEMBER),
+                eq(MailScenarioType.REJECT),
+                pageableCaptor.capture()
+        );
+        assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(1);
     }
 
     @Test
