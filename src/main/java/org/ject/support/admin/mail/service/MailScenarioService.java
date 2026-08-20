@@ -35,9 +35,9 @@ public class MailScenarioService {
     private final MailTemplateEngine mailTemplateEngine;
     private final MailTemplateValidator mailTemplateValidator;
 
-    public Page<MailScenarioResponse> getScenarios(MailScenarioCategory category,
-                                                   MailScenarioType type,
-                                                   Pageable pageable) {
+    public Page<MailScenarioResponse> searchScenarios(MailScenarioCategory category,
+                                                      MailScenarioType type,
+                                                      Pageable pageable) {
         Page<MailScenario> scenarioPage = mailScenarioRepository.findScenarios(category, type, pageable);
         List<MailScenarioResponse> content = scenarioPage.getContent().stream()
                 .map(MailScenarioResponse::from)

@@ -73,7 +73,7 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
                 "TEST_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${name}", true, LocalDateTime.now(),
                 List.of(new MailScenarioResponse.CustomVariableResponse("RECRUIT_NAME", "모집명", "TEXT", true, null))
         );
-        given(mailScenarioService.getScenarios(
+        given(mailScenarioService.searchScenarios(
                 isNull(MailScenarioCategory.class),
                 isNull(MailScenarioType.class),
                 any(Pageable.class)
@@ -88,7 +88,7 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.data.content[0].type").value(scenarioResponse.type().name()));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(mailScenarioService).getScenarios(
+        verify(mailScenarioService).searchScenarios(
                 isNull(MailScenarioCategory.class),
                 isNull(MailScenarioType.class),
                 pageableCaptor.capture()
@@ -107,7 +107,7 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
                 1L, "테스트 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.REJECT,
                 "TEST_SCENARIO", "제목", "본문", true, LocalDateTime.now(), List.of()
         );
-        given(mailScenarioService.getScenarios(
+        given(mailScenarioService.searchScenarios(
                 eq(MailScenarioCategory.CLUB_MEMBER),
                 eq(MailScenarioType.REJECT),
                 any(Pageable.class)
@@ -125,7 +125,7 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.data.size").value(10));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(mailScenarioService).getScenarios(
+        verify(mailScenarioService).searchScenarios(
                 eq(MailScenarioCategory.CLUB_MEMBER),
                 eq(MailScenarioType.REJECT),
                 pageableCaptor.capture()
