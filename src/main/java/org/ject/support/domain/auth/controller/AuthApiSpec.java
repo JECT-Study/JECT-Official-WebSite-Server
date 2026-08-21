@@ -49,7 +49,7 @@ public interface AuthApiSpec {
             @ApiErrorResponse(value = AuthErrorCode.class, name = "NOT_FOUND_AUTH_CODE"),
             @ApiErrorResponse(value = EmailErrorCode.class, name = "INVALID_EMAIL_TEMPLATE")
     })
-    boolean verifyAuthCode(@RequestBody AuthDto.VerifyAuthCodeRequest verifyAuthCodeRequest,
+    boolean verifyAuthCode(@Valid @RequestBody AuthDto.VerifyAuthCodeRequest verifyAuthCodeRequest,
                            HttpServletRequest request, HttpServletResponse response,
                            @RequestParam EmailTemplate template);
 
@@ -70,5 +70,5 @@ public interface AuthApiSpec {
     @Operation(
             summary = "이메일 가입 여부 확인",
             description = "입력한 이메일이 이미 가입된 사용자인지 여부를 확인합니다.")
-    boolean isExistMember(@RequestParam String email);
+    boolean isExistMember(@RequestParam String email, @RequestParam Long recruitId);
 }

@@ -58,6 +58,7 @@ class ApplicantControllerTest {
     private final String TEST_PHONE_NUMBER = "01012345678";
     private final String TEST_PIN = "123456";
     private final String TEST_VERIFICATION_TOKEN = "test.verification.token";
+    private final Long TEST_RECRUIT_ID = 22L;
 
     @BeforeEach
     void setUp() {
@@ -68,7 +69,7 @@ class ApplicantControllerTest {
     @Test
     void 지원자_등록_성공() throws Exception {
         // given
-        RegisterRequest request = new RegisterRequest(TEST_PIN);
+        RegisterRequest request = new RegisterRequest(TEST_PIN, TEST_RECRUIT_ID);
         Authentication mockAuthentication = new UsernamePasswordAuthenticationToken(
                 new CustomUserDetails(TEST_EMAIL, 1L, Role.APPLY), "", null);
 
