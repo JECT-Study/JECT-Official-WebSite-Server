@@ -14,8 +14,7 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Region;
-import org.ject.support.domain.recruit.domain.Semester;
-import org.ject.support.domain.recruit.repository.SemesterRepository;
+import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -50,13 +49,15 @@ class ApplicantServiceTest extends UnitTestSupport {
     private Authentication authentication;
 
     @Mock
-    private SemesterRepository semesterRepository;
+    private SemesterInquiryUsecase semesterInquiryUsecase;
 
     private final String TEST_NAME = "홍길동";
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_PHONE_NUMBER = "01012345678";
     private final String TEST_PIN = "123456";
     private final String TEST_ENCODED_PIN = "encoded_pin";
+    private final Long TEST_RECRUIT_ID = 22L;
+    private final Long TEST_SEMESTER_ID = 5L;
 
     @BeforeEach
     void setUp() {
@@ -66,24 +67,20 @@ class ApplicantServiceTest extends UnitTestSupport {
     @Test
     void 임시_지원자_등록_성공() {
         // given
-        RegisterRequest request = new RegisterRequest(TEST_PIN);
+        RegisterRequest request = new RegisterRequest(TEST_PIN, TEST_RECRUIT_ID);
         Applicant applicant = Applicant.builder()
                 .id(1L)
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
                 .build();
-        Semester semester = Semester.builder()
-                .id(1L)
-                .name("1기")
-                .isRecruiting(true)
-                .build();
-
-        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.empty());
+        given(semesterInquiryUsecase.getSemesterIdByRecruitId(TEST_RECRUIT_ID))
+                .willReturn(TEST_SEMESTER_ID);
+        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+                .willReturn(Optional.empty());
         given(passwordEncoder.encode(TEST_PIN)).willReturn(TEST_ENCODED_PIN);
         given(applicantRepository.save(any(Applicant.class))).willReturn(applicant);
         given(jwtTokenProvider.createAuthenticationByApplicant(any(Applicant.class))).willReturn(authentication);
-        given(semesterRepository.findRecruitingSemester()).willReturn(Optional.of(semester));
 
         // when
         Authentication result = applicantService.registerTempApplicant(request, TEST_EMAIL);
@@ -98,14 +95,17 @@ class ApplicantServiceTest extends UnitTestSupport {
     @Test
     void 이미_존재하는_지원자인_경우_예외_발생() {
         // given
-        RegisterRequest request = new RegisterRequest(TEST_PIN);
+        RegisterRequest request = new RegisterRequest(TEST_PIN, TEST_RECRUIT_ID);
         Applicant existingApplicant = Applicant.builder()
                 .email(TEST_EMAIL)
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
                 .build();
 
-        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(existingApplicant));
+        given(semesterInquiryUsecase.getSemesterIdByRecruitId(TEST_RECRUIT_ID))
+                .willReturn(TEST_SEMESTER_ID);
+        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+                .willReturn(Optional.of(existingApplicant));
 
         // when & then
         assertThatThrownBy(() -> applicantService.registerTempApplicant(request, TEST_EMAIL))
