@@ -7,6 +7,8 @@ import org.ject.support.domain.recruit.dto.SemesterResponse;
 import org.ject.support.domain.recruit.dto.SemesterResponses;
 import org.ject.support.domain.recruit.exception.SemesterErrorCode;
 import org.ject.support.domain.recruit.exception.SemesterException;
+import org.ject.support.domain.recruit.exception.RecruitErrorCode;
+import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -34,5 +36,12 @@ public class SemesterInquiryService implements SemesterInquiryUsecase {
             () -> new SemesterException(SemesterErrorCode.NOT_FOUND_SEMESTER)
         );
         return SemesterResponse.from(semester);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Long getSemesterIdByRecruitId(Long recruitId) {
+        return semesterRepository.findSemesterIdByRecruitId(recruitId)
+                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
 }
