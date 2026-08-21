@@ -33,6 +33,26 @@ class RecruitRepositoryTest {
     private SemesterRepository semesterRepository;
 
     @Test
+    void 모집_공고에_연결된_기수를_조회한다() {
+        // given
+        Semester savedSemester = semesterRepository.save(
+                Semester.builder().name("5기").isRecruiting(true).build());
+        Recruit savedRecruit = recruitRepository.save(Recruit.builder()
+                .semester(savedSemester)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
+                .jobFamily(BE)
+                .build());
+
+        // when
+        Long semesterId = semesterRepository.findSemesterIdByRecruitId(savedRecruit.getId())
+                .orElseThrow();
+
+        // then
+        assertThat(semesterId).isEqualTo(savedSemester.getId());
+    }
+
+    @Test
     void 특정_직군의_마감되지_않은_모집_정보가_존재하면_true를_반환한다() {
         // given
         Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
