@@ -10,6 +10,7 @@ import org.ject.support.domain.applicant.exception.ApplicantException;
 import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.auth.dto.AuthVerificationResult;
 import org.ject.support.domain.auth.exception.AuthException;
+import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
@@ -34,6 +35,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final ApplicantRepository applicantRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SemesterInquiryUsecase semesterInquiryUsecase;
 
     /**
      * 이메일 템플릿 타입에 따라 인증번호를 검증하고 적절한 결과를 반환합니다.
@@ -44,7 +46,8 @@ public class AuthService {
      * @return 템플릿 타입에 따른 결과 객체 (Authentication 또는 String)
      */
     @Transactional
-    public AuthVerificationResult verifyAuthCodeByTemplate(String email, String authCode, EmailTemplate template) {
+    public AuthVerificationResult verifyAuthCodeByTemplate(
+            String email, String authCode, Long recruitId, EmailTemplate template) {
         if (template == EmailTemplate.AUTH_CODE) {
             // 인증번호 검증 후 이메일 반환
             verifyAuthCode(email, authCode);
@@ -52,7 +55,7 @@ public class AuthService {
             return new AuthVerificationResult(email);
         } else if (template == EmailTemplate.PIN_RESET) {
             // 인증번호 검증 후 Authentication 객체 반환
-            Authentication authentication = verifyEmailByAuthCodeOnly(email, authCode);
+            Authentication authentication = verifyEmailByAuthCodeOnly(email, authCode, recruitId);
             return new AuthVerificationResult(authentication);
         }
 
@@ -66,10 +69,10 @@ public class AuthService {
      * @return 인증된 사용자의 Authentication 객체
      */
 
-    private Authentication verifyEmailByAuthCodeOnly(String email, String userInputCode) {
+    private Authentication verifyEmailByAuthCodeOnly(String email, String userInputCode, Long recruitId) {
         // 인증번호 검증
         verifyAuthCode(email, userInputCode);
-        Applicant applicant = findApplicant(email);
+        Applicant applicant = findApplicant(email, recruitId);
 
         Authentication authentication = jwtTokenProvider.createAuthenticationByApplicant(applicant);
         deleteAuthCode(email);
@@ -85,9 +88,9 @@ public class AuthService {
      * @param pin 사용자 PIN 번호
      */
     @Transactional
-    public Authentication loginWithPin(String email, String pin) {
+    public Authentication loginWithPin(String email, String pin, Long recruitId) {
         // 이메일로 회원 조회
-        Applicant applicant = findApplicant(email);
+        Applicant applicant = findApplicant(email, recruitId);
         
         // PIN 번호 검증
         if (!passwordEncoder.matches(pin, applicant.getPin())) {
@@ -98,9 +101,9 @@ public class AuthService {
         return jwtTokenProvider.createAuthenticationByApplicant(applicant);
     }
 
-    private Applicant findApplicant(String email) {
-        //Todo: Applicant는 이메일 유니크 제약없음(중복 발생) -> 고유하게 식별하도록 추가 개선 필요
-        return applicantRepository.findByEmail(email)
+    private Applicant findApplicant(String email, Long recruitId) {
+        Long semesterId = semesterInquiryUsecase.getSemesterIdByRecruitId(recruitId);
+        return applicantRepository.findByEmailAndSemesterId(email, semesterId)
                 .orElseThrow(() -> new ApplicantException(NOT_FOUND_APPLICANT));
     }
 
@@ -146,8 +149,8 @@ public class AuthService {
         }
     }
 
-    public boolean isExistMember(String email) {
-        //Todo: Applicant는 이메일 유니크 제약없음(중복 발생) -> 고유하게 식별하도록 추가 개선 필요
-        return applicantRepository.existsByEmail(email);
+    public boolean isExistMember(String email, Long recruitId) {
+        Long semesterId = semesterInquiryUsecase.getSemesterIdByRecruitId(recruitId);
+        return applicantRepository.existsByEmailAndSemesterId(email, semesterId);
     }
 }

@@ -11,6 +11,8 @@ public interface ApplicantRepository extends JpaRepository<Applicant, Long>, App
 
     Optional<Applicant> findByEmail(String email);
 
+    Optional<Applicant> findByEmailAndSemesterId(String email, Long semesterId);
+
     Optional<Applicant> findByEmailAndRole(String email, Role role);
 
     Optional<Applicant> findByEmailAndRoleIn(String email, Collection<Role> roles);
@@ -18,4 +20,6 @@ public interface ApplicantRepository extends JpaRepository<Applicant, Long>, App
     Optional<Applicant> findByIdAndRoleIn(Long id, Collection<Role> roles);
 
     boolean existsByEmail(String email);
+
+    boolean existsByEmailAndSemesterId(String email, Long semesterId);
 }

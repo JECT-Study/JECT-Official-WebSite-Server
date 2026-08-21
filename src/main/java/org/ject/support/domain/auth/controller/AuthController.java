@@ -36,12 +36,13 @@ public class AuthController implements AuthApiSpec {
     @Override
     @PostMapping("/code")
     @PreAuthorize("permitAll()")
-    public boolean verifyAuthCode(@RequestBody VerifyAuthCodeRequest verifyAuthCodeRequest,
+    public boolean verifyAuthCode(@Valid @RequestBody VerifyAuthCodeRequest verifyAuthCodeRequest,
                                   HttpServletRequest request, HttpServletResponse response,
                                   @RequestParam EmailTemplate template) {
         // 서비스 레이어에서 템플릿 타입에 따른 인증 검증 결과 반환
         AuthVerificationResult result = authService.verifyAuthCodeByTemplate(
-                verifyAuthCodeRequest.email(), verifyAuthCodeRequest.authCode(), template);
+                verifyAuthCodeRequest.email(), verifyAuthCodeRequest.authCode(),
+                verifyAuthCodeRequest.recruitId(), template);
 
         // 결과에 따라 적절한 응답 처리
         if (result.hasAuthentication()) {
@@ -78,7 +79,8 @@ public class AuthController implements AuthApiSpec {
     @PreAuthorize("permitAll()")
     public boolean loginWithPin(@RequestBody @Valid PinLoginRequest request,
                                 HttpServletRequest httpRequest, HttpServletResponse response) {
-        Authentication authentication = authService.loginWithPin(request.email(), request.pin());
+        Authentication authentication = authService.loginWithPin(
+                request.email(), request.pin(), request.recruitId());
 
         customSuccessHandler.onAuthenticationSuccess(httpRequest, response, authentication);
 
@@ -88,7 +90,7 @@ public class AuthController implements AuthApiSpec {
     @Override
     @GetMapping("/login/exist")
     @PreAuthorize("permitAll()")
-    public boolean isExistMember(@RequestParam String email) {
-        return authService.isExistMember(email);
+    public boolean isExistMember(@RequestParam String email, @RequestParam Long recruitId) {
+        return authService.isExistMember(email, recruitId);
     }
 }

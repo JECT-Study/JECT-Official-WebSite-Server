@@ -10,10 +10,7 @@ import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.applicant.exception.ApplicantErrorCode;
 import org.ject.support.domain.applicant.exception.ApplicantException;
 import org.ject.support.domain.applicant.repository.ApplicantRepository;
-import org.ject.support.domain.recruit.domain.Semester;
-import org.ject.support.domain.recruit.exception.SemesterErrorCode;
-import org.ject.support.domain.recruit.exception.SemesterException;
-import org.ject.support.domain.recruit.repository.SemesterRepository;
+import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -26,7 +23,7 @@ import static org.ject.support.domain.applicant.exception.ApplicantErrorCode.ALR
 public class ApplicantService {
 
     private final ApplicantRepository applicantRepository;
-    private final SemesterRepository semesterRepository;
+    private final SemesterInquiryUsecase semesterInquiryUsecase;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
 
@@ -37,20 +34,13 @@ public class ApplicantService {
      */
     @Transactional
     public Authentication registerTempApplicant(RegisterRequest registerRequest, String email) {
-        // 이메일로 지원자 조회
-        /**
-         * Todo: 이메일을 단건으로 구분할 수 있는 정책 설정
-         * 기존 Member는 email에 유니크 제약조건 존재, applicant는 이력 의미도 포함하기 때문에 유니크 제약 X
-         * 여러 기수에 지원한 경우 현재 로직대로면 복수 행 응답 가능
-         * 지원데이터는 모집 공고 당 1개만 존재할 수 있음 -> 이메일 조회를 이메일+공고로 조회
-         * applicant에 recruit_id 필요 (값 참조)
-         */
-        Applicant applicant = applicantRepository.findByEmail(email)
+        Long semesterId = semesterInquiryUsecase.getSemesterIdByRecruitId(registerRequest.recruitId());
+        Applicant applicant = applicantRepository.findByEmailAndSemesterId(email, semesterId)
                 .orElse(null);
 
         if (applicant == null) {
             // 새로운 지원자 생성
-            applicant = createTempApplicantWithPin(registerRequest, email);
+            applicant = createTempApplicantWithPin(registerRequest, email, semesterId);
         } else {
             // 기존 지원자가 있는 경우 PIN 번호만 업데이트
             throw new ApplicantException(ALREADY_EXIST_APPLICANT);
@@ -64,13 +54,10 @@ public class ApplicantService {
      * PIN 번호가 설정된 지원자를 생성합니다.
      * PIN 번호는 암호화하여 저장합니다.
      */
-    private Applicant createTempApplicantWithPin(RegisterRequest registerRequest, String email) {
+    private Applicant createTempApplicantWithPin(RegisterRequest registerRequest, String email, Long semesterId) {
         String encodedPin = passwordEncoder.encode(registerRequest.pin());
 
-        Semester semester = semesterRepository.findRecruitingSemester()
-                .orElseThrow(() -> new SemesterException(SemesterErrorCode.NOT_FOUND_RECRUITING_SEMESTER));
-
-        Applicant applicant = registerRequest.toEntity(semester.getId(), email, encodedPin);
+        Applicant applicant = registerRequest.toEntity(semesterId, email, encodedPin);
 
         return applicantRepository.save(applicant);
     }

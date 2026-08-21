@@ -1,6 +1,7 @@
 package org.ject.support.domain.applicant.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.MemberStatus;
@@ -9,8 +10,8 @@ import org.ject.support.domain.member.Role;
 public class ApplicantDto {
 
     public record RegisterRequest(
-
-            @NotBlank @Pattern(regexp = "^\\d{6}$", message = "PIN 번호는 6자리 숫자여야 합니다.") String pin) {
+            @NotBlank @Pattern(regexp = "^\\d{6}$", message = "PIN 번호는 6자리 숫자여야 합니다.") String pin,
+            @NotNull Long recruitId) {
 
         public Applicant toEntity(Long semesterId, String email, String encodedPin) {
             return Applicant.builder()
