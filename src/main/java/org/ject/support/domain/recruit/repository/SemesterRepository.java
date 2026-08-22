@@ -12,4 +12,7 @@ public interface SemesterRepository extends JpaRepository<Semester, Long>, Semes
     Optional<Semester> findRecruitingSemester();
 
     Optional<Semester> findByName(String name);
+
+    @Query("select r.semester.id from Recruit r where r.id = :recruitId")
+    Optional<Long> findSemesterIdByRecruitId(Long recruitId);
 }

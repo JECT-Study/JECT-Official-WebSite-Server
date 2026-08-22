@@ -12,4 +12,6 @@ public interface SemesterInquiryUsecase {
     SemesterResponses getAllSemesters();
 
     SemesterResponse getSemester(Long id);
+
+    Long getSemesterIdByRecruitId(Long recruitId);
 }

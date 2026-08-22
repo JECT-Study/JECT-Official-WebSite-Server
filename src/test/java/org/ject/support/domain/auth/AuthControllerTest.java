@@ -59,43 +59,48 @@ class AuthControllerTest extends UnitTestSupport {
     private final String TEST_AUTH_CODE = "123456";
     private final String TEST_REFRESH_TOKEN = "test.refresh.token";
     private final Long TEST_APPLICANT_ID = 1L;
+    private final Long TEST_RECRUIT_ID = 22L;
 
     @Test
     void 인증_코드_검증_AUTH_CODE_템플릿_이메일만_반환_성공() {
         // given
-        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
+        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID);
         EmailTemplate template = EmailTemplate.AUTH_CODE;
         
         AuthVerificationResult mockResult = new AuthVerificationResult(TEST_EMAIL);
         
-        given(authService.verifyAuthCodeByTemplate(request.email(), request.authCode(), template))
+        given(authService.verifyAuthCodeByTemplate(
+                request.email(), request.authCode(), request.recruitId(), template))
             .willReturn(mockResult);
 
         // when
         authController.verifyAuthCode(request, mock(HttpServletRequest.class), mock(HttpServletResponse.class), template);
 
         // then
-        verify(authService).verifyAuthCodeByTemplate(eq(TEST_EMAIL), eq(TEST_AUTH_CODE), eq(template));
+        verify(authService).verifyAuthCodeByTemplate(
+                eq(TEST_EMAIL), eq(TEST_AUTH_CODE), eq(TEST_RECRUIT_ID), eq(template));
         verify(customSuccessHandler).onAuthenticationSuccess(any(HttpServletResponse.class), eq(TEST_EMAIL));
     }
     
     @Test
     void 인증_코드_검증_PIN_RESET_템플릿_인증_토큰_발급_성공() {
         // given
-        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
+        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID);
         EmailTemplate template = EmailTemplate.PIN_RESET;
         
         Authentication mockAuthentication = mock(Authentication.class);
         AuthVerificationResult mockResult = new AuthVerificationResult(mockAuthentication);
         
-        given(authService.verifyAuthCodeByTemplate(request.email(), request.authCode(), template))
+        given(authService.verifyAuthCodeByTemplate(
+                request.email(), request.authCode(), request.recruitId(), template))
             .willReturn(mockResult);
 
         // when
         authController.verifyAuthCode(request, mock(HttpServletRequest.class), mock(HttpServletResponse.class), template);
 
         // then
-        verify(authService).verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, template);
+        verify(authService).verifyAuthCodeByTemplate(
+                TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID, template);
         verify(customSuccessHandler).onAuthenticationSuccess(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(mockAuthentication));
     }
     
@@ -119,33 +124,33 @@ class AuthControllerTest extends UnitTestSupport {
     @Test
     void PIN_로그인_성공() {
         // given
-        PinLoginRequest request = new PinLoginRequest(TEST_EMAIL, TEST_AUTH_CODE);
+        PinLoginRequest request = new PinLoginRequest(TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID);
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpServletResponse mockResponse = mock(HttpServletResponse.class);
         Authentication mockAuthentication = mock(Authentication.class);
         
-        given(authService.loginWithPin(request.email(), request.pin()))
+        given(authService.loginWithPin(request.email(), request.pin(), request.recruitId()))
             .willReturn(mockAuthentication);
 
         // when
         authController.loginWithPin(request, mockRequest, mockResponse);
 
         // then
-        verify(authService).loginWithPin(TEST_EMAIL, TEST_AUTH_CODE);
+        verify(authService).loginWithPin(TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID);
         verify(customSuccessHandler).onAuthenticationSuccess(mockRequest, mockResponse, mockAuthentication);
     }
     
     @Test
     void 회원_존재_여부_확인_성공() {
         // given
-        given(authService.isExistMember(TEST_EMAIL))
+        given(authService.isExistMember(TEST_EMAIL, TEST_RECRUIT_ID))
             .willReturn(true);
 
         // when
-        boolean result = authController.isExistMember(TEST_EMAIL);
+        boolean result = authController.isExistMember(TEST_EMAIL, TEST_RECRUIT_ID);
 
         // then
-        verify(authService).isExistMember(TEST_EMAIL);
+        verify(authService).isExistMember(TEST_EMAIL, TEST_RECRUIT_ID);
         org.assertj.core.api.Assertions.assertThat(result).isTrue();
     }
 }
@@ -170,12 +175,13 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_AUTH_CODE = "123456";
     private final String TEST_REFRESH_TOKEN = "test.refresh.token";
+    private final Long TEST_RECRUIT_ID = 22L;
     
     @Test
     @DisplayName("인증 코드 검증 API - 인증 없이 접근 가능 및 쿠키 발급 테스트")
     void verifyAuthCode_WithPermitAll_ShouldAllowAccessAndSetCookies() throws Exception {
         // given
-        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE);
+        VerifyAuthCodeRequest request = new VerifyAuthCodeRequest(TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID);
         
         // Redis에서 인증 코드를 반환하도록 설정
         when(valueOperations.get(TEST_EMAIL)).thenReturn(TEST_AUTH_CODE);
@@ -184,7 +190,8 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
         // PIN_RESET 템플릿은 Authentication 객체 반환
         Authentication mockAuthentication = mock(Authentication.class);
         AuthVerificationResult mockResult = new AuthVerificationResult(mockAuthentication);
-        given(authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET))
+        given(authService.verifyAuthCodeByTemplate(
+                TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID, EmailTemplate.PIN_RESET))
             .willReturn(mockResult);
         
         // 쿠키 발급을 위한 모킹 설정
@@ -213,7 +220,7 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
     @DisplayName("@PreAuthorize(\"hasRole('ROLE_APPLY')\") 설정으로 인증이 필요한지 확인")
     void refreshToken_WithRoleTemp_ShouldRequireAuthentication() throws Exception {
         // given
-        PinLoginRequest request = new PinLoginRequest("test@email.com", "123456");
+        PinLoginRequest request = new PinLoginRequest("test@email.com", "123456", TEST_RECRUIT_ID);
 
         // when & then
         mockMvc.perform(post("/auth/login/pin")
@@ -226,7 +233,7 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
     @DisplayName("PIN 로그인 API 인증 없이 접근 가능한지 확인")
     void loginWithPin_WithPermitAll_ShouldAllowAccessWithoutAuthentication() throws Exception {
         // given
-        PinLoginRequest request = new PinLoginRequest(TEST_EMAIL, TEST_AUTH_CODE);
+        PinLoginRequest request = new PinLoginRequest(TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID);
         
         // when & then
         // 인증 없이 접근 가능한지 확인 (permitAll 설정)
@@ -241,7 +248,9 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
     void isExistMember_WithPermitAll_ShouldAllowAccessWithoutAuthentication() throws Exception {
         // when & then
         // 인증 없이 접근 가능한지 확인 (permitAll 설정)
-        mockMvc.perform(get("/auth/login/exist?email=" + TEST_EMAIL)
+        mockMvc.perform(get("/auth/login/exist")
+                .param("email", TEST_EMAIL)
+                .param("recruitId", String.valueOf(TEST_RECRUIT_ID))
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }

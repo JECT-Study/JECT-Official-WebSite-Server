@@ -28,6 +28,7 @@ import java.util.Optional;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.applicant.exception.ApplicantException;
 import org.ject.support.domain.applicant.repository.ApplicantRepository;
+import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
 import org.ject.support.domain.member.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -67,6 +68,9 @@ class AuthServiceTest {
     @Mock
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
+    @Mock
+    private SemesterInquiryUsecase semesterInquiryUsecase;
+
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_AUTH_CODE = "123456";
     private final String TEST_VERIFICATION_TOKEN = "test.verification.token";
@@ -75,10 +79,14 @@ class AuthServiceTest {
     private final String TEST_ACCESS_TOKEN = "test.access.token";
     private final String TEST_REFRESH_TOKEN = "test.refresh.token";
     private final Long TEST_APPLICANT_ID = 1L;
+    private final Long TEST_RECRUIT_ID = 22L;
+    private final Long TEST_SEMESTER_ID = 5L;
 
     @BeforeEach
     void setUp() {
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        lenient().when(semesterInquiryUsecase.getSemesterIdByRecruitId(TEST_RECRUIT_ID))
+                .thenReturn(TEST_SEMESTER_ID);
     }
 
     @Test
@@ -94,12 +102,14 @@ class AuthServiceTest {
                 .build();
         
         given(valueOperations.get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
-        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(applicant));
+        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+                .willReturn(Optional.of(applicant));
         given(jwtTokenProvider.createAuthenticationByApplicant(applicant)).willReturn(authentication);
         given(jwtTokenProvider.createAccessToken(authentication, TEST_APPLICANT_ID)).willReturn(TEST_ACCESS_TOKEN);
 
         // when
-        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET);
+        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(
+                TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID, EmailTemplate.PIN_RESET);
 
         // then
         assertThat(result).isNotNull();
@@ -174,14 +184,15 @@ class AuthServiceTest {
                 .status(MemberStatus.ACTIVE)
                 .build();
         
-        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(applicant));
+        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+                .willReturn(Optional.of(applicant));
         given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(true);
         given(jwtTokenProvider.createAuthenticationByApplicant(applicant)).willReturn(authentication);
         given(jwtTokenProvider.createAccessToken(authentication, TEST_APPLICANT_ID)).willReturn(TEST_ACCESS_TOKEN);
         given(jwtTokenProvider.createRefreshToken(authentication, applicant.getId())).willReturn(TEST_REFRESH_TOKEN);
         
         // when
-        Authentication result = authService.loginWithPin(TEST_EMAIL, TEST_PIN);
+        Authentication result = authService.loginWithPin(TEST_EMAIL, TEST_PIN, TEST_RECRUIT_ID);
         
         // then
         assertThat(result).isEqualTo(authentication);
@@ -191,10 +202,11 @@ class AuthServiceTest {
     @DisplayName("PIN 로그인 실패 - 회원 없음")
     void loginWithPin_MemberNotFound_ThrowsException() {
         // given
-        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.empty());
+        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+                .willReturn(Optional.empty());
         
         // when & then
-        assertThatThrownBy(() -> authService.loginWithPin(TEST_EMAIL, TEST_PIN))
+        assertThatThrownBy(() -> authService.loginWithPin(TEST_EMAIL, TEST_PIN, TEST_RECRUIT_ID))
             .isInstanceOf(ApplicantException.class)
             .extracting(e -> ((ApplicantException) e).getErrorCode())
             .isEqualTo(NOT_FOUND_APPLICANT);
@@ -212,11 +224,12 @@ class AuthServiceTest {
                 .status(MemberStatus.ACTIVE)
                 .build();
         
-        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(applicant));
+        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+                .willReturn(Optional.of(applicant));
         given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(false);
         
         // when & then
-        assertThatThrownBy(() -> authService.loginWithPin(TEST_EMAIL, TEST_PIN))
+        assertThatThrownBy(() -> authService.loginWithPin(TEST_EMAIL, TEST_PIN, TEST_RECRUIT_ID))
             .isInstanceOf(AuthException.class)
             .extracting(e -> ((AuthException) e).getErrorCode())
             .isEqualTo(INVALID_CREDENTIALS);
@@ -226,10 +239,10 @@ class AuthServiceTest {
     @DisplayName("회원 존재 여부 확인 - 회원 존재")
     void isExistMember_MemberExists_ReturnsTrue() {
         // given
-        given(applicantRepository.existsByEmail(TEST_EMAIL)).willReturn(true);
+        given(applicantRepository.existsByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID)).willReturn(true);
         
         // when
-        boolean result = authService.isExistMember(TEST_EMAIL);
+        boolean result = authService.isExistMember(TEST_EMAIL, TEST_RECRUIT_ID);
         
         // then
         assertThat(result).isTrue();
@@ -239,10 +252,10 @@ class AuthServiceTest {
     @DisplayName("회원 존재 여부 확인 - 회원 없음")
     void isExistMember_MemberNotExists_ReturnsFalse() {
         // given
-        given(applicantRepository.existsByEmail(TEST_EMAIL)).willReturn(false);
+        given(applicantRepository.existsByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID)).willReturn(false);
         
         // when
-        boolean result = authService.isExistMember(TEST_EMAIL);
+        boolean result = authService.isExistMember(TEST_EMAIL, TEST_RECRUIT_ID);
         
         // then
         assertThat(result).isFalse();
@@ -255,7 +268,8 @@ class AuthServiceTest {
         given(redisTemplate.opsForValue().get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
         
         // when
-        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.AUTH_CODE);
+        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(
+                TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID, EmailTemplate.AUTH_CODE);
         
         // then
         assertThat(result).isNotNull();
@@ -278,12 +292,14 @@ class AuthServiceTest {
                 .build();
         Authentication mockAuthentication = mock(Authentication.class);
         
-        given(applicantRepository.findByEmail(TEST_EMAIL)).willReturn(Optional.of(applicant));
+        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+                .willReturn(Optional.of(applicant));
         given(redisTemplate.opsForValue().get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
         given(jwtTokenProvider.createAuthenticationByApplicant(any(Applicant.class))).willReturn(mockAuthentication);
         
         // when
-        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, EmailTemplate.PIN_RESET);
+        AuthVerificationResult result = authService.verifyAuthCodeByTemplate(
+                TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID, EmailTemplate.PIN_RESET);
         
         // then
         assertThat(result).isNotNull();
@@ -303,7 +319,7 @@ class AuthServiceTest {
         
         // when & then
         assertThatThrownBy(() -> 
-            authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, invalidTemplate)
+            authService.verifyAuthCodeByTemplate(TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID, invalidTemplate)
         ).isInstanceOf(EmailException.class)
          .hasFieldOrPropertyWithValue("errorCode", EmailErrorCode.INVALID_EMAIL_TEMPLATE);
     }
