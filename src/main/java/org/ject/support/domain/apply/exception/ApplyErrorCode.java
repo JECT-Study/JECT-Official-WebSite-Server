@@ -22,7 +22,8 @@ public enum ApplyErrorCode implements ErrorCode {
     WAITLIST_NUMBER_NOT_ALLOWED(BAD_REQUEST, "APPLY-8", "예비 합격이 아닌 선정 결과에는 예비 번호를 지정할 수 없습니다."),
     DUPLICATE_WAITLIST_NUMBER(CONFLICT, "APPLY-9", "같은 모집 공고 안에서 예비 번호는 중복될 수 없습니다."),
     DUPLICATE_APPLY_ID(BAD_REQUEST, "APPLY-10", "하나의 요청에 같은 지원을 두 번 담을 수 없습니다."),
-    INVALID_WAITLIST_NUMBER(BAD_REQUEST, "APPLY-11", "예비 번호는 1 이상의 정수여야 합니다.")
+    INVALID_WAITLIST_NUMBER(BAD_REQUEST, "APPLY-11", "예비 번호는 1 이상의 정수여야 합니다."),
+    APPLY_EXISTS_IN_OTHER_RECRUIT(CONFLICT, "APPLY-12", "다른 공고에서 작성 중인 지원서가 있습니다.")
     ;
 
     private final HttpStatus httpStatus;
