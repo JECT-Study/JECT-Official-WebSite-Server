@@ -6,9 +6,11 @@ import static org.ject.support.domain.auth.exception.AuthErrorCode.EXPIRED_REFRE
 import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_REFRESH_TOKEN;
 import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_CREDENTIALS;
 import static org.ject.support.domain.applicant.exception.ApplicantErrorCode.NOT_FOUND_APPLICANT;
+import static org.ject.support.domain.apply.exception.ApplyErrorCode.APPLY_EXISTS_IN_OTHER_RECRUIT;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.mock;
 
 import io.jsonwebtoken.ExpiredJwtException;
@@ -16,7 +18,9 @@ import io.jsonwebtoken.JwtException;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.auth.dto.AuthVerificationResult;
 import org.ject.support.domain.auth.exception.AuthException;
+import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.auth.service.AuthService;
+import org.ject.support.domain.apply.service.ApplyQueryService;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.EmailErrorCode;
@@ -70,6 +74,9 @@ class AuthServiceTest {
 
     @Mock
     private SemesterInquiryUsecase semesterInquiryUsecase;
+
+    @Mock
+    private ApplyQueryService applyQueryService;
 
     private final String TEST_EMAIL = "test@example.com";
     private final String TEST_AUTH_CODE = "123456";
@@ -187,6 +194,7 @@ class AuthServiceTest {
         given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
                 .willReturn(Optional.of(applicant));
         given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(true);
+        given(applyQueryService.getRecruitIdByApplicantId(TEST_APPLICANT_ID)).willReturn(Optional.empty());
         given(jwtTokenProvider.createAuthenticationByApplicant(applicant)).willReturn(authentication);
         given(jwtTokenProvider.createAccessToken(authentication, TEST_APPLICANT_ID)).willReturn(TEST_ACCESS_TOKEN);
         given(jwtTokenProvider.createRefreshToken(authentication, applicant.getId())).willReturn(TEST_REFRESH_TOKEN);
@@ -196,6 +204,58 @@ class AuthServiceTest {
         
         // then
         assertThat(result).isEqualTo(authentication);
+    }
+
+    @Test
+    @DisplayName("현재 공고에 작성 중인 지원서가 있으면 PIN 로그인에 성공한다")
+    void 현재_공고에_작성_중인_지원서가_있으면_PIN_로그인에_성공한다() {
+        // given
+        Applicant applicant = Applicant.builder()
+                .id(TEST_APPLICANT_ID)
+                .email(TEST_EMAIL)
+                .pin(TEST_ENCODED_PIN)
+                .role(Role.SEMESTER)
+                .status(MemberStatus.ACTIVE)
+                .build();
+
+        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+                .willReturn(Optional.of(applicant));
+        given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(true);
+        given(applyQueryService.getRecruitIdByApplicantId(TEST_APPLICANT_ID))
+                .willReturn(Optional.of(TEST_RECRUIT_ID));
+        given(jwtTokenProvider.createAuthenticationByApplicant(applicant)).willReturn(authentication);
+
+        // when
+        Authentication result = authService.loginWithPin(TEST_EMAIL, TEST_PIN, TEST_RECRUIT_ID);
+
+        // then
+        assertThat(result).isEqualTo(authentication);
+    }
+
+    @Test
+    @DisplayName("다른 공고에 작성 중인 지원서가 있으면 충돌 예외가 발생한다")
+    void 다른_공고에_작성_중인_지원서가_있으면_충돌_예외가_발생한다() {
+        // given
+        Long existingRecruitId = 21L;
+        Applicant applicant = Applicant.builder()
+                .id(TEST_APPLICANT_ID)
+                .email(TEST_EMAIL)
+                .pin(TEST_ENCODED_PIN)
+                .role(Role.SEMESTER)
+                .status(MemberStatus.ACTIVE)
+                .build();
+
+        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+                .willReturn(Optional.of(applicant));
+        given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(true);
+        given(applyQueryService.getRecruitIdByApplicantId(TEST_APPLICANT_ID))
+                .willReturn(Optional.of(existingRecruitId));
+
+        // when & then
+        assertThatThrownBy(() -> authService.loginWithPin(TEST_EMAIL, TEST_PIN, TEST_RECRUIT_ID))
+                .isInstanceOf(ApplyException.class)
+                .extracting(exception -> ((ApplyException) exception).getErrorCode())
+                .isEqualTo(APPLY_EXISTS_IN_OTHER_RECRUIT);
     }
     
     @Test
@@ -233,6 +293,7 @@ class AuthServiceTest {
             .isInstanceOf(AuthException.class)
             .extracting(e -> ((AuthException) e).getErrorCode())
             .isEqualTo(INVALID_CREDENTIALS);
+        verifyNoInteractions(applyQueryService);
     }
     
     @Test

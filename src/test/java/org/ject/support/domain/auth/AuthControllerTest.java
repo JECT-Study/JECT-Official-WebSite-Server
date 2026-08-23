@@ -11,6 +11,8 @@ import static org.mockito.BDDMockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.ject.support.domain.apply.exception.ApplyErrorCode.APPLY_EXISTS_IN_OTHER_RECRUIT;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
@@ -25,6 +27,7 @@ import org.ject.support.domain.auth.dto.AuthDto.TokenRefreshRequest;
 import org.ject.support.domain.auth.dto.AuthDto.VerifyAuthCodeRequest;
 import org.ject.support.domain.auth.dto.AuthVerificationResult;
 import org.ject.support.domain.auth.service.AuthService;
+import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.junit.jupiter.api.DisplayName;
@@ -241,6 +244,24 @@ class AuthControllerIntegrationTest extends ApplicationPeriodTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("다른 공고에 지원서가 있으면 명확한 충돌 응답을 반환한다")
+    void 다른_공고에_지원서가_있으면_명확한_충돌_응답을_반환한다() throws Exception {
+        // given
+        PinLoginRequest request = new PinLoginRequest(TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID);
+        given(authService.loginWithPin(TEST_EMAIL, TEST_AUTH_CODE, TEST_RECRUIT_ID))
+                .willThrow(new ApplyException(APPLY_EXISTS_IN_OTHER_RECRUIT));
+
+        // when & then
+        mockMvc.perform(post("/auth/login/pin")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value("APPLY-12"))
+                .andExpect(jsonPath("$.data[0]")
+                        .value("다른 공고에서 작성 중인 지원서가 있습니다."));
     }
     
     @Test
