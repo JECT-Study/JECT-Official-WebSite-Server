@@ -45,7 +45,7 @@ import static org.ject.support.domain.apply.exception.ApplyErrorCode.NOT_FOUND_A
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ApplyService implements ApplyUsecase {
+public class ApplyService implements ApplyUsecase, ApplyQueryService {
     private static final int RECRUIT_ID_PARAMETER_INDEX = 1;
 
     private final RecruitRepository recruitRepository;
@@ -54,6 +54,12 @@ public class ApplyService implements ApplyUsecase {
     private final ApplicantRepository applicantRepository;
     private final Map2JsonSerializer map2JsonSerializer;
     private final String2MapSerializer string2MapSerializer;
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Long> getRecruitIdByApplicantId(Long applicantId) {
+        return applyRepository.findRecruitIdByApplicantId(applicantId);
+    }
 
     @Override
     @PeriodAccessible(recruitIdParameterIndex = RECRUIT_ID_PARAMETER_INDEX)
