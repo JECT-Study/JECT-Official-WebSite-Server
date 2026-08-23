@@ -153,6 +153,21 @@ class ApplyRepositoryTest {
     }
 
     @Test
+    void 지원자가_작성한_공고_ID를_조회한다() {
+        // given
+        Applicant applicant = createApplicant("email@test.com", Role.APPLY);
+        applicantRepository.save(applicant);
+
+        applyRepository.save(getApply(applicant, beRecruit, TEMP_SAVED));
+
+        // when
+        Long result = applyRepository.findRecruitIdByApplicantId(applicant.getId()).orElseThrow();
+
+        // then
+        assertThat(result).isEqualTo(beRecruit.getId());
+    }
+
+    @Test
     void 지원ID와_지원서의_상태로_지원서를_상세_조회한다() {
         // given
         Applicant feApplicant = createApplicant("emailFE@test.com", Role.APPLY);
