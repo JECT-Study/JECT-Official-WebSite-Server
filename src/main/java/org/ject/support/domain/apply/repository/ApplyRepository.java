@@ -28,6 +28,9 @@ public interface ApplyRepository extends JpaRepository<Apply, Long> {
                                                            @Param("recruitId") Long recruitId,
                                                            @Param("now") LocalDateTime now);
 
+    @Query("select a.recruit.id from Apply a where a.applicant.id = :applicantId")
+    Optional<Long> findRecruitIdByApplicantId(@Param("applicantId") Long applicantId);
+
     List<Apply> findByRecruitAndStatus(Recruit recruit, ApplyStatus status);
 
     @Query("select a from Apply a join fetch a.applicant m where a.id = :applyId and a.status = :status")
