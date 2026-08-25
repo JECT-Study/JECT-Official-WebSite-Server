@@ -27,6 +27,7 @@ import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.entity.MemberSemester;
+import org.ject.support.domain.member.entity.MemberSupporters;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;
@@ -1321,4 +1322,55 @@ class MemberActivityRepositoryTest {
 		// when & then
 		assertThat(memberActivityRepository.findMemberIdsWithActivity(Set.of(member.getId()))).isEmpty();
 	}
+
+	@Test
+	@DisplayName("운영 서포터즈 활동을 삭제해도 활동 관리 항목은 유지한다")
+	void 운영_서포터즈_활동을_삭제해도_활동_관리_항목은_유지한다() {
+		// given
+		Member member = memberRepository.save(member().email("supporters-delete@test.com").build());
+		MemberActivity memberActivity = saveSupportersActivity(member.getId(), "SP-DELETE");
+
+		// when
+		memberActivityRepository.delete(memberActivity);
+		memberActivityRepository.flush();
+		entityManager.clear();
+
+		// then
+		assertThat(memberActivityRepository.findById(memberActivity.getId())).isEmpty();
+		assertThat(entityManager.find(MemberSupporters.class, memberActivity.getId())).isNotNull();
+	}
+
+	@Test
+	@DisplayName("운영 서포터즈 활동 여러 건을 삭제해도 활동 관리 항목은 유지한다")
+	void 운영_서포터즈_활동_여러_건을_삭제해도_활동_관리_항목은_유지한다() {
+		// given
+		Member firstMember = memberRepository.save(member().email("supporters-bulk1@test.com").build());
+		Member secondMember = memberRepository.save(member().email("supporters-bulk2@test.com").build());
+		MemberActivity first = saveSupportersActivity(firstMember.getId(), "SP-BULK-1");
+		MemberActivity second = saveSupportersActivity(secondMember.getId(), "SP-BULK-2");
+
+		// when
+		memberActivityRepository.deleteAll(List.of(first, second));
+		memberActivityRepository.flush();
+		entityManager.clear();
+
+		// then
+		assertThat(memberActivityRepository.findAllById(List.of(first.getId(), second.getId()))).isEmpty();
+		assertThat(entityManager.find(MemberSupporters.class, first.getId())).isNotNull();
+		assertThat(entityManager.find(MemberSupporters.class, second.getId())).isNotNull();
+	}
+
+	private MemberActivity saveSupportersActivity(Long memberId, String activityCertNumber) {
+		return memberActivityRepository.saveAndFlush(MemberActivity.createSupportersActivity(
+			memberId,
+			JobFamily.OPS,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ENDED,
+			null,
+			null,
+			activityCertNumber,
+			"memo"
+		));
+	}
+
 }

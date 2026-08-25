@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Set;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
-import org.ject.support.admin.member.dto.request.DeleteMemberMakersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.CareerDetails;
@@ -320,7 +320,7 @@ class AdminMemberMakersControllerTest {
 		// given
 		MemberActivity first = saveMakersActivity(uniqueEmail("bulk1"), JobFamily.FE, MakersTeam.TEAM_1);
 		MemberActivity second = saveMakersActivity(uniqueEmail("bulk2"), JobFamily.BE, MakersTeam.TEAM_2);
-		DeleteMemberMakersRequest request = new DeleteMemberMakersRequest(Set.of(first.getId(), second.getId()));
+		DeleteMembersRequest request = new DeleteMembersRequest(Set.of(first.getId(), second.getId()));
 
 		// when
 		mockMvc.perform(delete("/admin/members/makers")
@@ -339,7 +339,7 @@ class AdminMemberMakersControllerTest {
 	void 일괄_삭제_대상에_존재하지_않는_활동이_있으면_아무도_삭제하지_않는다() throws Exception {
 		// given
 		MemberActivity memberActivity = saveMakersActivity(uniqueEmail("bulk-invalid"), JobFamily.FE, MakersTeam.TEAM_1);
-		DeleteMemberMakersRequest request = new DeleteMemberMakersRequest(Set.of(memberActivity.getId(), 999999999L));
+		DeleteMembersRequest request = new DeleteMembersRequest(Set.of(memberActivity.getId(), 999999999L));
 
 		// when
 		mockMvc.perform(delete("/admin/members/makers")
@@ -360,7 +360,7 @@ class AdminMemberMakersControllerTest {
 		MemberActivity makers = saveMakersActivity(uniqueEmail("bulk-makers"), JobFamily.FE, MakersTeam.TEAM_1);
 		Member member = memberRepository.save(member().email(uniqueEmail("bulk-semester")).build());
 		MemberActivity semester = memberActivityRepository.saveAndFlush(semesterActivity().memberId(member.getId()).build());
-		DeleteMemberMakersRequest request = new DeleteMemberMakersRequest(Set.of(makers.getId(), semester.getId()));
+		DeleteMembersRequest request = new DeleteMembersRequest(Set.of(makers.getId(), semester.getId()));
 
 		// when
 		mockMvc.perform(delete("/admin/members/makers")

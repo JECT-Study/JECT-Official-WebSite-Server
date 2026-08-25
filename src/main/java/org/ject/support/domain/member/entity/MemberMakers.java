@@ -11,6 +11,7 @@ import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.MakersTeam;
@@ -20,6 +21,7 @@ import org.ject.support.domain.member.CareerLevel;
 @Getter
 @Builder
 @Table(name = "member_makers")
+@SQLDelete(sql = "UPDATE member_makers SET id = id WHERE id = ?")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class MemberMakers extends BaseTimeEntity {

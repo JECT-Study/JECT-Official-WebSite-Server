@@ -5,9 +5,11 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.verify;
 
 import java.util.List;
+import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.response.MemberSupportersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
@@ -105,6 +107,38 @@ class AdminMemberSupportersUseCaseTest {
 		// then
 		assertThat(response).isEqualTo(MemberSupportersDetailResponse.from(projection));
 		verify(adminMemberActivityService).getMemberSupportersDetail(memberActivityId);
+	}
+
+	@Test
+	@DisplayName("운영 서포터즈 구성원을 삭제하고 남은 활동이 없으면 구성원도 삭제한다")
+	void 운영_서포터즈_구성원을_삭제하고_남은_활동이_없으면_구성원도_삭제한다() {
+		// given
+		Long memberActivityId = 1L;
+		Long memberId = 10L;
+		given(adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.SUPPORTERS))
+			.willReturn(memberId);
+
+		// when
+		adminMemberSupportersUseCase.deleteMemberSupporters(memberActivityId);
+
+		// then
+		verify(adminMemberService).deleteMemberIfNoActivity(memberId);
+	}
+
+	@Test
+	@DisplayName("선택한 운영 서포터즈 구성원을 모두 삭제한다")
+	void 선택한_운영_서포터즈_구성원을_모두_삭제한다() {
+		// given
+		DeleteMembersRequest request = new DeleteMembersRequest(Set.of(1L, 2L));
+		Set<Long> memberIds = Set.of(10L, 20L);
+		given(adminMemberActivityService.deleteMemberActivities(request.memberActivityIds(), MemberType.SUPPORTERS))
+			.willReturn(memberIds);
+
+		// when
+		adminMemberSupportersUseCase.deleteMemberSupportersList(request);
+
+		// then
+		verify(adminMemberService).deleteMembersIfNoActivity(memberIds);
 	}
 
 	private MemberSupportersListProjection supportersProjection(Long memberActivityId, String name) {
