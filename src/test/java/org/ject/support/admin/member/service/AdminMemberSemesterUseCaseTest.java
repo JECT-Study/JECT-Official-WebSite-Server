@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
 import java.util.List;
+import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
@@ -15,6 +17,7 @@ import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -321,5 +324,37 @@ class AdminMemberSemesterUseCaseTest {
 		// then
 		assertThat(response.content()).isEmpty();
 		verify(adminMemberActivityService).searchMemberSemesterList(condition);
+	}
+
+	@Test
+	@DisplayName("일반 구성원 활동을 삭제하고 남은 활동이 없으면 구성원도 삭제한다")
+	void 일반_구성원_활동을_삭제하고_남은_활동이_없으면_구성원도_삭제한다() {
+		// given
+		Long memberActivityId = 1L;
+		Long memberId = 10L;
+		given(adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.SEMESTER))
+			.willReturn(memberId);
+
+		// when
+		adminMemberSemesterUseCase.deleteMemberSemester(memberActivityId);
+
+		// then
+		verify(adminMemberService).deleteMemberIfNoActivity(memberId);
+	}
+
+	@Test
+	@DisplayName("선택한 일반 구성원을 모두 삭제한다")
+	void 선택한_일반_구성원을_모두_삭제한다() {
+		// given
+		DeleteMembersRequest request = new DeleteMembersRequest(Set.of(1L, 2L));
+		Set<Long> memberIds = Set.of(10L, 20L);
+		given(adminMemberActivityService.deleteMemberActivities(request.memberActivityIds(), MemberType.SEMESTER))
+			.willReturn(memberIds);
+
+		// when
+		adminMemberSemesterUseCase.deleteMemberSemesterList(request);
+
+		// then
+		verify(adminMemberService).deleteMembersIfNoActivity(memberIds);
 	}
 }

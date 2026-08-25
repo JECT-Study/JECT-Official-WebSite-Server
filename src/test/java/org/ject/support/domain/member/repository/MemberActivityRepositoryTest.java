@@ -1360,6 +1360,49 @@ class MemberActivityRepositoryTest {
 		assertThat(entityManager.find(MemberSupporters.class, second.getId())).isNotNull();
 	}
 
+	@Test
+	@DisplayName("일반 구성원 활동을 삭제해도 활동 관리 항목은 유지한다")
+	void 일반_구성원_활동을_삭제해도_활동_관리_항목은_유지한다() {
+		// given
+		Member member = memberRepository.save(member().email("semester-delete@test.com").build());
+		MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+			semesterActivity().memberId(member.getId()).semesterId(SEMESTER_ID).build()
+		);
+
+		// when
+		memberActivityRepository.delete(memberActivity);
+		memberActivityRepository.flush();
+		entityManager.clear();
+
+		// then
+		assertThat(memberActivityRepository.findById(memberActivity.getId())).isEmpty();
+		assertThat(entityManager.find(MemberSemester.class, memberActivity.getId())).isNotNull();
+	}
+
+	@Test
+	@DisplayName("일반 구성원 활동 여러 건을 삭제해도 활동 관리 항목은 유지한다")
+	void 일반_구성원_활동_여러_건을_삭제해도_활동_관리_항목은_유지한다() {
+		// given
+		Member firstMember = memberRepository.save(member().email("semester-bulk1@test.com").build());
+		Member secondMember = memberRepository.save(member().email("semester-bulk2@test.com").build());
+		MemberActivity first = memberActivityRepository.saveAndFlush(
+			semesterActivity().memberId(firstMember.getId()).semesterId(SEMESTER_ID).build()
+		);
+		MemberActivity second = memberActivityRepository.saveAndFlush(
+			semesterActivity().memberId(secondMember.getId()).semesterId(SEMESTER_ID).build()
+		);
+
+		// when
+		memberActivityRepository.deleteAll(List.of(first, second));
+		memberActivityRepository.flush();
+		entityManager.clear();
+
+		// then
+		assertThat(memberActivityRepository.findAllById(List.of(first.getId(), second.getId()))).isEmpty();
+		assertThat(entityManager.find(MemberSemester.class, first.getId())).isNotNull();
+		assertThat(entityManager.find(MemberSemester.class, second.getId())).isNotNull();
+	}
+
 	private MemberActivity saveSupportersActivity(Long memberId, String activityCertNumber) {
 		return memberActivityRepository.saveAndFlush(MemberActivity.createSupportersActivity(
 			memberId,

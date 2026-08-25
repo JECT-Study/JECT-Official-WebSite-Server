@@ -3,9 +3,11 @@ package org.ject.support.admin.member.service;
 import static org.ject.support.domain.member.exception.MemberErrorCode.*;
 
 import java.util.List;
+import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
@@ -60,6 +62,23 @@ public class AdminMemberSemesterUseCase {
 			SearchMemberSemesterResponse::from,
 			SearchMemberSemesterProjection::memberActivityId
 		);
+	}
+
+	// 일반 구성원 단건 삭제
+	@Transactional
+	public void deleteMemberSemester(Long memberActivityId) {
+		Long memberId = adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.SEMESTER);
+		adminMemberService.deleteMemberIfNoActivity(memberId);
+	}
+
+	// 일반 구성원 일괄 삭제
+	@Transactional
+	public void deleteMemberSemesterList(DeleteMembersRequest request) {
+		Set<Long> memberIds = adminMemberActivityService.deleteMemberActivities(
+			request.memberActivityIds(),
+			MemberType.SEMESTER
+		);
+		adminMemberService.deleteMembersIfNoActivity(memberIds);
 	}
 
 	/*
