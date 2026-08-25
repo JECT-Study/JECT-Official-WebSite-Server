@@ -4,13 +4,15 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 import java.util.Optional;
 
 public final class DateTimeUtil {
 
     private static final String[] DAY_OF_WEEK_NAMES = {"월", "화", "수", "목", "금", "토", "일"};
     public static final DateTimeFormatter DEFAULT_DATETIME_FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+            DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm")
+                    .withResolverStyle(ResolverStyle.STRICT);
     public static final DateTimeFormatter DEFAULT_DATE_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd");
     public static final DateTimeFormatter DEFAULT_TIME_FORMATTER =

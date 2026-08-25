@@ -184,4 +184,28 @@ class MailScenarioServiceTest {
 
         then(mailScenarioRepository).should().delete(existing);
     }
+
+    @Test
+    @DisplayName("미리보기 입력값을 날짜와 시간 타입으로 검증한다")
+    void 미리보기_입력값이_잘못된_날짜와_시간이면_거부한다() {
+        Long scenarioId = 1L;
+        MailScenario scenario = MailScenario.builder()
+                .bodyTemplate("면접 일시: ${INTERVIEW_AT}")
+                .customVariables(Set.of(MailScenarioVariable.builder()
+                        .key("INTERVIEW_AT")
+                        .label("면접 일시")
+                        .inputType(VariableInputType.DATE_TIME)
+                        .required(true)
+                        .build()))
+                .build();
+        given(mailScenarioRepository.findById(scenarioId)).willReturn(Optional.of(scenario));
+
+        assertThatThrownBy(() -> mailScenarioService.renderScenario(
+                scenarioId,
+                Map.of("INTERVIEW_AT", "2026-02-30 10:00")
+        ))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.INVALID_VARIABLE_VALUE);
+    }
 }
