@@ -5,7 +5,7 @@ import java.util.Set;
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
-import org.ject.support.admin.member.dto.request.DeleteMemberMakersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
@@ -65,7 +65,7 @@ public class AdminMemberMakersUseCase {
 
 	// 메이커스팀 구성원 일괄 삭제
 	@Transactional
-	public void deleteMemberMakersList(DeleteMemberMakersRequest request) {
+	public void deleteMemberMakersList(DeleteMembersRequest request) {
 		Set<Long> memberIds = adminMemberActivityService.deleteMemberActivities(
 			request.memberActivityIds(),
 			MemberType.MAKERS

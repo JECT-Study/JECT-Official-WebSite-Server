@@ -9,12 +9,14 @@ import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.*;
+import org.hibernate.annotations.SQLDelete;
 import org.ject.support.domain.base.BaseTimeEntity;
 
 @Entity
 @Getter
 @Builder(access = AccessLevel.PRIVATE)
 @Table(name = "member_supporters")
+@SQLDelete(sql = "UPDATE member_supporters SET id = id WHERE id = ?")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class MemberSupporters extends BaseTimeEntity {

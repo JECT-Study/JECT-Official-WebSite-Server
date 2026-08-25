@@ -451,6 +451,68 @@ class AdminMemberActivityServiceTest {
 	}
 
 	@Test
+	@DisplayName("운영 서포터즈 구성원을 삭제한다")
+	void 운영_서포터즈_구성원을_삭제한다() {
+		// given
+		Long memberActivityId = 1L;
+		MemberActivity memberActivity = mock(MemberActivity.class);
+		given(memberActivity.getMemberId()).willReturn(10L);
+		given(memberActivityRepository.findByIdAndMemberType(memberActivityId, MemberType.SUPPORTERS))
+			.willReturn(Optional.of(memberActivity));
+
+		// when
+		Long memberId = adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.SUPPORTERS);
+
+		// then
+		assertThat(memberId).isEqualTo(10L);
+		verify(memberActivityRepository).delete(memberActivity);
+	}
+
+	@Test
+	@DisplayName("선택한 운영 서포터즈 구성원을 모두 삭제한다")
+	void 선택한_운영_서포터즈_구성원을_모두_삭제한다() {
+		// given
+		Set<Long> memberActivityIds = Set.of(1L, 2L);
+		MemberActivity first = memberActivity(1L, 10L);
+		MemberActivity second = memberActivity(2L, 20L);
+		List<MemberActivity> memberActivities = List.of(first, second);
+		given(memberActivityRepository.findAllByIdInAndMemberType(memberActivityIds, MemberType.SUPPORTERS))
+			.willReturn(memberActivities);
+
+		// when
+		Set<Long> memberIds = adminMemberActivityService.deleteMemberActivities(
+			memberActivityIds,
+			MemberType.SUPPORTERS
+		);
+
+		// then
+		assertThat(memberIds).containsExactlyInAnyOrder(10L, 20L);
+		verify(memberActivityRepository).deleteAll(memberActivities);
+	}
+
+	@Test
+	@DisplayName("유효하지 않은 구성원이 포함되면 모든 운영 서포터즈 구성원을 유지한다")
+	void 유효하지_않은_구성원이_포함되면_모든_운영_서포터즈_구성원을_유지한다() {
+		// given
+		Set<Long> memberActivityIds = Set.of(1L, 2L);
+		MemberActivity memberActivity = memberActivity(1L);
+		given(memberActivityRepository.findAllByIdInAndMemberType(memberActivityIds, MemberType.SUPPORTERS))
+			.willReturn(List.of(memberActivity));
+
+		// when
+		Throwable throwable = catchThrowable(() ->
+			adminMemberActivityService.deleteMemberActivities(memberActivityIds, MemberType.SUPPORTERS)
+		);
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_SUPPORTERS_ACTIVITY);
+		verify(memberActivityRepository, never()).deleteAll(any());
+	}
+
+	@Test
 	@DisplayName("선택한 메이커스팀 활동을 모두 삭제한다")
 	void 선택한_메이커스팀_활동을_모두_삭제한다() {
 		// given

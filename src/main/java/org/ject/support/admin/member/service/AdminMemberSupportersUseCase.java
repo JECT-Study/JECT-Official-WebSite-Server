@@ -1,13 +1,17 @@
 package org.ject.support.admin.member.service;
 
+import java.util.Set;
+
 import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.response.MemberSupportersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.domain.member.MemberType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,5 +53,22 @@ public class AdminMemberSupportersUseCase {
 	public MemberSupportersDetailResponse getMemberSupportersDetail(Long memberActivityId) {
 		MemberSupportersDetailProjection projection = adminMemberActivityService.getMemberSupportersDetail(memberActivityId);
 		return MemberSupportersDetailResponse.from(projection);
+	}
+
+	// 운영 서포터즈 구성원 단건 삭제
+	@Transactional
+	public void deleteMemberSupporters(Long memberActivityId) {
+		Long memberId = adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.SUPPORTERS);
+		adminMemberService.deleteMemberIfNoActivity(memberId);
+	}
+
+	// 운영 서포터즈 구성원 일괄 삭제
+	@Transactional
+	public void deleteMemberSupportersList(DeleteMembersRequest request) {
+		Set<Long> memberIds = adminMemberActivityService.deleteMemberActivities(
+			request.memberActivityIds(),
+			MemberType.SUPPORTERS
+		);
+		adminMemberService.deleteMembersIfNoActivity(memberIds);
 	}
 }
