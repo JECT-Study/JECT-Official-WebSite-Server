@@ -1,5 +1,10 @@
 package org.ject.support.domain.member.repository;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +14,15 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MemberActivityRepository extends JpaRepository<MemberActivity, Long>, MemberActivityQueryRepository {
+
+	Optional<MemberActivity> findByIdAndMemberType(Long id, MemberType memberType);
+
+	List<MemberActivity> findAllByIdInAndMemberType(Collection<Long> ids, MemberType memberType);
+
+	boolean existsByMemberId(Long memberId);
+
+	@Query("select distinct ma.memberId from MemberActivity ma where ma.memberId in :memberIds")
+	Set<Long> findMemberIdsWithActivity(@Param("memberIds") Collection<Long> memberIds);
 
 	@Query("""
 		select count(ma) > 0

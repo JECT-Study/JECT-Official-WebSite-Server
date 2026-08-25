@@ -2,6 +2,11 @@ package org.ject.support.admin.member.service;
 
 import static org.ject.support.domain.member.exception.MemberErrorCode.*;
 
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
@@ -17,16 +22,17 @@ import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.entity.MemberActivity;
+import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberActivityRepository;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AdminMemberActivityService {
 
 	private final MemberActivityRepository memberActivityRepository;
@@ -135,6 +141,40 @@ public class AdminMemberActivityService {
 	public MemberMakersDetailProjection getMemberMakersDetail(Long memberActivityId) {
 		return memberActivityRepository.findMemberMakersDetail(memberActivityId)
 			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+	}
+
+	// 구성원 유형에 맞는 활동 단건 삭제
+	public Long deleteMemberActivity(Long memberActivityId, MemberType memberType) {
+		MemberActivity memberActivity = memberActivityRepository.findByIdAndMemberType(memberActivityId, memberType)
+			.orElseThrow(() -> new MemberException(getNotFoundActivityErrorCode(memberType)));
+		memberActivityRepository.delete(memberActivity);
+		return memberActivity.getMemberId();
+	}
+
+	// 구성원 유형에 맞는 활동 전체 검증 후 일괄 삭제
+	public Set<Long> deleteMemberActivities(Set<Long> memberActivityIds, MemberType memberType) {
+		List<MemberActivity> memberActivities = memberActivityRepository.findAllByIdInAndMemberType(
+			memberActivityIds,
+			memberType
+		);
+		Set<Long> foundIds = memberActivities.stream().map(MemberActivity::getId).collect(Collectors.toSet());
+		memberActivityIds.stream().filter(id -> !foundIds.contains(id)).findFirst().ifPresent(invalidId -> {
+			log.warn("구성원 활동 일괄 삭제 검증 실패: memberType={}, invalidMemberActivityId={}", memberType, invalidId);
+			throw new MemberException(getNotFoundActivityErrorCode(memberType));
+		});
+		Set<Long> memberIds = memberActivities.stream()
+			.map(MemberActivity::getMemberId)
+			.collect(Collectors.toCollection(LinkedHashSet::new));
+		memberActivityRepository.deleteAll(memberActivities);
+		return memberIds;
+	}
+
+	private MemberErrorCode getNotFoundActivityErrorCode(MemberType memberType) {
+		return switch (memberType) {
+			case SEMESTER -> NOT_FOUND_MEMBER_SEMESTER_ACTIVITY;
+			case MAKERS -> NOT_FOUND_MEMBER_MAKERS_ACTIVITY;
+			case SUPPORTERS -> NOT_FOUND_MEMBER_SUPPORTERS_ACTIVITY;
+		};
 	}
 
 	// 운영 서포터즈 구성원 상세 조회

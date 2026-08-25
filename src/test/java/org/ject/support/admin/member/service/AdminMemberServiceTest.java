@@ -5,6 +5,7 @@ import static org.mockito.BDDMockito.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.domain.member.ActivityStatus;
@@ -13,6 +14,9 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.exception.MemberErrorCode;
+import org.ject.support.domain.member.exception.MemberException;
+import org.ject.support.domain.member.repository.MemberActivityRepository;
 import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +33,9 @@ class AdminMemberServiceTest {
 
 	@Mock
 	private MemberRepository memberRepository;
+
+	@Mock
+	private MemberActivityRepository memberActivityRepository;
 
 	@InjectMocks
 	private AdminMemberService adminMemberService;
@@ -141,5 +148,105 @@ class AdminMemberServiceTest {
 		assertThat(deletedMember.getRegion()).isEqualTo(request.region());
 		verify(memberRepository).findByEmailIncludingDeleted(request.email());
 		verify(memberRepository, never()).save(any(Member.class));
+	}
+
+	@Test
+	@DisplayName("남은 활동이 없으면 구성원을 삭제한다")
+	void 남은_활동이_없으면_구성원을_삭제한다() {
+		// given
+		Long memberId = 1L;
+		Member member = mock(Member.class);
+		given(memberActivityRepository.existsByMemberId(memberId)).willReturn(false);
+		given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
+
+		// when
+		adminMemberService.deleteMemberIfNoActivity(memberId);
+
+		// then
+		verify(memberRepository).delete(member);
+	}
+
+	@Test
+	@DisplayName("남은 활동은 없지만 구성원을 찾을 수 없으면 삭제에 실패한다")
+	void 남은_활동은_없지만_구성원을_찾을_수_없으면_삭제에_실패한다() {
+		// given
+		Long memberId = 1L;
+		given(memberActivityRepository.existsByMemberId(memberId)).willReturn(false);
+		given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> adminMemberService.deleteMemberIfNoActivity(memberId))
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+		verify(memberRepository, never()).delete(any(Member.class));
+	}
+
+	@Test
+	@DisplayName("다른 활동이 남아 있으면 구성원을 유지한다")
+	void 다른_활동이_남아_있으면_구성원을_유지한다() {
+		// given
+		Long memberId = 1L;
+		given(memberActivityRepository.existsByMemberId(memberId)).willReturn(true);
+
+		// when
+		adminMemberService.deleteMemberIfNoActivity(memberId);
+
+		// then
+		verify(memberRepository, never()).findById(memberId);
+		verify(memberRepository, never()).delete(any(Member.class));
+	}
+
+	@Test
+	@DisplayName("여러 구성원 중 남은 활동이 없는 구성원만 삭제한다")
+	void 여러_구성원_중_남은_활동이_없는_구성원만_삭제한다() {
+		// given
+		Set<Long> memberIds = Set.of(1L, 2L, 3L);
+		Member first = mock(Member.class);
+		Member third = mock(Member.class);
+		given(memberActivityRepository.findMemberIdsWithActivity(memberIds)).willReturn(Set.of(2L));
+		given(memberRepository.findAllById(any())).willReturn(List.of(first, third));
+
+		// when
+		adminMemberService.deleteMembersIfNoActivity(memberIds);
+
+		// then
+		verify(memberRepository).findAllById(argThat(ids -> {
+			assertThat(ids).containsExactlyInAnyOrder(1L, 3L);
+			return true;
+		}));
+		verify(memberRepository).deleteAll(List.of(first, third));
+	}
+
+	@Test
+	@DisplayName("일괄 삭제할 구성원 일부를 찾을 수 없으면 모두 삭제하지 않는다")
+	void 일괄_삭제할_구성원_일부를_찾을_수_없으면_모두_삭제하지_않는다() {
+		// given
+		Set<Long> memberIds = Set.of(1L, 2L);
+		Member member = mock(Member.class);
+		given(memberActivityRepository.findMemberIdsWithActivity(memberIds)).willReturn(Set.of());
+		given(memberRepository.findAllById(any())).willReturn(List.of(member));
+
+		// when & then
+		assertThatThrownBy(() -> adminMemberService.deleteMembersIfNoActivity(memberIds))
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+		verify(memberRepository, never()).deleteAll(any());
+	}
+
+	@Test
+	@DisplayName("모든 구성원에게 활동이 남아 있으면 모두 유지한다")
+	void 모든_구성원에게_활동이_남아_있으면_모두_유지한다() {
+		// given
+		Set<Long> memberIds = Set.of(1L, 2L);
+		given(memberActivityRepository.findMemberIdsWithActivity(memberIds)).willReturn(memberIds);
+
+		// when
+		adminMemberService.deleteMembersIfNoActivity(memberIds);
+
+		// then
+		verify(memberRepository, never()).findAllById(any());
+		verify(memberRepository, never()).deleteAll(any());
 	}
 }

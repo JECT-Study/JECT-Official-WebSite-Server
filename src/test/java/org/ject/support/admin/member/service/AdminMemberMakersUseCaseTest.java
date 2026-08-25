@@ -5,8 +5,11 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.verify;
 
 import java.util.List;
+import java.util.Set;
+
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
+import org.ject.support.admin.member.dto.request.DeleteMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
@@ -19,6 +22,7 @@ import org.ject.support.domain.member.CareerLevel;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
+import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.junit.jupiter.api.DisplayName;
@@ -113,6 +117,37 @@ class AdminMemberMakersUseCaseTest {
 		assertThat(response.makersTeam()).isEqualTo(projection.makersTeam());
 		assertThat(response.activityStatus()).isEqualTo(projection.activityStatus());
 		verify(adminMemberActivityService).getMemberMakersDetail(memberActivityId);
+	}
+
+	@Test
+	@DisplayName("메이커스팀 구성원을 삭제한다")
+	void 메이커스팀_구성원을_삭제한다() {
+		// given
+		Long memberActivityId = 1L;
+		Long memberId = 10L;
+		given(adminMemberActivityService.deleteMemberActivity(memberActivityId, MemberType.MAKERS)).willReturn(memberId);
+
+		// when
+		adminMemberMakersUseCase.deleteMemberMakers(memberActivityId);
+
+		// then
+		verify(adminMemberService).deleteMemberIfNoActivity(memberId);
+	}
+
+	@Test
+	@DisplayName("선택한 메이커스팀 구성원을 모두 삭제한다")
+	void 선택한_메이커스팀_구성원을_모두_삭제한다() {
+		// given
+		DeleteMemberMakersRequest request = new DeleteMemberMakersRequest(Set.of(1L, 2L));
+		Set<Long> memberIds = Set.of(10L, 20L);
+		given(adminMemberActivityService.deleteMemberActivities(request.memberActivityIds(), MemberType.MAKERS))
+			.willReturn(memberIds);
+
+		// when
+		adminMemberMakersUseCase.deleteMemberMakersList(request);
+
+		// then
+		verify(adminMemberService).deleteMembersIfNoActivity(memberIds);
 	}
 
 	private MemberMakersListProjection makersProjection(Long memberActivityId, String name) {
