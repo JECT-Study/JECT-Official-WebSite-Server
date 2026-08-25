@@ -12,7 +12,8 @@ public enum VariableInputType {
     TEXT("텍스트"),
     URL("URL 링크"),
     EMAIL("이메일 주소"),
-    PHONE("전화번호");
+    PHONE("전화번호"),
+    DATE_TIME("날짜/시간");
 
     private final String description;
 }

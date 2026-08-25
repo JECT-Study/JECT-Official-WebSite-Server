@@ -71,7 +71,10 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
         MailScenarioResponse scenarioResponse = new MailScenarioResponse(
                 1L, "테스트 시나리오", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC,
                 "TEST_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${name}", true, LocalDateTime.now(),
-                List.of(new MailScenarioResponse.CustomVariableResponse("RECRUIT_NAME", "모집명", "TEXT", true, null))
+                List.of(
+                        new MailScenarioResponse.CustomVariableResponse("RECRUIT_NAME", "모집명", "TEXT", true, null),
+                        new MailScenarioResponse.CustomVariableResponse("INTERVIEW_AT", "면접 일시", "DATE_TIME", true, null)
+                )
         );
         given(mailScenarioService.searchScenarios(
                 isNull(MailScenarioCategory.class),
@@ -85,7 +88,8 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.data.content[0].id").value(scenarioResponse.id()))
                 .andExpect(jsonPath("$.data.content[0].name").value(scenarioResponse.name()))
                 .andExpect(jsonPath("$.data.content[0].category").value(scenarioResponse.category().name()))
-                .andExpect(jsonPath("$.data.content[0].type").value(scenarioResponse.type().name()));
+                .andExpect(jsonPath("$.data.content[0].type").value(scenarioResponse.type().name()))
+                .andExpect(jsonPath("$.data.content[0].customVariables[1].inputType").value("DATE_TIME"));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
         verify(mailScenarioService).searchScenarios(
@@ -167,12 +171,12 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
         MailScenarioRequest request = new MailScenarioRequest(
                 "수정 시나리오", MailScenarioCategory.MAKERS, MailScenarioType.FINAL_PASS, "UPDATED_SCENARIO",
                 "[JECT] ${RECRUIT_NAME}", "${name}", false, 
-                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.TEXT, true, null))
+                List.of(new CustomVariableRequest("RECRUIT_NAME", "모집명", VariableInputType.DATE_TIME, true, null))
         );
         MailScenarioResponse response = new MailScenarioResponse(
                 scenarioId, "수정 시나리오", MailScenarioCategory.MAKERS, MailScenarioType.FINAL_PASS,
                 "UPDATED_SCENARIO", "[JECT] ${RECRUIT_NAME}", "${name}", false, LocalDateTime.now(),
-                List.of(new MailScenarioResponse.CustomVariableResponse("RECRUIT_NAME", "모집명", "TEXT", true, null))
+                List.of(new MailScenarioResponse.CustomVariableResponse("RECRUIT_NAME", "모집명", "DATE_TIME", true, null))
         );
         given(mailScenarioService.updateScenario(eq(scenarioId), any(MailScenarioRequest.class))).willReturn(response);
 
@@ -183,7 +187,8 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.name").value("수정 시나리오"))
                 .andExpect(jsonPath("$.data.category").value(MailScenarioCategory.MAKERS.name()))
-                .andExpect(jsonPath("$.data.type").value(MailScenarioType.FINAL_PASS.name()));
+                .andExpect(jsonPath("$.data.type").value(MailScenarioType.FINAL_PASS.name()))
+                .andExpect(jsonPath("$.data.customVariables[0].inputType").value("DATE_TIME"));
     }
 
     @Test
@@ -202,7 +207,7 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
         MailScenarioVariableResponse response = new MailScenarioVariableResponse(
                 scenarioId,
                 "일반 구성원 - 예비 합격 통지",
-                List.of(new MailScenarioVariableResponse.CustomVariableResponse("RECRUIT_ALERT_APPLY_URL", "모집 알림 신청 URL", "URL", true, null)),
+                List.of(new MailScenarioVariableResponse.CustomVariableResponse("INTERVIEW_AT", "면접 일시", "DATE_TIME", true, null)),
                 List.of("name", "semester")
         );
 
@@ -213,9 +218,31 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.scenarioId").value(scenarioId))
                 .andExpect(jsonPath("$.data.name").value("일반 구성원 - 예비 합격 통지"))
-                .andExpect(jsonPath("$.data.customVariables[0].key").value("RECRUIT_ALERT_APPLY_URL"))
-                .andExpect(jsonPath("$.data.customVariables[0].inputType").value("URL"))
+                .andExpect(jsonPath("$.data.customVariables[0].key").value("INTERVIEW_AT"))
+                .andExpect(jsonPath("$.data.customVariables[0].inputType").value("DATE_TIME"))
                 .andExpect(jsonPath("$.data.personalVariables[0]").value("name"));
+    }
+
+    @Test
+    @DisplayName("날짜와 시간 입력 변수 타입을 생성 요청과 응답에서 유지한다")
+    void 날짜와_시간_입력_변수_타입을_생성_요청과_응답에서_유지한다() throws Exception {
+        MailScenarioRequest request = new MailScenarioRequest(
+                "면접 안내", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC, "INTERVIEW_NOTICE",
+                "면접 안내", "면접 일시: ${INTERVIEW_AT}", true,
+                List.of(new CustomVariableRequest("INTERVIEW_AT", "면접 일시", VariableInputType.DATE_TIME, true, null))
+        );
+        MailScenarioResponse response = new MailScenarioResponse(
+                1L, "면접 안내", MailScenarioCategory.CLUB_MEMBER, MailScenarioType.ETC,
+                "INTERVIEW_NOTICE", "면접 안내", "면접 일시: ${INTERVIEW_AT}", true, LocalDateTime.now(),
+                List.of(new MailScenarioResponse.CustomVariableResponse("INTERVIEW_AT", "면접 일시", "DATE_TIME", true, null))
+        );
+        given(mailScenarioService.createScenario(any(MailScenarioRequest.class))).willReturn(response);
+
+        mockMvc.perform(post("/admin/mails/scenarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.customVariables[0].inputType").value("DATE_TIME"));
     }
 
     @Test

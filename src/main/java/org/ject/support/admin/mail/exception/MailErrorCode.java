@@ -27,6 +27,7 @@ public enum MailErrorCode implements ErrorCode {
     DISPATCH_JOB_NOT_FOUND(NOT_FOUND, "MAIL-9", "메일 발송 작업을 찾을 수 없습니다."),
     INVALID_DISPATCH_JOB_STATUS(BAD_REQUEST, "MAIL-10", "현재 상태에서는 발송 실행을 수행할 수 없습니다."),
     TEST_MAIL_SEND_FAILURE(SERVICE_UNAVAILABLE, "MAIL-11", "테스트 메일 발송에 실패했습니다."),
+    INVALID_VARIABLE_VALUE(BAD_REQUEST, "MAIL-12", "메일 입력 변수 값이 올바르지 않습니다."),
     ;
 
     private final HttpStatus httpStatus;

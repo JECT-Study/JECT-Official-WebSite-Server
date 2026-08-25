@@ -19,6 +19,10 @@ public interface RecruitRepository extends JpaRepository<Recruit, Long> {
             + "ORDER BY r.startDate ASC, r.id ASC")
     List<Recruit> findActiveRecruitments(@Param("now") LocalDateTime now);
 
+    @Query("SELECT r FROM Recruit r JOIN FETCH r.semester "
+            + "ORDER BY r.createdAt DESC, r.id DESC")
+    List<Recruit> findAllForMailDispatch();
+
     @Query("SELECT EXISTS(SELECT 1 FROM Recruit r "
             + "WHERE r.semester.id = :semesterId AND r.jobFamily IN :jobFamilies AND r.endDate >= now())")
     boolean existsByJobFamilyAndIsNotClosed(@Param("semesterId") Long semesterId,
