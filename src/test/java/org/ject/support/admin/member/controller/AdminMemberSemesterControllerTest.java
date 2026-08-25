@@ -2,8 +2,10 @@ package org.ject.support.admin.member.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.ject.support.domain.member.fixture.MakersActivityFixture.makersActivity;
 import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -12,7 +14,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
+import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
@@ -298,6 +302,93 @@ class AdminMemberSemesterControllerTest {
 				.param("status", ActivityStatus.DROPOUT.name()))
 			.andExpect(status().isBadRequest())
 			.andExpect(jsonPath("$.status").value(MemberErrorCode.INVALID_ACTIVITY_STATUS.getCode()));
+	}
+
+	@Test
+	@DisplayName("일반 구성원을 삭제한다")
+	void 일반_구성원을_삭제한다() throws Exception {
+		// given
+		Semester semester = saveSemester();
+		MemberActivity memberActivity = saveMemberSemesterActivity(
+			uniqueEmail("delete"),
+			semester.getId(),
+			null,
+			JobFamily.BE,
+			RecruitTypeDetail.REGULAR,
+			CareerDetails.EMPLOYEE,
+			ExperiencePeriod.ONE_TO_TWO
+		);
+
+		// when
+		mockMvc.perform(delete("/admin/members/semester/{memberActivityId}", memberActivity.getId()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"));
+
+		// then
+		assertThat(memberActivityRepository.findById(memberActivity.getId())).isEmpty();
+		assertThat(memberRepository.findById(memberActivity.getMemberId())).isEmpty();
+	}
+
+	@Test
+	@DisplayName("선택한 일반 구성원을 모두 삭제한다")
+	void 선택한_일반_구성원을_모두_삭제한다() throws Exception {
+		// given
+		Semester semester = saveSemester();
+		MemberActivity first = saveMemberSemesterActivity(
+			uniqueEmail("bulk1"),
+			semester.getId(),
+			null,
+			JobFamily.BE,
+			RecruitTypeDetail.REGULAR,
+			CareerDetails.EMPLOYEE,
+			ExperiencePeriod.ONE_TO_TWO
+		);
+		MemberActivity second = saveMemberSemesterActivity(
+			uniqueEmail("bulk2"),
+			semester.getId(),
+			null,
+			JobFamily.FE,
+			RecruitTypeDetail.REGULAR,
+			CareerDetails.STUDENT,
+			ExperiencePeriod.NONE
+		);
+		DeleteMembersRequest request = new DeleteMembersRequest(Set.of(first.getId(), second.getId()));
+
+		// when
+		mockMvc.perform(delete("/admin/members/semester")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"));
+
+		// then
+		assertThat(memberActivityRepository.findAllById(List.of(first.getId(), second.getId()))).isEmpty();
+		assertThat(memberRepository.findAllById(List.of(first.getMemberId(), second.getMemberId()))).isEmpty();
+	}
+
+	@Test
+	@DisplayName("일반 구성원이 아닌 구성원은 삭제할 수 없다")
+	void 일반_구성원이_아닌_구성원은_삭제할_수_없다() throws Exception {
+		// given
+		Member member = memberRepository.save(member().email(uniqueEmail("invalid-type")).build());
+		MemberActivity makers = memberActivityRepository.saveAndFlush(makersActivity().memberId(member.getId()).build());
+
+		// when & then
+		mockMvc.perform(delete("/admin/members/semester/{memberActivityId}", makers.getId()))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER_SEMESTER_ACTIVITY.getCode()));
+		assertThat(memberActivityRepository.findById(makers.getId())).isPresent();
+		assertThat(memberRepository.findById(member.getId())).isPresent();
+	}
+
+	@Test
+	@DisplayName("삭제할 일반 구성원이 없으면 요청에 실패한다")
+	void 삭제할_일반_구성원이_없으면_요청에_실패한다() throws Exception {
+		mockMvc.perform(delete("/admin/members/semester")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("{\"memberActivityIds\":[]}"))
+			.andExpect(status().isBadRequest())
+			.andExpect(jsonPath("$.status").value("GLOBAL-15"));
 	}
 
 	private CreateMemberSemesterRequest createMemberSemesterRequest(String email, Long semesterId, Long teamId) {
