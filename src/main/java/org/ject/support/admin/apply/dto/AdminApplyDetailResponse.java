@@ -1,6 +1,7 @@
 package org.ject.support.admin.apply.dto;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
@@ -21,9 +22,10 @@ public record AdminApplyDetailResponse(
         String region,
         String experiencePeriod,
         List<String> interestedDomains,
+        Map<String, String> answers,
         List<ApplyPortfolioDto> portfolios
 ) {
-    public static AdminApplyDetailResponse from(Apply apply) {
+    public static AdminApplyDetailResponse from(Apply apply, Map<String, String> answers) {
         var applicant = apply.getApplicant();
         return new AdminApplyDetailResponse(
                 apply.getId(),
@@ -37,6 +39,7 @@ public record AdminApplyDetailResponse(
                 Optional.ofNullable(applicant.getRegion()).map(Region::getDescription).orElse(""),
                 Optional.ofNullable(applicant.getExperiencePeriod()).map(ExperiencePeriod::getDescription).orElse(""),
                 Optional.ofNullable(applicant.getInterestedDomains()).orElse(List.of()),
+                answers,
                 Optional.ofNullable(apply.getApplicationForm())
                         .map(applicationForm -> applicationForm.getPortfolios())
                         .orElse(List.of())
