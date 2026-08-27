@@ -3,6 +3,7 @@ package org.ject.support.admin.apply.dto;
 import java.util.List;
 import java.util.Optional;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
@@ -19,7 +20,8 @@ public record AdminApplyDetailResponse(
         String note,
         String region,
         String experiencePeriod,
-        List<String> interestedDomains
+        List<String> interestedDomains,
+        List<ApplyPortfolioDto> portfolios
 ) {
     public static AdminApplyDetailResponse from(Apply apply) {
         var applicant = apply.getApplicant();
@@ -34,7 +36,13 @@ public record AdminApplyDetailResponse(
                 apply.getNote(),
                 Optional.ofNullable(applicant.getRegion()).map(Region::getDescription).orElse(""),
                 Optional.ofNullable(applicant.getExperiencePeriod()).map(ExperiencePeriod::getDescription).orElse(""),
-                Optional.ofNullable(applicant.getInterestedDomains()).orElse(List.of())
+                Optional.ofNullable(applicant.getInterestedDomains()).orElse(List.of()),
+                Optional.ofNullable(apply.getApplicationForm())
+                        .map(applicationForm -> applicationForm.getPortfolios())
+                        .orElse(List.of())
+                        .stream()
+                        .map(ApplyPortfolioDto::from)
+                        .toList()
         );
     }
 }

@@ -23,6 +23,7 @@ import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
+import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
@@ -468,6 +469,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         // then
         assertThat(actual.applyId()).isEqualTo(applyId);
+        assertThat(actual.portfolios()).isEmpty();
     }
 
     @Test
@@ -494,6 +496,39 @@ class AdminApplyServiceTest extends UnitTestSupport {
         assertThat(actual.interestedDomains()).containsExactly("AI", "Backend");
         assertThat(actual.recruitType()).isEqualTo("REGULAR");
         assertThat(actual.note()).isEqualTo("Test note");
+    }
+
+    @Test
+    void 포트폴리오가_있는_지원서_상세조회_시_포트폴리오를_반환한다() {
+        // given
+        submittedApply.getApplicationForm().getPortfolios().addAll(List.of(
+                Portfolio.builder()
+                        .fileUrl("url1")
+                        .fileName("name1")
+                        .fileSize(100L)
+                        .sequence(1)
+                        .build(),
+                Portfolio.builder()
+                        .fileUrl("url2")
+                        .fileName("name2")
+                        .fileSize(200L)
+                        .sequence(2)
+                        .build()
+        ));
+        given(adminApplyRepository.findApplyByIdByStatus(
+                submittedApply.getId(),
+                ApplyStatus.SUBMITTED
+        )).willReturn(Optional.of(submittedApply));
+
+        // when
+        AdminApplyDetailResponse actual = adminApplyService.findApply(
+                submittedApply.getId(), ApplyStatus.SUBMITTED);
+
+        // then
+        assertThat(actual.portfolios()).containsExactly(
+                new ApplyPortfolioDto("url1", "name1", "100", "1"),
+                new ApplyPortfolioDto("url2", "name2", "200", "2")
+        );
     }
 
     @Test
