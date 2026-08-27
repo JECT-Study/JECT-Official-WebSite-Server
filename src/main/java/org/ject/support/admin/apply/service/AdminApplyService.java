@@ -2,6 +2,7 @@ package org.ject.support.admin.apply.service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.AdminApplyResponse;
@@ -10,8 +11,10 @@ import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.applicant.entity.ApplicantEditor;
+import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.Portfolio;
@@ -34,6 +37,7 @@ public class AdminApplyService {
     private final ApplyRepository applyRepository;
     private final AdminApplyRepository adminApplyRepository;
     private final Map2JsonSerializer map2JsonSerializer;
+    private final String2MapSerializer string2MapSerializer;
 
     @Transactional(readOnly = true)
     public Page<AdminApplyResponse> findApplies(final AdminApplySearchCondition condition,
@@ -51,7 +55,7 @@ public class AdminApplyService {
     public AdminApplyDetailResponse findApply(final Long applyId,
                                               final ApplyStatus applyStatus) {
         return adminApplyRepository.findApplyByIdByStatus(applyId, applyStatus)
-                .map(AdminApplyDetailResponse::from)
+                .map(apply -> AdminApplyDetailResponse.from(apply, getAnswers(apply)))
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
     }
 
@@ -105,5 +109,14 @@ public class AdminApplyService {
                 .ifPresent(key -> {
                     throw new QuestionException(QuestionErrorCode.NOT_FOUND_QUESTION);
                 });
+    }
+
+    private Map<String, String> getAnswers(final Apply apply) {
+        ApplicationForm applicationForm = apply.getApplicationForm();
+        if (applicationForm == null) {
+            return Map.of();
+        }
+        return Optional.ofNullable(string2MapSerializer.serializeAsMap(applicationForm.getContent()))
+                .orElse(Map.of());
     }
 }
