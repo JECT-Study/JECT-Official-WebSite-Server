@@ -25,6 +25,8 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.command.EditMemberActivityCommand;
+import org.ject.support.domain.member.command.EditMemberMakersCommand;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
@@ -202,9 +204,46 @@ public class MemberActivity extends BaseTimeEntity {
 
     // 구성원 유형에 맞는 활동 상태로 변경
     public void updateActivityStatus(ActivityStatus activityStatus) {
-        validateActivityStatus(memberType, activityStatus);
+        changeActivityStatus(activityStatus);
+    }
 
-        this.activityStatus = activityStatus;
+    // 전달된 구성원 활동정보 편집
+    public void edit(EditMemberActivityCommand command) {
+        if (command.jobFamily() != null) {
+            validateJobFamily(memberType, command.jobFamily());
+            this.jobFamily = command.jobFamily();
+        }
+        if (command.careerDetails() != null) this.careerDetails = command.careerDetails();
+        if (command.recruitTypeDetail() != null) this.recruitTypeDetail = command.recruitTypeDetail();
+        if (command.experiencePeriod() != null) this.experiencePeriod = command.experiencePeriod();
+        if (command.memo() != null) this.memo = command.memo();
+    }
+
+    // 메이커스팀 구성원 활동정보 편집
+    public void editMakersActivity(EditMemberActivityCommand activityCommand, EditMemberMakersCommand makersCommand) {
+        edit(activityCommand);
+        memberMakers.edit(makersCommand);
+    }
+
+    public void activate() {
+        changeActivityStatus(ActivityStatus.ACTIVE);
+    }
+
+    public void end() {
+        changeActivityStatus(ActivityStatus.ENDED);
+    }
+
+    public void dropOut() {
+        changeActivityStatus(ActivityStatus.DROPOUT);
+    }
+
+    public boolean isSameActivityStatus(ActivityStatus activityStatus) {
+        return this.activityStatus == activityStatus;
+    }
+
+    private void changeActivityStatus(ActivityStatus nextStatus) {
+        validateActivityStatus(memberType, nextStatus);
+        this.activityStatus = nextStatus;
     }
 
     // 구성원 활동 삭제 처리

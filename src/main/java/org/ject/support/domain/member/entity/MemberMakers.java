@@ -16,6 +16,7 @@ import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.CareerLevel;
+import org.ject.support.domain.member.command.EditMemberMakersCommand;
 
 @Entity
 @Getter
@@ -90,5 +91,18 @@ public class MemberMakers extends BaseTimeEntity {
             .expertTopics(expertTopics)
             .activityCertNumber(activityCertNumber)
             .build();
+    }
+
+    // 전달된 메이커스팀 상세정보 편집
+    public void edit(EditMemberMakersCommand command) {
+        if (command.makersTeam() != null) this.makersTeam = command.makersTeam();
+        if (command.mentoringAvailability() != null) this.mentoringAvailability = command.mentoringAvailability();
+        if (command.projectSupplementAvailability() != null) this.projectSupplementAvailability = command.projectSupplementAvailability();
+        if (command.speakerAvailability() != null) this.speakerAvailability = command.speakerAvailability();
+        if (command.careerLevel() != null) this.careerLevel = command.careerLevel();
+        if (command.skills() != null) this.skills = command.skills();
+        if (command.company() != null) this.company = command.company();
+        if (command.expertTopics() != null) this.expertTopics = command.expertTopics();
+        if (command.activityCertNumber() != null) this.activityCertNumber = command.activityCertNumber();
     }
 }
