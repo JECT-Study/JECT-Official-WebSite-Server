@@ -21,6 +21,8 @@ import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.command.EditMemberActivityCommand;
+import org.ject.support.domain.member.command.EditMemberMakersCommand;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -137,10 +139,42 @@ public class AdminMemberActivityService {
 		return MemberPageResult.of(projections, count);
 	}
 
+	public MemberActivity getMemberMakersActivity(Long memberActivityId) {
+		return memberActivityRepository.findByIdAndMemberType(memberActivityId, MemberType.MAKERS)
+			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER_MAKERS_ACTIVITY));
+	}
+
 	// 메이커스팀 구성원 상세 조회
 	public MemberMakersDetailProjection getMemberMakersDetail(Long memberActivityId) {
 		return memberActivityRepository.findMemberMakersDetail(memberActivityId)
 			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+	}
+
+	// 메이커스팀 구성원 활동정보 편집
+	public Long editMemberMakersActivity(Long memberActivityId, EditMemberActivityCommand activityCommand,
+		EditMemberMakersCommand makersCommand, ActivityStatus activityStatus) {
+		MemberActivity memberActivity = getMemberMakersActivity(memberActivityId);
+		memberActivity.editMakersActivity(activityCommand, makersCommand);
+		if (activityStatus != null) {
+			editMakersActivityStatus(memberActivity, activityStatus);
+		}
+		return memberActivity.getMemberId();
+	}
+
+	public void editMakersActivityStatus(MemberActivity memberActivity, ActivityStatus activityStatus) {
+		if (memberActivity.isSameActivityStatus(activityStatus)) {
+			return;
+		}
+
+		switch (activityStatus) {
+			case ACTIVE -> {
+				validateDuplicateActiveMakersActivity(memberActivity.getMemberId());
+				memberActivity.activate();
+			}
+			case ENDED -> memberActivity.end();
+			case DROPOUT -> memberActivity.dropOut();
+			default -> throw new MemberException(INVALID_ACTIVITY_STATUS);
+		}
 	}
 
 	// 구성원 유형에 맞는 활동 단건 삭제
