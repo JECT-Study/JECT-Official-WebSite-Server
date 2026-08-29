@@ -4,6 +4,7 @@ CREATE TABLE mail_dispatch_job
     scenario_id          BIGINT                NOT NULL,
     recruit_id           BIGINT                NOT NULL,
     requested_by_admin_id BIGINT                NOT NULL,
+    idempotency_key      VARCHAR(255)          NOT NULL,
     status               VARCHAR(30)           NOT NULL,
     target_count         INT                   NOT NULL,
     processing_count     INT                   NOT NULL DEFAULT 0,
@@ -18,7 +19,8 @@ CREATE TABLE mail_dispatch_job
     version              BIGINT                NOT NULL DEFAULT 0,
     created_at           datetime(6),
     updated_at           datetime(6),
-    CONSTRAINT `PRIMARY` PRIMARY KEY (id)
+    CONSTRAINT `PRIMARY` PRIMARY KEY (id),
+    CONSTRAINT uk_mail_dispatch_job_requester_key UNIQUE (requested_by_admin_id, idempotency_key)
 ) ENGINE = InnoDB;
 
 CREATE TABLE mail_dispatch_target

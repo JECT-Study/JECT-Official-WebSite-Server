@@ -17,6 +17,7 @@ class MailDispatchJobTest {
                 1L,
                 2L,
                 3L,
+                "dispatch-key",
                 "제목 템플릿",
                 "본문 템플릿",
                 "{}",
@@ -26,6 +27,7 @@ class MailDispatchJobTest {
         assertThat(job.getScenarioId()).isEqualTo(1L);
         assertThat(job.getRecruitId()).isEqualTo(2L);
         assertThat(job.getRequestedByAdminId()).isEqualTo(3L);
+        assertThat(job.getIdempotencyKey()).isEqualTo("dispatch-key");
         assertThat(job.getStatus()).isEqualTo(MailDispatchJobStatus.REQUESTED);
         assertThat(job.getTargetCount()).isEqualTo(2);
         assertThat(job.getRequestedAt()).isNotNull();
@@ -85,6 +87,6 @@ class MailDispatchJobTest {
     }
 
     private MailDispatchJob createJob(int targetCount) {
-        return MailDispatchJob.create(1L, 2L, 3L, "제목", "본문", "{}", targetCount);
+        return MailDispatchJob.create(1L, 2L, 3L, "dispatch-key", "제목", "본문", "{}", targetCount);
     }
 }

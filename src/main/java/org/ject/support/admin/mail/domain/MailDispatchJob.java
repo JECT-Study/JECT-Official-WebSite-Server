@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -20,7 +21,9 @@ import org.ject.support.domain.base.BaseTimeEntity;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "mail_dispatch_job")
+@Table(name = "mail_dispatch_job", uniqueConstraints = @UniqueConstraint(
+        name = "uk_mail_dispatch_job_requester_key",
+        columnNames = {"requested_by_admin_id", "idempotency_key"}))
 public class MailDispatchJob extends BaseTimeEntity {
 
     @Id
@@ -35,6 +38,9 @@ public class MailDispatchJob extends BaseTimeEntity {
 
     @Column(name = "requested_by_admin_id", nullable = false)
     private Long requestedByAdminId;
+
+    @Column(name = "idempotency_key", nullable = false, length = 255)
+    private String idempotencyKey;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -76,6 +82,7 @@ public class MailDispatchJob extends BaseTimeEntity {
     private MailDispatchJob(Long scenarioId,
                             Long recruitId,
                             Long requestedByAdminId,
+                            String idempotencyKey,
                             String subjectTemplate,
                             String bodyTemplate,
                             String inputVariablesJson,
@@ -83,6 +90,7 @@ public class MailDispatchJob extends BaseTimeEntity {
         this.scenarioId = scenarioId;
         this.recruitId = recruitId;
         this.requestedByAdminId = requestedByAdminId;
+        this.idempotencyKey = idempotencyKey;
         this.subjectTemplate = subjectTemplate;
         this.bodyTemplate = bodyTemplate;
         this.inputVariablesJson = inputVariablesJson;
@@ -94,6 +102,7 @@ public class MailDispatchJob extends BaseTimeEntity {
     public static MailDispatchJob create(Long scenarioId,
                                          Long recruitId,
                                          Long requestedByAdminId,
+                                         String idempotencyKey,
                                          String subjectTemplate,
                                          String bodyTemplate,
                                          String inputVariablesJson,
@@ -102,6 +111,7 @@ public class MailDispatchJob extends BaseTimeEntity {
                 scenarioId,
                 recruitId,
                 requestedByAdminId,
+                idempotencyKey,
                 subjectTemplate,
                 bodyTemplate,
                 inputVariablesJson,
