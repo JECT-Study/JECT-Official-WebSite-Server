@@ -39,4 +39,9 @@ public class MemberSupporters extends BaseTimeEntity {
             .activityCertNumber(activityCertNumber)
             .build();
     }
+
+    // 전달된 운영 서포터즈 구성원 상세정보 편집
+    public void edit(String activityCertNumber) {
+        if (activityCertNumber != null) this.activityCertNumber = activityCertNumber;
+    }
 }
