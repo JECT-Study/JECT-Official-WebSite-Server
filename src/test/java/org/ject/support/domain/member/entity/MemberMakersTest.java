@@ -6,7 +6,6 @@ import static org.ject.support.domain.member.fixture.MakersActivityFixture.maker
 import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.CareerLevel;
 import org.ject.support.domain.member.MakersTeam;
-import org.ject.support.domain.member.command.EditMemberMakersCommand;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -17,11 +16,8 @@ class MemberMakersTest {
 	void 입력한_메이커스팀_구성원_상세정보만_변경되고_입력하지_않은_상세정보는_유지된다() {
 		// given
 		MemberMakers memberMakers = makersActivity().build().getMemberMakers();
-		EditMemberMakersCommand command = new EditMemberMakersCommand(
-			MakersTeam.TEAM_2, null, null, null, null, null, "수정된 회사", null, null);
-
 		// when
-		memberMakers.edit(command);
+		memberMakers.edit(MakersTeam.TEAM_2, null, null, null, null, null, "수정된 회사", null, null);
 
 		// then
 		assertThat(memberMakers.getMakersTeam()).isEqualTo(MakersTeam.TEAM_2);
@@ -36,20 +32,10 @@ class MemberMakersTest {
 	void 메이커스팀_구성원의_소속과_활동_가능_정보와_경력_정보를_함께_변경할_수_있다() {
 		// given
 		MemberMakers memberMakers = makersActivity().build().getMemberMakers();
-		EditMemberMakersCommand command = new EditMemberMakersCommand(
-			MakersTeam.TEAM_2,
-			Availability.UNAVAILABLE,
-			Availability.CONSIDER_LATER,
-			Availability.AVAILABLE_BY_TOPIC,
-			CareerLevel.SENIOR,
-			"Kotlin",
-			"젝트",
-			"아키텍처",
-			"MK-002"
-		);
-
 		// when
-		memberMakers.edit(command);
+		memberMakers.edit(
+			MakersTeam.TEAM_2, Availability.UNAVAILABLE, Availability.CONSIDER_LATER,
+			Availability.AVAILABLE_BY_TOPIC, CareerLevel.SENIOR, "Kotlin", "젝트", "아키텍처", "MK-002");
 
 		// then
 		assertThat(memberMakers.getMakersTeam()).isEqualTo(MakersTeam.TEAM_2);

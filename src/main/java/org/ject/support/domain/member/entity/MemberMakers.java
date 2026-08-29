@@ -16,7 +16,6 @@ import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.CareerLevel;
-import org.ject.support.domain.member.command.EditMemberMakersCommand;
 
 @Entity
 @Getter
@@ -94,15 +93,17 @@ public class MemberMakers extends BaseTimeEntity {
     }
 
     // 전달된 메이커스팀 상세정보 편집
-    public void edit(EditMemberMakersCommand command) {
-        if (command.makersTeam() != null) this.makersTeam = command.makersTeam();
-        if (command.mentoringAvailability() != null) this.mentoringAvailability = command.mentoringAvailability();
-        if (command.projectSupplementAvailability() != null) this.projectSupplementAvailability = command.projectSupplementAvailability();
-        if (command.speakerAvailability() != null) this.speakerAvailability = command.speakerAvailability();
-        if (command.careerLevel() != null) this.careerLevel = command.careerLevel();
-        if (command.skills() != null) this.skills = command.skills();
-        if (command.company() != null) this.company = command.company();
-        if (command.expertTopics() != null) this.expertTopics = command.expertTopics();
-        if (command.activityCertNumber() != null) this.activityCertNumber = command.activityCertNumber();
+    public void edit(MakersTeam makersTeam, Availability mentoringAvailability,
+        Availability projectSupplementAvailability, Availability speakerAvailability, CareerLevel careerLevel,
+        String skills, String company, String expertTopics, String activityCertNumber) {
+        if (makersTeam != null) this.makersTeam = makersTeam;
+        if (mentoringAvailability != null) this.mentoringAvailability = mentoringAvailability;
+        if (projectSupplementAvailability != null) this.projectSupplementAvailability = projectSupplementAvailability;
+        if (speakerAvailability != null) this.speakerAvailability = speakerAvailability;
+        if (careerLevel != null) this.careerLevel = careerLevel;
+        if (skills != null) this.skills = skills;
+        if (company != null) this.company = company;
+        if (expertTopics != null) this.expertTopics = expertTopics;
+        if (activityCertNumber != null) this.activityCertNumber = activityCertNumber;
     }
 }

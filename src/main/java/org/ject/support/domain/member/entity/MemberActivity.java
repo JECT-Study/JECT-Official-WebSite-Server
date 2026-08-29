@@ -25,8 +25,6 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
-import org.ject.support.domain.member.command.EditMemberActivityCommand;
-import org.ject.support.domain.member.command.EditMemberMakersCommand;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
@@ -208,21 +206,26 @@ public class MemberActivity extends BaseTimeEntity {
     }
 
     // 전달된 구성원 활동정보 편집
-    public void edit(EditMemberActivityCommand command) {
-        if (command.jobFamily() != null) {
-            validateJobFamily(memberType, command.jobFamily());
-            this.jobFamily = command.jobFamily();
+    public void edit(JobFamily jobFamily, CareerDetails careerDetails, RecruitTypeDetail recruitTypeDetail,
+        ExperiencePeriod experiencePeriod, String memo) {
+        if (jobFamily != null) {
+            validateJobFamily(memberType, jobFamily);
+            this.jobFamily = jobFamily;
         }
-        if (command.careerDetails() != null) this.careerDetails = command.careerDetails();
-        if (command.recruitTypeDetail() != null) this.recruitTypeDetail = command.recruitTypeDetail();
-        if (command.experiencePeriod() != null) this.experiencePeriod = command.experiencePeriod();
-        if (command.memo() != null) this.memo = command.memo();
+        if (careerDetails != null) this.careerDetails = careerDetails;
+        if (recruitTypeDetail != null) this.recruitTypeDetail = recruitTypeDetail;
+        if (experiencePeriod != null) this.experiencePeriod = experiencePeriod;
+        if (memo != null) this.memo = memo;
     }
 
     // 메이커스팀 구성원 활동정보 편집
-    public void editMakersActivity(EditMemberActivityCommand activityCommand, EditMemberMakersCommand makersCommand) {
-        edit(activityCommand);
-        memberMakers.edit(makersCommand);
+    public void editMakersActivity(JobFamily jobFamily, CareerDetails careerDetails, RecruitTypeDetail recruitTypeDetail,
+        ExperiencePeriod experiencePeriod, String memo, MakersTeam makersTeam, Availability mentoringAvailability,
+        Availability projectSupplementAvailability, Availability speakerAvailability, CareerLevel careerLevel,
+        String skills, String company, String expertTopics, String activityCertNumber) {
+        edit(jobFamily, careerDetails, recruitTypeDetail, experiencePeriod, memo);
+        memberMakers.edit(makersTeam, mentoringAvailability, projectSupplementAvailability, speakerAvailability,
+            careerLevel, skills, company, expertTopics, activityCertNumber);
     }
 
     public void activate() {

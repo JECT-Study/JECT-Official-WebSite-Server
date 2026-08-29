@@ -6,7 +6,6 @@ import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import java.util.List;
 
 import org.ject.support.domain.member.Region;
-import org.ject.support.domain.member.command.EditMemberCommand;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -38,10 +37,8 @@ class MemberTest {
 	void 입력한_기본정보만_변경되고_입력하지_않은_기본정보는_유지된다() {
 		// given
 		Member member = member().build();
-		EditMemberCommand command = new EditMemberCommand("수정된이름", null, null, Region.BUSAN, null);
-
 		// when
-		member.edit(command);
+		member.edit("수정된이름", null, null, Region.BUSAN, null);
 
 		// then
 		assertThat(member.getName()).isEqualTo("수정된이름");
@@ -56,10 +53,8 @@ class MemberTest {
 	void 관심_도메인을_입력하면_기존_관심_도메인이_새로운_목록으로_교체된다() {
 		// given
 		Member member = member().interestedDomains(List.of("커머스")).build();
-		EditMemberCommand command = new EditMemberCommand(null, null, null, null, List.of("핀테크", "헬스케어"));
-
 		// when
-		member.edit(command);
+		member.edit(null, null, null, null, List.of("핀테크", "헬스케어"));
 
 		// then
 		assertThat(member.getInterestedDomains()).containsExactly("핀테크", "헬스케어");

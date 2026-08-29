@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.ject.support.admin.member.dto.request.CreateMemberRequest;
-import org.ject.support.domain.member.command.EditMemberCommand;
+import org.ject.support.admin.member.dto.command.EditMemberCommand;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -72,7 +72,7 @@ public class AdminMemberService {
 		Member member = memberRepository.findById(memberId)
 			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
 		validateDuplicateEmail(member, command.email());
-		member.edit(command);
+		member.edit(command.name(), command.email(), command.phoneNumber(), command.region(), command.interestedDomains());
 	}
 
 	// 남은 구성원 활동이 없으면 구성원 삭제

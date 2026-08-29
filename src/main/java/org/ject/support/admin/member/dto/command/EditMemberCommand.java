@@ -1,4 +1,4 @@
-package org.ject.support.domain.member.command;
+package org.ject.support.admin.member.dto.command;
 
 import java.util.List;
 

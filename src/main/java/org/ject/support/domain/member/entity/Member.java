@@ -20,7 +20,6 @@ import org.hibernate.annotations.SQLRestriction;
 import org.ject.support.common.util.StringListConverter;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.Region;
-import org.ject.support.domain.member.command.EditMemberCommand;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,12 +97,12 @@ public class Member extends BaseTimeEntity {
     }
 
     // 전달된 구성원 기본정보 편집
-    public void edit(EditMemberCommand command) {
-        if (command.name() != null) this.name = command.name();
-        if (command.email() != null) this.email = command.email();
-        if (command.phoneNumber() != null) this.phoneNumber = command.phoneNumber();
-        if (command.region() != null) this.region = command.region();
-        if (command.interestedDomains() != null) this.interestedDomains = command.interestedDomains();
+    public void edit(String name, String email, String phoneNumber, Region region, List<String> interestedDomains) {
+        if (name != null) this.name = name;
+        if (email != null) this.email = email;
+        if (phoneNumber != null) this.phoneNumber = phoneNumber;
+        if (region != null) this.region = region;
+        if (interestedDomains != null) this.interestedDomains = interestedDomains;
     }
 
     // 구성원 삭제 처리

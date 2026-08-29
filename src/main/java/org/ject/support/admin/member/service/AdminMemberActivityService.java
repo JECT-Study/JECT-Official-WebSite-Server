@@ -21,8 +21,8 @@ import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
-import org.ject.support.domain.member.command.EditMemberActivityCommand;
-import org.ject.support.domain.member.command.EditMemberMakersCommand;
+import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
+import org.ject.support.admin.member.dto.command.EditMemberMakersCommand;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -154,7 +154,22 @@ public class AdminMemberActivityService {
 	public Long editMemberMakersActivity(Long memberActivityId, EditMemberActivityCommand activityCommand,
 		EditMemberMakersCommand makersCommand, ActivityStatus activityStatus) {
 		MemberActivity memberActivity = getMemberMakersActivity(memberActivityId);
-		memberActivity.editMakersActivity(activityCommand, makersCommand);
+		memberActivity.editMakersActivity(
+			activityCommand.jobFamily(),
+			activityCommand.careerDetails(),
+			activityCommand.recruitTypeDetail(),
+			activityCommand.experiencePeriod(),
+			activityCommand.memo(),
+			makersCommand.makersTeam(),
+			makersCommand.mentoringAvailability(),
+			makersCommand.projectSupplementAvailability(),
+			makersCommand.speakerAvailability(),
+			makersCommand.careerLevel(),
+			makersCommand.skills(),
+			makersCommand.company(),
+			makersCommand.expertTopics(),
+			makersCommand.activityCertNumber()
+		);
 		if (activityStatus != null) {
 			editMakersActivityStatus(memberActivity, activityStatus);
 		}

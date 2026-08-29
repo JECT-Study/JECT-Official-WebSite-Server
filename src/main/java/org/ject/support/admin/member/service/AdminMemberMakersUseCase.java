@@ -13,9 +13,9 @@ import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.MemberType;
-import org.ject.support.domain.member.command.EditMemberActivityCommand;
-import org.ject.support.domain.member.command.EditMemberCommand;
-import org.ject.support.domain.member.command.EditMemberMakersCommand;
+import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
+import org.ject.support.admin.member.dto.command.EditMemberCommand;
+import org.ject.support.admin.member.dto.command.EditMemberMakersCommand;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

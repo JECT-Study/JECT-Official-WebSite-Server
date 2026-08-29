@@ -14,8 +14,6 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
-import org.ject.support.domain.member.command.EditMemberActivityCommand;
-import org.ject.support.domain.member.command.EditMemberMakersCommand;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
@@ -366,11 +364,8 @@ class MemberActivityTest {
 	void 입력한_활동정보만_변경되고_입력하지_않은_활동정보는_유지된다() {
 		// given
 		MemberActivity memberActivity = makersActivity().build();
-		EditMemberActivityCommand command = new EditMemberActivityCommand(
-			JobFamily.BE, null, RecruitTypeDetail.REFILL, null, null);
-
 		// when
-		memberActivity.edit(command);
+		memberActivity.edit(JobFamily.BE, null, RecruitTypeDetail.REFILL, null, null);
 
 		// then
 		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.BE);
@@ -385,10 +380,8 @@ class MemberActivityTest {
 	void 메이커스팀_구성원에게_허용되지_않는_직군으로_변경할_수_없다() {
 		// given
 		MemberActivity memberActivity = makersActivity().build();
-		EditMemberActivityCommand command = new EditMemberActivityCommand(JobFamily.OPS, null, null, null, null);
-
 		// when
-		Throwable throwable = catchThrowable(() -> memberActivity.edit(command));
+		Throwable throwable = catchThrowable(() -> memberActivity.edit(JobFamily.OPS, null, null, null, null));
 
 		// then
 		assertThat(throwable)
@@ -402,13 +395,10 @@ class MemberActivityTest {
 	void 메이커스팀_구성원의_활동정보와_상세정보를_함께_수정할_수_있다() {
 		// given
 		MemberActivity memberActivity = makersActivity().build();
-		EditMemberActivityCommand activityCommand = new EditMemberActivityCommand(
-			JobFamily.BE, CareerDetails.JOB_SEEKER, null, null, "수정된 메모");
-		EditMemberMakersCommand makersCommand = new EditMemberMakersCommand(
-			MakersTeam.TEAM_2, null, null, null, null, null, "수정된 회사", null, null);
-
 		// when
-		memberActivity.editMakersActivity(activityCommand, makersCommand);
+		memberActivity.editMakersActivity(
+			JobFamily.BE, CareerDetails.JOB_SEEKER, null, null, "수정된 메모",
+			MakersTeam.TEAM_2, null, null, null, null, null, "수정된 회사", null, null);
 
 		// then
 		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.BE);
