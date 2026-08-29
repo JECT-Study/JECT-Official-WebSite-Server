@@ -3,6 +3,7 @@ package org.ject.support.admin.member.controller;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
+import org.ject.support.admin.member.dto.request.UpdateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.response.MemberSupportersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
 import org.ject.support.common.response.CursorPageResponse;
@@ -24,16 +25,22 @@ public interface AdminMemberSupportersApiSpec {
 	void createAdminMemberSupporters(@RequestBody @Valid CreateMemberSupportersRequest request);
 
 	@Operation(
+		summary = "운영 서포터즈 구성원 상세 조회",
+		description = "운영 서포터즈 구성원을 상세 조회합니다."
+	)
+	MemberSupportersDetailResponse getAdminMemberSupportersDetail(@PathVariable Long memberActivityId);
+
+	@Operation(
 		summary = "운영 서포터즈 구성원 목록 조회",
 		description = "운영 서포터즈 구성원 목록을 조회합니다."
 	)
 	CursorPageResponse<MemberSupportersListResponse> getAdminMemberSupportersList(@ModelAttribute MemberSupportersListRequest request);
 
 	@Operation(
-		summary = "운영 서포터즈 구성원 상세 조회",
-		description = "운영 서포터즈 구성원을 상세 조회합니다."
+		summary = "운영 서포터즈 구성원 수정",
+		description = "전달한 활동 ID에 해당하는 운영 서포터즈 구성원의 입력된 정보만 수정합니다."
 	)
-	MemberSupportersDetailResponse getAdminMemberSupportersDetail(@PathVariable Long memberActivityId);
+	void editAdminMemberSupporters(@PathVariable Long memberActivityId, @RequestBody @Valid UpdateMemberSupportersRequest request);
 
 	@Operation(
 		summary = "운영 서포터즈 구성원 삭제",
