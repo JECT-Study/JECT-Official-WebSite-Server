@@ -14,6 +14,8 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.command.EditMemberActivityCommand;
+import org.ject.support.domain.member.command.EditMemberMakersCommand;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
@@ -351,6 +353,109 @@ class MemberActivityTest {
 		Throwable throwable = catchThrowable(() ->
 			memberActivity.updateActivityStatus(ActivityStatus.DROPOUT)
 		);
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
+	}
+
+	@Test
+	@DisplayName("입력한 활동정보만 변경되고 입력하지 않은 활동정보는 유지된다")
+	void 입력한_활동정보만_변경되고_입력하지_않은_활동정보는_유지된다() {
+		// given
+		MemberActivity memberActivity = makersActivity().build();
+		EditMemberActivityCommand command = new EditMemberActivityCommand(
+			JobFamily.BE, null, RecruitTypeDetail.REFILL, null, null);
+
+		// when
+		memberActivity.edit(command);
+
+		// then
+		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.BE);
+		assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REFILL);
+		assertThat(memberActivity.getCareerDetails()).isEqualTo(CareerDetails.EMPLOYEE);
+		assertThat(memberActivity.getExperiencePeriod()).isEqualTo(ExperiencePeriod.ONE_TO_TWO);
+		assertThat(memberActivity.getMemo()).isEqualTo("테스트 메모");
+	}
+
+	@Test
+	@DisplayName("메이커스팀 구성원에게 허용되지 않는 직군으로 변경할 수 없다")
+	void 메이커스팀_구성원에게_허용되지_않는_직군으로_변경할_수_없다() {
+		// given
+		MemberActivity memberActivity = makersActivity().build();
+		EditMemberActivityCommand command = new EditMemberActivityCommand(JobFamily.OPS, null, null, null, null);
+
+		// when
+		Throwable throwable = catchThrowable(() -> memberActivity.edit(command));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_JOB_FAMILY);
+	}
+
+	@Test
+	@DisplayName("메이커스팀 구성원의 활동정보와 상세정보를 함께 수정할 수 있다")
+	void 메이커스팀_구성원의_활동정보와_상세정보를_함께_수정할_수_있다() {
+		// given
+		MemberActivity memberActivity = makersActivity().build();
+		EditMemberActivityCommand activityCommand = new EditMemberActivityCommand(
+			JobFamily.BE, CareerDetails.JOB_SEEKER, null, null, "수정된 메모");
+		EditMemberMakersCommand makersCommand = new EditMemberMakersCommand(
+			MakersTeam.TEAM_2, null, null, null, null, null, "수정된 회사", null, null);
+
+		// when
+		memberActivity.editMakersActivity(activityCommand, makersCommand);
+
+		// then
+		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.BE);
+		assertThat(memberActivity.getCareerDetails()).isEqualTo(CareerDetails.JOB_SEEKER);
+		assertThat(memberActivity.getMemo()).isEqualTo("수정된 메모");
+		assertThat(memberActivity.getMemberMakers().getMakersTeam()).isEqualTo(MakersTeam.TEAM_2);
+		assertThat(memberActivity.getMemberMakers().getCompany()).isEqualTo("수정된 회사");
+	}
+
+	@Test
+	@DisplayName("메이커스팀 구성원 활동을 활동 중 상태로 변경할 수 있다")
+	void 메이커스팀_구성원_활동을_활동_중_상태로_변경할_수_있다() {
+		MemberActivity memberActivity = makersActivity().activityStatus(ActivityStatus.ENDED).build();
+
+		memberActivity.activate();
+
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ACTIVE);
+	}
+
+	@Test
+	@DisplayName("메이커스팀 구성원 활동을 활동 종료 상태로 변경할 수 있다")
+	void 메이커스팀_구성원_활동을_활동_종료_상태로_변경할_수_있다() {
+		MemberActivity memberActivity = makersActivity().build();
+
+		memberActivity.end();
+
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ENDED);
+	}
+
+	@Test
+	@DisplayName("메이커스팀 구성원 활동을 중도 이탈 상태로 변경할 수 있다")
+	void 메이커스팀_구성원_활동을_중도_이탈_상태로_변경할_수_있다() {
+		MemberActivity memberActivity = makersActivity().build();
+
+		memberActivity.dropOut();
+
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.DROPOUT);
+	}
+
+	@Test
+	@DisplayName("메이커스팀 구성원에게 허용되지 않는 활동 상태로 변경할 수 없다")
+	void 메이커스팀_구성원에게_허용되지_않는_활동_상태로_변경할_수_없다() {
+		// given
+		MemberActivity memberActivity = makersActivity().build();
+
+		// when
+		Throwable throwable = catchThrowable(() -> memberActivity.updateActivityStatus(ActivityStatus.COMPLETED));
 
 		// then
 		assertThat(throwable)

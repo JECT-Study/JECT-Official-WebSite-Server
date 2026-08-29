@@ -1,6 +1,7 @@
 package org.ject.support.admin.member.service;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.mockito.BDDMockito.*;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.Region;
+import org.ject.support.domain.member.command.EditMemberCommand;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -39,6 +41,77 @@ class AdminMemberServiceTest {
 
 	@InjectMocks
 	private AdminMemberService adminMemberService;
+
+	@Test
+	@DisplayName("존재하지 않는 구성원은 수정할 수 없다")
+	void 존재하지_않는_구성원은_수정할_수_없다() {
+		// given
+		Long memberId = 1L;
+		EditMemberCommand command = new EditMemberCommand("수정된이름", null, null, null, null);
+		given(memberRepository.findById(memberId)).willReturn(Optional.empty());
+
+		// when & then
+		assertThatThrownBy(() -> adminMemberService.editMember(memberId, command))
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER);
+	}
+
+	@Test
+	@DisplayName("다른 구성원이 사용 중인 이메일로 변경할 수 없다")
+	void 다른_구성원이_사용_중인_이메일로_변경할_수_없다() {
+		// given
+		Member member = member().email("current@ject.kr").build();
+		Member otherMember = member().email("other@ject.kr").build();
+		ReflectionTestUtils.setField(member, "id", 1L);
+		ReflectionTestUtils.setField(otherMember, "id", 2L);
+		EditMemberCommand command = new EditMemberCommand(null, "other@ject.kr", null, null, null);
+		given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+		given(memberRepository.findByEmailIncludingDeleted("other@ject.kr")).willReturn(Optional.of(otherMember));
+
+		// when & then
+		assertThatThrownBy(() -> adminMemberService.editMember(1L, command))
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.DUPLICATE_EMAIL);
+		assertThat(member.getEmail()).isEqualTo("current@ject.kr");
+	}
+
+	@Test
+	@DisplayName("삭제된 구성원이 사용했던 이메일로 변경할 수 없다")
+	void 삭제된_구성원이_사용했던_이메일로_변경할_수_없다() {
+		// given
+		Member member = member().email("current@ject.kr").build();
+		Member deletedMember = member().email("deleted@ject.kr").deleted().build();
+		ReflectionTestUtils.setField(member, "id", 1L);
+		ReflectionTestUtils.setField(deletedMember, "id", 2L);
+		EditMemberCommand command = new EditMemberCommand(null, "deleted@ject.kr", null, null, null);
+		given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+		given(memberRepository.findByEmailIncludingDeleted("deleted@ject.kr")).willReturn(Optional.of(deletedMember));
+
+		// when & then
+		assertThatThrownBy(() -> adminMemberService.editMember(1L, command))
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.DUPLICATE_EMAIL);
+	}
+
+	@Test
+	@DisplayName("현재 이메일과 동일한 이메일로 수정할 수 있다")
+	void 현재_이메일과_동일한_이메일로_수정할_수_있다() {
+		// given
+		Member member = member().email("current@ject.kr").build();
+		EditMemberCommand command = new EditMemberCommand("수정된이름", "current@ject.kr", null, null, null);
+		given(memberRepository.findById(1L)).willReturn(Optional.of(member));
+
+		// when
+		adminMemberService.editMember(1L, command);
+
+		// then
+		assertThat(member.getName()).isEqualTo("수정된이름");
+		assertThat(member.getEmail()).isEqualTo("current@ject.kr");
+		verify(memberRepository, never()).findByEmailIncludingDeleted(any());
+	}
 
 	private CreateMemberSemesterRequest createMemberSemesterRequest() {
 		return new CreateMemberSemesterRequest(

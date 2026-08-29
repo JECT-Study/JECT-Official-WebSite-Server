@@ -2,6 +2,7 @@ package org.ject.support.admin.member.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.ject.support.domain.member.fixture.MakersActivityFixture.makersActivity;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.never;
@@ -31,6 +32,8 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.command.EditMemberActivityCommand;
+import org.ject.support.domain.member.command.EditMemberMakersCommand;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.exception.MemberErrorCode;
@@ -53,6 +56,72 @@ class AdminMemberActivityServiceTest {
 
     @InjectMocks
     private AdminMemberActivityService adminMemberActivityService;
+
+	@Test
+	@DisplayName("존재하지 않는 메이커스팀 구성원 활동은 수정할 수 없다")
+	void 존재하지_않는_메이커스팀_구성원_활동은_수정할_수_없다() {
+		// given
+		Long memberActivityId = 1L;
+		given(memberActivityRepository.findByIdAndMemberType(memberActivityId, MemberType.MAKERS))
+			.willReturn(Optional.empty());
+
+		// when
+		Throwable throwable = catchThrowable(() -> adminMemberActivityService.editMemberMakersActivity(
+			memberActivityId, emptyActivityCommand(), emptyMakersCommand(), null));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_MAKERS_ACTIVITY);
+	}
+
+	@Test
+	@DisplayName("이미 활동 중인 메이커스팀 구성원 활동이 있으면 다른 활동을 활동 중 상태로 변경할 수 없다")
+	void 이미_활동_중인_메이커스팀_구성원_활동이_있으면_다른_활동을_활동_중_상태로_변경할_수_없다() {
+		// given
+		MemberActivity memberActivity = makersActivity().activityStatus(ActivityStatus.ENDED).build();
+		given(memberActivityRepository.findByIdAndMemberType(1L, MemberType.MAKERS))
+			.willReturn(Optional.of(memberActivity));
+		given(memberActivityRepository.existsActiveMakersActivityByMemberId(memberActivity.getMemberId()))
+			.willReturn(true);
+
+		// when
+		Throwable throwable = catchThrowable(() -> adminMemberActivityService.editMemberMakersActivity(
+			1L, emptyActivityCommand(), emptyMakersCommand(), ActivityStatus.ACTIVE));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.ALREADY_EXIST_ACTIVE_MEMBER_MAKERS_ACTIVITY);
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ENDED);
+	}
+
+	@Test
+	@DisplayName("현재 활동 중인 이력을 다시 활동 중 상태로 수정할 수 있다")
+	void 현재_활동_중인_이력을_다시_활동_중_상태로_수정할_수_있다() {
+		// given
+		MemberActivity memberActivity = makersActivity().build();
+		given(memberActivityRepository.findByIdAndMemberType(1L, MemberType.MAKERS))
+			.willReturn(Optional.of(memberActivity));
+
+		// when
+		adminMemberActivityService.editMemberMakersActivity(
+			1L, emptyActivityCommand(), emptyMakersCommand(), ActivityStatus.ACTIVE);
+
+		// then
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ACTIVE);
+		verify(memberActivityRepository, never()).existsActiveMakersActivityByMemberId(any());
+	}
+
+	private EditMemberActivityCommand emptyActivityCommand() {
+		return new EditMemberActivityCommand(null, null, null, null, null);
+	}
+
+	private EditMemberMakersCommand emptyMakersCommand() {
+		return new EditMemberMakersCommand(null, null, null, null, null, null, null, null, null);
+	}
 
     @Test
     @DisplayName("운영 서포터즈 목록을 size보다 한 건 더 조회하고 전체 개수를 반환한다")
