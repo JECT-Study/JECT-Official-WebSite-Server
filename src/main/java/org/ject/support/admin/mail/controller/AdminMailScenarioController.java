@@ -7,6 +7,9 @@ import org.ject.support.admin.mail.domain.MailScenarioType;
 import org.ject.support.admin.mail.dto.MailScenarioRequest;
 import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
+import org.ject.support.admin.mail.dto.MailPreviewResponse;
+import org.ject.support.admin.mail.dto.PreviewMailRequest;
+import org.ject.support.admin.mail.service.MailPreviewService;
 import org.ject.support.admin.mail.service.MailScenarioService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AdminMailScenarioController implements AdminMailScenarioApiSpec {
 
     private final MailScenarioService mailScenarioService;
+    private final MailPreviewService mailPreviewService;
 
     @Override
     @GetMapping
@@ -63,5 +67,11 @@ public class AdminMailScenarioController implements AdminMailScenarioApiSpec {
     @GetMapping("/{scenarioId}/variables")
     public MailScenarioVariableResponse getVariablesByScenario(@PathVariable Long scenarioId) {
         return mailScenarioService.getScenarioVariables(scenarioId);
+    }
+
+    @Override
+    @PostMapping("/preview")
+    public MailPreviewResponse preview(@RequestBody @Valid PreviewMailRequest request) {
+        return mailPreviewService.preview(request);
     }
 }

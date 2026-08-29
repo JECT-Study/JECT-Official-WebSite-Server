@@ -8,6 +8,8 @@ import org.ject.support.admin.mail.domain.MailScenarioType;
 import org.ject.support.admin.mail.dto.MailScenarioRequest;
 import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
+import org.ject.support.admin.mail.dto.MailPreviewResponse;
+import org.ject.support.admin.mail.dto.PreviewMailRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Direction;
@@ -37,4 +39,7 @@ public interface AdminMailScenarioApiSpec {
 
     @Operation(summary = "시나리오 변수 목록 조회", description = "시나리오 ID로 템플릿 변수 목록(공통/개인)을 조회합니다.")
     MailScenarioVariableResponse getVariablesByScenario(@PathVariable Long scenarioId);
+
+    @Operation(summary = "메일 미리보기", description = "지원자와 입력 변수 기준으로 메일 제목과 본문을 미리 확인합니다.")
+    MailPreviewResponse preview(@RequestBody @Valid PreviewMailRequest request);
 }
