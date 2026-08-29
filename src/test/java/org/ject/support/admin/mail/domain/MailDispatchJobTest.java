@@ -4,11 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
 import org.ject.support.admin.mail.exception.MailException;
 
 class MailDispatchJobTest {
 
     @Test
+    @DisplayName("발송 작업을 생성하면 요청 상태와 대상 건수가 설정된다")
     void 발송_작업을_생성하면_요청_상태와_대상_건수가_설정된다() {
         // given
         MailDispatchJob job = MailDispatchJob.create(
@@ -33,6 +35,7 @@ class MailDispatchJobTest {
     }
 
     @Test
+    @DisplayName("발송 작업은 대상별 처리가 끝나면 성공 건수와 실패 건수를 기록한다")
     void 발송_작업은_대상별_처리가_끝나면_성공_건수와_실패_건수를_기록한다() {
         // given
         MailDispatchJob job = createJob(2);
@@ -52,6 +55,7 @@ class MailDispatchJobTest {
     }
 
     @Test
+    @DisplayName("모든 대상 발송에 실패하면 실패 상태가 된다")
     void 모든_대상_발송에_실패하면_실패_상태가_된다() {
         // given
         MailDispatchJob job = createJob(2);
@@ -68,6 +72,7 @@ class MailDispatchJobTest {
     }
 
     @Test
+    @DisplayName("처리가 끝난 발송 작업은 다시 처리할 수 없다")
     void 처리가_끝난_발송_작업은_다시_처리할_수_없다() {
         // given
         MailDispatchJob job = createJob(1);
