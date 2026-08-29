@@ -14,6 +14,7 @@ import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.OptimisticLockException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
@@ -223,6 +224,26 @@ class AdminApplyQueryRepositoryTest {
         // then
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
+    }
+
+    @Test
+    void ApplicationForm이_없는_지원서_상세조회_성공() {
+        // given
+        Applicant applicant = createApplicant("without-form@test.com", BE);
+        applicantRepository.save(applicant);
+        Apply apply = Apply.builder()
+                .applicant(applicant)
+                .recruit(beRecruit)
+                .status(TEMP_SAVED)
+                .build();
+        applyRepository.saveAndFlush(apply);
+
+        // when
+        Optional<Apply> result = adminApplyRepository.findApplyByIdByStatus(apply.getId(), TEMP_SAVED);
+
+        // then
+        assertThat(result).isPresent();
+        assertThat(result.get().getApplicationForm()).isNull();
     }
 
     @Test
