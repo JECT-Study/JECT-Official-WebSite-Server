@@ -453,4 +453,67 @@ class MemberActivityTest {
 			.extracting("errorCode")
 			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
 	}
+
+	@Test
+	@DisplayName("입력한 운영 서포터즈 구성원 활동정보만 변경되고 입력하지 않은 활동정보는 유지된다")
+	void 입력한_운영_서포터즈_구성원_활동정보만_변경되고_입력하지_않은_활동정보는_유지된다() {
+		// given
+		MemberActivity memberActivity = supportersActivity();
+		// when
+		memberActivity.editSupportersActivity(
+			JobFamily.INFRA, null, java.time.LocalDate.of(2026, 2, 1), null, "수정된 메모", null);
+
+		// then
+		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.INFRA);
+		assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REGULAR);
+		assertThat(memberActivity.getStartDate()).isEqualTo(java.time.LocalDate.of(2026, 2, 1));
+		assertThat(memberActivity.getEndDate()).isEqualTo(java.time.LocalDate.of(2026, 12, 31));
+		assertThat(memberActivity.getMemo()).isEqualTo("수정된 메모");
+	}
+
+	@Test
+	@DisplayName("운영 서포터즈 구성원에게 허용되지 않는 직군으로 변경할 수 없다")
+	void 운영_서포터즈_구성원에게_허용되지_않는_직군으로_변경할_수_없다() {
+		// given
+		MemberActivity memberActivity = supportersActivity();
+		// when
+		Throwable throwable = catchThrowable(() ->
+			memberActivity.editSupportersActivity(JobFamily.FE, null, null, null, null, null));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_JOB_FAMILY);
+	}
+
+	@Test
+	@DisplayName("운영 서포터즈 구성원의 활동 종료일을 시작일보다 빠르게 변경할 수 없다")
+	void 운영_서포터즈_구성원의_활동_종료일을_시작일보다_빠르게_변경할_수_없다() {
+		// given
+		MemberActivity memberActivity = supportersActivity();
+		// when
+		Throwable throwable = catchThrowable(() ->
+			memberActivity.editSupportersActivity(
+				null, null, null, java.time.LocalDate.of(2025, 12, 31), null, null));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_PERIOD);
+	}
+
+	private MemberActivity supportersActivity() {
+		return MemberActivity.createSupportersActivity(
+			1L,
+			JobFamily.OPS,
+			RecruitTypeDetail.REGULAR,
+			ActivityStatus.ACTIVE,
+			java.time.LocalDate.of(2026, 1, 1),
+			java.time.LocalDate.of(2026, 12, 31),
+			"SP-001",
+			"운영 서포터즈 메모"
+		);
+	}
 }
