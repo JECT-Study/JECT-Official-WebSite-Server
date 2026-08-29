@@ -9,6 +9,7 @@ CREATE TABLE mail_dispatch_job
     processing_count     INT                   NOT NULL DEFAULT 0,
     success_count        INT                   NOT NULL DEFAULT 0,
     failed_count         INT                   NOT NULL DEFAULT 0,
+    requested_at         datetime(6)           NOT NULL,
     subject_template     TEXT                  NOT NULL,
     body_template        TEXT                  NOT NULL,
     input_variables_json TEXT,

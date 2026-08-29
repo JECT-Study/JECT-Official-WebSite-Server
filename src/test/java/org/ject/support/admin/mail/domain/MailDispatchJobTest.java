@@ -26,6 +26,7 @@ class MailDispatchJobTest {
         assertThat(job.getRequestedByAdminId()).isEqualTo(3L);
         assertThat(job.getStatus()).isEqualTo(MailDispatchJobStatus.REQUESTED);
         assertThat(job.getTargetCount()).isEqualTo(2);
+        assertThat(job.getRequestedAt()).isNotNull();
         assertThat(job.getProcessingCount()).isZero();
         assertThat(job.getSuccessCount()).isZero();
         assertThat(job.getFailedCount()).isZero();

@@ -52,6 +52,9 @@ public class MailDispatchJob extends BaseTimeEntity {
     @Column(name = "failed_count", nullable = false)
     private int failedCount;
 
+    @Column(name = "requested_at", nullable = false)
+    private LocalDateTime requestedAt;
+
     @Column(name = "subject_template", nullable = false, columnDefinition = "TEXT")
     private String subjectTemplate;
 
@@ -85,6 +88,7 @@ public class MailDispatchJob extends BaseTimeEntity {
         this.inputVariablesJson = inputVariablesJson;
         this.targetCount = targetCount;
         this.status = MailDispatchJobStatus.REQUESTED;
+        this.requestedAt = LocalDateTime.now();
     }
 
     public static MailDispatchJob create(Long scenarioId,
