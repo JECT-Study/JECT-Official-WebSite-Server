@@ -24,18 +24,14 @@ import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.base.UnitTestSupport;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
-class MailPreviewServiceTest {
+class MailPreviewServiceTest extends UnitTestSupport {
 
-    @InjectMocks
     private MailPreviewService mailPreviewService;
 
     @Mock
@@ -44,11 +40,14 @@ class MailPreviewServiceTest {
     @Mock
     private ApplyRepository applyRepository;
 
-    @Spy
-    private MailTemplateEngine mailTemplateEngine = new MailTemplateEngine();
+    private final MailTemplateRenderService mailTemplateRenderService = new MailTemplateRenderService(
+            new MailTemplateEngine(), new MailTemplateValidator());
 
-    @Spy
-    private MailTemplateValidator mailTemplateValidator = new MailTemplateValidator();
+    @BeforeEach
+    void setUp() {
+        mailPreviewService = new MailPreviewService(
+                mailScenarioRepository, applyRepository, mailTemplateRenderService);
+    }
 
     @Test
     @DisplayName("지원자 정보와 입력 변수로 제목과 본문을 미리보기한다")
