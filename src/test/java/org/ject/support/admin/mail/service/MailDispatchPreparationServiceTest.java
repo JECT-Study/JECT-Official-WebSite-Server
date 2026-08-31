@@ -69,12 +69,14 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
         // when
         MailDispatchPlan plan = mailDispatchPreparationService.prepare(
                 new SendMailDispatchRequest(2L, 1L, List.of(20L), "  ${name}  ", Map.of("MESSAGE", "반갑습니다")),
-                3L);
+                3L,
+                "dispatch-key");
 
         // then
         assertThat(plan.scenarioId()).isEqualTo(1L);
         assertThat(plan.recruitId()).isEqualTo(2L);
         assertThat(plan.requestedByAdminId()).isEqualTo(3L);
+        assertThat(plan.idempotencyKey()).isEqualTo("dispatch-key");
         assertThat(plan.subjectTemplate()).isEqualTo("  ${name}  ");
         assertThat(plan.targets()).singleElement().satisfies(target -> {
             assertThat(target.applyId()).isEqualTo(20L);
@@ -90,7 +92,7 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
         // when & then
         assertThatThrownBy(() -> mailDispatchPreparationService.prepare(
                 new SendMailDispatchRequest(2L, 1L, List.of(20L, 20L), null, Map.of()),
-                3L))
+                3L, "dispatch-key"))
                 .isInstanceOf(ApplyException.class)
                 .extracting("errorCode")
                 .isEqualTo(ApplyErrorCode.DUPLICATE_APPLY_ID);
@@ -105,7 +107,7 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
         // when & then
         assertThatThrownBy(() -> mailDispatchPreparationService.prepare(
                 new SendMailDispatchRequest(2L, 1L, List.of(20L), null, Map.of()),
-                3L))
+                3L, "dispatch-key"))
                 .isInstanceOf(RecruitException.class)
                 .extracting("errorCode")
                 .isEqualTo(RecruitErrorCode.NOT_FOUND_RECRUIT);
@@ -124,7 +126,7 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
         // when & then
         assertThatThrownBy(() -> mailDispatchPreparationService.prepare(
                 new SendMailDispatchRequest(2L, 1L, List.of(20L), null, Map.of()),
-                3L))
+                3L, "dispatch-key"))
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.INVALID_DISPATCH_TARGETS);
@@ -147,7 +149,7 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
         // when & then
         assertThatThrownBy(() -> mailDispatchPreparationService.prepare(
                 new SendMailDispatchRequest(2L, 1L, List.of(20L), null, Map.of()),
-                3L))
+                3L, "dispatch-key"))
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.INACTIVE_SCENARIO);
@@ -166,7 +168,7 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
         // when & then
         assertThatThrownBy(() -> mailDispatchPreparationService.prepare(
                 new SendMailDispatchRequest(2L, 1L, List.of(20L), "  ?  ", Map.of()),
-                3L))
+                3L, "dispatch-key"))
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.INVALID_SUBJECT);
@@ -185,7 +187,7 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
         // when & then
         assertThatThrownBy(() -> mailDispatchPreparationService.prepare(
                 new SendMailDispatchRequest(2L, 1L, List.of(20L), "가".repeat(41), Map.of()),
-                3L))
+                3L, "dispatch-key"))
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.INVALID_SUBJECT);
@@ -204,7 +206,8 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
         // when
         MailDispatchPlan plan = mailDispatchPreparationService.prepare(
                 new SendMailDispatchRequest(2L, 1L, List.of(20L), "가 ".repeat(40), Map.of()),
-                3L);
+                3L,
+                "dispatch-key");
 
         // then
         assertThat(plan.targets()).singleElement()
@@ -222,7 +225,7 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
         // when & then
         assertThatThrownBy(() -> mailDispatchPreparationService.prepare(
                 new SendMailDispatchRequest(2L, 1L, List.of(20L), null, Map.of("name", "운영자")),
-                3L))
+                3L, "dispatch-key"))
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE);
