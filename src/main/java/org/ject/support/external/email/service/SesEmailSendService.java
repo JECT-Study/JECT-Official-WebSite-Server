@@ -118,6 +118,7 @@ public class SesEmailSendService implements EmailSendService {
                 .build();
 
         try {
+            rateLimiter.consume(1);
             sesV2Client.sendEmail(emailRequest);
         } catch (Exception e) {
             log.error("단건 이메일 전송 실패 to={}", to, e);

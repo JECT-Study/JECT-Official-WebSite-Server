@@ -33,6 +33,8 @@ public enum MailErrorCode implements ErrorCode {
     INVALID_DISPATCH_TARGET_COUNT(BAD_REQUEST, "MAIL-15", "메일 발송 대상은 1~500명이어야 합니다."),
     INVALID_DISPATCH_TARGETS(BAD_REQUEST, "MAIL-16", "메일 발송 대상이 올바르지 않습니다."),
     INVALID_SUBJECT(BAD_REQUEST, "MAIL-17", "메일 제목은 공백을 제외하고 2~40자여야 합니다."),
+    INVALID_IDEMPOTENCY_KEY(BAD_REQUEST, "MAIL-18", "Idempotency-Key가 올바르지 않습니다."),
+    MAIL_SEND_FAILURE(SERVICE_UNAVAILABLE, "MAIL-19", "메일 발송에 실패했습니다."),
     ;
 
     private final HttpStatus httpStatus;
