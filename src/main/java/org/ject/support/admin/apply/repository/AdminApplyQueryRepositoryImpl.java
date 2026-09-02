@@ -77,7 +77,7 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
                 .selectFrom(apply)
                 .distinct()
                 .join(apply.applicant, applicant).fetchJoin()
-                .join(apply.applicationForm, applicationForm).fetchJoin()
+                .leftJoin(apply.applicationForm, applicationForm).fetchJoin()
                 .join(apply.recruit, recruit).fetchJoin()
                 .leftJoin(apply.applicationForm.portfolios, portfolio).fetchJoin()
                 .where(
