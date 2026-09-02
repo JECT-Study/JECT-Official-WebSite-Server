@@ -5,5 +5,6 @@ package org.ject.support.admin.mail.domain;
  */
 public enum ReservedMailVariable {
     name,
-    semester;
+    semester,
+    waitlistNumber;
 }

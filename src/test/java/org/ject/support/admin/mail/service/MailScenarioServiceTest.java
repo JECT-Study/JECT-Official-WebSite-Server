@@ -72,6 +72,7 @@ class MailScenarioServiceTest {
         MailScenarioVariableResponse response = mailScenarioService.getScenarioVariables(scenarioId);
 
         assertThat(response.customVariables()).hasSize(1);
+        assertThat(response.personalVariables()).containsExactly("name", "semester", "waitlistNumber");
     }
 
     // ── createScenario ────────────────────────────────────

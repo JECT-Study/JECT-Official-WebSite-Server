@@ -195,4 +195,34 @@ class MailTemplateValidatorTest {
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.INVALID_VARIABLE_VALUE);
     }
+
+    @Test
+    @DisplayName("시스템 변수는 입력 변수로 덮어쓸 수 없다")
+    void 시스템_변수는_입력_변수로_덮어쓸_수_없다() {
+        assertThatThrownBy(() -> validator.validateInputVariables(
+                Set.of(MailScenarioVariable.builder()
+                        .key("MESSAGE")
+                        .label("메시지")
+                        .inputType(VariableInputType.TEXT)
+                        .required(false)
+                        .build()),
+                Map.of("name", "변조된 이름")
+        ))
+                .isInstanceOf(MailException.class)
+                .hasMessageContaining("name")
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE);
+    }
+
+    @Test
+    @DisplayName("렌더링 후 남은 placeholder는 지원 ID와 키를 포함한 오류를 발생시킨다")
+    void 렌더링_후_남은_placeholder는_지원_ID와_키를_포함한_오류를_발생시킨다() {
+        assertThatThrownBy(() -> validator.validateResolvedTemplate(
+                "안녕하세요 ${waitlistNumber}님", 42L))
+                .isInstanceOf(MailException.class)
+                .hasMessageContaining("42")
+                .hasMessageContaining("waitlistNumber")
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.UNRESOLVED_TEMPLATE_VARIABLE);
+    }
 }

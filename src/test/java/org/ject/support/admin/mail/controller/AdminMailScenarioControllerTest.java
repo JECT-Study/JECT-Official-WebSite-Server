@@ -16,15 +16,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import org.ject.support.admin.mail.domain.MailScenarioCategory;
 import org.ject.support.admin.mail.domain.MailScenarioType;
 import org.ject.support.admin.mail.domain.VariableInputType;
+import org.ject.support.admin.mail.dto.MailPreviewResponse;
+import org.ject.support.admin.mail.dto.PreviewMailRequest;
 import org.ject.support.admin.mail.dto.MailScenarioRequest;
 import org.ject.support.admin.mail.dto.MailScenarioRequest.CustomVariableRequest;
 import org.ject.support.admin.mail.dto.MailScenarioResponse;
 import org.ject.support.admin.mail.dto.MailScenarioVariableResponse;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
+import org.ject.support.admin.mail.service.MailPreviewService;
 import org.ject.support.admin.mail.service.MailScenarioService;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.exception.GlobalExceptionHandler;
@@ -52,6 +56,9 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
 
     @Mock
     private MailScenarioService mailScenarioService;
+
+    @Mock
+    private MailPreviewService mailPreviewService;
 
     @InjectMocks
     private AdminMailScenarioController adminMailScenarioController;
@@ -221,6 +228,29 @@ class AdminMailScenarioControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.data.customVariables[0].key").value("INTERVIEW_AT"))
                 .andExpect(jsonPath("$.data.customVariables[0].inputType").value("DATE_TIME"))
                 .andExpect(jsonPath("$.data.personalVariables[0]").value("name"));
+    }
+
+    @Test
+    @DisplayName("지원자 기준으로 메일 미리보기 결과를 반환한다")
+    void 지원자_기준으로_메일_미리보기_결과를_반환한다() throws Exception {
+        // given
+        PreviewMailRequest request = new PreviewMailRequest(1L, 20L, Map.of("MESSAGE", "안내 내용"));
+        MailPreviewResponse response = new MailPreviewResponse(
+                1L, 20L, "applicant@ject.kr", "홍길동님 안내", "안내 내용");
+        given(mailPreviewService.preview(any(PreviewMailRequest.class))).willReturn(response);
+
+        // when & then
+        mockMvc.perform(post("/admin/mails/scenarios/preview")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scenarioId").value(1))
+                .andExpect(jsonPath("$.data.applyId").value(20))
+                .andExpect(jsonPath("$.data.receiverEmail").value("applicant@ject.kr"))
+                .andExpect(jsonPath("$.data.subject").value("홍길동님 안내"))
+                .andExpect(jsonPath("$.data.body").value("안내 내용"));
+
+        verify(mailPreviewService).preview(request);
     }
 
     @Test

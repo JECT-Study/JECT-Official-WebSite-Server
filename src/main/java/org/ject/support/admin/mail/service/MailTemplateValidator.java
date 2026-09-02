@@ -71,10 +71,7 @@ public class MailTemplateValidator {
                 .collect(Collectors.toSet());
 
         if (!invalidKeys.isEmpty()) {
-            String message = String.format("%s : [%s]", 
-                MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE.getMessage(),
-                String.join(", ", invalidKeys.stream().sorted().toList()));
-            throw new MailException(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE, message);
+            throwUnsupportedVariable(invalidKeys);
         }
     }
 
@@ -102,11 +99,33 @@ public class MailTemplateValidator {
      * 미리보기와 발송에 사용할 입력 변수의 선언, 필수 여부, 타입을 검증합니다.
      */
     public void validateVariables(Set<MailScenarioVariable> customVariables, Map<String, ?> variables) {
+        validateVariables(customVariables, variables, getReservedVariableKeys());
+    }
+
+    /**
+     * 미리보기에 사용할 운영자 입력 변수만 검증합니다.
+     */
+    public void validateInputVariables(Set<MailScenarioVariable> customVariables, Map<String, ?> variables) {
+        Map<String, ?> safeVariables = variables != null ? variables : Map.of();
+        Set<String> reservedVariableKeys = getReservedVariableKeys();
+        Set<String> collisionKeys = safeVariables.keySet().stream()
+                .filter(reservedVariableKeys::contains)
+                .collect(Collectors.toSet());
+        if (!collisionKeys.isEmpty()) {
+            throwUnsupportedVariable(collisionKeys);
+        }
+
+        validateVariables(customVariables, safeVariables, Set.of());
+    }
+
+    private void validateVariables(Set<MailScenarioVariable> customVariables,
+                                   Map<String, ?> variables,
+                                   Set<String> allowedReservedVariableKeys) {
         Set<MailScenarioVariable> safeCustomVariables = customVariables != null ? customVariables : Set.of();
         Map<String, ?> safeVariables = variables != null ? variables : Map.of();
 
         validateRequiredVariables(safeCustomVariables, safeVariables);
-        validateDeclaredVariableKeys(safeCustomVariables, safeVariables);
+        validateDeclaredVariableKeys(safeCustomVariables, safeVariables, allowedReservedVariableKeys);
 
         for (MailScenarioVariable variable : safeCustomVariables) {
             Object value = safeVariables.get(variable.getKey());
@@ -120,19 +139,28 @@ public class MailTemplateValidator {
         }
     }
 
-    private void validateDeclaredVariableKeys(Set<MailScenarioVariable> customVariables, Map<String, ?> variables) {
-        Set<String> allowedKeys = getAllowedVariableKeys(customVariables);
+    private void validateDeclaredVariableKeys(Set<MailScenarioVariable> customVariables,
+                                              Map<String, ?> variables,
+                                              Set<String> allowedReservedVariableKeys) {
+        Set<String> allowedKeys = getAllowedVariableKeys(customVariables, allowedReservedVariableKeys);
         Set<String> invalidKeys = variables.keySet().stream()
                 .filter(key -> !allowedKeys.contains(key))
                 .map(key -> key == null ? "null" : key)
                 .collect(Collectors.toSet());
 
         if (!invalidKeys.isEmpty()) {
-            String message = String.format("%s : [%s]",
-                    MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE.getMessage(),
-                    String.join(", ", invalidKeys.stream().sorted().toList()));
-            throw new MailException(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE, message);
+            throwUnsupportedVariable(invalidKeys);
         }
+    }
+
+    private void throwUnsupportedVariable(Set<String> invalidKeys) {
+        String message = String.format("%s : [%s]",
+                MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE.getMessage(),
+                invalidKeys.stream()
+                        .map(key -> key == null ? "null" : key)
+                        .sorted()
+                        .collect(Collectors.joining(", ")));
+        throw new MailException(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE, message);
     }
 
     private void validateDateTime(String key, Object value) {
@@ -159,14 +187,29 @@ public class MailTemplateValidator {
     }
 
     private Set<String> getAllowedVariableKeys(Set<MailScenarioVariable> customVariables) {
+        return getAllowedVariableKeys(customVariables, getReservedVariableKeys());
+    }
+
+    private Set<String> getAllowedVariableKeys(Set<MailScenarioVariable> customVariables,
+                                               Set<String> allowedReservedVariableKeys) {
         Set<String> allowedKeys = new HashSet<>();
         for (ReservedMailVariable rv : ReservedMailVariable.values()) {
-            allowedKeys.add(rv.name());
+            if (allowedReservedVariableKeys.contains(rv.name())) {
+                allowedKeys.add(rv.name());
+            }
         }
         for (MailScenarioVariable cv : customVariables) {
             allowedKeys.add(cv.getKey());
         }
         return allowedKeys;
+    }
+
+    private Set<String> getReservedVariableKeys() {
+        Set<String> reservedKeys = new HashSet<>();
+        for (ReservedMailVariable variable : ReservedMailVariable.values()) {
+            reservedKeys.add(variable.name());
+        }
+        return reservedKeys;
     }
 
     private Set<String> extractPlaceholderKeys(String template) {
@@ -176,5 +219,22 @@ public class MailTemplateValidator {
             keys.add(matcher.group(1));
         }
         return keys;
+    }
+
+    /**
+     * 렌더링 결과에 치환되지 않은 placeholder가 없는지 검증합니다.
+     */
+    public void validateResolvedTemplate(String template, Long applyId) {
+        validateSyntax(template);
+        Set<String> unresolvedKeys = extractPlaceholderKeys(template);
+        if (unresolvedKeys.isEmpty()) {
+            return;
+        }
+
+        String message = String.format("%s (applyId=%s, keys=[%s])",
+                MailErrorCode.UNRESOLVED_TEMPLATE_VARIABLE.getMessage(),
+                applyId,
+                unresolvedKeys.stream().sorted().collect(Collectors.joining(", ")));
+        throw new MailException(MailErrorCode.UNRESOLVED_TEMPLATE_VARIABLE, message);
     }
 }
