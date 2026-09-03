@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
+import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
 
 class MailDispatchJobTest {
@@ -84,6 +85,28 @@ class MailDispatchJobTest {
         // when & then
         assertThatThrownBy(job::startProcessing)
                 .isInstanceOf(MailException.class);
+    }
+
+    @Test
+    @DisplayName("대상 건수가 0이면 발송 작업을 생성하지 않는다")
+    void 대상_건수가_0이면_발송_작업을_생성하지_않는다() {
+        // when & then
+        assertThatThrownBy(() -> MailDispatchJob.create(
+                1L, 2L, 3L, "dispatch-key", "제목", "본문", "{}", 0))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.INVALID_DISPATCH_TARGET_COUNT);
+    }
+
+    @Test
+    @DisplayName("대상 건수가 음수이면 발송 작업을 생성하지 않는다")
+    void 대상_건수가_음수이면_발송_작업을_생성하지_않는다() {
+        // when & then
+        assertThatThrownBy(() -> MailDispatchJob.create(
+                1L, 2L, 3L, "dispatch-key", "제목", "본문", "{}", -1))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.INVALID_DISPATCH_TARGET_COUNT);
     }
 
     private MailDispatchJob createJob(int targetCount) {

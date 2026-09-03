@@ -107,6 +107,9 @@ public class MailDispatchJob extends BaseTimeEntity {
                                          String bodyTemplate,
                                          String inputVariablesJson,
                                          int targetCount) {
+        if (targetCount <= 0) {
+            throw new MailException(MailErrorCode.INVALID_DISPATCH_TARGET_COUNT);
+        }
         return new MailDispatchJob(
                 scenarioId,
                 recruitId,
