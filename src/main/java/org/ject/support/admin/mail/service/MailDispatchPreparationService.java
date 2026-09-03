@@ -34,7 +34,9 @@ public class MailDispatchPreparationService {
     private final ApplyRepository applyRepository;
     private final MailTemplateRenderService mailTemplateRenderService;
 
-    public MailDispatchPlan prepare(SendMailDispatchRequest request, Long requestedByAdminId) {
+    public MailDispatchPlan prepare(SendMailDispatchRequest request,
+                                    Long requestedByAdminId,
+                                    String idempotencyKey) {
         validateApplyIds(request.applyIds());
         validateRecruit(request.recruitId());
         MailScenario scenario = findActiveScenario(request.scenarioId());
@@ -60,6 +62,7 @@ public class MailDispatchPreparationService {
                 request.scenarioId(),
                 request.recruitId(),
                 requestedByAdminId,
+                idempotencyKey,
                 subjectTemplate,
                 scenario.getBodyTemplate(),
                 inputVariables,
