@@ -48,8 +48,10 @@ public class MailDispatchPreparationService {
 
         List<Apply> applies = applyRepository.findAllByIdAndStatusWithApplicantRecruitAndForm(
                 request.applyIds(), ApplyStatus.SUBMITTED);
+        // 조회 결과가 요청한 모집 공고와 모두 일치하는지 검증합니다.
         validateTargets(request.recruitId(), request.applyIds(), applies);
 
+        // 지원자별 변수를 치환한 결과를 발송 대상에 저장합니다.
         List<MailDispatchPlan.Target> targets = applies.stream()
                 .map(apply -> prepareTarget(apply, subjectTemplate, scenario.getBodyTemplate(), inputVariables))
                 .toList();
@@ -117,6 +119,7 @@ public class MailDispatchPreparationService {
         if (inputVariables == null) {
             return Map.of();
         }
+        // 요청 맵을 복사해 이후 변경이 발송 계획에 영향을 주지 않도록 합니다.
         return Collections.unmodifiableMap(new LinkedHashMap<>(inputVariables));
     }
 }
