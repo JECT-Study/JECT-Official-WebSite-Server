@@ -30,6 +30,9 @@ public enum MailErrorCode implements ErrorCode {
     INVALID_VARIABLE_VALUE(BAD_REQUEST, "MAIL-12", "메일 입력 변수 값이 올바르지 않습니다."),
     UNRESOLVED_TEMPLATE_VARIABLE(BAD_REQUEST, "MAIL-13", "렌더링되지 않은 템플릿 변수가 있습니다."),
     INVALID_DISPATCH_TARGET_STATUS(BAD_REQUEST, "MAIL-14", "현재 상태에서는 발송 대상 처리를 수행할 수 없습니다."),
+    INVALID_DISPATCH_TARGET_COUNT(BAD_REQUEST, "MAIL-15", "메일 발송 대상은 1~500명이어야 합니다."),
+    INVALID_DISPATCH_TARGETS(BAD_REQUEST, "MAIL-16", "메일 발송 대상이 올바르지 않습니다."),
+    INVALID_SUBJECT(BAD_REQUEST, "MAIL-17", "메일 제목은 공백을 제외하고 2~40자여야 합니다."),
     ;
 
     private final HttpStatus httpStatus;
