@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Set;
 
 import org.ject.support.admin.member.dto.request.CreateMemberRequest;
+import org.ject.support.admin.member.dto.command.EditMemberCommand;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberActivityRepository;
 import org.ject.support.domain.member.repository.MemberRepository;
@@ -65,6 +67,14 @@ public class AdminMemberService {
 		return savedMember.getId();
 	}
 
+	// 구성원 기본정보 편집
+	public void editMember(Long memberId, EditMemberCommand command) {
+		Member member = memberRepository.findById(memberId)
+			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER));
+		validateDuplicateEmail(member, command.email());
+		member.edit(command.name(), command.email(), command.phoneNumber(), command.region(), command.interestedDomains());
+	}
+
 	// 남은 구성원 활동이 없으면 구성원 삭제
 	public void deleteMemberIfNoActivity(Long memberId) {
 		if (memberActivityRepository.existsByMemberId(memberId)) {
@@ -87,6 +97,18 @@ public class AdminMemberService {
 			throw new MemberException(NOT_FOUND_MEMBER);
 		}
 		memberRepository.deleteAll(members);
+	}
+
+	// 삭제 이력을 포함한 이메일 중복 검증
+	private void validateDuplicateEmail(Member member, String email) {
+		if (email == null || email.equals(member.getEmail())) {
+			return;
+		}
+		memberRepository.findByEmailIncludingDeleted(email)
+			.filter(foundMember -> !foundMember.getId().equals(member.getId()))
+			.ifPresent(foundMember -> {
+				throw new MemberException(MemberErrorCode.DUPLICATE_EMAIL);
+			});
 	}
 
 }

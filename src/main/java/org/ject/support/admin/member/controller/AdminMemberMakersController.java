@@ -3,6 +3,7 @@ package org.ject.support.admin.member.controller;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
+import org.ject.support.admin.member.dto.request.UpdateMemberMakersRequest;
 import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.admin.member.service.AdminMemberMakersUseCase;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,6 +38,12 @@ public class AdminMemberMakersController implements AdminMemberMakersApiSpec {
 	}
 
 	@Override
+	@GetMapping("/{memberActivityId}")
+	public MemberMakersDetailResponse getAdminMemberMakersDetail(@PathVariable Long memberActivityId) {
+		return adminMemberMakersUseCase.getMemberMakersDetail(memberActivityId);
+	}
+
+	@Override
 	@GetMapping
 	public CursorPageResponse<MemberMakersListResponse> getAdminMemberMakersList(
 		@ParameterObject @ModelAttribute @Valid MemberMakersListRequest request) {
@@ -43,9 +51,9 @@ public class AdminMemberMakersController implements AdminMemberMakersApiSpec {
 	}
 
 	@Override
-	@GetMapping("/{memberActivityId}")
-	public MemberMakersDetailResponse getAdminMemberMakersDetail(@PathVariable Long memberActivityId) {
-		return adminMemberMakersUseCase.getMemberMakersDetail(memberActivityId);
+	@PatchMapping("/{memberActivityId}")
+	public void editAdminMemberMakers(@PathVariable Long memberActivityId, @RequestBody @Valid UpdateMemberMakersRequest request) {
+		adminMemberMakersUseCase.editMemberMakers(memberActivityId, request);
 	}
 
 	@Override

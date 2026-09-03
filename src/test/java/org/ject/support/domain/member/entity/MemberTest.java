@@ -32,4 +32,32 @@ class MemberTest {
 		assertThat(member.getIsDeleted()).isFalse();
 	}
 
+	@Test
+	@DisplayName("입력한 기본정보만 변경되고 입력하지 않은 기본정보는 유지된다")
+	void 입력한_기본정보만_변경되고_입력하지_않은_기본정보는_유지된다() {
+		// given
+		Member member = member().build();
+		// when
+		member.edit("수정된이름", null, null, Region.BUSAN, null);
+
+		// then
+		assertThat(member.getName()).isEqualTo("수정된이름");
+		assertThat(member.getRegion()).isEqualTo(Region.BUSAN);
+		assertThat(member.getEmail()).isEqualTo("member@test.com");
+		assertThat(member.getPhoneNumber()).isEqualTo("01012345678");
+		assertThat(member.getInterestedDomains()).containsExactly("커머스");
+	}
+
+	@Test
+	@DisplayName("관심 도메인을 입력하면 기존 관심 도메인이 새로운 목록으로 교체된다")
+	void 관심_도메인을_입력하면_기존_관심_도메인이_새로운_목록으로_교체된다() {
+		// given
+		Member member = member().interestedDomains(List.of("커머스")).build();
+		// when
+		member.edit(null, null, null, null, List.of("핀테크", "헬스케어"));
+
+		// then
+		assertThat(member.getInterestedDomains()).containsExactly("핀테크", "헬스케어");
+	}
+
 }

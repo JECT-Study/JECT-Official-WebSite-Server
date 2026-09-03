@@ -7,15 +7,18 @@ import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
+import org.ject.support.admin.member.dto.request.UpdateMemberMakersRequest;
 import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
+import org.ject.support.admin.member.dto.command.EditMemberCommand;
+import org.ject.support.admin.member.dto.command.EditMemberMakersCommand;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -56,6 +59,18 @@ public class AdminMemberMakersUseCase {
 		return MemberMakersDetailResponse.from(projection);
 	}
 
+	// 메이커스팀 구성원 정보 편집
+	@Transactional
+	public void editMemberMakers(Long memberActivityId, UpdateMemberMakersRequest request) {
+		Long memberId = adminMemberActivityService.editMemberMakersActivity(
+			memberActivityId,
+			EditMemberActivityCommand.from(request),
+			EditMemberMakersCommand.from(request),
+			request.activityStatus()
+		);
+		adminMemberService.editMember(memberId, EditMemberCommand.from(request));
+	}
+
 	// 메이커스팀 구성원 단건 삭제
 	@Transactional
 	public void deleteMemberMakers(Long memberActivityId) {
@@ -72,4 +87,5 @@ public class AdminMemberMakersUseCase {
 		);
 		adminMemberService.deleteMembersIfNoActivity(memberIds);
 	}
+
 }

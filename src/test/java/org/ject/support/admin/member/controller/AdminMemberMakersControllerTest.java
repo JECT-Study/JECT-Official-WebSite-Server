@@ -7,6 +7,7 @@ import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
+import org.ject.support.admin.member.dto.request.UpdateMemberMakersRequest;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.Availability;
 import org.ject.support.domain.member.CareerDetails;
@@ -265,6 +267,45 @@ class AdminMemberMakersControllerTest {
 	}
 
 	@Test
+	@DisplayName("메이커스팀 구성원 수정 요청에 성공한다")
+	void 메이커스팀_구성원_수정_요청에_성공한다() throws Exception {
+		// given
+		MemberActivity memberActivity = saveMakersActivity(uniqueEmail("edit"), JobFamily.FE, MakersTeam.TEAM_1);
+		UpdateMemberMakersRequest request = updateMemberMakersRequest("수정된이름", uniqueEmail("edited"));
+
+		// when
+		mockMvc.perform(patch("/admin/members/makers/{memberActivityId}", memberActivity.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"));
+
+		// then
+		Member updatedMember = memberRepository.findById(memberActivity.getMemberId()).orElseThrow();
+		MemberActivity updatedActivity = memberActivityRepository.findById(memberActivity.getId()).orElseThrow();
+		assertThat(updatedMember.getName()).isEqualTo(request.name());
+		assertThat(updatedMember.getEmail()).isEqualTo(request.email());
+		assertThat(updatedActivity.getJobFamily()).isEqualTo(request.jobFamily());
+		assertThat(updatedActivity.getActivityStatus()).isEqualTo(request.activityStatus());
+		assertThat(updatedActivity.getMemberMakers().getMakersTeam()).isEqualTo(request.makersTeam());
+		assertThat(updatedActivity.getMemberMakers().getCompany()).isEqualTo(request.company());
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 메이커스팀 구성원 수정 요청은 실패한다")
+	void 존재하지_않는_메이커스팀_구성원_수정_요청은_실패한다() throws Exception {
+		// given
+		UpdateMemberMakersRequest request = updateMemberMakersRequest("수정된이름", uniqueEmail("not-found"));
+
+		// when & then
+		mockMvc.perform(patch("/admin/members/makers/{memberActivityId}", 999999999L)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER_MAKERS_ACTIVITY.getCode()));
+	}
+
+	@Test
 	@DisplayName("메이커스팀 구성원을 삭제하고 남은 활동이 없으면 구성원도 삭제한다")
 	void 메이커스팀_구성원을_삭제하고_남은_활동이_없으면_구성원도_삭제한다() throws Exception {
 		// given
@@ -436,6 +477,31 @@ class AdminMemberMakersControllerTest {
 			"백오피스",
 			"MK-001",
 			"memo"
+		);
+	}
+
+	private UpdateMemberMakersRequest updateMemberMakersRequest(String name, String email) {
+		return new UpdateMemberMakersRequest(
+			name,
+			email,
+			"01011112222",
+			JobFamily.BE,
+			CareerDetails.JOB_SEEKER,
+			MakersTeam.TEAM_2,
+			RecruitTypeDetail.REFILL,
+			ActivityStatus.ENDED,
+			Region.BUSAN,
+			List.of("핀테크", "커머스"),
+			ExperiencePeriod.THREE_TO_FOUR,
+			Availability.AVAILABLE_BY_TOPIC,
+			Availability.HIGHLY_AVAILABLE,
+			Availability.UNAVAILABLE,
+			CareerLevel.MIDDLE,
+			"Java, Spring",
+			"수정된회사",
+			"성능 최적화",
+			"MK-EDIT-001",
+			"수정된 메모"
 		);
 	}
 

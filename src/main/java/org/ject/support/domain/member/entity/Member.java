@@ -96,6 +96,15 @@ public class Member extends BaseTimeEntity {
         this.region = region;
     }
 
+    // 전달된 구성원 기본정보 편집
+    public void edit(String name, String email, String phoneNumber, Region region, List<String> interestedDomains) {
+        if (name != null) this.name = name;
+        if (email != null) this.email = email;
+        if (phoneNumber != null) this.phoneNumber = phoneNumber;
+        if (region != null) this.region = region;
+        if (interestedDomains != null) this.interestedDomains = interestedDomains;
+    }
+
     // 구성원 삭제 처리
     public void delete(){
         this.isDeleted = true;

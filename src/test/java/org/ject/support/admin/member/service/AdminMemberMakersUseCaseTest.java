@@ -11,6 +11,7 @@ import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
+import org.ject.support.admin.member.dto.request.UpdateMemberMakersRequest;
 import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
@@ -24,11 +25,15 @@ import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.Region;
+import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
+import org.ject.support.admin.member.dto.command.EditMemberCommand;
+import org.ject.support.admin.member.dto.command.EditMemberMakersCommand;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -43,6 +48,39 @@ class AdminMemberMakersUseCaseTest {
 
 	@InjectMocks
 	private AdminMemberMakersUseCase adminMemberMakersUseCase;
+
+	@Test
+	@DisplayName("메이커스팀 구성원의 기본정보와 활동정보와 상세정보를 함께 수정할 수 있다")
+	void 메이커스팀_구성원의_기본정보와_활동정보와_상세정보를_함께_수정할_수_있다() {
+		// given
+		Long memberActivityId = 1L;
+		Long memberId = 10L;
+		UpdateMemberMakersRequest request = updateMemberMakersRequest();
+		given(adminMemberActivityService.editMemberMakersActivity(
+			org.mockito.ArgumentMatchers.eq(memberActivityId),
+			org.mockito.ArgumentMatchers.any(EditMemberActivityCommand.class),
+			org.mockito.ArgumentMatchers.any(EditMemberMakersCommand.class),
+			org.mockito.ArgumentMatchers.eq(request.activityStatus())
+		)).willReturn(memberId);
+
+		// when
+		adminMemberMakersUseCase.editMemberMakers(memberActivityId, request);
+
+		// then
+		ArgumentCaptor<EditMemberActivityCommand> activityCaptor = ArgumentCaptor.forClass(EditMemberActivityCommand.class);
+		ArgumentCaptor<EditMemberMakersCommand> makersCaptor = ArgumentCaptor.forClass(EditMemberMakersCommand.class);
+		ArgumentCaptor<EditMemberCommand> memberCaptor = ArgumentCaptor.forClass(EditMemberCommand.class);
+		verify(adminMemberActivityService).editMemberMakersActivity(
+			org.mockito.ArgumentMatchers.eq(memberActivityId), activityCaptor.capture(), makersCaptor.capture(),
+			org.mockito.ArgumentMatchers.eq(request.activityStatus()));
+		verify(adminMemberService).editMember(org.mockito.ArgumentMatchers.eq(memberId), memberCaptor.capture());
+		assertThat(memberCaptor.getValue().name()).isEqualTo(request.name());
+		assertThat(memberCaptor.getValue().email()).isEqualTo(request.email());
+		assertThat(activityCaptor.getValue().jobFamily()).isEqualTo(request.jobFamily());
+		assertThat(activityCaptor.getValue().memo()).isEqualTo(request.memo());
+		assertThat(makersCaptor.getValue().makersTeam()).isEqualTo(request.makersTeam());
+		assertThat(makersCaptor.getValue().company()).isEqualTo(request.company());
+	}
 
 	@Test
 	@DisplayName("조회 결과가 size보다 많으면 다음 커서를 반환한다")
@@ -161,6 +199,16 @@ class AdminMemberMakersUseCaseTest {
 			RecruitTypeDetail.REGULAR,
 			ActivityStatus.ACTIVE,
 			"memo"
+		);
+	}
+
+	private UpdateMemberMakersRequest updateMemberMakersRequest() {
+		return new UpdateMemberMakersRequest(
+			"수정된이름", "edited@ject.kr", "01011112222", JobFamily.BE, CareerDetails.JOB_SEEKER,
+			MakersTeam.TEAM_2, RecruitTypeDetail.REFILL, ActivityStatus.ENDED, Region.BUSAN,
+			List.of("핀테크"), ExperiencePeriod.THREE_TO_FOUR, Availability.AVAILABLE_BY_TOPIC,
+			Availability.HIGHLY_AVAILABLE, Availability.UNAVAILABLE, CareerLevel.MIDDLE,
+			"Java, Spring", "수정된회사", "성능 최적화", "MK-EDIT-001", "수정된 메모"
 		);
 	}
 
