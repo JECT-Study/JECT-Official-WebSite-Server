@@ -9,9 +9,12 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import lombok.*;
 import org.hibernate.annotations.SQLDelete;
@@ -25,6 +28,7 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.ParticipationStatus;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
@@ -90,6 +94,11 @@ public class MemberActivity extends BaseTimeEntity {
 
     @OneToOne(mappedBy = "memberActivity", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     private MemberSupporters memberSupporters;
+
+    @OneToMany(mappedBy = "memberActivity", orphanRemoval = true,
+        cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @Builder.Default
+    private List<EventParticipation> eventParticipations = new ArrayList<>();
 
     // 일반 구성원 활동과 관리 항목 생성
     public static MemberActivity createSemesterActivity(
@@ -260,6 +269,22 @@ public class MemberActivity extends BaseTimeEntity {
 
     public boolean isSameActivityStatus(ActivityStatus activityStatus) {
         return this.activityStatus == activityStatus;
+    }
+
+    // 행사 참여 상태 지정
+    public void assignEventParticipation(Long semesterEventId, ParticipationStatus status) {
+        eventParticipations.stream()
+            .filter(participation -> participation.getSemesterEventId().equals(semesterEventId))
+            .findFirst()
+            .ifPresentOrElse(
+                participation -> participation.updateStatus(status),
+                () -> eventParticipations.add(EventParticipation.create(this, semesterEventId, status))
+            );
+    }
+
+    // 행사 참여 상태 미지정 처리
+    public void unassignEventParticipation(Long semesterEventId) {
+        eventParticipations.removeIf(participation -> participation.getSemesterEventId().equals(semesterEventId));
     }
 
     private void changeActivityStatus(ActivityStatus nextStatus) {
