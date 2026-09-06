@@ -8,12 +8,14 @@ import java.util.Set;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
+import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
 import org.springframework.stereotype.Service;
@@ -62,6 +64,15 @@ public class AdminMemberSemesterUseCase {
 			SearchMemberSemesterResponse::from,
 			SearchMemberSemesterProjection::memberActivityId
 		);
+	}
+
+	// 일반 구성원 행사 참여 상태 수정 처리
+	@Transactional
+	public void editEventParticipation(Long memberActivityId, EditEventParticipationRequest request) {
+		MemberActivity memberActivity = adminMemberActivityService.getMemberSemesterActivityWithParticipations(memberActivityId);
+		Long semesterId = memberActivity.getMemberSemester().getSemesterId();
+		semesterInquiryUsecase.validateSemesterEvent(semesterId, request.semesterEventId());
+		adminMemberActivityService.editEventParticipation(memberActivity, request.semesterEventId(), request.participationStatus());
 	}
 
 	// 일반 구성원 단건 삭제

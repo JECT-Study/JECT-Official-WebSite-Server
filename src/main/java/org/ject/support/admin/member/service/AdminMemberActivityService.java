@@ -21,6 +21,7 @@ import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.ParticipationStatus;
 import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
 import org.ject.support.admin.member.dto.command.EditMemberMakersCommand;
 import org.ject.support.admin.member.dto.command.EditMemberSupportersActivityCommand;
@@ -121,6 +122,21 @@ public class AdminMemberActivityService {
 			memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
 		long totalCount = memberActivityRepository.countMemberSemesters(condition);
 		return MemberPageResult.of(projections, totalCount);
+	}
+
+	// 행사 참여 기록을 포함한 일반 구성원 활동 조회
+	public MemberActivity getMemberSemesterActivityWithParticipations(Long memberActivityId) {
+		return memberActivityRepository.findSemesterActivityWithParticipations(memberActivityId)
+			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER_SEMESTER_ACTIVITY));
+	}
+
+	// 일반 구성원 행사 참여 상태 수정
+	public void editEventParticipation(MemberActivity memberActivity, Long semesterEventId, ParticipationStatus participationStatus) {
+		if (participationStatus == null) {
+			memberActivity.unassignEventParticipation(semesterEventId);
+			return;
+		}
+		memberActivity.assignEventParticipation(semesterEventId, participationStatus);
 	}
 
 	// 메이커스팀 구성원 목록 조회

@@ -2,6 +2,7 @@ package org.ject.support.admin.member.controller;
 
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
+import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.service.AdminMemberSemesterUseCase;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,6 +42,13 @@ public class AdminMemberSemesterController implements AdminMemberSemesterApiSpec
 	public CursorPageResponse<SearchMemberSemesterResponse> searchAdminMemberSemesterList(
 		@ParameterObject @ModelAttribute @Valid MemberSemesterSearchCondition request) {
 		return adminMemberUsecase.searchMemberSemester(request);
+	}
+
+	// 일반 구성원 행사 참여 상태 수정
+	@Override
+	@PatchMapping("/{memberActivityId}/event-participation")
+	public void editEventParticipation(@PathVariable Long memberActivityId, @RequestBody @Valid EditEventParticipationRequest request) {
+		adminMemberUsecase.editEventParticipation(memberActivityId, request);
 	}
 
 	@Override
