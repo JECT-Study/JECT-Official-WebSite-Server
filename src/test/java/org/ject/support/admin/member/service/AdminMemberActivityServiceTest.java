@@ -523,7 +523,7 @@ class AdminMemberActivityServiceTest {
 
 		// then
 		assertThat(memberId).isEqualTo(10L);
-		verify(memberActivityRepository).delete(memberActivity);
+		verify(memberActivity).delete();
 	}
 
 	@Test
@@ -544,7 +544,6 @@ class AdminMemberActivityServiceTest {
 			.isInstanceOf(MemberException.class)
 			.extracting("errorCode")
 			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_MAKERS_ACTIVITY);
-		verify(memberActivityRepository, never()).delete(any(MemberActivity.class));
 	}
 
 	@Test
@@ -565,7 +564,6 @@ class AdminMemberActivityServiceTest {
 			.isInstanceOf(MemberException.class)
 			.extracting("errorCode")
 			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_SEMESTER_ACTIVITY);
-		verify(memberActivityRepository, never()).delete(any(MemberActivity.class));
 	}
 
 	@Test
@@ -586,7 +584,6 @@ class AdminMemberActivityServiceTest {
 			.isInstanceOf(MemberException.class)
 			.extracting("errorCode")
 			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_SUPPORTERS_ACTIVITY);
-		verify(memberActivityRepository, never()).delete(any(MemberActivity.class));
 	}
 
 	@Test
@@ -604,7 +601,7 @@ class AdminMemberActivityServiceTest {
 
 		// then
 		assertThat(memberId).isEqualTo(10L);
-		verify(memberActivityRepository).delete(memberActivity);
+		verify(memberActivity).delete();
 	}
 
 	@Test
@@ -626,7 +623,8 @@ class AdminMemberActivityServiceTest {
 
 		// then
 		assertThat(memberIds).containsExactlyInAnyOrder(10L, 20L);
-		verify(memberActivityRepository).deleteAll(memberActivities);
+		verify(first).delete();
+		verify(second).delete();
 	}
 
 	@Test
@@ -648,7 +646,7 @@ class AdminMemberActivityServiceTest {
 			.isInstanceOf(MemberException.class)
 			.extracting("errorCode")
 			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_SUPPORTERS_ACTIVITY);
-		verify(memberActivityRepository, never()).deleteAll(any());
+		verify(memberActivity, never()).delete();
 	}
 
 	@Test
@@ -667,7 +665,8 @@ class AdminMemberActivityServiceTest {
 
 		// then
 		assertThat(memberIds).containsExactlyInAnyOrder(10L, 20L);
-		verify(memberActivityRepository).deleteAll(memberActivities);
+		verify(first).delete();
+		verify(second).delete();
 	}
 
 	@Test
@@ -689,7 +688,7 @@ class AdminMemberActivityServiceTest {
 			.isInstanceOf(MemberException.class)
 			.extracting("errorCode")
 			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_MAKERS_ACTIVITY);
-		verify(memberActivityRepository, never()).deleteAll(any());
+		verify(memberActivity, never()).delete();
 	}
 
 	private MemberActivity memberActivity(Long memberActivityId) {

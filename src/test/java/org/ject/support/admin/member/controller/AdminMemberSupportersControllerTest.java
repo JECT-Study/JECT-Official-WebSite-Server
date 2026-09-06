@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Set;
 import java.time.LocalDate;
@@ -56,6 +57,9 @@ class AdminMemberSupportersControllerTest {
 
 	@Autowired
 	private MemberActivityRepository memberActivityRepository;
+
+	@Autowired
+	private EntityManager entityManager;
 
 	@Test
 	@DisplayName("운영 서포터즈 구성원을 추가한다")
@@ -266,6 +270,8 @@ class AdminMemberSupportersControllerTest {
 		mockMvc.perform(delete("/admin/members/supporters/{memberActivityId}", memberActivity.getId()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("SUCCESS"));
+		entityManager.flush();
+		entityManager.clear();
 
 		// then
 		assertThat(memberActivityRepository.findById(memberActivity.getId())).isEmpty();
@@ -287,6 +293,8 @@ class AdminMemberSupportersControllerTest {
 		// when
 		mockMvc.perform(delete("/admin/members/supporters/{memberActivityId}", supporters.getId()))
 			.andExpect(status().isOk());
+		entityManager.flush();
+		entityManager.clear();
 
 		// then
 		assertThat(memberActivityRepository.findById(supporters.getId())).isEmpty();
