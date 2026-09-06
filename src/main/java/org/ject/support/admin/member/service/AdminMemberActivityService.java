@@ -247,7 +247,8 @@ public class AdminMemberActivityService {
 	public Long deleteMemberActivity(Long memberActivityId, MemberType memberType) {
 		MemberActivity memberActivity = memberActivityRepository.findByIdAndMemberType(memberActivityId, memberType)
 			.orElseThrow(() -> new MemberException(getNotFoundActivityErrorCode(memberType)));
-		memberActivityRepository.delete(memberActivity);
+		// 연관 활동 이력 보존을 위한 소프트 삭제
+		memberActivity.delete();
 		return memberActivity.getMemberId();
 	}
 
@@ -265,7 +266,8 @@ public class AdminMemberActivityService {
 		Set<Long> memberIds = memberActivities.stream()
 			.map(MemberActivity::getMemberId)
 			.collect(Collectors.toCollection(LinkedHashSet::new));
-		memberActivityRepository.deleteAll(memberActivities);
+		// 연관 활동 이력 보존을 위한 소프트 삭제
+		memberActivities.forEach(MemberActivity::delete);
 		return memberIds;
 	}
 
