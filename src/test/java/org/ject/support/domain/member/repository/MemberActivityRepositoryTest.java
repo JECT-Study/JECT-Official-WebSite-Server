@@ -23,6 +23,7 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.ParticipationStatus;
 import org.ject.support.domain.member.dto.TeamMemberNames;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberActivity;
@@ -1401,6 +1402,59 @@ class MemberActivityRepositoryTest {
 		assertThat(memberActivityRepository.findAllById(List.of(first.getId(), second.getId()))).isEmpty();
 		assertThat(entityManager.find(MemberSemester.class, first.getId())).isNotNull();
 		assertThat(entityManager.find(MemberSemester.class, second.getId())).isNotNull();
+	}
+
+	@Test
+	@DisplayName("일반 구성원 활동과 기수 정보 및 행사 참여 이력을 함께 조회한다")
+	void 일반_구성원_활동과_기수_정보_및_행사_참여_이력을_함께_조회한다() {
+		// given
+		Member member = memberRepository.save(member().email("sem-part@test.com").build());
+		MemberActivity memberActivity = semesterActivity().memberId(member.getId()).semesterId(SEMESTER_ID).build();
+		memberActivity.assignEventParticipation(1L, ParticipationStatus.ATTENDED);
+		memberActivityRepository.saveAndFlush(memberActivity);
+		entityManager.clear();
+
+		// when
+		MemberActivity result = memberActivityRepository.findSemesterActivityWithParticipations(memberActivity.getId())
+			.orElseThrow();
+
+		// then
+		assertThat(result.getMemberSemester().getSemesterId()).isEqualTo(SEMESTER_ID);
+		assertThat(result.getEventParticipations()).singleElement()
+			.extracting("semesterEventId", "participationStatus")
+			.containsExactly(1L, ParticipationStatus.ATTENDED);
+	}
+
+	@Test
+	@DisplayName("참여 이력이 없어도 일반 구성원 활동과 기수 정보를 조회한다")
+	void 참여_이력이_없어도_일반_구성원_활동과_기수_정보를_조회한다() {
+		// given
+		Member member = memberRepository.save(member().email("sem-empty@test.com").build());
+		MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+			semesterActivity().memberId(member.getId()).semesterId(SEMESTER_ID).build()
+		);
+		entityManager.clear();
+
+		// when
+		MemberActivity result = memberActivityRepository.findSemesterActivityWithParticipations(memberActivity.getId())
+			.orElseThrow();
+
+		// then
+		assertThat(result.getMemberSemester().getSemesterId()).isEqualTo(SEMESTER_ID);
+		assertThat(result.getEventParticipations()).isEmpty();
+	}
+
+	@Test
+	@DisplayName("다른 유형의 구성원 활동은 행사 참여 이력과 함께 조회할 수 없다")
+	void 다른_유형의_구성원_활동은_행사_참여_이력과_함께_조회할_수_없다() {
+		// given
+		Member member = memberRepository.save(member().email("makers-participation@test.com").build());
+		MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+			makersActivity().memberId(member.getId()).build()
+		);
+
+		// when & then
+		assertThat(memberActivityRepository.findSemesterActivityWithParticipations(memberActivity.getId())).isEmpty();
 	}
 
 	private MemberActivity saveSupportersActivity(Long memberId, String activityCertNumber) {

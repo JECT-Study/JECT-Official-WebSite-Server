@@ -33,6 +33,7 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.ParticipationStatus;
 import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
 import org.ject.support.admin.member.dto.command.EditMemberMakersCommand;
 import org.ject.support.admin.member.dto.command.EditMemberSupportersActivityCommand;
@@ -44,6 +45,8 @@ import org.ject.support.domain.member.repository.MemberActivityRepository;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -58,6 +61,50 @@ class AdminMemberActivityServiceTest {
 
     @InjectMocks
     private AdminMemberActivityService adminMemberActivityService;
+
+	@ParameterizedTest
+	@EnumSource(ParticipationStatus.class)
+	@DisplayName("참여 상태가 입력되면 행사 참여 상태를 지정한다")
+	void 참여_상태가_입력되면_행사_참여_상태를_지정한다(ParticipationStatus participationStatus) {
+		// given
+		MemberActivity memberActivity = mock(MemberActivity.class);
+
+		// when
+		adminMemberActivityService.editEventParticipation(memberActivity, 1L, participationStatus);
+
+		// then
+		verify(memberActivity).assignEventParticipation(1L, participationStatus);
+	}
+
+	@Test
+	@DisplayName("참여 상태가 입력되지 않으면 행사 참여 상태를 미지정한다")
+	void 참여_상태가_입력되지_않으면_행사_참여_상태를_미지정한다() {
+		// given
+		MemberActivity memberActivity = mock(MemberActivity.class);
+
+		// when
+		adminMemberActivityService.editEventParticipation(memberActivity, 1L, null);
+
+		// then
+		verify(memberActivity).unassignEventParticipation(1L);
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 일반 구성원 활동은 행사 참여 이력과 함께 조회할 수 없다")
+	void 존재하지_않는_일반_구성원_활동은_행사_참여_이력과_함께_조회할_수_없다() {
+		// given
+		given(memberActivityRepository.findSemesterActivityWithParticipations(1L)).willReturn(Optional.empty());
+
+		// when
+		Throwable throwable = catchThrowable(() ->
+			adminMemberActivityService.getMemberSemesterActivityWithParticipations(1L));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_SEMESTER_ACTIVITY);
+	}
 
 	@Test
 	@DisplayName("존재하지 않는 운영 서포터즈 구성원 활동은 수정할 수 없다")
