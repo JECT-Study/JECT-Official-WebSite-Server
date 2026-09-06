@@ -3,6 +3,7 @@ package org.ject.support.admin.member.controller;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
+import org.ject.support.admin.member.dto.request.UpdateMemberMakersRequest;
 import org.ject.support.admin.member.dto.response.MemberMakersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberMakersListResponse;
 import org.ject.support.common.response.CursorPageResponse;
@@ -23,16 +24,22 @@ public interface AdminMemberMakersApiSpec {
 	void createAdminMemberMakers(@RequestBody @Valid CreateMemberMakersRequest request);
 
 	@Operation(
+		summary = "메이커스팀 구성원 상세 조회",
+		description = "메이커스팀 구성원을 상세 조회합니다."
+	)
+	MemberMakersDetailResponse getAdminMemberMakersDetail(@PathVariable Long memberActivityId);
+
+	@Operation(
 		summary = "메이커스팀 구성원 목록 조회",
 		description = "메이커스팀 구성원 목록을 조회합니다."
 	)
 	CursorPageResponse<MemberMakersListResponse> getAdminMemberMakersList(@ModelAttribute MemberMakersListRequest request);
 
 	@Operation(
-		summary = "메이커스팀 구성원 상세 조회",
-		description = "메이커스팀 구성원을 상세 조회합니다."
+		summary = "메이커스팀 구성원 수정",
+		description = "전달한 활동 ID에 해당하는 메이커스팀 구성원의 입력된 정보만 수정합니다."
 	)
-	MemberMakersDetailResponse getAdminMemberMakersDetail(@PathVariable Long memberActivityId);
+	void editAdminMemberMakers(@PathVariable Long memberActivityId, @RequestBody @Valid UpdateMemberMakersRequest request);
 
 	@Operation(
 		summary = "메이커스팀 구성원 삭제",

@@ -202,9 +202,51 @@ public class MemberActivity extends BaseTimeEntity {
 
     // 구성원 유형에 맞는 활동 상태로 변경
     public void updateActivityStatus(ActivityStatus activityStatus) {
-        validateActivityStatus(memberType, activityStatus);
+        changeActivityStatus(activityStatus);
+    }
 
-        this.activityStatus = activityStatus;
+    // 전달된 구성원 활동정보 편집
+    public void edit(JobFamily jobFamily, CareerDetails careerDetails, RecruitTypeDetail recruitTypeDetail,
+        ExperiencePeriod experiencePeriod, String memo) {
+        if (jobFamily != null) {
+            validateJobFamily(memberType, jobFamily);
+            this.jobFamily = jobFamily;
+        }
+        if (careerDetails != null) this.careerDetails = careerDetails;
+        if (recruitTypeDetail != null) this.recruitTypeDetail = recruitTypeDetail;
+        if (experiencePeriod != null) this.experiencePeriod = experiencePeriod;
+        if (memo != null) this.memo = memo;
+    }
+
+    // 메이커스팀 구성원 활동정보 편집
+    public void editMakersActivity(JobFamily jobFamily, CareerDetails careerDetails, RecruitTypeDetail recruitTypeDetail,
+        ExperiencePeriod experiencePeriod, String memo, MakersTeam makersTeam, Availability mentoringAvailability,
+        Availability projectSupplementAvailability, Availability speakerAvailability, CareerLevel careerLevel,
+        String skills, String company, String expertTopics, String activityCertNumber) {
+        edit(jobFamily, careerDetails, recruitTypeDetail, experiencePeriod, memo);
+        memberMakers.edit(makersTeam, mentoringAvailability, projectSupplementAvailability, speakerAvailability,
+            careerLevel, skills, company, expertTopics, activityCertNumber);
+    }
+
+    public void activate() {
+        changeActivityStatus(ActivityStatus.ACTIVE);
+    }
+
+    public void end() {
+        changeActivityStatus(ActivityStatus.ENDED);
+    }
+
+    public void dropOut() {
+        changeActivityStatus(ActivityStatus.DROPOUT);
+    }
+
+    public boolean isSameActivityStatus(ActivityStatus activityStatus) {
+        return this.activityStatus == activityStatus;
+    }
+
+    private void changeActivityStatus(ActivityStatus nextStatus) {
+        validateActivityStatus(memberType, nextStatus);
+        this.activityStatus = nextStatus;
     }
 
     // 구성원 활동 삭제 처리

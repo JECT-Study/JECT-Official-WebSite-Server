@@ -91,4 +91,19 @@ public class MemberMakers extends BaseTimeEntity {
             .activityCertNumber(activityCertNumber)
             .build();
     }
+
+    // 전달된 메이커스팀 상세정보 편집
+    public void edit(MakersTeam makersTeam, Availability mentoringAvailability,
+        Availability projectSupplementAvailability, Availability speakerAvailability, CareerLevel careerLevel,
+        String skills, String company, String expertTopics, String activityCertNumber) {
+        if (makersTeam != null) this.makersTeam = makersTeam;
+        if (mentoringAvailability != null) this.mentoringAvailability = mentoringAvailability;
+        if (projectSupplementAvailability != null) this.projectSupplementAvailability = projectSupplementAvailability;
+        if (speakerAvailability != null) this.speakerAvailability = speakerAvailability;
+        if (careerLevel != null) this.careerLevel = careerLevel;
+        if (skills != null) this.skills = skills;
+        if (company != null) this.company = company;
+        if (expertTopics != null) this.expertTopics = expertTopics;
+        if (activityCertNumber != null) this.activityCertNumber = activityCertNumber;
+    }
 }
