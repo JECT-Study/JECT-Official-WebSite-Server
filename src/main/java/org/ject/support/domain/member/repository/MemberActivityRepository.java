@@ -17,6 +17,16 @@ public interface MemberActivityRepository extends JpaRepository<MemberActivity, 
 
 	Optional<MemberActivity> findByIdAndMemberType(Long id, MemberType memberType);
 
+	@Query("""
+		select distinct ma
+		from MemberActivity ma
+		join fetch ma.memberSemester
+		left join fetch ma.eventParticipations
+		where ma.id = :memberActivityId
+		  and ma.memberType = org.ject.support.domain.member.MemberType.SEMESTER
+		""")
+	Optional<MemberActivity> findSemesterActivityWithParticipations(@Param("memberActivityId") Long memberActivityId);
+
 	List<MemberActivity> findAllByIdInAndMemberType(Collection<Long> ids, MemberType memberType);
 
 	boolean existsByMemberId(Long memberId);

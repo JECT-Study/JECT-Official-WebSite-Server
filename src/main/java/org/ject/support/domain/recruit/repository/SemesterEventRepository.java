@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SemesterEventRepository extends JpaRepository<SemesterEvent, Long> {
 
+	boolean existsByIdAndSemesterId(Long id, Long semesterId);
+
     List<SemesterEvent> findAllBySemesterIdAndTypeOrderByIdAsc(
             Long semesterId,
             SemesterEventType type

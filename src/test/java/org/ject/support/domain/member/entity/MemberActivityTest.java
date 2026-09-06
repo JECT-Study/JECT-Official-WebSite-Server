@@ -14,6 +14,7 @@ import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MakersTeam;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.ParticipationStatus;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
@@ -502,6 +503,67 @@ class MemberActivityTest {
 			.isInstanceOf(MemberException.class)
 			.extracting("errorCode")
 			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_PERIOD);
+	}
+
+	@Test
+	@DisplayName("참여 기록이 없는 행사의 참여 상태를 지정한다")
+	void 참여_기록이_없는_행사의_참여_상태를_지정한다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().build();
+
+		// when
+		memberActivity.assignEventParticipation(1L, ParticipationStatus.ATTENDED);
+
+		// then
+		assertThat(memberActivity.getEventParticipations()).singleElement()
+			.satisfies(participation -> {
+				assertThat(participation.getSemesterEventId()).isEqualTo(1L);
+				assertThat(participation.getParticipationStatus()).isEqualTo(ParticipationStatus.ATTENDED);
+			});
+	}
+
+	@Test
+	@DisplayName("기존 행사의 참여 상태를 변경한다")
+	void 기존_행사의_참여_상태를_변경한다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().build();
+		memberActivity.assignEventParticipation(1L, ParticipationStatus.ATTENDED);
+
+		// when
+		memberActivity.assignEventParticipation(1L, ParticipationStatus.ABSENT);
+
+		// then
+		assertThat(memberActivity.getEventParticipations()).singleElement()
+			.extracting(EventParticipation::getParticipationStatus)
+			.isEqualTo(ParticipationStatus.ABSENT);
+	}
+
+	@Test
+	@DisplayName("행사 참여 상태를 미지정하면 참여 기록을 제거한다")
+	void 행사_참여_상태를_미지정하면_참여_기록을_제거한다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().build();
+		memberActivity.assignEventParticipation(1L, ParticipationStatus.ATTENDED);
+
+		// when
+		memberActivity.unassignEventParticipation(1L);
+
+		// then
+		assertThat(memberActivity.getEventParticipations()).isEmpty();
+	}
+
+	@Test
+	@DisplayName("참여 기록이 없는 행사를 미지정해도 기존 기록을 유지한다")
+	void 참여_기록이_없는_행사를_미지정해도_기존_기록을_유지한다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().build();
+		memberActivity.assignEventParticipation(1L, ParticipationStatus.ATTENDED);
+
+		// when
+		memberActivity.unassignEventParticipation(2L);
+
+		// then
+		assertThat(memberActivity.getEventParticipations()).hasSize(1);
 	}
 
 	private MemberActivity supportersActivity() {

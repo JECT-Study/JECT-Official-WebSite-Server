@@ -12,6 +12,7 @@ import org.ject.support.domain.recruit.exception.SemesterException;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
+import org.ject.support.domain.recruit.repository.SemesterEventRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +25,9 @@ class SemesterInquiryServiceTest {
 
     @Mock
     private SemesterRepository semesterRepository;
+
+	@Mock
+	private SemesterEventRepository semesterEventRepository;
 
     @InjectMocks
     private SemesterInquiryService semesterInquiryService;
@@ -98,4 +102,30 @@ class SemesterInquiryServiceTest {
             .extracting("errorCode")
             .isEqualTo(SemesterErrorCode.NOT_FOUND_SEMESTER);
     }
+
+	@Test
+	@DisplayName("기수에 속한 행사는 유효하다")
+	void 기수에_속한_행사는_유효하다() {
+		// given
+		given(semesterEventRepository.existsByIdAndSemesterId(2L, 1L)).willReturn(true);
+
+		// when & then
+		semesterInquiryService.validateSemesterEvent(1L, 2L);
+	}
+
+	@Test
+	@DisplayName("다른 기수에 속하거나 존재하지 않는 행사는 유효하지 않다")
+	void 다른_기수에_속하거나_존재하지_않는_행사는_유효하지_않다() {
+		// given
+		given(semesterEventRepository.existsByIdAndSemesterId(2L, 1L)).willReturn(false);
+
+		// when
+		Throwable throwable = catchThrowable(() -> semesterInquiryService.validateSemesterEvent(1L, 2L));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(SemesterException.class)
+			.extracting("errorCode")
+			.isEqualTo(SemesterErrorCode.NOT_FOUND_SEMESTER_EVENT);
+	}
 }
