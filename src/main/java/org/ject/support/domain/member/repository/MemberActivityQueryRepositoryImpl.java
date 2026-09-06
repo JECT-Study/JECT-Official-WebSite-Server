@@ -5,12 +5,15 @@ import static org.ject.support.domain.member.entity.QMemberActivity.*;
 import static org.ject.support.domain.member.entity.QMemberMakers.*;
 import static org.ject.support.domain.member.entity.QMemberSemester.*;
 import static org.ject.support.domain.member.entity.QMemberSupporters.*;
+import static org.ject.support.domain.member.entity.QTeam.*;
+import static org.ject.support.domain.recruit.domain.QSemester.*;
 
 import java.util.List;
 import java.util.Optional;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
+import org.ject.support.admin.member.dto.projection.MemberSemesterProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
@@ -35,6 +38,45 @@ public class MemberActivityQueryRepositoryImpl implements MemberActivityQueryRep
 	//Todo: 구성원 관리의모든 dto 필드명을 엔티티 기준으로 재정렬
 
 	private final JPAQueryFactory jpaQueryFactory;
+
+	// 일반 구성원 단건 조회
+	@Override
+	public Optional<MemberSemesterProjection> findMemberSemester(Long memberActivityId) {
+		return Optional.ofNullable(jpaQueryFactory.select(Projections.constructor(
+			MemberSemesterProjection.class,
+			memberActivity.id,
+			member.name,
+			member.email,
+			member.phoneNumber,
+			member.region,
+			member.interestedDomains,
+			memberActivity.jobFamily,
+			memberActivity.recruitTypeDetail,
+			memberActivity.careerDetails,
+			memberActivity.activityStatus,
+			memberActivity.experiencePeriod,
+			memberActivity.memo,
+			memberSemester.semesterId,
+			semester.name,
+			memberSemester.teamId,
+			team.name,
+			memberSemester.certNumber,
+			memberSemester.firstReview,
+			memberSemester.secondReview
+		))
+			.from(memberActivity)
+			.join(member).on(member.id.eq(memberActivity.memberId))
+			.join(memberSemester).on(memberSemester.id.eq(memberActivity.id))
+			.join(semester).on(semester.id.eq(memberSemester.semesterId))
+			.leftJoin(team).on(team.id.eq(memberSemester.teamId))
+			.where(
+				memberActivity.id.eq(memberActivityId),
+				memberActivity.memberType.eq(MemberType.SEMESTER),
+				memberActivity.isDeleted.isFalse(),
+				member.isDeleted.isFalse()
+			)
+			.fetchOne());
+	}
 
 	// 일반 구성원 목록 조회(단일 값 동적 필터)
 	@Override
