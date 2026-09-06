@@ -85,6 +85,44 @@ class AdminMemberSemesterControllerTest {
 	private EntityManager entityManager;
 
 	@Test
+	@DisplayName("일반 구성원의 상세정보와 기수별 행사 참여 상태를 조회한다")
+	void 일반_구성원의_상세정보와_기수별_행사_참여_상태를_조회한다() throws Exception {
+		// given
+		Semester semester = saveSemester();
+		Team team = saveTeam(semester.getId(), "상세조회팀");
+		SemesterEvent event = semesterEventRepository.save(SemesterEvent.create(semester.getId(), SemesterEventType.EVENT, "온보딩"));
+		SemesterEvent survey = semesterEventRepository.save(SemesterEvent.create(semester.getId(), SemesterEventType.SURVEY, "만족도 조사"));
+		MemberActivity memberActivity = saveMemberSemesterActivity(
+			uniqueEmail("detail"), semester.getId(), team.getId(), JobFamily.BE,
+			RecruitTypeDetail.REGULAR, CareerDetails.EMPLOYEE, ExperiencePeriod.ONE_TO_TWO
+		);
+		memberActivity.assignEventParticipation(event.getId(), ParticipationStatus.ATTENDED);
+		memberActivityRepository.flush();
+
+		// when & then
+		mockMvc.perform(get("/admin/members/semester/{memberActivityId}", memberActivity.getId()))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"))
+			.andExpect(jsonPath("$.data.memberActivityId").value(memberActivity.getId()))
+			.andExpect(jsonPath("$.data.semester.semesterId").value(semester.getId()))
+			.andExpect(jsonPath("$.data.semester.semesterName").value(semester.getName()))
+			.andExpect(jsonPath("$.data.team.teamId").value(team.getId()))
+			.andExpect(jsonPath("$.data.team.teamName").value(team.getName()))
+			.andExpect(jsonPath("$.data.events[0].semesterEventId").value(event.getId()))
+			.andExpect(jsonPath("$.data.events[0].participationStatus").value("ATTENDED"))
+			.andExpect(jsonPath("$.data.surveys[0].semesterEventId").value(survey.getId()))
+			.andExpect(jsonPath("$.data.surveys[0].participationStatus").value(nullValue()));
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 일반 구성원은 조회할 수 없다")
+	void 존재하지_않는_일반_구성원은_조회할_수_없다() throws Exception {
+		mockMvc.perform(get("/admin/members/semester/{memberActivityId}", Long.MAX_VALUE))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER_SEMESTER_ACTIVITY.getCode()));
+	}
+
+	@Test
 	@DisplayName("일반 구성원을 추가한다")
 	void 일반_구성원을_추가한다() throws Exception {
 		// given
