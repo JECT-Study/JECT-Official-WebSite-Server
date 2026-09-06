@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Set;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
@@ -63,6 +64,9 @@ class AdminMemberMakersControllerTest {
 
 	@Autowired
 	private MemberActivityRepository memberActivityRepository;
+
+	@Autowired
+	private EntityManager entityManager;
 
 	@Test
 	@DisplayName("메이커스팀 구성원을 추가한다")
@@ -316,6 +320,8 @@ class AdminMemberMakersControllerTest {
 		mockMvc.perform(delete("/admin/members/makers/{memberActivityId}", memberActivity.getId()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("SUCCESS"));
+		entityManager.flush();
+		entityManager.clear();
 
 		// then
 		assertThat(memberActivityRepository.findById(memberActivity.getId())).isEmpty();
@@ -333,6 +339,8 @@ class AdminMemberMakersControllerTest {
 		// when
 		mockMvc.perform(delete("/admin/members/makers/{memberActivityId}", makers.getId()))
 			.andExpect(status().isOk());
+		entityManager.flush();
+		entityManager.clear();
 
 		// then
 		assertThat(memberActivityRepository.findById(makers.getId())).isEmpty();
@@ -427,6 +435,8 @@ class AdminMemberMakersControllerTest {
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(request))
 			.andExpect(status().isOk());
+		entityManager.flush();
+		entityManager.clear();
 
 		// then
 		assertThat(memberActivityRepository.findById(memberActivity.getId())).isEmpty();

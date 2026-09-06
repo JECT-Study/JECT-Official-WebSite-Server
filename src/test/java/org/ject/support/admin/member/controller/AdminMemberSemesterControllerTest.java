@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -69,6 +70,9 @@ class AdminMemberSemesterControllerTest {
 
 	@Autowired
 	private TeamRepository teamRepository;
+
+	@Autowired
+	private EntityManager entityManager;
 
 	@Test
 	@DisplayName("일반 구성원을 추가한다")
@@ -323,6 +327,8 @@ class AdminMemberSemesterControllerTest {
 		mockMvc.perform(delete("/admin/members/semester/{memberActivityId}", memberActivity.getId()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("SUCCESS"));
+		entityManager.flush();
+		entityManager.clear();
 
 		// then
 		assertThat(memberActivityRepository.findById(memberActivity.getId())).isEmpty();
