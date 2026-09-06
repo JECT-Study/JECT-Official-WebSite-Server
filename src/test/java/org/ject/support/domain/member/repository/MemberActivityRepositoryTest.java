@@ -1,6 +1,6 @@
 package org.ject.support.domain.member.repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.ject.support.domain.member.fixture.MakersActivityFixture.*;
 import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
@@ -11,6 +11,7 @@ import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection;
+import org.ject.support.admin.member.dto.projection.MemberSemesterProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
@@ -29,7 +30,10 @@ import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.entity.MemberSemester;
 import org.ject.support.domain.member.entity.MemberSupporters;
+import org.ject.support.domain.member.entity.Team;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
+import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,8 +53,14 @@ class MemberActivityRepositoryTest {
     @Autowired
     MemberActivityRepository memberActivityRepository;
 
-    @Autowired
-    EntityManager entityManager;
+	@Autowired
+	TeamRepository teamRepository;
+
+	@Autowired
+	SemesterRepository semesterRepository;
+
+	@Autowired
+	EntityManager entityManager;
 
     private MemberSemesterSearchCondition searchCondition(
         Long cursor,
@@ -1402,6 +1412,119 @@ class MemberActivityRepositoryTest {
 		assertThat(memberActivityRepository.findAllById(List.of(first.getId(), second.getId()))).isEmpty();
 		assertThat(entityManager.find(MemberSemester.class, first.getId())).isNotNull();
 		assertThat(entityManager.find(MemberSemester.class, second.getId())).isNotNull();
+	}
+
+	@Test
+	@DisplayName("일반 구성원의 기본정보와 활동 및 소속 정보를 조회한다")
+	void 일반_구성원의_기본정보와_활동_및_소속_정보를_조회한다() {
+		// given
+		Semester semester = semesterRepository.save(Semester.builder().name("상세조회 기수").build());
+		Team team = teamRepository.save(Team.builder().name("상세조회 팀").semesterId(semester.getId()).build());
+		Member member = memberRepository.save(member().email("semester-detail@test.com").build());
+		MemberActivity memberActivity = memberActivityRepository.saveAndFlush(semesterActivity()
+			.memberId(member.getId())
+			.semesterId(semester.getId())
+			.teamId(team.getId())
+			.memo("상세조회 메모")
+			.build());
+		entityManager.clear();
+
+		// when
+		MemberSemesterProjection result = memberActivityRepository.findMemberSemester(memberActivity.getId()).orElseThrow();
+
+		// then
+		assertThat(result.memberActivityId()).isEqualTo(memberActivity.getId());
+		assertThat(result.name()).isEqualTo(member.getName());
+		assertThat(result.semesterId()).isEqualTo(semester.getId());
+		assertThat(result.semesterName()).isEqualTo(semester.getName());
+		assertThat(result.teamId()).isEqualTo(team.getId());
+		assertThat(result.teamName()).isEqualTo(team.getName());
+		assertThat(result.memo()).isEqualTo("상세조회 메모");
+	}
+
+	@Test
+	@DisplayName("팀이 없어도 일반 구성원의 상세정보를 조회한다")
+	void 팀이_없어도_일반_구성원의_상세정보를_조회한다() {
+		// given
+		Semester semester = semesterRepository.save(Semester.builder().name("팀 미지정 기수").build());
+		Member member = memberRepository.save(member().email("semester-no-team@test.com").build());
+		MemberActivity memberActivity = memberActivityRepository.saveAndFlush(semesterActivity()
+			.memberId(member.getId()).semesterId(semester.getId()).teamId(null).build());
+		entityManager.clear();
+
+		// when
+		MemberSemesterProjection result = memberActivityRepository.findMemberSemester(memberActivity.getId()).orElseThrow();
+
+		// then
+		assertThat(result.teamId()).isNull();
+		assertThat(result.teamName()).isNull();
+	}
+
+	@Test
+	@DisplayName("삭제된 일반 구성원의 상세정보는 조회하지 않는다")
+	void 삭제된_일반_구성원의_상세정보는_조회하지_않는다() {
+		// given
+		Semester semester = semesterRepository.save(Semester.builder().name("삭제 조회 기수").build());
+		Member deletedMember = memberRepository.save(member().email("deleted-member@test.com").deleted().build());
+		MemberActivity memberOfDeletedMember = memberActivityRepository.saveAndFlush(semesterActivity()
+			.memberId(deletedMember.getId()).semesterId(semester.getId()).teamId(null).build());
+		Member activeMember = memberRepository.save(member().email("deleted-activity@test.com").build());
+		MemberActivity deletedActivity = memberActivityRepository.saveAndFlush(semesterActivity()
+			.memberId(activeMember.getId()).semesterId(semester.getId()).teamId(null).deleted().build());
+		entityManager.clear();
+
+		// when & then
+		assertThat(memberActivityRepository.findMemberSemester(memberOfDeletedMember.getId())).isEmpty();
+		assertThat(memberActivityRepository.findMemberSemester(deletedActivity.getId())).isEmpty();
+	}
+
+	@Test
+	@DisplayName("다른 유형의 구성원은 일반 구성원 상세정보로 조회하지 않는다")
+	void 다른_유형의_구성원은_일반_구성원_상세정보로_조회하지_않는다() {
+		// given
+		Member member = memberRepository.save(member().email("makers-detail@test.com").build());
+		MemberActivity memberActivity = memberActivityRepository.saveAndFlush(
+			makersActivity().memberId(member.getId()).build()
+		);
+
+		// when & then
+		assertThat(memberActivityRepository.findMemberSemester(memberActivity.getId())).isEmpty();
+	}
+
+	@Test
+	@DisplayName("일반 구성원의 행사 참여 이력을 조회한다")
+	void 일반_구성원의_행사_참여_이력을_조회한다() {
+		// given
+		Member member = memberRepository.save(member().email("participation-detail@test.com").build());
+		MemberActivity memberActivity = semesterActivity().memberId(member.getId()).semesterId(SEMESTER_ID).build();
+		memberActivity.assignEventParticipation(1L, ParticipationStatus.ATTENDED);
+		memberActivity.assignEventParticipation(2L, ParticipationStatus.ABSENT);
+		memberActivityRepository.saveAndFlush(memberActivity);
+		entityManager.clear();
+
+		// when
+		List<?> result = memberActivityRepository.findEventParticipations(memberActivity.getId());
+
+		// then
+		assertThat(result).extracting("semesterEventId", "participationStatus")
+			.containsExactlyInAnyOrder(
+				tuple(1L, ParticipationStatus.ATTENDED),
+				tuple(2L, ParticipationStatus.ABSENT)
+			);
+	}
+
+	@Test
+	@DisplayName("삭제된 일반 구성원의 행사 참여 이력은 조회하지 않는다")
+	void 삭제된_일반_구성원의_행사_참여_이력은_조회하지_않는다() {
+		// given
+		Member member = memberRepository.save(member().email("deleted-participation@test.com").build());
+		MemberActivity memberActivity = semesterActivity().memberId(member.getId()).semesterId(SEMESTER_ID).deleted().build();
+		memberActivity.assignEventParticipation(1L, ParticipationStatus.ATTENDED);
+		memberActivityRepository.saveAndFlush(memberActivity);
+		entityManager.clear();
+
+		// when & then
+		assertThat(memberActivityRepository.findEventParticipations(memberActivity.getId())).isEmpty();
 	}
 
 	@Test
