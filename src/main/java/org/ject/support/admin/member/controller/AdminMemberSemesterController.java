@@ -5,6 +5,7 @@ import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
+import org.ject.support.admin.member.dto.response.MemberSemesterResponse;
 import org.ject.support.admin.member.service.AdminMemberSemesterUseCase;
 import org.ject.support.common.response.CursorPageResponse;
 import org.springdoc.core.annotations.ParameterObject;
@@ -34,6 +35,13 @@ public class AdminMemberSemesterController implements AdminMemberSemesterApiSpec
 	public void createAdminMemberSemester(
 		@RequestBody @Valid CreateMemberSemesterRequest request) {
 		adminMemberUsecase.createMemberSemester(request);
+	}
+
+	// 일반 구성원 단건 조회
+	@Override
+	@GetMapping("/{memberActivityId}")
+	public MemberSemesterResponse getMemberSemester(@PathVariable Long memberActivityId) {
+		return adminMemberUsecase.getMemberSemester(memberActivityId);
 	}
 
 	// 일반 구성원 목록 조회

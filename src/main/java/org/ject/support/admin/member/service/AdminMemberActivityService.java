@@ -11,6 +11,7 @@ import org.ject.support.admin.member.dto.projection.MemberMakersDetailProjection
 import org.ject.support.admin.member.dto.projection.MemberMakersListProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
+import org.ject.support.admin.member.dto.projection.MemberSemesterProjection;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
@@ -26,6 +27,7 @@ import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
 import org.ject.support.admin.member.dto.command.EditMemberMakersCommand;
 import org.ject.support.admin.member.dto.command.EditMemberSupportersActivityCommand;
 import org.ject.support.domain.member.entity.MemberActivity;
+import org.ject.support.domain.member.entity.EventParticipation;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberActivityRepository;
@@ -122,6 +124,17 @@ public class AdminMemberActivityService {
 			memberActivityRepository.searchMemberSemesters(condition, condition.getSizeOrDefault()+1);
 		long totalCount = memberActivityRepository.countMemberSemesters(condition);
 		return MemberPageResult.of(projections, totalCount);
+	}
+
+	// 일반 구성원 단건 조회
+	public MemberSemesterProjection getMemberSemester(Long memberActivityId) {
+		return memberActivityRepository.findMemberSemester(memberActivityId)
+			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER_SEMESTER_ACTIVITY));
+	}
+
+	// 일반 구성원 행사 참여 이력 조회
+	public List<EventParticipation> getEventParticipations(Long memberActivityId) {
+		return memberActivityRepository.findEventParticipations(memberActivityId);
 	}
 
 	// 행사 참여 기록을 포함한 일반 구성원 활동 조회

@@ -6,16 +6,20 @@ import java.util.List;
 import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
+import org.ject.support.admin.member.dto.projection.MemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
+import org.ject.support.admin.member.dto.response.MemberSemesterResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.entity.MemberActivity;
+import org.ject.support.domain.member.entity.EventParticipation;
+import org.ject.support.domain.recruit.domain.SemesterEvent;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
 import org.springframework.stereotype.Service;
@@ -44,6 +48,15 @@ public class AdminMemberSemesterUseCase {
 
 		// memberId 기준 MemberActivity와 MemberSemester 생성 및 저장
 		adminMemberActivityService.createMemberSemesterActivity(request, memberId);
+	}
+
+	// 일반 구성원 단건 조회 흐름 처리
+	@Transactional(readOnly = true)
+	public MemberSemesterResponse getMemberSemester(Long memberActivityId) {
+		MemberSemesterProjection memberSemester = adminMemberActivityService.getMemberSemester(memberActivityId);
+		List<SemesterEvent> semesterEvents = semesterInquiryUsecase.getSemesterEvents(memberSemester.semesterId());
+		List<EventParticipation> eventParticipations = adminMemberActivityService.getEventParticipations(memberActivityId);
+		return MemberSemesterResponse.of(memberSemester, semesterEvents, eventParticipations);
 	}
 
 
