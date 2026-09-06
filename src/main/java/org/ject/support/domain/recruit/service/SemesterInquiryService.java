@@ -1,8 +1,11 @@
 package org.ject.support.domain.recruit.service;
 
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.domain.SemesterEvent;
 import org.ject.support.domain.recruit.dto.SemesterResponse;
 import org.ject.support.domain.recruit.dto.SemesterResponses;
 import org.ject.support.domain.recruit.exception.SemesterErrorCode;
@@ -39,6 +42,13 @@ public class SemesterInquiryService implements SemesterInquiryUsecase {
         );
         return SemesterResponse.from(semester);
     }
+
+	// 기수에 속한 행사 목록 조회
+	@Override
+	@Transactional(readOnly = true)
+	public List<SemesterEvent> getSemesterEvents(Long semesterId) {
+		return semesterEventRepository.findAllBySemesterIdOrderByIdAsc(semesterId);
+	}
 
 	// 기수에 속한 행사 존재 여부 검증
 	@Override

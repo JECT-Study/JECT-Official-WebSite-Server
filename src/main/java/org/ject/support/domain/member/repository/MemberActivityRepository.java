@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.entity.MemberActivity;
+import org.ject.support.domain.member.entity.EventParticipation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,6 +27,16 @@ public interface MemberActivityRepository extends JpaRepository<MemberActivity, 
 		  and ma.memberType = org.ject.support.domain.member.MemberType.SEMESTER
 		""")
 	Optional<MemberActivity> findSemesterActivityWithParticipations(@Param("memberActivityId") Long memberActivityId);
+
+	@Query("""
+		select ep
+		from MemberActivity ma
+		join ma.eventParticipations ep
+		where ma.id = :memberActivityId
+		  and ma.memberType = org.ject.support.domain.member.MemberType.SEMESTER
+		  and ma.isDeleted = false
+		""")
+	List<EventParticipation> findEventParticipations(@Param("memberActivityId") Long memberActivityId);
 
 	List<MemberActivity> findAllByIdInAndMemberType(Collection<Long> ids, MemberType memberType);
 

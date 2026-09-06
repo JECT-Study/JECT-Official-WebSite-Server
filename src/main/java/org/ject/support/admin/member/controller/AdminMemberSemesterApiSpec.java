@@ -5,6 +5,7 @@ import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
+import org.ject.support.admin.member.dto.response.MemberSemesterResponse;
 import org.ject.support.common.response.CursorPageResponse;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,6 +22,12 @@ public interface AdminMemberSemesterApiSpec {
 		description = "일반 구성원을 추가합니다."
 	)
 	void createAdminMemberSemester(@RequestBody @Valid CreateMemberSemesterRequest request);
+
+	@Operation(
+		summary = "일반 구성원 단건 조회",
+		description = "일반 구성원 정보와 기수별 행사 참여 상태를 조회합니다."
+	)
+	MemberSemesterResponse getMemberSemester(@PathVariable Long memberActivityId);
 
 	@Operation(
 		summary = "일반 구성원 리스트 조회",

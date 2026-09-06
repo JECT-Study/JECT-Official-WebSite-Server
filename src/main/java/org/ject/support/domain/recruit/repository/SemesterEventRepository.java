@@ -10,6 +10,8 @@ public interface SemesterEventRepository extends JpaRepository<SemesterEvent, Lo
 
 	boolean existsByIdAndSemesterId(Long id, Long semesterId);
 
+	List<SemesterEvent> findAllBySemesterIdOrderByIdAsc(Long semesterId);
+
     List<SemesterEvent> findAllBySemesterIdAndTypeOrderByIdAsc(
             Long semesterId,
             SemesterEventType type
