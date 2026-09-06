@@ -9,6 +9,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -95,8 +96,8 @@ public class MemberActivity extends BaseTimeEntity {
     @OneToOne(mappedBy = "memberActivity", fetch = FetchType.LAZY, orphanRemoval = true, cascade = CascadeType.ALL)
     private MemberSupporters memberSupporters;
 
-    @OneToMany(mappedBy = "memberActivity", orphanRemoval = true,
-        cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(orphanRemoval = true, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinColumn(name = "member_activity_id", nullable = false)
     @Builder.Default
     private List<EventParticipation> eventParticipations = new ArrayList<>();
 
@@ -278,7 +279,7 @@ public class MemberActivity extends BaseTimeEntity {
             .findFirst()
             .ifPresentOrElse(
                 participation -> participation.updateStatus(status),
-                () -> eventParticipations.add(EventParticipation.create(this, semesterEventId, status))
+                () -> eventParticipations.add(EventParticipation.create(semesterEventId, status))
             );
     }
 
