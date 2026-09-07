@@ -228,6 +228,31 @@ public class MemberActivity extends BaseTimeEntity {
         if (memo != null) this.memo = memo;
     }
 
+    // 일반 구성원 활동정보 수정
+    public void updateSemesterActivity(
+        JobFamily jobFamily,
+        CareerDetails careerDetails,
+        RecruitTypeDetail recruitTypeDetail,
+        ExperiencePeriod experiencePeriod,
+        String memo,
+        String certNumber,
+        String firstReview,
+        String secondReview
+    ) {
+        update(jobFamily, careerDetails, recruitTypeDetail, experiencePeriod, memo);
+        memberSemester.update(certNumber, firstReview, secondReview);
+    }
+
+    // 일반 구성원 기수 변경
+    public void changeSemester(Long semesterId) {
+        memberSemester.changeSemester(semesterId);
+    }
+
+    // 일반 구성원 팀 변경
+    public void changeTeam(Long teamId) {
+        memberSemester.changeTeam(teamId);
+    }
+
     // 메이커스팀 구성원 활동정보 수정
     public void updateMakersActivity(
         JobFamily jobFamily,
@@ -276,6 +301,16 @@ public class MemberActivity extends BaseTimeEntity {
 
     public void activate() {
         changeActivityStatus(ActivityStatus.ACTIVE);
+    }
+
+    // 일반 구성원 활동 완주 처리
+    public void complete() {
+        changeActivityStatus(ActivityStatus.COMPLETED);
+    }
+
+    // 일반 구성원 활동 탈퇴 처리
+    public void withdraw() {
+        changeActivityStatus(ActivityStatus.WITHDRAWN);
     }
 
     public void end() {
