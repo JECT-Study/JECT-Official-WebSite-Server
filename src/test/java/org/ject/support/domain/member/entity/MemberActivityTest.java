@@ -366,7 +366,7 @@ class MemberActivityTest {
 		// given
 		MemberActivity memberActivity = makersActivity().build();
 		// when
-		memberActivity.edit(JobFamily.BE, null, RecruitTypeDetail.REFILL, null, null);
+		memberActivity.update(JobFamily.BE, null, RecruitTypeDetail.REFILL, null, null);
 
 		// then
 		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.BE);
@@ -382,7 +382,7 @@ class MemberActivityTest {
 		// given
 		MemberActivity memberActivity = makersActivity().build();
 		// when
-		Throwable throwable = catchThrowable(() -> memberActivity.edit(JobFamily.OPS, null, null, null, null));
+		Throwable throwable = catchThrowable(() -> memberActivity.update(JobFamily.OPS, null, null, null, null));
 
 		// then
 		assertThat(throwable)
@@ -397,7 +397,7 @@ class MemberActivityTest {
 		// given
 		MemberActivity memberActivity = makersActivity().build();
 		// when
-		memberActivity.editMakersActivity(
+		memberActivity.updateMakersActivity(
 			JobFamily.BE, CareerDetails.JOB_SEEKER, null, null, "수정된 메모",
 			MakersTeam.TEAM_2, null, null, null, null, null, "수정된 회사", null, null);
 
@@ -461,7 +461,7 @@ class MemberActivityTest {
 		// given
 		MemberActivity memberActivity = supportersActivity();
 		// when
-		memberActivity.editSupportersActivity(
+		memberActivity.updateSupportersActivity(
 			JobFamily.INFRA, null, java.time.LocalDate.of(2026, 2, 1), null, "수정된 메모", null);
 
 		// then
@@ -479,7 +479,7 @@ class MemberActivityTest {
 		MemberActivity memberActivity = supportersActivity();
 		// when
 		Throwable throwable = catchThrowable(() ->
-			memberActivity.editSupportersActivity(JobFamily.FE, null, null, null, null, null));
+			memberActivity.updateSupportersActivity(JobFamily.FE, null, null, null, null, null));
 
 		// then
 		assertThat(throwable)
@@ -495,7 +495,7 @@ class MemberActivityTest {
 		MemberActivity memberActivity = supportersActivity();
 		// when
 		Throwable throwable = catchThrowable(() ->
-			memberActivity.editSupportersActivity(
+			memberActivity.updateSupportersActivity(
 				null, null, null, java.time.LocalDate.of(2025, 12, 31), null, null));
 
 		// then
