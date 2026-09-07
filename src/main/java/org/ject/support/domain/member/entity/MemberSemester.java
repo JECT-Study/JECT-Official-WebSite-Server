@@ -55,4 +55,26 @@ public class MemberSemester extends BaseTimeEntity {
             .build();
     }
 
+    // 일반 구성원 기수 변경
+    public void changeSemester(Long semesterId) {
+        this.semesterId = semesterId;
+    }
+
+    // 일반 구성원 팀 변경
+    public void changeTeam(Long teamId) {
+        this.teamId = teamId;
+    }
+
+    // 동일 기수 소속 여부 확인
+    public boolean isSameSemester(Long semesterId) {
+        return this.semesterId.equals(semesterId);
+    }
+
+    // 일반 구성원 활동정보 수정
+    public void update(String certNumber, String firstReview, String secondReview) {
+        if (certNumber != null) this.certNumber = certNumber;
+        if (firstReview != null) this.firstReview = firstReview;
+        if (secondReview != null) this.secondReview = secondReview;
+    }
+
 }
