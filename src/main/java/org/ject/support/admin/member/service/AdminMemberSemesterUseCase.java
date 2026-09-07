@@ -5,11 +5,15 @@ import static org.ject.support.domain.member.exception.MemberErrorCode.*;
 import java.util.List;
 import java.util.Set;
 
+import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
+import org.ject.support.admin.member.dto.command.EditMemberCommand;
+import org.ject.support.admin.member.dto.command.EditMemberSemesterCommand;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.projection.MemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
+import org.ject.support.admin.member.dto.request.EditMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.dto.response.MemberSemesterResponse;
@@ -41,7 +45,7 @@ public class AdminMemberSemesterUseCase {
 	public void createMemberSemester(CreateMemberSemesterRequest request) {
 		// 유효성 검증
 		semesterInquiryUsecase.getSemester(request.semesterId());
-		validateCreateTeam(request.semesterId(), request.teamId());
+		validateTeam(request.semesterId(), request.teamId());
 
 		// email 기준 기존 Member 조회 또는 신규 생성
 		Long memberId = adminMemberService.findOrCreateMember(request);
@@ -77,6 +81,26 @@ public class AdminMemberSemesterUseCase {
 			SearchMemberSemesterResponse::from,
 			SearchMemberSemesterProjection::memberActivityId
 		);
+	}
+
+	// 일반 구성원 정보 수정
+	@Transactional
+	public void editMemberSemester(Long memberActivityId, EditMemberSemesterRequest request) {
+		MemberActivity memberActivity = adminMemberActivityService.getMemberSemesterActivity(memberActivityId);
+		Long semesterId = request.semesterId() != null
+			? request.semesterId()
+			: memberActivity.getMemberSemester().getSemesterId();
+
+		if (request.semesterId() != null) semesterInquiryUsecase.getSemester(request.semesterId());
+		if (request.teamId() != null) validateTeam(semesterId, request.teamId());
+
+		Long memberId = adminMemberActivityService.editMemberSemesterActivity(
+			memberActivity,
+			EditMemberActivityCommand.from(request),
+			EditMemberSemesterCommand.from(request),
+			request.activityStatus()
+		);
+		adminMemberService.editMember(memberId, EditMemberCommand.from(request));
 	}
 
 	// 일반 구성원 행사 참여 상태 수정 처리
@@ -119,7 +143,7 @@ public class AdminMemberSemesterUseCase {
 	}
 
 	// 선택한 팀의 기수 소속 검증
-	private void validateCreateTeam(Long semesterId, Long teamId) {
+	private void validateTeam(Long semesterId, Long teamId) {
 		if (teamId == null) {
 			return;
 		}
