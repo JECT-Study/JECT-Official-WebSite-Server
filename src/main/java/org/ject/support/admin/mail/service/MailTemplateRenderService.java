@@ -46,6 +46,7 @@ public class MailTemplateRenderService {
             variables.putAll(inputVariables);
         }
 
+        // 입력 변수 먼저 넣고, 시스템 변수를 뒤에서 덮어써요.
         Applicant applicant = apply.getApplicant();
         addVariable(variables, ReservedMailVariable.name.name(), applicant.getName());
         if (apply.getRecruit() != null && apply.getRecruit().getSemester() != null) {
@@ -66,6 +67,7 @@ public class MailTemplateRenderService {
 
     private String render(String template, Map<String, Object> variables, Long applyId) {
         String rendered = mailTemplateEngine.render(template, variables);
+        // 렌더링 후 남은 변수도 없는지 확인해요.
         mailTemplateValidator.validateResolvedTemplate(rendered, applyId);
         return rendered;
     }
