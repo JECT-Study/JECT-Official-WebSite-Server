@@ -1,6 +1,7 @@
 package org.ject.support.admin.member.dto.command;
 
 import org.ject.support.admin.member.dto.request.UpdateMemberMakersRequest;
+import org.ject.support.admin.member.dto.request.EditMemberSemesterRequest;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
@@ -13,6 +14,16 @@ public record EditMemberActivityCommand(
 	ExperiencePeriod experiencePeriod,
 	String memo
 ) {
+	public static EditMemberActivityCommand from(EditMemberSemesterRequest request) {
+		return new EditMemberActivityCommand(
+			request.jobFamily(),
+			request.careerDetails(),
+			request.recruitTypeDetail(),
+			request.experiencePeriod(),
+			request.memo()
+		);
+	}
+
 	public static EditMemberActivityCommand from(UpdateMemberMakersRequest request) {
 		return new EditMemberActivityCommand(
 			request.jobFamily(),
