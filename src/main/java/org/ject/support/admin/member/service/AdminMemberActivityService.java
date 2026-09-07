@@ -190,7 +190,7 @@ public class AdminMemberActivityService {
 	public Long editMemberMakersActivity(Long memberActivityId, EditMemberActivityCommand activityCommand,
 		EditMemberMakersCommand makersCommand, ActivityStatus activityStatus) {
 		MemberActivity memberActivity = getMemberMakersActivity(memberActivityId);
-		memberActivity.editMakersActivity(
+		memberActivity.updateMakersActivity(
 			activityCommand.jobFamily(),
 			activityCommand.careerDetails(),
 			activityCommand.recruitTypeDetail(),
@@ -216,7 +216,7 @@ public class AdminMemberActivityService {
 	public Long editMemberSupportersActivity(Long memberActivityId, EditMemberSupportersActivityCommand activityCommand,
 		String activityCertNumber, ActivityStatus activityStatus) {
 		MemberActivity memberActivity = getMemberSupportersActivity(memberActivityId);
-		memberActivity.editSupportersActivity(
+		memberActivity.updateSupportersActivity(
 			activityCommand.jobFamily(),
 			activityCommand.recruitTypeDetail(),
 			activityCommand.startDate(),

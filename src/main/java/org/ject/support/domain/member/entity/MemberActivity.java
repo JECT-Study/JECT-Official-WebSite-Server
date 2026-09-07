@@ -215,8 +215,8 @@ public class MemberActivity extends BaseTimeEntity {
         changeActivityStatus(activityStatus);
     }
 
-    // 전달된 구성원 활동정보 편집
-    public void edit(JobFamily jobFamily, CareerDetails careerDetails, RecruitTypeDetail recruitTypeDetail,
+    // 전달된 구성원 활동정보 수정
+    public void update(JobFamily jobFamily, CareerDetails careerDetails, RecruitTypeDetail recruitTypeDetail,
         ExperiencePeriod experiencePeriod, String memo) {
         if (jobFamily != null) {
             validateJobFamily(memberType, jobFamily);
@@ -228,19 +228,37 @@ public class MemberActivity extends BaseTimeEntity {
         if (memo != null) this.memo = memo;
     }
 
-    // 메이커스팀 구성원 활동정보 편집
-    public void editMakersActivity(JobFamily jobFamily, CareerDetails careerDetails, RecruitTypeDetail recruitTypeDetail,
-        ExperiencePeriod experiencePeriod, String memo, MakersTeam makersTeam, Availability mentoringAvailability,
-        Availability projectSupplementAvailability, Availability speakerAvailability, CareerLevel careerLevel,
-        String skills, String company, String expertTopics, String activityCertNumber) {
-        edit(jobFamily, careerDetails, recruitTypeDetail, experiencePeriod, memo);
-        memberMakers.edit(makersTeam, mentoringAvailability, projectSupplementAvailability, speakerAvailability,
+    // 메이커스팀 구성원 활동정보 수정
+    public void updateMakersActivity(
+        JobFamily jobFamily,
+        CareerDetails careerDetails,
+        RecruitTypeDetail recruitTypeDetail,
+        ExperiencePeriod experiencePeriod,
+        String memo,
+        MakersTeam makersTeam,
+        Availability mentoringAvailability,
+        Availability projectSupplementAvailability,
+        Availability speakerAvailability,
+        CareerLevel careerLevel,
+        String skills,
+        String company,
+        String expertTopics,
+        String activityCertNumber
+    ) {
+        update(jobFamily, careerDetails, recruitTypeDetail, experiencePeriod, memo);
+        memberMakers.update(makersTeam, mentoringAvailability, projectSupplementAvailability, speakerAvailability,
             careerLevel, skills, company, expertTopics, activityCertNumber);
     }
 
-    // 운영 서포터즈 구성원 활동정보 편집
-    public void editSupportersActivity(JobFamily jobFamily, RecruitTypeDetail recruitTypeDetail,
-        LocalDate startDate, LocalDate endDate, String memo, String activityCertNumber) {
+    // 운영 서포터즈 구성원 활동정보 수정
+    public void updateSupportersActivity(
+        JobFamily jobFamily,
+        RecruitTypeDetail recruitTypeDetail,
+        LocalDate startDate,
+        LocalDate endDate,
+        String memo,
+        String activityCertNumber
+    ) {
         if (jobFamily != null) {
             validateJobFamily(memberType, jobFamily);
         }
@@ -253,7 +271,7 @@ public class MemberActivity extends BaseTimeEntity {
         if (startDate != null) this.startDate = startDate;
         if (endDate != null) this.endDate = endDate;
         if (memo != null) this.memo = memo;
-        memberSupporters.edit(activityCertNumber);
+        memberSupporters.update(activityCertNumber);
     }
 
     public void activate() {
