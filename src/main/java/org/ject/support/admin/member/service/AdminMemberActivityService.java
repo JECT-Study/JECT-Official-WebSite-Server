@@ -25,6 +25,7 @@ import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.ParticipationStatus;
 import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
 import org.ject.support.admin.member.dto.command.EditMemberMakersCommand;
+import org.ject.support.admin.member.dto.command.EditMemberSemesterCommand;
 import org.ject.support.admin.member.dto.command.EditMemberSupportersActivityCommand;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.entity.EventParticipation;
@@ -137,6 +138,12 @@ public class AdminMemberActivityService {
 		return memberActivityRepository.findEventParticipations(memberActivityId);
 	}
 
+	// 일반 구성원 활동 조회
+	public MemberActivity getMemberSemesterActivity(Long memberActivityId) {
+		return memberActivityRepository.findByIdAndMemberType(memberActivityId, MemberType.SEMESTER)
+			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER_SEMESTER_ACTIVITY));
+	}
+
 	// 행사 참여 기록을 포함한 일반 구성원 활동 조회
 	public MemberActivity getMemberSemesterActivityWithParticipations(Long memberActivityId) {
 		return memberActivityRepository.findSemesterActivityWithParticipations(memberActivityId)
@@ -150,6 +157,34 @@ public class AdminMemberActivityService {
 			return;
 		}
 		memberActivity.assignEventParticipation(semesterEventId, participationStatus);
+	}
+
+	// 일반 구성원 활동정보 수정
+	public Long editMemberSemesterActivity(MemberActivity memberActivity, EditMemberActivityCommand activityCommand,
+		EditMemberSemesterCommand semesterCommand, ActivityStatus activityStatus) {
+		if (semesterCommand.semesterId() != null
+			&& !memberActivity.getMemberSemester().isSameSemester(semesterCommand.semesterId())) {
+			validateDuplicateSemesterActivity(memberActivity.getMemberId(), semesterCommand.semesterId());
+		}
+
+		memberActivity.updateSemesterActivity(
+			activityCommand.jobFamily(),
+			activityCommand.careerDetails(),
+			activityCommand.recruitTypeDetail(),
+			activityCommand.experiencePeriod(),
+			activityCommand.memo(),
+			semesterCommand.certNumber(),
+			semesterCommand.firstReview(),
+			semesterCommand.secondReview()
+		);
+		if (semesterCommand.semesterId() != null) {
+			memberActivity.changeSemester(semesterCommand.semesterId());
+			memberActivity.changeTeam(semesterCommand.teamId());
+		} else if (semesterCommand.teamId() != null) {
+			memberActivity.changeTeam(semesterCommand.teamId());
+		}
+		if (activityStatus != null) editActivityStatus(memberActivity, activityStatus);
+		return memberActivity.getMemberId();
 	}
 
 	// 메이커스팀 구성원 목록 조회
@@ -235,15 +270,21 @@ public class AdminMemberActivityService {
 		if (memberActivity.isSameActivityStatus(activityStatus)) {
 			return;
 		}
+		if (!activityStatus.isAvailableFor(memberActivity.getMemberType())) {
+			throw new MemberException(INVALID_ACTIVITY_STATUS);
+		}
 
 		switch (activityStatus) {
 			case ACTIVE -> {
-				validateDuplicateActiveActivity(memberActivity);
+				if (memberActivity.getMemberType() != MemberType.SEMESTER) {
+					validateDuplicateActiveActivity(memberActivity);
+				}
 				memberActivity.activate();
 			}
+			case COMPLETED -> memberActivity.complete();
+			case WITHDRAWN -> memberActivity.withdraw();
 			case ENDED -> memberActivity.end();
 			case DROPOUT -> memberActivity.dropOut();
-			default -> throw new MemberException(INVALID_ACTIVITY_STATUS);
 		}
 	}
 
