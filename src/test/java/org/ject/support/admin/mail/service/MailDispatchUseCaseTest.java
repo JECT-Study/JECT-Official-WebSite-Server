@@ -93,7 +93,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
         // then
         assertThat(result.failedCount()).isEqualTo(1);
         verify(persistenceService).recordFailure(
-                100L, 1L, MailErrorCode.MAIL_SEND_FAILURE.getMessage());
+                100L, 1L, EmailErrorCode.EMAIL_SEND_FAILURE.getCode());
         verify(persistenceService).recordSuccess(100L, 2L);
         InOrder order = inOrder(emailSendService);
         order.verify(emailSendService).sendEmail("one@ject.kr", "첫 번째", "본문 1");

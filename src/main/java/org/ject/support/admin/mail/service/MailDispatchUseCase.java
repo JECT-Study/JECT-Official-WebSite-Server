@@ -7,6 +7,7 @@ import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
+import org.ject.support.external.email.exception.EmailException;
 import org.ject.support.external.email.service.EmailSendService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -51,10 +52,13 @@ public class MailDispatchUseCase {
     private void sendTarget(Long dispatchJobId, MailDispatchPlan.Target target) {
         try {
             emailSendService.sendEmail(target.email(), target.subject(), target.body());
-        } catch (Exception ignored) {
+        } catch (Exception exception) {
             // 대상별 실패를 기록하고 다음 대상 발송을 계속합니다.
+            String failureReason = exception instanceof EmailException emailException
+                    ? emailException.getErrorCode().getCode()
+                    : MailErrorCode.MAIL_SEND_FAILURE.getCode();
             mailDispatchPersistenceService.recordFailure(
-                    dispatchJobId, target.applyId(), MailErrorCode.MAIL_SEND_FAILURE.getMessage());
+                    dispatchJobId, target.applyId(), failureReason);
             return;
         }
         mailDispatchPersistenceService.recordSuccess(dispatchJobId, target.applyId());
