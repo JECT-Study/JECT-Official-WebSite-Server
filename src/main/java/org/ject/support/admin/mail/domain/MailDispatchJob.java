@@ -147,6 +147,7 @@ public class MailDispatchJob extends BaseTimeEntity {
         if (processingCount > 0) {
             return;
         }
+        // 모든 대상이 실패한 경우에만 작업을 실패로 마무리한다.
         status = failedCount == targetCount
                 ? MailDispatchJobStatus.FAILED
                 : MailDispatchJobStatus.COMPLETED;
