@@ -53,7 +53,7 @@ public class MailDispatchUseCase {
         try {
             emailSendService.sendEmail(target.email(), target.subject(), target.body());
         } catch (Exception exception) {
-            // 대상별 실패를 기록하고 다음 대상 발송을 계속합니다.
+            // 대상별 실패를 기록하고 다음 대상 발송을 계속한다.
             String failureReason = exception instanceof EmailException emailException
                     ? emailException.getErrorCode().getCode()
                     : MailErrorCode.MAIL_SEND_FAILURE.getCode();
