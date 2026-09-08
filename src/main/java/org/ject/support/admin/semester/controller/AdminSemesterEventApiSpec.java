@@ -28,4 +28,12 @@ public interface AdminSemesterEventApiSpec {
             @PathVariable Long semesterId,
             @RequestBody @Valid EditSemesterEventsRequest request
     );
+
+    @Operation(
+            summary = "기수별 행사 삭제",
+            description = "선택한 기수의 행사를 삭제합니다.")
+    void deleteEvent(
+            @PathVariable Long semesterId,
+            @PathVariable Long semesterEventId
+    );
 }

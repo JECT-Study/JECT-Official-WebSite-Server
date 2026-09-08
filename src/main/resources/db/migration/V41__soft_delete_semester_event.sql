@@ -1,0 +1,2 @@
+ALTER TABLE semester_event
+    ADD COLUMN is_deleted BOOLEAN NOT NULL DEFAULT FALSE;
