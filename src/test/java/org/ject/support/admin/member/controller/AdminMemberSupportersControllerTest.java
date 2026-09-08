@@ -6,6 +6,7 @@ import static org.ject.support.domain.member.fixture.SemesterActivityFixture.sem
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -13,8 +14,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Set;
+import java.time.LocalDate;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
+import org.ject.support.admin.member.dto.request.UpdateMemberSupportersRequest;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
@@ -211,6 +214,49 @@ class AdminMemberSupportersControllerTest {
 	}
 
 	@Test
+	@DisplayName("운영 서포터즈 구성원 수정 요청에 성공한다")
+	void 운영_서포터즈_구성원_수정_요청에_성공한다() throws Exception {
+		// given
+		MemberActivity memberActivity = saveSupportersActivity(uniqueEmail("edit"), ActivityStatus.ACTIVE);
+		UpdateMemberSupportersRequest request = updateMemberSupportersRequest("수정된이름", uniqueEmail("edited"));
+
+		// when
+		mockMvc.perform(patch("/admin/members/supporters/{memberActivityId}", memberActivity.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"));
+
+		// then
+		Member updatedMember = memberRepository.findById(memberActivity.getMemberId()).orElseThrow();
+		MemberActivity updatedActivity = memberActivityRepository.findById(memberActivity.getId()).orElseThrow();
+		assertThat(updatedMember.getName()).isEqualTo(request.name());
+		assertThat(updatedMember.getPhoneNumber()).isEqualTo(request.phoneNumber());
+		assertThat(updatedMember.getEmail()).isEqualTo(request.email());
+		assertThat(updatedActivity.getJobFamily()).isEqualTo(request.jobFamily());
+		assertThat(updatedActivity.getRecruitTypeDetail()).isEqualTo(request.recruitTypeDetail());
+		assertThat(updatedActivity.getActivityStatus()).isEqualTo(request.activityStatus());
+		assertThat(updatedActivity.getStartDate()).isEqualTo(request.startDate());
+		assertThat(updatedActivity.getEndDate()).isEqualTo(request.endDate());
+		assertThat(updatedActivity.getMemo()).isEqualTo(request.memo());
+		assertThat(updatedActivity.getMemberSupporters().getActivityCertNumber()).isEqualTo(request.activityCertNumber());
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 운영 서포터즈 구성원 수정 요청은 실패한다")
+	void 존재하지_않는_운영_서포터즈_구성원_수정_요청은_실패한다() throws Exception {
+		// given
+		UpdateMemberSupportersRequest request = updateMemberSupportersRequest("수정된이름", uniqueEmail("not-found"));
+
+		// when & then
+		mockMvc.perform(patch("/admin/members/supporters/{memberActivityId}", 999999999L)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER_SUPPORTERS_ACTIVITY.getCode()));
+	}
+
+	@Test
 	@DisplayName("운영 서포터즈 구성원을 삭제하고 남은 활동이 없으면 구성원도 삭제한다")
 	void 운영_서포터즈_구성원을_삭제하고_남은_활동이_없으면_구성원도_삭제한다() throws Exception {
 		// given
@@ -368,6 +414,21 @@ class AdminMemberSupportersControllerTest {
 			java.time.LocalDate.of(2025, 12, 19),
 			"SP-001",
 			memo
+		);
+	}
+
+	private UpdateMemberSupportersRequest updateMemberSupportersRequest(String name, String email) {
+		return new UpdateMemberSupportersRequest(
+			name,
+			"01011112222",
+			email,
+			JobFamily.INFRA,
+			RecruitTypeDetail.REFILL,
+			ActivityStatus.ENDED,
+			LocalDate.of(2026, 1, 1),
+			LocalDate.of(2026, 12, 31),
+			"SP-EDIT-001",
+			"수정된 메모"
 		);
 	}
 

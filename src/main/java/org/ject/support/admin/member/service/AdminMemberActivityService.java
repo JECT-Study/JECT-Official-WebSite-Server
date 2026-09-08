@@ -23,6 +23,7 @@ import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.MemberType;
 import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
 import org.ject.support.admin.member.dto.command.EditMemberMakersCommand;
+import org.ject.support.admin.member.dto.command.EditMemberSupportersActivityCommand;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
@@ -144,6 +145,12 @@ public class AdminMemberActivityService {
 			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER_MAKERS_ACTIVITY));
 	}
 
+	// 운영 서포터즈 구성원 활동 조회
+	public MemberActivity getMemberSupportersActivity(Long memberActivityId) {
+		return memberActivityRepository.findByIdAndMemberType(memberActivityId, MemberType.SUPPORTERS)
+			.orElseThrow(() -> new MemberException(NOT_FOUND_MEMBER_SUPPORTERS_ACTIVITY));
+	}
+
 	// 메이커스팀 구성원 상세 조회
 	public MemberMakersDetailProjection getMemberMakersDetail(Long memberActivityId) {
 		return memberActivityRepository.findMemberMakersDetail(memberActivityId)
@@ -171,24 +178,52 @@ public class AdminMemberActivityService {
 			makersCommand.activityCertNumber()
 		);
 		if (activityStatus != null) {
-			editMakersActivityStatus(memberActivity, activityStatus);
+			editActivityStatus(memberActivity, activityStatus);
 		}
 		return memberActivity.getMemberId();
 	}
 
-	public void editMakersActivityStatus(MemberActivity memberActivity, ActivityStatus activityStatus) {
+	// 운영 서포터즈 구성원 활동정보 편집
+	public Long editMemberSupportersActivity(Long memberActivityId, EditMemberSupportersActivityCommand activityCommand,
+		String activityCertNumber, ActivityStatus activityStatus) {
+		MemberActivity memberActivity = getMemberSupportersActivity(memberActivityId);
+		memberActivity.editSupportersActivity(
+			activityCommand.jobFamily(),
+			activityCommand.recruitTypeDetail(),
+			activityCommand.startDate(),
+			activityCommand.endDate(),
+			activityCommand.memo(),
+			activityCertNumber
+		);
+		if (activityStatus != null) {
+			editActivityStatus(memberActivity, activityStatus);
+		}
+		return memberActivity.getMemberId();
+	}
+
+	// 구성원 유형별 활동 상태 편집
+	private void editActivityStatus(MemberActivity memberActivity, ActivityStatus activityStatus) {
 		if (memberActivity.isSameActivityStatus(activityStatus)) {
 			return;
 		}
 
 		switch (activityStatus) {
 			case ACTIVE -> {
-				validateDuplicateActiveMakersActivity(memberActivity.getMemberId());
+				validateDuplicateActiveActivity(memberActivity);
 				memberActivity.activate();
 			}
 			case ENDED -> memberActivity.end();
 			case DROPOUT -> memberActivity.dropOut();
 			default -> throw new MemberException(INVALID_ACTIVITY_STATUS);
+		}
+	}
+
+	// 구성원 유형별 활성 활동 중복 검증
+	private void validateDuplicateActiveActivity(MemberActivity memberActivity) {
+		switch (memberActivity.getMemberType()) {
+			case MAKERS -> validateDuplicateActiveMakersActivity(memberActivity.getMemberId());
+			case SUPPORTERS -> validateDuplicateActiveSupportersActivity(memberActivity.getMemberId());
+			default -> throw new MemberException(INVALID_MEMBER_TYPE);
 		}
 	}
 
