@@ -21,6 +21,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
@@ -71,6 +73,17 @@ public class Recruit extends BaseTimeEntity {
     @Builder.Default
     private List<Question> questions = new ArrayList<>();
 
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String recruitInformation;
+
+    @Column(columnDefinition = "MEDIUMTEXT")
+    private String notice;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "json", nullable = false)
+    @Builder.Default
+    private List<RecruitFaq> faqs = new ArrayList<>();
+
     public void addQuestion(Question question) {
         this.questions.add(question);
         question.setRecruit(this);
@@ -96,10 +109,21 @@ public class Recruit extends BaseTimeEntity {
         }
     }
 
-    public void update(JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate) {
+    // 모집공고 정보 변경
+    public void update(JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate,
+                       String recruitInformation, String notice, List<RecruitFaq> faqs) {
         this.jobFamily = jobFamily;
         this.startDate = startDate;
         this.endDate = endDate;
+        if (recruitInformation != null && !recruitInformation.isBlank()) {
+            this.recruitInformation = recruitInformation;
+        }
+        if (notice != null && !notice.isBlank()) {
+            this.notice = notice;
+        }
+        if (faqs != null && !faqs.isEmpty()) {
+            this.faqs = new ArrayList<>(faqs);
+        }
     }
 
     public boolean isClosed() {
