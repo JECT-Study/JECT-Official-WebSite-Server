@@ -6,11 +6,15 @@ import static org.mockito.BDDMockito.*;
 import java.util.List;
 import java.util.Set;
 
+import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
+import org.ject.support.admin.member.dto.command.EditMemberCommand;
+import org.ject.support.admin.member.dto.command.EditMemberSemesterCommand;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.projection.MemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
+import org.ject.support.admin.member.dto.request.EditMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.dto.response.MemberSemesterResponse;
@@ -113,6 +117,139 @@ class AdminMemberSemesterUseCaseTest {
 			ExperiencePeriod.ONE_TO_TWO,
 			ActivityStatus.ACTIVE
 		);
+	}
+
+	@Test
+	@DisplayName("일반 구성원의 활동정보를 수정한다")
+	void 일반_구성원의_활동정보를_수정한다() {
+		// given
+		MemberActivity memberActivity = memberActivityWithSemester(1L);
+		EditMemberSemesterRequest request = editMemberSemesterRequest(null, null);
+		given(adminMemberActivityService.getMemberSemesterActivity(3L)).willReturn(memberActivity);
+		given(adminMemberActivityService.editMemberSemesterActivity(
+			memberActivity, EditMemberActivityCommand.from(request), EditMemberSemesterCommand.from(request),
+			request.activityStatus())).willReturn(10L);
+
+		// when
+		adminMemberSemesterUseCase.editMemberSemester(3L, request);
+
+		// then
+		verify(adminMemberService).editMember(10L, EditMemberCommand.from(request));
+	}
+
+	@Test
+	@DisplayName("기수를 변경하면 팀을 미지정 상태로 변경한다")
+	void 기수를_변경하면_팀을_미지정_상태로_변경한다() {
+		// given
+		MemberActivity memberActivity = mock(MemberActivity.class);
+		EditMemberSemesterRequest request = editMemberSemesterRequest(2L, null);
+		given(adminMemberActivityService.getMemberSemesterActivity(3L)).willReturn(memberActivity);
+		given(adminMemberActivityService.editMemberSemesterActivity(any(), any(), any(), any())).willReturn(10L);
+
+		// when
+		adminMemberSemesterUseCase.editMemberSemester(3L, request);
+
+		// then
+		verify(semesterInquiryUsecase).getSemester(2L);
+		verifyNoInteractions(adminMemberTeamService);
+		verify(adminMemberActivityService).editMemberSemesterActivity(
+			memberActivity, EditMemberActivityCommand.from(request), EditMemberSemesterCommand.from(request),
+			request.activityStatus());
+	}
+
+	@Test
+	@DisplayName("현재 기수에 속한 팀으로 변경한다")
+	void 현재_기수에_속한_팀으로_변경한다() {
+		// given
+		MemberActivity memberActivity = memberActivityWithSemester(1L);
+		EditMemberSemesterRequest request = editMemberSemesterRequest(null, 2L);
+		given(adminMemberActivityService.getMemberSemesterActivity(3L)).willReturn(memberActivity);
+		given(adminMemberTeamService.getTeamIdsBySemesterId(1L)).willReturn(List.of(2L));
+		given(adminMemberActivityService.editMemberSemesterActivity(any(), any(), any(), any())).willReturn(10L);
+
+		// when
+		adminMemberSemesterUseCase.editMemberSemester(3L, request);
+
+		// then
+		verify(adminMemberActivityService).editMemberSemesterActivity(
+			memberActivity, EditMemberActivityCommand.from(request), EditMemberSemesterCommand.from(request),
+			request.activityStatus());
+	}
+
+	@Test
+	@DisplayName("기수와 해당 기수에 속한 팀을 함께 변경한다")
+	void 기수와_해당_기수에_속한_팀을_함께_변경한다() {
+		// given
+		MemberActivity memberActivity = mock(MemberActivity.class);
+		EditMemberSemesterRequest request = editMemberSemesterRequest(2L, 4L);
+		given(adminMemberActivityService.getMemberSemesterActivity(3L)).willReturn(memberActivity);
+		given(adminMemberTeamService.getTeamIdsBySemesterId(2L)).willReturn(List.of(4L));
+		given(adminMemberActivityService.editMemberSemesterActivity(any(), any(), any(), any())).willReturn(10L);
+
+		// when
+		adminMemberSemesterUseCase.editMemberSemester(3L, request);
+
+		// then
+		verify(semesterInquiryUsecase).getSemester(2L);
+		verify(adminMemberActivityService).editMemberSemesterActivity(
+			memberActivity, EditMemberActivityCommand.from(request), EditMemberSemesterCommand.from(request),
+			request.activityStatus());
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 기수로 변경할 수 없다")
+	void 존재하지_않는_기수로_변경할_수_없다() {
+		// given
+		MemberActivity memberActivity = mock(MemberActivity.class);
+		EditMemberSemesterRequest request = editMemberSemesterRequest(99L, null);
+		SemesterException exception = new SemesterException(SemesterErrorCode.NOT_FOUND_SEMESTER);
+		given(adminMemberActivityService.getMemberSemesterActivity(3L)).willReturn(memberActivity);
+		given(semesterInquiryUsecase.getSemester(99L)).willThrow(exception);
+
+		// when
+		Throwable throwable = catchThrowable(() -> adminMemberSemesterUseCase.editMemberSemester(3L, request));
+
+		// then
+		assertThat(throwable).isSameAs(exception);
+		verify(adminMemberActivityService, never()).editMemberSemesterActivity(any(), any(), any(), any());
+	}
+
+	@Test
+	@DisplayName("선택한 기수에 속하지 않은 팀으로 변경할 수 없다")
+	void 선택한_기수에_속하지_않은_팀으로_변경할_수_없다() {
+		// given
+		MemberActivity memberActivity = mock(MemberActivity.class);
+		EditMemberSemesterRequest request = editMemberSemesterRequest(2L, 4L);
+		given(adminMemberActivityService.getMemberSemesterActivity(3L)).willReturn(memberActivity);
+		given(adminMemberTeamService.getTeamIdsBySemesterId(2L)).willReturn(List.of(5L));
+
+		// when
+		Throwable throwable = catchThrowable(() -> adminMemberSemesterUseCase.editMemberSemester(3L, request));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.NOT_FOUND_TEAM_OF_SEMESTER);
+		verify(adminMemberActivityService, never()).editMemberSemesterActivity(any(), any(), any(), any());
+	}
+
+	@Test
+	@DisplayName("일반 구성원 활동정보 수정 중 오류가 발생하면 모든 활동정보를 유지한다")
+	void 일반_구성원_활동정보_수정_중_오류가_발생하면_모든_활동정보를_유지한다() {
+		// given
+		MemberActivity memberActivity = memberActivityWithSemester(1L);
+		EditMemberSemesterRequest request = editMemberSemesterRequest(null, null);
+		given(adminMemberActivityService.getMemberSemesterActivity(3L)).willReturn(memberActivity);
+		given(adminMemberActivityService.editMemberSemesterActivity(any(), any(), any(), any()))
+			.willThrow(new IllegalStateException("활동정보 수정 실패"));
+
+		// when
+		Throwable throwable = catchThrowable(() -> adminMemberSemesterUseCase.editMemberSemester(3L, request));
+
+		// then
+		assertThat(throwable).hasMessage("활동정보 수정 실패");
+		verifyNoInteractions(adminMemberService);
 	}
 
 	@Test
@@ -268,6 +405,14 @@ class AdminMemberSemesterUseCaseTest {
 		given(memberActivity.getMemberSemester()).willReturn(memberSemester);
 		given(memberSemester.getSemesterId()).willReturn(semesterId);
 		return memberActivity;
+	}
+
+	private EditMemberSemesterRequest editMemberSemesterRequest(Long semesterId, Long teamId) {
+		return new EditMemberSemesterRequest(
+			"수정구성원", null, null, JobFamily.FE, RecruitTypeDetail.REFILL, ActivityStatus.COMPLETED,
+			CareerDetails.JOB_SEEKER, semesterId, teamId, ExperiencePeriod.THREE_TO_FOUR, "수정된 활동정보",
+			List.of("커머스", "핀테크"), Region.BUSAN, "SEMESTER-EDIT", "https://review/1", null
+		);
 	}
 
 	/**
