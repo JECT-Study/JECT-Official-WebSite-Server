@@ -2,6 +2,7 @@ package org.ject.support.domain.recruit.repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.ject.support.domain.recruit.domain.SemesterEvent;
 import org.ject.support.domain.recruit.domain.SemesterEventType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,6 +10,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SemesterEventRepository extends JpaRepository<SemesterEvent, Long> {
 
 	boolean existsByIdAndSemesterId(Long id, Long semesterId);
+
+    Optional<SemesterEvent> findByIdAndSemesterId(Long id, Long semesterId);
 
 	List<SemesterEvent> findAllBySemesterIdOrderByIdAsc(Long semesterId);
 
