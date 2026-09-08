@@ -3,11 +3,13 @@ package org.ject.support.domain.recruit.service;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.RecruitFaq;
 import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
+import org.ject.support.domain.recruit.dto.RecruitResponse;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
 import org.ject.support.domain.recruit.exception.RecruitException;
@@ -95,6 +97,30 @@ class RecruitServiceTest extends UnitTestSupport {
         assertThat(result.recruitments().get(0).recruitType()).isEqualTo(RecruitType.SUPPORTERS);
         assertThat(result.recruitments().get(0).recruitTypeDetail()).isEqualTo(RecruitTypeDetail.REFILL);
         assertThat(result.recruitments().get(0).jobFamily()).isEqualTo(SUPPORTER);
+    }
+
+    @Test
+    void 모집공고의_상세정보와_안내사항_및_FAQ를_조회한다() {
+        // given
+        Recruit recruit = Recruit.builder()
+                .id(1L)
+                .semester(getSemester(true))
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
+                .jobFamily(BE)
+                .recruitInformation("<h2>모집 정보</h2>")
+                .notice("<h2>안내사항</h2>")
+                .faqs(List.of(RecruitFaq.create("지원 자격이 있나요?", "<p>누구나 지원할 수 있습니다.</p>")))
+                .build();
+        when(recruitRepository.findByIdWithSemester(1L)).thenReturn(Optional.of(recruit));
+
+        // when
+        RecruitResponse result = recruitService.getRecruit(1L);
+
+        // then
+        assertThat(result.recruitInformation()).isEqualTo("<h2>모집 정보</h2>");
+        assertThat(result.notice()).isEqualTo("<h2>안내사항</h2>");
+        assertThat(result.faqs()).hasSize(1);
     }
 
     @Test
