@@ -87,9 +87,10 @@ class RecruitTest {
 
         // when
         recruit.update(JobFamily.FE, LocalDateTime.now(), LocalDateTime.now().plusDays(2),
-                "<h2>모집 정보</h2>", "<h2>안내사항</h2>", faqs);
+                "모집공고 요약", "<h2>모집 정보</h2>", "<h2>안내사항</h2>", faqs);
 
         // then
+        assertThat(recruit.getSummary()).isEqualTo("모집공고 요약");
         assertThat(recruit.getRecruitInformation()).isEqualTo("<h2>모집 정보</h2>");
         assertThat(recruit.getNotice()).isEqualTo("<h2>안내사항</h2>");
         assertThat(recruit.getFaqs()).containsExactlyElementsOf(faqs);
@@ -103,15 +104,17 @@ class RecruitTest {
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now())
                 .endDate(LocalDateTime.now().plusDays(1))
+                .summary("모집공고 요약")
                 .recruitInformation("<h2>모집 정보</h2>")
                 .notice("<h2>안내사항</h2>")
                 .faqs(List.of(RecruitFaq.create("지원 자격이 있나요?", "<p>누구나 지원할 수 있습니다.</p>")))
                 .build();
 
         // when
-        recruit.update(JobFamily.FE, LocalDateTime.now(), LocalDateTime.now().plusDays(2), "", " ", List.of());
+        recruit.update(JobFamily.FE, LocalDateTime.now(), LocalDateTime.now().plusDays(2), "", "", " ", List.of());
 
         // then
+        assertThat(recruit.getSummary()).isEqualTo("모집공고 요약");
         assertThat(recruit.getRecruitInformation()).isEqualTo("<h2>모집 정보</h2>");
         assertThat(recruit.getNotice()).isEqualTo("<h2>안내사항</h2>");
         assertThat(recruit.getFaqs()).hasSize(1);

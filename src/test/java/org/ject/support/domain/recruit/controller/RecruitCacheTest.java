@@ -94,6 +94,7 @@ class RecruitCacheTest {
                     savedRecruit.getJobFamily(),
                     savedRecruit.getStartDate(),
                     savedRecruit.getEndDate(),
+                    null,
                     "<h2>변경된 모집 정보</h2>",
                     null,
                     null
@@ -115,6 +116,7 @@ class RecruitCacheTest {
                 FE,
                 LocalDateTime.now().minusDays(1),
                 LocalDateTime.now().plusDays(3),
+                "수정된 모집 요약",
                 "<h2>변경된 모집 정보</h2>",
                 null,
                 List.of()
