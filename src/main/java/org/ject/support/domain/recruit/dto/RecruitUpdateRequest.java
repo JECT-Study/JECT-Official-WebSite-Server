@@ -21,6 +21,9 @@ public record RecruitUpdateRequest(
         @Future(message = "모집 종료일은 현재 시각보다 이후여야 합니다.")
         LocalDateTime endDate,
 
+        @Size(max = 500, message = "모집공고 요약은 500자 이하로 입력해주세요.")
+        String summary,
+
         @Size(max = 100000, message = "모집 정보는 100,000자 이하여야 합니다.")
         String recruitInformation,
 
@@ -30,7 +33,7 @@ public record RecruitUpdateRequest(
         List<@Valid RecruitFaqRequest> faqs
 ) {
     public RecruitUpdateRequest(JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate) {
-        this(jobFamily, startDate, endDate, null, null, List.of());
+        this(jobFamily, startDate, endDate, null, null, null, List.of());
     }
 
     // FAQ 요청 목록을 도메인 값으로 변환

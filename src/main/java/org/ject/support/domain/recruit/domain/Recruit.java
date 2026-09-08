@@ -76,6 +76,9 @@ public class Recruit extends BaseTimeEntity {
     @Column(columnDefinition = "MEDIUMTEXT")
     private String recruitInformation;
 
+    @Column(length = 500)
+    private String summary;
+
     @Column(columnDefinition = "MEDIUMTEXT")
     private String notice;
 
@@ -111,10 +114,13 @@ public class Recruit extends BaseTimeEntity {
 
     // 모집공고 정보 변경
     public void update(JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate,
-                       String recruitInformation, String notice, List<RecruitFaq> faqs) {
+                       String summary, String recruitInformation, String notice, List<RecruitFaq> faqs) {
         this.jobFamily = jobFamily;
         this.startDate = startDate;
         this.endDate = endDate;
+        if (summary != null && !summary.isBlank()) {
+            this.summary = summary;
+        }
         if (recruitInformation != null && !recruitInformation.isBlank()) {
             this.recruitInformation = recruitInformation;
         }

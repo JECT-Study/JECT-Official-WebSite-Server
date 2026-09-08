@@ -46,6 +46,7 @@ public class DevRecruitController {
                 request.jobFamily(),
                 request.startDate(),
                 request.endDate(),
+                request.summary(),
                 request.recruitInformation(),
                 request.notice(),
                 request.getFaqsOrNull()
