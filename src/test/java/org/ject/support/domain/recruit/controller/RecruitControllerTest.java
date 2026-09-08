@@ -56,10 +56,10 @@ class RecruitControllerTest {
         ActiveRecruitmentResponses responses = new ActiveRecruitmentResponses(List.of(
                 new ActiveRecruitmentResponse(
                         1L, 3L, "3기", SEMESTER, "정규 기수 모집", REGULAR, "정규 모집",
-                        BE, "백엔드 개발자(BE)", now.minusDays(2), now.plusDays(2)),
+                        BE, "백엔드 개발자(BE)", now.minusDays(2), now.plusDays(2), "백엔드 모집 요약"),
                 new ActiveRecruitmentResponse(
                         2L, 3L, "3기", MAKERS, "메이커스 모집", NEW, "신규 모집",
-                        FE, "프론트엔드 개발자(FE)", now.minusDays(1), now.plusDays(2))
+                        FE, "프론트엔드 개발자(FE)", now.minusDays(1), now.plusDays(2), "프론트엔드 모집 요약")
         ));
         given(recruitUsecase.findActiveRecruitments()).willReturn(responses);
 
@@ -72,6 +72,7 @@ class RecruitControllerTest {
                 .andExpect(jsonPath("$.data.recruitments[0].recruitTypeDescription").value("정규 기수 모집"))
                 .andExpect(jsonPath("$.data.recruitments[0].recruitTypeDetail").value("REGULAR"))
                 .andExpect(jsonPath("$.data.recruitments[0].jobFamily").value("BE"))
+                .andExpect(jsonPath("$.data.recruitments[0].summary").value("백엔드 모집 요약"))
                 .andExpect(jsonPath("$.data.recruitments[1].recruitType").value("MAKERS"))
                 .andExpect(jsonPath("$.data.recruitments[1].recruitTypeDetail").value("NEW"))
                 .andExpect(jsonPath("$.data.recruitments[1].jobFamily").value("FE"));
