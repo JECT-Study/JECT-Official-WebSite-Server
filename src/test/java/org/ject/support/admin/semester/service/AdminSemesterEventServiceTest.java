@@ -10,6 +10,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import java.util.List;
+import java.util.Optional;
 import org.ject.support.admin.semester.dto.CreateSemesterEventRequest;
 import org.ject.support.admin.semester.dto.EditSemesterEventsRequest;
 import org.ject.support.admin.semester.dto.SemesterEventsResponse;
@@ -286,6 +287,34 @@ class AdminSemesterEventServiceTest extends UnitTestSupport {
         // then
         assertSemesterError(throwable, SemesterErrorCode.NOT_FOUND_SEMESTER);
         verify(semesterEventRepository, never()).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("기수별 행사를 삭제한다")
+    void 기수별_행사를_삭제한다() {
+        // given
+        SemesterEvent semesterEvent = semesterEvent(1L, 4L, "오리엔테이션");
+        given(semesterEventRepository.findByIdAndSemesterId(1L, 4L)).willReturn(Optional.of(semesterEvent));
+
+        // when
+        adminSemesterEventService.deleteEvent(4L, 1L);
+
+        // then
+        verify(semesterEventRepository).delete(semesterEvent);
+    }
+
+    @Test
+    @DisplayName("선택한 기수에 없는 행사는 삭제할 수 없다")
+    void 선택한_기수에_없는_행사는_삭제할_수_없다() {
+        // given
+        given(semesterEventRepository.findByIdAndSemesterId(1L, 4L)).willReturn(Optional.empty());
+
+        // when
+        Throwable throwable = catchThrowable(() -> adminSemesterEventService.deleteEvent(4L, 1L));
+
+        // then
+        assertSemesterError(throwable, SemesterErrorCode.NOT_FOUND_SEMESTER_EVENT);
+        verify(semesterEventRepository, never()).delete(any());
     }
 
     private SemesterEvent semesterEvent(Long id, Long semesterId, String name) {
