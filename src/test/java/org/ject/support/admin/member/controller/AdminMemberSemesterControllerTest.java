@@ -20,6 +20,7 @@ import java.util.Set;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
+import org.ject.support.admin.member.dto.request.EditMemberSemesterRequest;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
@@ -357,6 +358,50 @@ class AdminMemberSemesterControllerTest {
 	}
 
 	@Test
+	@DisplayName("일반 구성원의 활동정보를 수정한다")
+	void 일반_구성원의_활동정보를_수정한다() throws Exception {
+		// given
+		Semester semester = saveSemester();
+		Team currentTeam = saveTeam(semester.getId(), "기존팀");
+		Team changedTeam = saveTeam(semester.getId(), "변경팀");
+		MemberActivity memberActivity = saveMemberSemesterActivity(
+			uniqueEmail("edit"), semester.getId(), currentTeam.getId(), JobFamily.BE,
+			RecruitTypeDetail.REGULAR, CareerDetails.EMPLOYEE, ExperiencePeriod.ONE_TO_TWO);
+		EditMemberSemesterRequest request = editMemberSemesterRequest(changedTeam.getId());
+
+		// when
+		mockMvc.perform(patch("/admin/members/semester/{memberActivityId}", memberActivity.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"));
+		entityManager.flush();
+		entityManager.clear();
+
+		// then
+		Member changedMember = memberRepository.findById(memberActivity.getMemberId()).orElseThrow();
+		MemberActivity changedActivity = memberActivityRepository.findById(memberActivity.getId()).orElseThrow();
+		assertThat(changedMember.getName()).isEqualTo(request.name());
+		assertThat(changedMember.getRegion()).isEqualTo(request.region());
+		assertThat(changedActivity.getJobFamily()).isEqualTo(request.jobFamily());
+		assertThat(changedActivity.getActivityStatus()).isEqualTo(request.activityStatus());
+		assertThat(changedActivity.getMemberSemester().getTeamId()).isEqualTo(changedTeam.getId());
+		assertThat(changedActivity.getMemberSemester().getCertNumber()).isEqualTo(request.certNumber());
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 일반 구성원의 활동정보는 수정할 수 없다")
+	void 존재하지_않는_일반_구성원의_활동정보는_수정할_수_없다() throws Exception {
+		EditMemberSemesterRequest request = editMemberSemesterRequest(null);
+
+		mockMvc.perform(patch("/admin/members/semester/{memberActivityId}", Long.MAX_VALUE)
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(MemberErrorCode.NOT_FOUND_MEMBER_SEMESTER_ACTIVITY.getCode()));
+	}
+
+	@Test
 	@DisplayName("일반 구성원의 행사 참여 상태를 수정한다")
 	void 일반_구성원의_행사_참여_상태를_수정한다() throws Exception {
 		// given
@@ -514,6 +559,14 @@ class AdminMemberSemesterControllerTest {
 			"memo",
 			List.of("HEALTHCARE", "FINTECH", "AI"),
 			Region.SEOUL
+		);
+	}
+
+	private EditMemberSemesterRequest editMemberSemesterRequest(Long teamId) {
+		return new EditMemberSemesterRequest(
+			"수정구성원", null, null, JobFamily.FE, RecruitTypeDetail.REFILL, ActivityStatus.COMPLETED,
+			CareerDetails.JOB_SEEKER, null, teamId, ExperiencePeriod.THREE_TO_FOUR, "수정된 활동정보",
+			List.of("커머스", "핀테크"), Region.BUSAN, "SEMESTER-EDIT", "https://review/1", null
 		);
 	}
 

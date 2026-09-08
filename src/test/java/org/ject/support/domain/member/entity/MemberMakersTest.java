@@ -17,7 +17,7 @@ class MemberMakersTest {
 		// given
 		MemberMakers memberMakers = makersActivity().build().getMemberMakers();
 		// when
-		memberMakers.edit(MakersTeam.TEAM_2, null, null, null, null, null, "수정된 회사", null, null);
+		memberMakers.update(MakersTeam.TEAM_2, null, null, null, null, null, "수정된 회사", null, null);
 
 		// then
 		assertThat(memberMakers.getMakersTeam()).isEqualTo(MakersTeam.TEAM_2);
@@ -33,7 +33,7 @@ class MemberMakersTest {
 		// given
 		MemberMakers memberMakers = makersActivity().build().getMemberMakers();
 		// when
-		memberMakers.edit(
+		memberMakers.update(
 			MakersTeam.TEAM_2, Availability.UNAVAILABLE, Availability.CONSIDER_LATER,
 			Availability.AVAILABLE_BY_TOPIC, CareerLevel.SENIOR, "Kotlin", "젝트", "아키텍처", "MK-002");
 

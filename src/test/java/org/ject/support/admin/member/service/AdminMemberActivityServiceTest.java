@@ -3,6 +3,7 @@ package org.ject.support.admin.member.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.ject.support.domain.member.fixture.MakersActivityFixture.makersActivity;
+import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 import static org.mockito.BDDMockito.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.never;
@@ -36,6 +37,7 @@ import org.ject.support.domain.member.MemberType;
 import org.ject.support.domain.member.ParticipationStatus;
 import org.ject.support.admin.member.dto.command.EditMemberActivityCommand;
 import org.ject.support.admin.member.dto.command.EditMemberMakersCommand;
+import org.ject.support.admin.member.dto.command.EditMemberSemesterCommand;
 import org.ject.support.admin.member.dto.command.EditMemberSupportersActivityCommand;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.entity.MemberActivity;
@@ -104,6 +106,114 @@ class AdminMemberActivityServiceTest {
 			.isInstanceOf(MemberException.class)
 			.extracting("errorCode")
 			.isEqualTo(MemberErrorCode.NOT_FOUND_MEMBER_SEMESTER_ACTIVITY);
+	}
+
+	@Test
+	@DisplayName("일반 구성원의 활동정보를 수정한다")
+	void 일반_구성원의_활동정보를_수정한다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().build();
+		EditMemberActivityCommand activityCommand = new EditMemberActivityCommand(
+			JobFamily.FE, CareerDetails.JOB_SEEKER, RecruitTypeDetail.REFILL,
+			ExperiencePeriod.THREE_TO_FOUR, "수정된 활동정보");
+		EditMemberSemesterCommand semesterCommand = new EditMemberSemesterCommand(
+			null, null, "SEMESTER-EDIT", "https://review/1", null);
+
+		// when
+		adminMemberActivityService.editMemberSemesterActivity(
+			memberActivity, activityCommand, semesterCommand, ActivityStatus.COMPLETED);
+
+		// then
+		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.FE);
+		assertThat(memberActivity.getCareerDetails()).isEqualTo(CareerDetails.JOB_SEEKER);
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.COMPLETED);
+		assertThat(memberActivity.getMemberSemester().getCertNumber()).isEqualTo("SEMESTER-EDIT");
+	}
+
+	@Test
+	@DisplayName("일반 구성원이 이미 속한 기수로 변경하면 현재 활동을 수정한다")
+	void 일반_구성원이_이미_속한_기수로_변경하면_현재_활동을_수정한다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().semesterId(1L).teamId(1L).build();
+		EditMemberSemesterCommand semesterCommand = new EditMemberSemesterCommand(1L, 2L, null, null, null);
+
+		// when
+		adminMemberActivityService.editMemberSemesterActivity(
+			memberActivity, emptyActivityCommand(), semesterCommand, null);
+
+		// then
+		assertThat(memberActivity.getMemberSemester().getSemesterId()).isEqualTo(1L);
+		assertThat(memberActivity.getMemberSemester().getTeamId()).isEqualTo(2L);
+		verify(memberActivityRepository, never()).existsSemesterActivity(any(), any(), any());
+	}
+
+	@Test
+	@DisplayName("동일한 구성원이 이미 등록된 기수로 변경할 수 없다")
+	void 동일한_구성원이_이미_등록된_기수로_변경할_수_없다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().semesterId(1L).build();
+		EditMemberSemesterCommand semesterCommand = new EditMemberSemesterCommand(2L, null, null, null, null);
+		given(memberActivityRepository.existsSemesterActivity(
+			memberActivity.getMemberId(), MemberType.SEMESTER, 2L)).willReturn(true);
+
+		// when
+		Throwable throwable = catchThrowable(() -> adminMemberActivityService.editMemberSemesterActivity(
+			memberActivity, emptyActivityCommand(), semesterCommand, null));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.ALREADY_EXIST_MEMBER_SEMESTER_ACTIVITY);
+		assertThat(memberActivity.getMemberSemester().getSemesterId()).isEqualTo(1L);
+	}
+
+	@ParameterizedTest
+	@EnumSource(value = ActivityStatus.class, names = {"ACTIVE", "COMPLETED", "WITHDRAWN"})
+	@DisplayName("일반 구성원의 활동 상태를 허용된 상태로 변경한다")
+	void 일반_구성원의_활동_상태를_허용된_상태로_변경한다(ActivityStatus activityStatus) {
+		// given
+		MemberActivity memberActivity = semesterActivity().activityStatus(ActivityStatus.WITHDRAWN).build();
+
+		// when
+		adminMemberActivityService.editMemberSemesterActivity(
+			memberActivity, emptyActivityCommand(), emptySemesterCommand(), activityStatus);
+
+		// then
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(activityStatus);
+	}
+
+	@Test
+	@DisplayName("일반 구성원에게 허용되지 않는 활동 상태로 변경할 수 없다")
+	void 일반_구성원에게_허용되지_않는_활동_상태로_변경할_수_없다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().build();
+
+		// when
+		Throwable throwable = catchThrowable(() -> adminMemberActivityService.editMemberSemesterActivity(
+			memberActivity, emptyActivityCommand(), emptySemesterCommand(), ActivityStatus.ENDED));
+
+		// then
+		assertThat(throwable)
+			.isInstanceOf(MemberException.class)
+			.extracting("errorCode")
+			.isEqualTo(MemberErrorCode.INVALID_ACTIVITY_STATUS);
+	}
+
+	@Test
+	@DisplayName("현재 활동 상태와 동일하면 기존 상태를 유지한다")
+	void 현재_활동_상태와_동일하면_기존_상태를_유지한다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().activityStatus(ActivityStatus.ACTIVE).build();
+
+		// when
+		adminMemberActivityService.editMemberSemesterActivity(
+			memberActivity, emptyActivityCommand(), emptySemesterCommand(), ActivityStatus.ACTIVE);
+
+		// then
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.ACTIVE);
+		verify(memberActivityRepository, never()).existsActiveMakersActivityByMemberId(any());
+		verify(memberActivityRepository, never()).existsActiveSupportersActivityByMemberId(any());
 	}
 
 	@Test
@@ -234,6 +344,10 @@ class AdminMemberActivityServiceTest {
 
 	private EditMemberActivityCommand emptyActivityCommand() {
 		return new EditMemberActivityCommand(null, null, null, null, null);
+	}
+
+	private EditMemberSemesterCommand emptySemesterCommand() {
+		return new EditMemberSemesterCommand(null, null, null, null, null);
 	}
 
 	private EditMemberMakersCommand emptyMakersCommand() {

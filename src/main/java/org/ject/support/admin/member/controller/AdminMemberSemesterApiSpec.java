@@ -3,6 +3,7 @@ package org.ject.support.admin.member.controller;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
+import org.ject.support.admin.member.dto.request.EditMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.dto.response.MemberSemesterResponse;
@@ -36,6 +37,12 @@ public interface AdminMemberSemesterApiSpec {
 	CursorPageResponse<SearchMemberSemesterResponse> searchAdminMemberSemesterList(
 		@ModelAttribute @Valid MemberSemesterSearchCondition request
 	);
+
+	@Operation(
+		summary = "일반 구성원 수정",
+		description = "일반 구성원의 기본정보와 활동정보를 수정합니다."
+	)
+	void editAdminMemberSemester(@PathVariable Long memberActivityId, @RequestBody @Valid EditMemberSemesterRequest request);
 
 	@Operation(
 		summary = "일반 구성원 행사 참여 상태 수정",

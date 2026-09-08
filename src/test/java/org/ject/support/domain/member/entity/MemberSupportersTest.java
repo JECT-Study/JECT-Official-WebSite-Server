@@ -19,7 +19,7 @@ class MemberSupportersTest {
 		MemberSupporters memberSupporters = supportersActivity().getMemberSupporters();
 
 		// when
-		memberSupporters.edit("SP-002");
+		memberSupporters.update("SP-002");
 
 		// then
 		assertThat(memberSupporters.getActivityCertNumber()).isEqualTo("SP-002");
@@ -32,7 +32,7 @@ class MemberSupportersTest {
 		MemberSupporters memberSupporters = supportersActivity().getMemberSupporters();
 
 		// when
-		memberSupporters.edit(null);
+		memberSupporters.update(null);
 
 		// then
 		assertThat(memberSupporters.getActivityCertNumber()).isEqualTo("SP-001");

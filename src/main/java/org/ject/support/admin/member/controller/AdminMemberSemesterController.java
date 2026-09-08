@@ -3,6 +3,7 @@ package org.ject.support.admin.member.controller;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
+import org.ject.support.admin.member.dto.request.EditMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.dto.response.MemberSemesterResponse;
@@ -50,6 +51,13 @@ public class AdminMemberSemesterController implements AdminMemberSemesterApiSpec
 	public CursorPageResponse<SearchMemberSemesterResponse> searchAdminMemberSemesterList(
 		@ParameterObject @ModelAttribute @Valid MemberSemesterSearchCondition request) {
 		return adminMemberUsecase.searchMemberSemester(request);
+	}
+
+	// 일반 구성원 편집
+	@Override
+	@PatchMapping("/{memberActivityId}")
+	public void editAdminMemberSemester(@PathVariable Long memberActivityId, @RequestBody @Valid EditMemberSemesterRequest request) {
+		adminMemberUsecase.editMemberSemester(memberActivityId, request);
 	}
 
 	// 일반 구성원 행사 참여 상태 수정
