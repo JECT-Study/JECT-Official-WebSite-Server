@@ -13,10 +13,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 import org.ject.support.domain.base.BaseTimeEntity;
 
 @Entity
 @Getter
+@SQLDelete(sql = "UPDATE semester_event SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
 @Builder(access = AccessLevel.PRIVATE)
 @Table(name = "semester_event")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -40,6 +44,10 @@ public class SemesterEvent extends BaseTimeEntity {
     @Column(nullable = false)
     @Builder.Default
     private Boolean isRequired = true;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Boolean isDeleted = false;
 
     // 기수별 행사 생성
     public static SemesterEvent create(
