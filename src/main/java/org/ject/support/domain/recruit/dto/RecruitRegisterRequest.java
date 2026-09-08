@@ -22,6 +22,9 @@ public record RecruitRegisterRequest(
         @Future(message = "모집 종료일은 현재 시각보다 이후여야 합니다.")
         LocalDateTime endDate,
 
+        @Size(max = 500, message = "모집공고 요약은 500자 이하로 입력해주세요.")
+        String summary,
+
         @Size(max = 100000, message = "모집 정보는 100,000자 이하여야 합니다.")
         String recruitInformation,
 
@@ -31,7 +34,7 @@ public record RecruitRegisterRequest(
         List<@Valid RecruitFaqRequest> faqs
 ) {
     public RecruitRegisterRequest(JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate) {
-        this(jobFamily, startDate, endDate, null, null, List.of());
+        this(jobFamily, startDate, endDate, null, null, null, List.of());
     }
 
     public Recruit toEntity(Semester semester) {
@@ -40,6 +43,7 @@ public record RecruitRegisterRequest(
                 .jobFamily(this.jobFamily)
                 .startDate(this.startDate)
                 .endDate(this.endDate)
+                .summary(this.summary)
                 .recruitInformation(this.recruitInformation)
                 .notice(this.notice)
                 .faqs(RecruitFaqRequest.toDomains(this.faqs))

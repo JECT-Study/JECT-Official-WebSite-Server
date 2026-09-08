@@ -80,6 +80,7 @@ public class RecruitService implements RecruitUsecase {
                 request.jobFamily(),
                 request.startDate(),
                 request.endDate(),
+                request.summary(),
                 request.recruitInformation(),
                 request.notice(),
                 request.getFaqsOrNull()

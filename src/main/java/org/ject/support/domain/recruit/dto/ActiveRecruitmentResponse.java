@@ -17,7 +17,8 @@ public record ActiveRecruitmentResponse(Long recruitId,
                                         JobFamily jobFamily,
                                         String jobFamilyDescription,
                                         LocalDateTime startDate,
-                                        LocalDateTime endDate) {
+                                        LocalDateTime endDate,
+                                        String summary) {
 
     public static ActiveRecruitmentResponse from(Recruit recruit) {
         RecruitType recruitType = toPublicRecruitType(recruit.getRecruitType());
@@ -33,7 +34,8 @@ public record ActiveRecruitmentResponse(Long recruitId,
                 recruit.getJobFamily(),
                 recruit.getJobFamily().getDescription(),
                 recruit.getStartDate(),
-                recruit.getEndDate()
+                recruit.getEndDate(),
+                recruit.getSummary()
         );
     }
 
