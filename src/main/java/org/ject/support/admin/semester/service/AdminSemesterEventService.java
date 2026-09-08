@@ -71,6 +71,17 @@ public class AdminSemesterEventService {
 
     }
 
+    // 선택한 기수의 행사 삭제
+    @Transactional
+    public void deleteEvent(Long semesterId, Long semesterEventId) {
+        validateSemester(semesterId);
+
+        SemesterEvent semesterEvent = semesterEventRepository.findByIdAndSemesterId(semesterEventId, semesterId)
+                .orElseThrow(() -> new SemesterException(NOT_FOUND_SEMESTER_EVENT));
+
+        semesterEventRepository.delete(semesterEvent);
+    }
+
     // 존재하는 기수인지 검증
     private void validateSemester(Long semesterId) {
         if (!semesterRepository.existsById(semesterId)) {
