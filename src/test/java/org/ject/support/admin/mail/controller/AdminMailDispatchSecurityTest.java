@@ -2,11 +2,13 @@ package org.ject.support.admin.mail.controller;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
+import org.ject.support.admin.mail.service.MailDispatchQueryService;
 import org.ject.support.admin.mail.service.MailDispatchUseCase;
 import org.ject.support.testconfig.ApplicationPeriodTest;
 import org.ject.support.testconfig.AuthenticatedUser;
@@ -31,6 +33,9 @@ class AdminMailDispatchSecurityTest extends ApplicationPeriodTest {
     @MockitoBean
     private MailDispatchUseCase mailDispatchUseCase;
 
+    @MockitoBean
+    private MailDispatchQueryService mailDispatchQueryService;
+
     @Test
     @DisplayName("인증되지 않은 사용자는 단체 메일을 발송할 수 없다")
     void 인증되지_않은_사용자는_단체_메일을_발송할_수_없다() throws Exception {
@@ -38,6 +43,21 @@ class AdminMailDispatchSecurityTest extends ApplicationPeriodTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Idempotency-Key", "dispatch-key")
                         .content(validRequest()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("인증되지 않은 사용자는 발송 작업을 조회할 수 없다")
+    void 인증되지_않은_사용자는_발송_작업을_조회할_수_없다() throws Exception {
+        mockMvc.perform(get("/admin/mails/dispatches"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @AuthenticatedUser(isAdmin = false)
+    @DisplayName("일반 사용자는 발송 작업을 조회할 수 없다")
+    void 일반_사용자는_발송_작업을_조회할_수_없다() throws Exception {
+        mockMvc.perform(get("/admin/mails/dispatches"))
                 .andExpect(status().isUnauthorized());
     }
 
