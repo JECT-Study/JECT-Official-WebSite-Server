@@ -3,6 +3,7 @@ package org.ject.support.domain.recruit.repository;
 import jakarta.persistence.EntityManager;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.RecruitFaq;
 import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
@@ -56,6 +57,30 @@ class RecruitRepositoryTest {
 
         // then
         assertThat(semesterId).isEqualTo(savedSemester.getId());
+    }
+
+    @Test
+    void 모집공고의_상세정보와_안내사항_및_FAQ를_저장하고_조회한다() {
+        // given
+        Semester semester = semesterRepository.save(Semester.builder().name("5기").isRecruiting(true).build());
+        Recruit savedRecruit = recruitRepository.saveAndFlush(Recruit.builder()
+                .semester(semester)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
+                .jobFamily(FE)
+                .recruitInformation("<h2>모집 정보</h2>")
+                .notice("<h2>안내사항</h2>")
+                .faqs(List.of(RecruitFaq.create("지원 자격이 있나요?", "<p>누구나 지원할 수 있습니다.</p>")))
+                .build());
+        entityManager.clear();
+
+        // when
+        Recruit result = recruitRepository.findByIdWithSemester(savedRecruit.getId()).orElseThrow();
+
+        // then
+        assertThat(result.getRecruitInformation()).isEqualTo("<h2>모집 정보</h2>");
+        assertThat(result.getNotice()).isEqualTo("<h2>안내사항</h2>");
+        assertThat(result.getFaqs()).containsExactly(RecruitFaq.create("지원 자격이 있나요?", "<p>누구나 지원할 수 있습니다.</p>"));
     }
 
     @Test

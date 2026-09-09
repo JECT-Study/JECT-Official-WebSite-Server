@@ -2,6 +2,7 @@ package org.ject.support.domain.recruit.service;
 
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.recruit.dto.RecruitCanceledEvent;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -15,6 +16,7 @@ public class RecruitCanceledEventHandler {
     /**
      * 모집 취소 시 호출됨
      */
+    @CacheEvict(value = "recruit-detail", key = "#event.recruitId")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleRecruitCanceled(RecruitCanceledEvent event) {
         recruitFlagService.deleteRecruitFlag(event.recruitId(), event.jobFamily());
