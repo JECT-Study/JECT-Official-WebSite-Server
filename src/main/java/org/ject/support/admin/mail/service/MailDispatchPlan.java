@@ -7,6 +7,7 @@ public record MailDispatchPlan(
         Long scenarioId,
         Long recruitId,
         Long requestedByAdminId,
+        String idempotencyKey,
         String subjectTemplate,
         String bodyTemplate,
         Map<String, String> inputVariables,
