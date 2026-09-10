@@ -1,6 +1,7 @@
 package org.ject.support.external.email.service;
 
 import org.ject.support.base.UnitTestSupport;
+import org.ject.support.external.email.config.EmailAuthBypassProperties;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.RateLimitException;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,9 @@ class EmailAuthServiceTest extends UnitTestSupport {
     private RedisTemplate<String, String> redisTemplate;
 
     @Mock
+    private EmailAuthBypassProperties emailAuthBypassProperties;
+
+    @Mock
     private ValueOperations<String, String> valueOperations;
 
     @Test
@@ -38,6 +42,7 @@ class EmailAuthServiceTest extends UnitTestSupport {
         // given
         String email = "test@example.com";
 
+        given(emailAuthBypassProperties.isEnabledFor(email)).willReturn(false);
         given(redisTemplate.hasKey(anyString())).willReturn(false);
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
@@ -49,6 +54,23 @@ class EmailAuthServiceTest extends UnitTestSupport {
         verify(valueOperations).set(eq("email:rate_limit:" + email), eq("1"), eq(Duration.ofMinutes(3)));
         // 2. 이메일 발송이 호출되었는지 검증
         verify(emailSendService).sendTemplatedEmail(eq(EmailTemplate.AUTH_CODE), eq(email), any());
+    }
+
+    @Test
+    void 개발용_인증_이메일은_메일을_발송하지_않고_고정_인증번호를_저장한다() {
+        // given
+        String email = "testbot@ject.kr";
+        given(emailAuthBypassProperties.isEnabledFor(email)).willReturn(true);
+        given(emailAuthBypassProperties.code()).willReturn("000000");
+        given(redisTemplate.opsForValue()).willReturn(valueOperations);
+
+        // when
+        emailAuthService.sendAuthCode(EmailTemplate.AUTH_CODE, email);
+
+        // then
+        verify(valueOperations).set(email, "000000", Duration.ofMinutes(5));
+        verify(emailSendService, never()).sendTemplatedEmail(any(), any(), any());
+        verify(redisTemplate, never()).hasKey(anyString());
     }
 
     @Test
