@@ -3,3 +3,7 @@ spring:
     name: support
   profiles:
     active: local
+
+email-auth:
+  bypass:
+    enabled: false
