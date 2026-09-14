@@ -228,6 +228,24 @@ public class MemberActivity extends BaseTimeEntity {
             careerLevel, skills, company, expertTopics, activityCertNumber);
     }
 
+    // 운영 서포터즈 구성원 활동정보 편집
+    public void editSupportersActivity(JobFamily jobFamily, RecruitTypeDetail recruitTypeDetail,
+        LocalDate startDate, LocalDate endDate, String memo, String activityCertNumber) {
+        if (jobFamily != null) {
+            validateJobFamily(memberType, jobFamily);
+        }
+        LocalDate nextStartDate = startDate != null ? startDate : this.startDate;
+        LocalDate nextEndDate = endDate != null ? endDate : this.endDate;
+        validateActivityPeriod(nextStartDate, nextEndDate);
+
+        if (jobFamily != null) this.jobFamily = jobFamily;
+        if (recruitTypeDetail != null) this.recruitTypeDetail = recruitTypeDetail;
+        if (startDate != null) this.startDate = startDate;
+        if (endDate != null) this.endDate = endDate;
+        if (memo != null) this.memo = memo;
+        memberSupporters.edit(activityCertNumber);
+    }
+
     public void activate() {
         changeActivityStatus(ActivityStatus.ACTIVE);
     }

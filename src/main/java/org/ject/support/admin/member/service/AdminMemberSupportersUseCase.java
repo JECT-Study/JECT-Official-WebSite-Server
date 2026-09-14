@@ -4,9 +4,12 @@ import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.MemberSupportersDetailProjection;
 import org.ject.support.admin.member.dto.projection.MemberSupportersListProjection;
+import org.ject.support.admin.member.dto.command.EditMemberCommand;
+import org.ject.support.admin.member.dto.command.EditMemberSupportersActivityCommand;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
+import org.ject.support.admin.member.dto.request.UpdateMemberSupportersRequest;
 import org.ject.support.admin.member.dto.response.MemberSupportersDetailResponse;
 import org.ject.support.admin.member.dto.response.MemberSupportersListResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
@@ -53,6 +56,18 @@ public class AdminMemberSupportersUseCase {
 	public MemberSupportersDetailResponse getMemberSupportersDetail(Long memberActivityId) {
 		MemberSupportersDetailProjection projection = adminMemberActivityService.getMemberSupportersDetail(memberActivityId);
 		return MemberSupportersDetailResponse.from(projection);
+	}
+
+	// 운영 서포터즈 구성원 정보 편집
+	@Transactional
+	public void editMemberSupporters(Long memberActivityId, UpdateMemberSupportersRequest request) {
+		Long memberId = adminMemberActivityService.editMemberSupportersActivity(
+			memberActivityId,
+			EditMemberSupportersActivityCommand.from(request),
+			request.activityCertNumber(),
+			request.activityStatus()
+		);
+		adminMemberService.editMember(memberId, EditMemberCommand.from(request));
 	}
 
 	// 운영 서포터즈 구성원 단건 삭제
