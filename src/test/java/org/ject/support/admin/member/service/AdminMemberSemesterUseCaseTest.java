@@ -7,11 +7,13 @@ import java.util.List;
 import java.util.Set;
 
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
+import org.ject.support.admin.member.dto.projection.MemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
 import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
+import org.ject.support.admin.member.dto.response.MemberSemesterResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.member.ActivityStatus;
@@ -23,9 +25,12 @@ import org.ject.support.domain.member.ParticipationStatus;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.entity.MemberSemester;
+import org.ject.support.domain.member.entity.EventParticipation;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
+import org.ject.support.domain.recruit.domain.SemesterEvent;
+import org.ject.support.domain.recruit.domain.SemesterEventType;
 import org.ject.support.domain.recruit.exception.SemesterErrorCode;
 import org.ject.support.domain.recruit.exception.SemesterException;
 import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
@@ -108,6 +113,84 @@ class AdminMemberSemesterUseCaseTest {
 			ExperiencePeriod.ONE_TO_TWO,
 			ActivityStatus.ACTIVE
 		);
+	}
+
+	@Test
+	@DisplayName("일반 구성원의 행사와 만족도 조사를 참여 상태와 함께 구분해 조회한다")
+	void 일반_구성원의_행사와_만족도_조사를_참여_상태와_함께_구분해_조회한다() {
+		// given
+		MemberSemesterProjection projection = memberSemesterProjection(2L);
+		SemesterEvent event = semesterEvent(10L, SemesterEventType.EVENT, "온보딩");
+		SemesterEvent survey = semesterEvent(20L, SemesterEventType.SURVEY, "만족도 조사");
+		EventParticipation participation = EventParticipation.create(10L, ParticipationStatus.ATTENDED);
+		given(adminMemberActivityService.getMemberSemester(1L)).willReturn(projection);
+		given(semesterInquiryUsecase.getSemesterEvents(2L)).willReturn(List.of(event, survey));
+		given(adminMemberActivityService.getEventParticipations(1L)).willReturn(List.of(participation));
+
+		// when
+		MemberSemesterResponse response = adminMemberSemesterUseCase.getMemberSemester(1L);
+
+		// then
+		assertThat(response.events()).singleElement().satisfies(result -> {
+			assertThat(result.semesterEventId()).isEqualTo(10L);
+			assertThat(result.participationStatus()).isEqualTo(ParticipationStatus.ATTENDED);
+		});
+		assertThat(response.surveys()).singleElement().satisfies(result -> {
+			assertThat(result.semesterEventId()).isEqualTo(20L);
+			assertThat(result.participationStatus()).isNull();
+		});
+	}
+
+	@Test
+	@DisplayName("참여 이력이 없는 행사는 미지정 상태로 조회한다")
+	void 참여_이력이_없는_행사는_미지정_상태로_조회한다() {
+		// given
+		MemberSemesterProjection projection = memberSemesterProjection(2L);
+		SemesterEvent event = semesterEvent(10L, SemesterEventType.EVENT, "온보딩");
+		given(adminMemberActivityService.getMemberSemester(1L)).willReturn(projection);
+		given(semesterInquiryUsecase.getSemesterEvents(2L)).willReturn(List.of(event));
+		given(adminMemberActivityService.getEventParticipations(1L)).willReturn(List.of());
+
+		// when
+		MemberSemesterResponse response = adminMemberSemesterUseCase.getMemberSemester(1L);
+
+		// then
+		assertThat(response.events()).singleElement()
+			.extracting("participationStatus")
+			.isNull();
+	}
+
+	@Test
+	@DisplayName("팀이 없는 일반 구성원은 팀 정보 없이 조회한다")
+	void 팀이_없는_일반_구성원은_팀_정보_없이_조회한다() {
+		// given
+		MemberSemesterProjection projection = memberSemesterProjection(null);
+		given(adminMemberActivityService.getMemberSemester(1L)).willReturn(projection);
+		given(semesterInquiryUsecase.getSemesterEvents(2L)).willReturn(List.of());
+		given(adminMemberActivityService.getEventParticipations(1L)).willReturn(List.of());
+
+		// when
+		MemberSemesterResponse response = adminMemberSemesterUseCase.getMemberSemester(1L);
+
+		// then
+		assertThat(response.team()).isNull();
+	}
+
+	private MemberSemesterProjection memberSemesterProjection(Long teamId) {
+		return new MemberSemesterProjection(
+			1L, "김젝트", "ject@ject.kr", "01012345678", Region.SEOUL, List.of("커머스"),
+			JobFamily.BE, RecruitTypeDetail.REGULAR, CareerDetails.EMPLOYEE, ActivityStatus.ACTIVE,
+			ExperiencePeriod.ONE_TO_TWO, "memo", 2L, "2기", teamId, teamId == null ? null : "1팀",
+			null, null, null
+		);
+	}
+
+	private SemesterEvent semesterEvent(Long id, SemesterEventType type, String name) {
+		SemesterEvent semesterEvent = mock(SemesterEvent.class);
+		given(semesterEvent.getId()).willReturn(id);
+		given(semesterEvent.getType()).willReturn(type);
+		given(semesterEvent.getName()).willReturn(name);
+		return semesterEvent;
 	}
 
 	@Test

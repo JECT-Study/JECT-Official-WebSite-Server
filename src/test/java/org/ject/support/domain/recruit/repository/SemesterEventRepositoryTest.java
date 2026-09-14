@@ -20,6 +20,21 @@ class SemesterEventRepositoryTest {
     @Autowired
     private SemesterEventRepository semesterEventRepository;
 
+	@Test
+	@DisplayName("기수에 등록된 행사와 만족도 조사를 등록 순서대로 조회한다")
+	void 기수에_등록된_행사와_만족도_조사를_등록_순서대로_조회한다() {
+		// given
+		SemesterEvent event = semesterEventRepository.save(SemesterEvent.create(4L, EVENT, "오리엔테이션"));
+		SemesterEvent survey = semesterEventRepository.save(SemesterEvent.create(4L, SURVEY, "만족도 조사"));
+		semesterEventRepository.save(SemesterEvent.create(5L, EVENT, "다른 기수 행사"));
+
+		// when
+		List<SemesterEvent> result = semesterEventRepository.findAllBySemesterIdOrderByIdAsc(4L);
+
+		// then
+		assertThat(result).containsExactly(event, survey);
+	}
+
     @Test
     @DisplayName("기수와 행사 유형으로 행사 목록을 등록 순서대로 조회한다")
     void 기수와_행사_유형으로_행사_목록을_등록_순서대로_조회한다() {

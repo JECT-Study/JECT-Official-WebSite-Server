@@ -1,5 +1,8 @@
 package org.ject.support.domain.recruit.service;
 
+import java.util.List;
+
+import org.ject.support.domain.recruit.domain.SemesterEvent;
 import org.ject.support.domain.recruit.dto.SemesterResponse;
 import org.ject.support.domain.recruit.dto.SemesterResponses;
 
@@ -12,6 +15,8 @@ public interface SemesterInquiryUsecase {
     SemesterResponses getAllSemesters();
 
     SemesterResponse getSemester(Long id);
+
+	List<SemesterEvent> getSemesterEvents(Long semesterId);
 
 	void validateSemesterEvent(Long semesterId, Long semesterEventId);
 
