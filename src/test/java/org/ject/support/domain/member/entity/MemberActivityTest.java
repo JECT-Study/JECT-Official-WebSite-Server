@@ -361,12 +361,87 @@ class MemberActivityTest {
 	}
 
 	@Test
+	@DisplayName("일반 구성원의 활동정보를 수정한다")
+	void 일반_구성원의_활동정보를_수정한다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().build();
+
+		// when
+		memberActivity.updateSemesterActivity(
+			JobFamily.FE, CareerDetails.JOB_SEEKER, RecruitTypeDetail.REFILL,
+			ExperiencePeriod.THREE_TO_FOUR, "수정된 활동정보", "SEMESTER-EDIT",
+			"https://review/1", "https://review/2");
+
+		// then
+		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.FE);
+		assertThat(memberActivity.getCareerDetails()).isEqualTo(CareerDetails.JOB_SEEKER);
+		assertThat(memberActivity.getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REFILL);
+		assertThat(memberActivity.getMemberSemester().getCertNumber()).isEqualTo("SEMESTER-EDIT");
+	}
+
+	@Test
+	@DisplayName("입력하지 않은 일반 구성원 활동정보는 기존 값을 유지한다")
+	void 입력하지_않은_일반_구성원_활동정보는_기존_값을_유지한다() {
+		// given
+		MemberActivity memberActivity = semesterActivity().build();
+		JobFamily jobFamily = memberActivity.getJobFamily();
+		Long semesterId = memberActivity.getMemberSemester().getSemesterId();
+
+		// when
+		memberActivity.updateSemesterActivity(null, null, null, null, null, null, null, null);
+
+		// then
+		assertThat(memberActivity.getJobFamily()).isEqualTo(jobFamily);
+		assertThat(memberActivity.getMemberSemester().getSemesterId()).isEqualTo(semesterId);
+	}
+
+	@Test
+	@DisplayName("일반 구성원의 기수를 변경한다")
+	void 일반_구성원의_기수를_변경한다() {
+		MemberActivity memberActivity = semesterActivity().semesterId(1L).build();
+
+		memberActivity.changeSemester(2L);
+
+		assertThat(memberActivity.getMemberSemester().getSemesterId()).isEqualTo(2L);
+	}
+
+	@Test
+	@DisplayName("일반 구성원의 팀을 변경한다")
+	void 일반_구성원의_팀을_변경한다() {
+		MemberActivity memberActivity = semesterActivity().teamId(1L).build();
+
+		memberActivity.changeTeam(2L);
+
+		assertThat(memberActivity.getMemberSemester().getTeamId()).isEqualTo(2L);
+	}
+
+	@Test
+	@DisplayName("일반 구성원의 활동을 완주 처리한다")
+	void 일반_구성원의_활동을_완주_처리한다() {
+		MemberActivity memberActivity = semesterActivity().build();
+
+		memberActivity.complete();
+
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.COMPLETED);
+	}
+
+	@Test
+	@DisplayName("일반 구성원의 활동을 탈퇴 처리한다")
+	void 일반_구성원의_활동을_탈퇴_처리한다() {
+		MemberActivity memberActivity = semesterActivity().build();
+
+		memberActivity.withdraw();
+
+		assertThat(memberActivity.getActivityStatus()).isEqualTo(ActivityStatus.WITHDRAWN);
+	}
+
+	@Test
 	@DisplayName("입력한 활동정보만 변경되고 입력하지 않은 활동정보는 유지된다")
 	void 입력한_활동정보만_변경되고_입력하지_않은_활동정보는_유지된다() {
 		// given
 		MemberActivity memberActivity = makersActivity().build();
 		// when
-		memberActivity.edit(JobFamily.BE, null, RecruitTypeDetail.REFILL, null, null);
+		memberActivity.update(JobFamily.BE, null, RecruitTypeDetail.REFILL, null, null);
 
 		// then
 		assertThat(memberActivity.getJobFamily()).isEqualTo(JobFamily.BE);
@@ -382,7 +457,7 @@ class MemberActivityTest {
 		// given
 		MemberActivity memberActivity = makersActivity().build();
 		// when
-		Throwable throwable = catchThrowable(() -> memberActivity.edit(JobFamily.OPS, null, null, null, null));
+		Throwable throwable = catchThrowable(() -> memberActivity.update(JobFamily.OPS, null, null, null, null));
 
 		// then
 		assertThat(throwable)
@@ -397,7 +472,7 @@ class MemberActivityTest {
 		// given
 		MemberActivity memberActivity = makersActivity().build();
 		// when
-		memberActivity.editMakersActivity(
+		memberActivity.updateMakersActivity(
 			JobFamily.BE, CareerDetails.JOB_SEEKER, null, null, "수정된 메모",
 			MakersTeam.TEAM_2, null, null, null, null, null, "수정된 회사", null, null);
 
@@ -461,7 +536,7 @@ class MemberActivityTest {
 		// given
 		MemberActivity memberActivity = supportersActivity();
 		// when
-		memberActivity.editSupportersActivity(
+		memberActivity.updateSupportersActivity(
 			JobFamily.INFRA, null, java.time.LocalDate.of(2026, 2, 1), null, "수정된 메모", null);
 
 		// then
@@ -479,7 +554,7 @@ class MemberActivityTest {
 		MemberActivity memberActivity = supportersActivity();
 		// when
 		Throwable throwable = catchThrowable(() ->
-			memberActivity.editSupportersActivity(JobFamily.FE, null, null, null, null, null));
+			memberActivity.updateSupportersActivity(JobFamily.FE, null, null, null, null, null));
 
 		// then
 		assertThat(throwable)
@@ -495,7 +570,7 @@ class MemberActivityTest {
 		MemberActivity memberActivity = supportersActivity();
 		// when
 		Throwable throwable = catchThrowable(() ->
-			memberActivity.editSupportersActivity(
+			memberActivity.updateSupportersActivity(
 				null, null, null, java.time.LocalDate.of(2025, 12, 31), null, null));
 
 		// then

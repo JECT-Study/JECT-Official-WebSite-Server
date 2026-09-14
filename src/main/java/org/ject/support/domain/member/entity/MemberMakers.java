@@ -92,8 +92,8 @@ public class MemberMakers extends BaseTimeEntity {
             .build();
     }
 
-    // 전달된 메이커스팀 상세정보 편집
-    public void edit(MakersTeam makersTeam, Availability mentoringAvailability,
+    // 전달된 메이커스팀 상세정보 수정
+    public void update(MakersTeam makersTeam, Availability mentoringAvailability,
         Availability projectSupplementAvailability, Availability speakerAvailability, CareerLevel careerLevel,
         String skills, String company, String expertTopics, String activityCertNumber) {
         if (makersTeam != null) this.makersTeam = makersTeam;

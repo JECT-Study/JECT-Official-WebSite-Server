@@ -38,7 +38,7 @@ class MemberTest {
 		// given
 		Member member = member().build();
 		// when
-		member.edit("수정된이름", null, null, Region.BUSAN, null);
+		member.update("수정된이름", null, null, Region.BUSAN, null);
 
 		// then
 		assertThat(member.getName()).isEqualTo("수정된이름");
@@ -54,7 +54,7 @@ class MemberTest {
 		// given
 		Member member = member().interestedDomains(List.of("커머스")).build();
 		// when
-		member.edit(null, null, null, null, List.of("핀테크", "헬스케어"));
+		member.update(null, null, null, null, List.of("핀테크", "헬스케어"));
 
 		// then
 		assertThat(member.getInterestedDomains()).containsExactly("핀테크", "헬스케어");
