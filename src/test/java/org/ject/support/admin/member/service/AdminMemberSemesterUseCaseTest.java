@@ -9,6 +9,7 @@ import java.util.Set;
 import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjection;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
+import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.response.SearchMemberSemesterResponse;
 import org.ject.support.admin.member.dto.result.MemberPageResult;
@@ -18,7 +19,10 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.ParticipationStatus;
 import org.ject.support.domain.member.Region;
+import org.ject.support.domain.member.entity.MemberActivity;
+import org.ject.support.domain.member.entity.MemberSemester;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
@@ -104,6 +108,83 @@ class AdminMemberSemesterUseCaseTest {
 			ExperiencePeriod.ONE_TO_TWO,
 			ActivityStatus.ACTIVE
 		);
+	}
+
+	@Test
+	@DisplayName("일반 구성원이 속한 기수의 행사 참여 상태를 수정한다")
+	void 일반_구성원이_속한_기수의_행사_참여_상태를_수정한다() {
+		// given
+		MemberActivity memberActivity = memberActivityWithSemester(1L);
+		EditEventParticipationRequest request = new EditEventParticipationRequest(2L, ParticipationStatus.ATTENDED);
+		given(adminMemberActivityService.getMemberSemesterActivityWithParticipations(3L)).willReturn(memberActivity);
+
+		// when
+		adminMemberSemesterUseCase.editEventParticipation(3L, request);
+
+		// then
+		verify(semesterInquiryUsecase).validateSemesterEvent(1L, request.semesterEventId());
+		verify(adminMemberActivityService).editEventParticipation(
+			memberActivity, request.semesterEventId(), request.participationStatus());
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 기수별 행사의 참여 상태는 수정할 수 없다")
+	void 존재하지_않는_기수별_행사의_참여_상태는_수정할_수_없다() {
+		// given
+		MemberActivity memberActivity = memberActivityWithSemester(1L);
+		EditEventParticipationRequest request = new EditEventParticipationRequest(99L, ParticipationStatus.ATTENDED);
+		SemesterException exception = new SemesterException(SemesterErrorCode.NOT_FOUND_SEMESTER_EVENT);
+		given(adminMemberActivityService.getMemberSemesterActivityWithParticipations(3L)).willReturn(memberActivity);
+		willThrow(exception).given(semesterInquiryUsecase).validateSemesterEvent(1L, request.semesterEventId());
+
+		// when
+		Throwable throwable = catchThrowable(() -> adminMemberSemesterUseCase.editEventParticipation(3L, request));
+
+		// then
+		assertThat(throwable).isSameAs(exception);
+		verify(adminMemberActivityService, never()).editEventParticipation(any(), any(), any());
+	}
+
+	@Test
+	@DisplayName("다른 기수의 행사 참여 상태는 수정할 수 없다")
+	void 다른_기수의_행사_참여_상태는_수정할_수_없다() {
+		// given
+		MemberActivity memberActivity = memberActivityWithSemester(1L);
+		EditEventParticipationRequest request = new EditEventParticipationRequest(2L, ParticipationStatus.ABSENT);
+		SemesterException exception = new SemesterException(SemesterErrorCode.NOT_FOUND_SEMESTER_EVENT);
+		given(adminMemberActivityService.getMemberSemesterActivityWithParticipations(3L)).willReturn(memberActivity);
+		willThrow(exception).given(semesterInquiryUsecase).validateSemesterEvent(1L, request.semesterEventId());
+
+		// when
+		Throwable throwable = catchThrowable(() -> adminMemberSemesterUseCase.editEventParticipation(3L, request));
+
+		// then
+		assertThat(throwable).isSameAs(exception);
+		verify(adminMemberActivityService, never()).editEventParticipation(any(), any(), any());
+	}
+
+	@Test
+	@DisplayName("존재하지 않는 일반 구성원의 행사 참여 상태는 수정할 수 없다")
+	void 존재하지_않는_일반_구성원의_행사_참여_상태는_수정할_수_없다() {
+		// given
+		EditEventParticipationRequest request = new EditEventParticipationRequest(2L, ParticipationStatus.ATTENDED);
+		MemberException exception = new MemberException(MemberErrorCode.NOT_FOUND_MEMBER_SEMESTER_ACTIVITY);
+		given(adminMemberActivityService.getMemberSemesterActivityWithParticipations(3L)).willThrow(exception);
+
+		// when
+		Throwable throwable = catchThrowable(() -> adminMemberSemesterUseCase.editEventParticipation(3L, request));
+
+		// then
+		assertThat(throwable).isSameAs(exception);
+		verifyNoInteractions(semesterInquiryUsecase);
+	}
+
+	private MemberActivity memberActivityWithSemester(Long semesterId) {
+		MemberActivity memberActivity = mock(MemberActivity.class);
+		MemberSemester memberSemester = mock(MemberSemester.class);
+		given(memberActivity.getMemberSemester()).willReturn(memberSemester);
+		given(memberSemester.getSemesterId()).willReturn(semesterId);
+		return memberActivity;
 	}
 
 	/**

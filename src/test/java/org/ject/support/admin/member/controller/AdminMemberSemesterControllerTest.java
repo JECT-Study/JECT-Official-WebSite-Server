@@ -7,21 +7,25 @@ import static org.ject.support.domain.member.fixture.MemberFixture.member;
 import static org.ject.support.domain.member.fixture.SemesterActivityFixture.semesterActivity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.DeleteMembersRequest;
+import org.ject.support.admin.member.dto.request.EditEventParticipationRequest;
 import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.ParticipationStatus;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.entity.Member;
 import org.ject.support.domain.member.entity.MemberActivity;
@@ -32,6 +36,10 @@ import org.ject.support.domain.member.repository.MemberRepository;
 import org.ject.support.domain.member.repository.TeamRepository;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.domain.SemesterEvent;
+import org.ject.support.domain.recruit.domain.SemesterEventType;
+import org.ject.support.domain.recruit.exception.SemesterErrorCode;
+import org.ject.support.domain.recruit.repository.SemesterEventRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.AuthenticatedUser;
 import org.ject.support.testconfig.IntegrationTest;
@@ -68,7 +76,13 @@ class AdminMemberSemesterControllerTest {
 	private SemesterRepository semesterRepository;
 
 	@Autowired
+	private SemesterEventRepository semesterEventRepository;
+
+	@Autowired
 	private TeamRepository teamRepository;
+
+	@Autowired
+	private EntityManager entityManager;
 
 	@Test
 	@DisplayName("일반 구성원을 추가한다")
@@ -305,6 +319,60 @@ class AdminMemberSemesterControllerTest {
 	}
 
 	@Test
+	@DisplayName("일반 구성원의 행사 참여 상태를 수정한다")
+	void 일반_구성원의_행사_참여_상태를_수정한다() throws Exception {
+		// given
+		Semester semester = saveSemester();
+		MemberActivity memberActivity = saveMemberSemesterActivity(
+			uniqueEmail("participation"), semester.getId(), null, JobFamily.BE,
+			RecruitTypeDetail.REGULAR, CareerDetails.EMPLOYEE, ExperiencePeriod.ONE_TO_TWO);
+		SemesterEvent semesterEvent = semesterEventRepository.save(
+			SemesterEvent.create(semester.getId(), SemesterEventType.EVENT, "오리엔테이션")
+		);
+		EditEventParticipationRequest request = new EditEventParticipationRequest(
+			semesterEvent.getId(), ParticipationStatus.ATTENDED);
+
+		// when
+		mockMvc.perform(patch("/admin/members/semester/{memberActivityId}/event-participation", memberActivity.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.status").value("SUCCESS"));
+		entityManager.flush();
+		entityManager.clear();
+
+		// then
+		MemberActivity result = memberActivityRepository.findSemesterActivityWithParticipations(memberActivity.getId())
+			.orElseThrow();
+		assertThat(result.getEventParticipations()).singleElement()
+			.extracting("semesterEventId", "participationStatus")
+			.containsExactly(semesterEvent.getId(), ParticipationStatus.ATTENDED);
+	}
+
+	@Test
+	@DisplayName("다른 기수의 행사 참여 상태를 수정하면 실패한다")
+	void 다른_기수의_행사_참여_상태를_수정하면_실패한다() throws Exception {
+		// given
+		Semester memberSemester = saveSemester();
+		Semester eventSemester = saveSemester();
+		MemberActivity memberActivity = saveMemberSemesterActivity(
+			uniqueEmail("other-event"), memberSemester.getId(), null, JobFamily.BE,
+			RecruitTypeDetail.REGULAR, CareerDetails.EMPLOYEE, ExperiencePeriod.ONE_TO_TWO);
+		SemesterEvent semesterEvent = semesterEventRepository.save(
+			SemesterEvent.create(eventSemester.getId(), SemesterEventType.EVENT, "다른 기수 행사")
+		);
+		EditEventParticipationRequest request = new EditEventParticipationRequest(
+			semesterEvent.getId(), ParticipationStatus.ATTENDED);
+
+		// when & then
+		mockMvc.perform(patch("/admin/members/semester/{memberActivityId}/event-participation", memberActivity.getId())
+				.contentType(MediaType.APPLICATION_JSON)
+				.content(objectMapper.writeValueAsString(request)))
+			.andExpect(status().isNotFound())
+			.andExpect(jsonPath("$.status").value(SemesterErrorCode.NOT_FOUND_SEMESTER_EVENT.getCode()));
+	}
+
+	@Test
 	@DisplayName("일반 구성원을 삭제한다")
 	void 일반_구성원을_삭제한다() throws Exception {
 		// given
@@ -323,6 +391,8 @@ class AdminMemberSemesterControllerTest {
 		mockMvc.perform(delete("/admin/members/semester/{memberActivityId}", memberActivity.getId()))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.status").value("SUCCESS"));
+		entityManager.flush();
+		entityManager.clear();
 
 		// then
 		assertThat(memberActivityRepository.findById(memberActivity.getId())).isEmpty();

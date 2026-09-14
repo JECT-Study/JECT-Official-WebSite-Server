@@ -13,5 +13,7 @@ public interface SemesterInquiryUsecase {
 
     SemesterResponse getSemester(Long id);
 
+	void validateSemesterEvent(Long semesterId, Long semesterEventId);
+
     Long getSemesterIdByRecruitId(Long recruitId);
 }

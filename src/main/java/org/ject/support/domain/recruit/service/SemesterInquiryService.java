@@ -10,6 +10,7 @@ import org.ject.support.domain.recruit.exception.SemesterException;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
+import org.ject.support.domain.recruit.repository.SemesterEventRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class SemesterInquiryService implements SemesterInquiryUsecase {
 
     private final SemesterRepository semesterRepository;
+    private final SemesterEventRepository semesterEventRepository;
 
     @Override
     @Cacheable(value = "semester", key = "'all'")
@@ -37,6 +39,15 @@ public class SemesterInquiryService implements SemesterInquiryUsecase {
         );
         return SemesterResponse.from(semester);
     }
+
+	// 기수에 속한 행사 존재 여부 검증
+	@Override
+	@Transactional(readOnly = true)
+	public void validateSemesterEvent(Long semesterId, Long semesterEventId) {
+		if (!semesterEventRepository.existsByIdAndSemesterId(semesterEventId, semesterId)) {
+			throw new SemesterException(SemesterErrorCode.NOT_FOUND_SEMESTER_EVENT);
+		}
+	}
 
     @Override
     @Transactional(readOnly = true)
