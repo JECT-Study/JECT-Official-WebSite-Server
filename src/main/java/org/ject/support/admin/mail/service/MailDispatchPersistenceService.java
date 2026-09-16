@@ -101,7 +101,7 @@ public class MailDispatchPersistenceService {
         if (claimed == 0) {
             return Optional.empty();
         }
-        return mailDispatchOutboxRepository.findById(outboxId);
+        return mailDispatchOutboxRepository.findByIdWithDispatchJob(outboxId);
     }
 
     @Transactional(readOnly = true)

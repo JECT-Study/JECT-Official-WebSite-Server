@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.ject.support.admin.mail.domain.MailDispatchOutbox;
 import org.ject.support.admin.mail.domain.MailDispatchOutboxStatus;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,6 +16,10 @@ import org.springframework.data.repository.query.Param;
 public interface MailDispatchOutboxRepository extends JpaRepository<MailDispatchOutbox, Long> {
 
     Optional<MailDispatchOutbox> findByDispatchJobIdAndApplyId(Long dispatchJobId, Long applyId);
+
+    @EntityGraph(attributePaths = "dispatchJob")
+    @Query("select outbox from MailDispatchOutbox outbox where outbox.id = :id")
+    Optional<MailDispatchOutbox> findByIdWithDispatchJob(@Param("id") Long id);
 
     List<MailDispatchOutbox> findAllByDispatchJobIdOrderByIdAsc(Long dispatchJobId);
 
