@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
+import org.ject.support.admin.mail.domain.MailDispatchOutbox;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.testconfig.QueryDslTestConfig;
@@ -26,6 +27,9 @@ class MailDispatchRepositoryTest {
     @Autowired
     private MailDispatchTargetRepository mailDispatchTargetRepository;
 
+    @Autowired
+    private MailDispatchOutboxRepository mailDispatchOutboxRepository;
+
     @Test
     @DisplayName("발송 작업과 대상 이력을 함께 저장하고 조회한다")
     void 발송_작업과_대상_이력을_함께_저장하고_조회한다() {
@@ -34,6 +38,8 @@ class MailDispatchRepositoryTest {
                 MailDispatchJob.create(1L, 2L, 3L, "dispatch-key", "제목", "본문", "{}", 1));
         MailDispatchTarget target = mailDispatchTargetRepository.saveAndFlush(
                 MailDispatchTarget.pending(job, 10L, "applicant@ject.kr"));
+        MailDispatchOutbox outbox = mailDispatchOutboxRepository.saveAndFlush(
+                MailDispatchOutbox.pending(job, 10L, "applicant@ject.kr", "제목", "본문"));
 
         // when
         List<MailDispatchTarget> targets = mailDispatchTargetRepository
@@ -49,6 +55,9 @@ class MailDispatchRepositoryTest {
         assertThat(mailDispatchJobRepository
                 .findByRequestedByAdminIdAndIdempotencyKey(3L, "dispatch-key"))
                 .containsSame(job);
+        assertThat(mailDispatchOutboxRepository
+                .findByDispatchJobIdAndApplyId(job.getId(), 10L))
+                .containsSame(outbox);
     }
 
     @Test
