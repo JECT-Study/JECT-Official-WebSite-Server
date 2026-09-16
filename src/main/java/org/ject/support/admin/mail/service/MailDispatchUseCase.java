@@ -21,15 +21,18 @@ public class MailDispatchUseCase {
     private final MailDispatchPreparationService mailDispatchPreparationService;
     private final MailDispatchPersistenceService mailDispatchPersistenceService;
     private final EmailSendService emailSendService;
+    private final MailDispatchRequestFingerprint requestFingerprint;
 
     public MailDispatchResponse sendMail(SendMailDispatchRequest request,
                                          Long requestedByAdminId,
                                          String idempotencyKey) {
         validateIdempotencyKey(idempotencyKey);
+        String requestFingerprintValue = requestFingerprint.generate(request);
         Optional<MailDispatchResponse> existingResult =
                 mailDispatchPersistenceService.findResultByIdempotencyKey(
                         requestedByAdminId, idempotencyKey);
         if (existingResult.isPresent()) {
+            validateRequestFingerprint(requestedByAdminId, idempotencyKey, requestFingerprintValue);
             return existingResult.get();
         }
 
@@ -37,11 +40,16 @@ public class MailDispatchUseCase {
                 request, requestedByAdminId, idempotencyKey);
         MailDispatchJob job;
         try {
-            job = mailDispatchPersistenceService.createJob(plan);
+            job = mailDispatchPersistenceService.createJob(plan, requestFingerprintValue);
         } catch (DataIntegrityViolationException exception) {
-            return mailDispatchPersistenceService.findResultByIdempotencyKey(
-                            requestedByAdminId, idempotencyKey)
-                    .orElseThrow(() -> exception);
+            Optional<MailDispatchResponse> concurrentResult =
+                    mailDispatchPersistenceService.findResultByIdempotencyKey(
+                            requestedByAdminId, idempotencyKey);
+            if (concurrentResult.isEmpty()) {
+                throw exception;
+            }
+            validateRequestFingerprint(requestedByAdminId, idempotencyKey, requestFingerprintValue);
+            return concurrentResult.get();
         }
         mailDispatchPersistenceService.startProcessing(job.getId());
 
@@ -69,6 +77,17 @@ public class MailDispatchUseCase {
                 || idempotencyKey.isBlank()
                 || idempotencyKey.length() > MAX_IDEMPOTENCY_KEY_LENGTH) {
             throw new MailException(MailErrorCode.INVALID_IDEMPOTENCY_KEY);
+        }
+    }
+
+    private void validateRequestFingerprint(Long requestedByAdminId,
+                                            String idempotencyKey,
+                                            String requestFingerprint) {
+        Optional<String> existingFingerprint =
+                mailDispatchPersistenceService.findRequestFingerprintByIdempotencyKey(
+                        requestedByAdminId, idempotencyKey);
+        if (existingFingerprint.isPresent() && !existingFingerprint.get().equals(requestFingerprint)) {
+            throw new MailException(MailErrorCode.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH);
         }
     }
 }
