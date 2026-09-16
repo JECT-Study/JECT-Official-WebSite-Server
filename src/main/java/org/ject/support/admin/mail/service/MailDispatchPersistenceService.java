@@ -2,9 +2,12 @@ package org.ject.support.admin.mail.service;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchOutbox;
+import org.ject.support.admin.mail.domain.MailDispatchOutboxStatus;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.exception.MailErrorCode;
@@ -19,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class MailDispatchPersistenceService {
+
+    private static final Duration OUTBOX_LEASE_DURATION = Duration.ofMinutes(1);
 
     private final MailDispatchJobRepository mailDispatchJobRepository;
     private final MailDispatchTargetRepository mailDispatchTargetRepository;
@@ -73,6 +78,30 @@ public class MailDispatchPersistenceService {
         target.markFailed(failureReason);
         job.recordFailure();
         findOutbox(dispatchJobId, applyId).ifPresent(outbox -> outbox.markFailed(failureReason));
+    }
+
+    @Transactional
+    public Optional<MailDispatchOutbox> claimForImmediateDispatch(Long dispatchJobId,
+                                                                    Long applyId,
+                                                                    String claimedBy) {
+        return mailDispatchOutboxRepository.findByDispatchJobIdAndApplyId(dispatchJobId, applyId)
+                .flatMap(outbox -> claimOutbox(outbox.getId(), claimedBy));
+    }
+
+    @Transactional
+    public Optional<MailDispatchOutbox> claimOutbox(Long outboxId, String claimedBy) {
+        LocalDateTime now = LocalDateTime.now();
+        int claimed = mailDispatchOutboxRepository.claim(
+                outboxId,
+                claimedBy,
+                now,
+                now.plus(OUTBOX_LEASE_DURATION),
+                MailDispatchOutboxStatus.PENDING,
+                MailDispatchOutboxStatus.PROCESSING);
+        if (claimed == 0) {
+            return Optional.empty();
+        }
+        return mailDispatchOutboxRepository.findById(outboxId);
     }
 
     @Transactional(readOnly = true)

@@ -2,10 +2,12 @@ package org.ject.support.admin.mail.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.domain.MailDispatchOutbox;
+import org.ject.support.admin.mail.domain.MailDispatchOutboxStatus;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.testconfig.QueryDslTestConfig;
@@ -83,5 +85,35 @@ class MailDispatchRepositoryTest {
                 .containsSame(first);
         assertThat(mailDispatchJobRepository.findByIdAndRequestedByAdminId(first.getId(), 2L))
                 .isEmpty();
+    }
+
+    @Test
+    @DisplayName("만료된 Outbox lease만 다시 claim하고 유효한 lease는 중복 claim하지 않는다")
+    void 만료된_Outbox_lease만_다시_claim하고_유효한_lease는_중복_claim하지_않는다() {
+        // given
+        MailDispatchJob job = mailDispatchJobRepository.saveAndFlush(
+                MailDispatchJob.create(1L, 2L, 3L, "dispatch-key-lease", "제목", "본문", "{}", 1));
+        MailDispatchOutbox outbox = mailDispatchOutboxRepository.saveAndFlush(
+                MailDispatchOutbox.pending(job, 10L, "applicant@ject.kr", "제목", "본문"));
+        LocalDateTime now = LocalDateTime.now();
+
+        // when
+        int firstClaim = mailDispatchOutboxRepository.claim(
+                outbox.getId(), "worker-1", now, now.minusSeconds(1),
+                MailDispatchOutboxStatus.PENDING, MailDispatchOutboxStatus.PROCESSING);
+        int secondClaim = mailDispatchOutboxRepository.claim(
+                outbox.getId(), "worker-2", now, now.plusMinutes(1),
+                MailDispatchOutboxStatus.PENDING, MailDispatchOutboxStatus.PROCESSING);
+        int thirdClaim = mailDispatchOutboxRepository.claim(
+                outbox.getId(), "worker-3", now, now.plusMinutes(1),
+                MailDispatchOutboxStatus.PENDING, MailDispatchOutboxStatus.PROCESSING);
+
+        // then
+        assertThat(firstClaim).isEqualTo(1);
+        assertThat(secondClaim).isEqualTo(1);
+        assertThat(thirdClaim).isZero();
+        MailDispatchOutbox reclaimed = mailDispatchOutboxRepository.findById(outbox.getId()).orElseThrow();
+        assertThat(reclaimed.getStatus()).isEqualTo(MailDispatchOutboxStatus.PROCESSING);
+        assertThat(reclaimed.getClaimedBy()).isEqualTo("worker-2");
     }
 }

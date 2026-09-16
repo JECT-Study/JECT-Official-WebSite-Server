@@ -151,6 +151,9 @@ public class MailDispatchJob extends BaseTimeEntity {
     }
 
     public void startProcessing() {
+        if (status == MailDispatchJobStatus.PROCESSING) {
+            return;
+        }
         validateStatus(MailDispatchJobStatus.REQUESTED);
         status = MailDispatchJobStatus.PROCESSING;
         processingCount = targetCount;

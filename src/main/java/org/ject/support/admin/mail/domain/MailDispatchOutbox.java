@@ -13,6 +13,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -52,6 +53,12 @@ public class MailDispatchOutbox extends BaseTimeEntity {
 
     @Column(name = "failure_reason", columnDefinition = "TEXT")
     private String failureReason;
+
+    @Column(name = "claimed_by", length = 100)
+    private String claimedBy;
+
+    @Column(name = "lease_until")
+    private LocalDateTime leaseUntil;
 
     @Version
     private Long version;
