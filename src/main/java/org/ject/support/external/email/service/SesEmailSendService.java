@@ -11,10 +11,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.external.email.domain.EmailTemplate;
+import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
 import org.ject.support.external.infrastructure.SesRateLimiter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.exception.SdkServiceException;
 import software.amazon.awssdk.services.sesv2.SesV2Client;
 import software.amazon.awssdk.services.sesv2.model.Body;
 import software.amazon.awssdk.services.sesv2.model.BulkEmailContent;
@@ -64,7 +67,7 @@ public class SesEmailSendService implements EmailSendService {
             sesV2Client.sendEmail(emailRequest);
         } catch (Exception e) {
             log.error("이메일 전송 실패 sendGroupCode={}", sendGroupCode.getTemplateName(), e);
-            throw new EmailException(EMAIL_SEND_FAILURE);
+            throw new EmailException(classifySendFailure(e));
         }
     }
 
@@ -122,8 +125,22 @@ public class SesEmailSendService implements EmailSendService {
             sesV2Client.sendEmail(emailRequest);
         } catch (Exception e) {
             log.error("단건 이메일 전송 실패 errorType={}", e.getClass().getSimpleName(), e);
-            throw new EmailException(EMAIL_SEND_FAILURE);
+            throw new EmailException(classifySendFailure(e));
         }
+    }
+
+    private EmailErrorCode classifySendFailure(Exception exception) {
+        if (exception instanceof SdkClientException) {
+            return EmailErrorCode.EMAIL_TRANSIENT_FAILURE;
+        }
+        if (exception instanceof SdkServiceException serviceException
+                && (serviceException.isThrottlingException()
+                || serviceException.statusCode() == 408
+                || serviceException.statusCode() == 429
+                || serviceException.statusCode() >= 500)) {
+            return EmailErrorCode.EMAIL_TRANSIENT_FAILURE;
+        }
+        return EMAIL_SEND_FAILURE;
     }
 
     private Template getTemplate(String templateName, Map<String, String> parameter) {

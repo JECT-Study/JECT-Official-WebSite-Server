@@ -22,6 +22,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 import software.amazon.awssdk.services.sesv2.SesV2Client;
 import software.amazon.awssdk.services.sesv2.model.SendEmailRequest;
 import software.amazon.awssdk.services.sesv2.model.SendEmailResponse;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.exception.SdkServiceException;
 
 class SesEmailSendServiceTest extends UnitTestSupport {
 
@@ -114,6 +116,45 @@ class SesEmailSendServiceTest extends UnitTestSupport {
                 .willThrow(new RuntimeException("simple send fail"));
 
         assertThatThrownBy(() -> sesEmailSendService.sendEmail("user@recipient.com", "JECT 안내", "<h1>본문</h1>"))
+                .isInstanceOf(EmailException.class)
+                .extracting(e -> ((EmailException) e).getErrorCode())
+                .isEqualTo(EmailErrorCode.EMAIL_SEND_FAILURE);
+    }
+
+    @Test
+    @DisplayName("SES client 오류는 일시적 전송 오류로 분류한다")
+    void SES_client_오류는_일시적_전송_오류로_분류한다() {
+        given(sesV2Client.sendEmail(any(SendEmailRequest.class)))
+                .willThrow(SdkClientException.create("network failure"));
+
+        assertThatThrownBy(() -> sesEmailSendService.sendEmail(
+                "user@recipient.com", "JECT 안내", "<h1>본문</h1>"))
+                .isInstanceOf(EmailException.class)
+                .extracting(e -> ((EmailException) e).getErrorCode())
+                .isEqualTo(EmailErrorCode.EMAIL_TRANSIENT_FAILURE);
+    }
+
+    @Test
+    @DisplayName("SES 5xx 오류는 일시적 전송 오류로 분류한다")
+    void SES_5xx_오류는_일시적_전송_오류로_분류한다() {
+        given(sesV2Client.sendEmail(any(SendEmailRequest.class)))
+                .willThrow(SdkServiceException.builder().statusCode(503).build());
+
+        assertThatThrownBy(() -> sesEmailSendService.sendEmail(
+                "user@recipient.com", "JECT 안내", "<h1>본문</h1>"))
+                .isInstanceOf(EmailException.class)
+                .extracting(e -> ((EmailException) e).getErrorCode())
+                .isEqualTo(EmailErrorCode.EMAIL_TRANSIENT_FAILURE);
+    }
+
+    @Test
+    @DisplayName("SES 4xx 오류는 재시도하지 않는 전송 오류로 분류한다")
+    void SES_4xx_오류는_재시도하지_않는_전송_오류로_분류한다() {
+        given(sesV2Client.sendEmail(any(SendEmailRequest.class)))
+                .willThrow(SdkServiceException.builder().statusCode(400).build());
+
+        assertThatThrownBy(() -> sesEmailSendService.sendEmail(
+                "user@recipient.com", "JECT 안내", "<h1>본문</h1>"))
                 .isInstanceOf(EmailException.class)
                 .extracting(e -> ((EmailException) e).getErrorCode())
                 .isEqualTo(EmailErrorCode.EMAIL_SEND_FAILURE);

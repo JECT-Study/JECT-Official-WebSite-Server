@@ -1,5 +1,6 @@
 package org.ject.support.admin.mail.service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class MailDispatchWorker {
     public void dispatchPending() {
         List<MailDispatchOutbox> candidates = mailDispatchOutboxRepository.findCandidates(
                 List.of(MailDispatchOutboxStatus.PENDING, MailDispatchOutboxStatus.PROCESSING),
+                LocalDateTime.now(),
                 PageRequest.of(0, BATCH_SIZE));
         candidates.forEach(this::dispatch);
     }

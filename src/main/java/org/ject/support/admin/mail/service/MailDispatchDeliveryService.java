@@ -1,5 +1,6 @@
 package org.ject.support.admin.mail.service;
 
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.mail.domain.MailDispatchOutbox;
 import org.ject.support.admin.mail.exception.MailErrorCode;
@@ -13,6 +14,7 @@ public class MailDispatchDeliveryService {
 
     private final EmailSendService emailSendService;
     private final MailDispatchPersistenceService mailDispatchPersistenceService;
+    private final MailDispatchRetryPolicy mailDispatchRetryPolicy;
 
     public void deliver(MailDispatchOutbox outbox) {
         try {
@@ -21,6 +23,13 @@ public class MailDispatchDeliveryService {
             String failureReason = exception instanceof EmailException emailException
                     ? emailException.getErrorCode().getCode()
                     : MailErrorCode.MAIL_SEND_FAILURE.getCode();
+            if (mailDispatchRetryPolicy.shouldRetry(failureReason, outbox.getAttemptCount())) {
+                mailDispatchPersistenceService.scheduleRetry(
+                        outbox.getId(),
+                        failureReason,
+                        mailDispatchRetryPolicy.nextAttemptAt(outbox.getAttemptCount(), LocalDateTime.now()));
+                return;
+            }
             mailDispatchPersistenceService.recordFailure(
                     outbox.getDispatchJob().getId(), outbox.getApplyId(), failureReason);
             return;
