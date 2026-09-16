@@ -62,6 +62,20 @@ class AdminMailDispatchSecurityTest extends ApplicationPeriodTest {
     }
 
     @Test
+    @DisplayName("인증되지 않은 사용자는 발송 작업 상세를 조회할 수 없다")
+    void 인증되지_않은_사용자는_발송_작업_상세를_조회할_수_없다() throws Exception {
+        mockMvc.perform(get("/admin/mails/dispatches/{dispatchJobId}", 100L))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("인증되지 않은 사용자는 수신자별 발송 결과를 조회할 수 없다")
+    void 인증되지_않은_사용자는_수신자별_발송_결과를_조회할_수_없다() throws Exception {
+        mockMvc.perform(get("/admin/mails/dispatches/{dispatchJobId}/targets", 100L))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @AuthenticatedUser(isAdmin = false)
     @DisplayName("일반 사용자는 단체 메일을 발송할 수 없다")
     void 일반_사용자는_단체_메일을_발송할_수_없다() throws Exception {

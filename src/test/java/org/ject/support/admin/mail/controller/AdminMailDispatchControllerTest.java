@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -14,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import org.mockito.ArgumentCaptor;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.admin.mail.dto.MailDispatchJobResponse;
@@ -38,6 +40,7 @@ import org.springframework.http.MediaType;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -84,7 +87,37 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.data.content[0].requestedByAdminId").value(50))
                 .andExpect(jsonPath("$.data.content[0].status").value("COMPLETED"));
 
-        verify(mailDispatchQueryService).searchJobs(eq(50L), isNull(), isNull(), any(Pageable.class));
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(mailDispatchQueryService).searchJobs(eq(50L), isNull(), isNull(), pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(10);
+        assertThat(pageableCaptor.getValue().getSort().getOrderFor("requestedAt").getDirection())
+                .isEqualTo(Direction.DESC);
+    }
+
+    @Test
+    @DisplayName("발송 작업 목록을 모집 공고와 상태, 페이지 조건으로 필터링한다")
+    void 발송_작업_목록을_모집_공고와_상태_페이지_조건으로_필터링한다() throws Exception {
+        // given
+        given(mailDispatchQueryService.searchJobs(
+                eq(50L), eq(2L), eq(MailDispatchJobStatus.COMPLETED), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(jobResponse()), PageRequest.of(1, 5), 6));
+
+        // when & then
+        mockMvc.perform(get("/admin/mails/dispatches")
+                        .param("recruitId", "2")
+                        .param("status", MailDispatchJobStatus.COMPLETED.name())
+                        .param("page", "1")
+                        .param("size", "5")
+                        .param("sort", "requestedAt,asc"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(mailDispatchQueryService).searchJobs(
+                eq(50L), eq(2L), eq(MailDispatchJobStatus.COMPLETED), pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageNumber()).isEqualTo(1);
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(5);
+        assertThat(pageableCaptor.getValue().getSort().getOrderFor("requestedAt").getDirection())
+                .isEqualTo(Direction.ASC);
     }
 
     @Test
@@ -117,6 +150,13 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].applyId").value(10))
                 .andExpect(jsonPath("$.data.content[0].email").value("applicant@ject.kr"));
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(mailDispatchQueryService).searchTargets(
+                eq(50L), eq(100L), eq(MailDispatchTargetStatus.SENT), pageableCaptor.capture());
+        assertThat(pageableCaptor.getValue().getPageSize()).isEqualTo(10);
+        assertThat(pageableCaptor.getValue().getSort().getOrderFor("id").getDirection())
+                .isEqualTo(Direction.ASC);
     }
 
     @AfterEach

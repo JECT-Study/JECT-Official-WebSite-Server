@@ -78,6 +78,41 @@ class MailDispatchQueryServiceTest extends UnitTestSupport {
     }
 
     @Test
+    @DisplayName("모집 공고만으로 발송 작업을 필터링한다")
+    void 모집_공고만으로_발송_작업을_필터링한다() {
+        // given
+        Long adminId = 50L;
+        Long recruitId = 2L;
+        PageRequest pageable = PageRequest.of(0, 10);
+        given(mailDispatchJobRepository.findAllByRequestedByAdminIdAndRecruitIdOrderByRequestedAtDescIdDesc(
+                adminId, recruitId, pageable)).willReturn(Page.empty(pageable));
+
+        // when
+        Page<MailDispatchJobResponse> result = mailDispatchQueryService.searchJobs(
+                adminId, recruitId, null, pageable);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("작업 상태만으로 발송 작업을 필터링한다")
+    void 작업_상태만으로_발송_작업을_필터링한다() {
+        // given
+        Long adminId = 50L;
+        PageRequest pageable = PageRequest.of(0, 10);
+        given(mailDispatchJobRepository.findAllByRequestedByAdminIdAndStatusOrderByRequestedAtDescIdDesc(
+                adminId, MailDispatchJobStatus.FAILED, pageable)).willReturn(Page.empty(pageable));
+
+        // when
+        Page<MailDispatchJobResponse> result = mailDispatchQueryService.searchJobs(
+                adminId, null, MailDispatchJobStatus.FAILED, pageable);
+
+        // then
+        assertThat(result).isEmpty();
+    }
+
+    @Test
     @DisplayName("다른 관리자의 발송 작업 상세 조회를 거부한다")
     void 다른_관리자의_발송_작업_상세_조회를_거부한다() {
         // given
