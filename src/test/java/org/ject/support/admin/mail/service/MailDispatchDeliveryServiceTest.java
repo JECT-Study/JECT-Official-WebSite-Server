@@ -2,9 +2,13 @@ package org.ject.support.admin.mail.service;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import java.time.LocalDateTime;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchOutbox;
 import org.ject.support.admin.mail.exception.MailErrorCode;
@@ -25,6 +29,9 @@ class MailDispatchDeliveryServiceTest extends UnitTestSupport {
 
     @Mock
     private MailDispatchPersistenceService mailDispatchPersistenceService;
+
+    @Mock
+    private MailDispatchRetryPolicy mailDispatchRetryPolicy;
 
     @InjectMocks
     private MailDispatchDeliveryService mailDispatchDeliveryService;
@@ -58,6 +65,31 @@ class MailDispatchDeliveryServiceTest extends UnitTestSupport {
         // then
         verify(mailDispatchPersistenceService).recordFailure(
                 100L, 10L, EmailErrorCode.EMAIL_SEND_FAILURE.getCode());
+    }
+
+    @Test
+    @DisplayName("일시적인 메일 공급자 오류는 재시도를 예약한다")
+    void 일시적인_메일_공급자_오류는_재시도를_예약한다() {
+        // given
+        MailDispatchOutbox outbox = outbox();
+        ReflectionTestUtils.setField(outbox, "id", 200L);
+        ReflectionTestUtils.setField(outbox, "attemptCount", 1);
+        LocalDateTime nextAttemptAt = LocalDateTime.now().plusSeconds(30);
+        willThrow(new EmailException(EmailErrorCode.EMAIL_TRANSIENT_FAILURE))
+                .given(emailSendService)
+                .sendEmail(any(), any(), any());
+        given(mailDispatchRetryPolicy.shouldRetry(EmailErrorCode.EMAIL_TRANSIENT_FAILURE.getCode(), 1))
+                .willReturn(true);
+        given(mailDispatchRetryPolicy.nextAttemptAt(eq(1), any(LocalDateTime.class)))
+                .willReturn(nextAttemptAt);
+
+        // when
+        mailDispatchDeliveryService.deliver(outbox);
+
+        // then
+        verify(mailDispatchPersistenceService).scheduleRetry(
+                200L, EmailErrorCode.EMAIL_TRANSIENT_FAILURE.getCode(), nextAttemptAt);
+        verify(mailDispatchPersistenceService, never()).recordFailure(any(), any(), any());
     }
 
     @Test
