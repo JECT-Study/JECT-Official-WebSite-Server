@@ -30,8 +30,8 @@ import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class MailDispatchUseCaseTest extends UnitTestSupport {
 
@@ -170,6 +170,26 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
     }
 
     @Test
+    @DisplayName("fingerprint가 없는 기존 작업은 기존 결과를 재사용한다")
+    void fingerprint가_없는_기존_작업은_기존_결과를_재사용한다() {
+        // given
+        SendMailDispatchRequest request = request();
+        MailDispatchResponse response = new MailDispatchResponse(
+                100L, MailDispatchJobStatus.COMPLETED, 2, 0, 2, 0);
+        given(persistenceService.findResultByIdempotencyKey(3L, "dispatch-key"))
+                .willReturn(Optional.of(response));
+        given(persistenceService.findRequestFingerprintByIdempotencyKey(3L, "dispatch-key"))
+                .willReturn(Optional.empty());
+
+        // when
+        MailDispatchResponse result = mailDispatchUseCase.sendMail(request, 3L, "dispatch-key");
+
+        // then
+        assertThat(result).isEqualTo(response);
+        verifyNoInteractions(preparationService, emailSendService);
+    }
+
+    @Test
     @DisplayName("동시 요청으로 중복 키가 저장된 뒤 다른 본문이면 충돌을 반환한다")
     void 동시_요청으로_중복_키가_저장된_뒤_다른_본문이면_충돌을_반환한다() {
         // given
@@ -190,6 +210,30 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH);
+        verifyNoInteractions(emailSendService);
+    }
+
+    @Test
+    @DisplayName("동시 요청으로 중복 키가 저장된 뒤 같은 본문이면 기존 결과를 반환한다")
+    void 동시_요청으로_중복_키가_저장된_뒤_같은_본문이면_기존_결과를_반환한다() {
+        // given
+        SendMailDispatchRequest request = request();
+        MailDispatchPlan plan = plan();
+        MailDispatchResponse response = new MailDispatchResponse(
+                100L, MailDispatchJobStatus.COMPLETED, 2, 0, 2, 0);
+        given(persistenceService.findResultByIdempotencyKey(3L, "dispatch-key"))
+                .willReturn(Optional.empty(), Optional.of(response));
+        given(preparationService.prepare(request, 3L, "dispatch-key")).willReturn(plan);
+        given(persistenceService.createJob(plan, "fingerprint"))
+                .willThrow(new DataIntegrityViolationException("duplicate key"));
+        given(persistenceService.findRequestFingerprintByIdempotencyKey(3L, "dispatch-key"))
+                .willReturn(Optional.of("fingerprint"));
+
+        // when
+        MailDispatchResponse result = mailDispatchUseCase.sendMail(request, 3L, "dispatch-key");
+
+        // then
+        assertThat(result).isEqualTo(response);
         verifyNoInteractions(emailSendService);
     }
 

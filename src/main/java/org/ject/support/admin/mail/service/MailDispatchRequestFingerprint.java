@@ -1,5 +1,7 @@
 package org.ject.support.admin.mail.service;
 
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +17,10 @@ public class MailDispatchRequestFingerprint {
 
     public String generate(SendMailDispatchRequest request) {
         Map<String, Object> payload = new TreeMap<>();
-        payload.put("applyIds", request.applyIds());
+        List<Long> applyIds = request.applyIds() == null
+                ? null
+                : request.applyIds().stream().sorted(Comparator.nullsFirst(Long::compareTo)).toList();
+        payload.put("applyIds", applyIds);
         payload.put("inputVariables", request.inputVariables() == null
                 ? Map.of()
                 : new TreeMap<>(request.inputVariables()));

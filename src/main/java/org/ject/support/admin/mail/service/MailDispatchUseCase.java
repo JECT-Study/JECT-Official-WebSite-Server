@@ -83,6 +83,7 @@ public class MailDispatchUseCase {
     private void validateRequestFingerprint(Long requestedByAdminId,
                                             String idempotencyKey,
                                             String requestFingerprint) {
+        // V42 이전 작업은 원본 요청 본문이 저장되지 않았으므로 기존 재시도 호환을 유지합니다.
         Optional<String> existingFingerprint =
                 mailDispatchPersistenceService.findRequestFingerprintByIdempotencyKey(
                         requestedByAdminId, idempotencyKey);
