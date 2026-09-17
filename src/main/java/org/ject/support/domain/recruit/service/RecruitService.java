@@ -8,6 +8,7 @@ import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponse;
 import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
 import org.ject.support.domain.recruit.dto.RecruitCanceledEvent;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
+import org.ject.support.domain.recruit.dto.RecruitResponse;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
@@ -16,6 +17,7 @@ import org.ject.support.domain.recruit.exception.SemesterErrorCode;
 import org.ject.support.domain.recruit.exception.SemesterException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +50,16 @@ public class RecruitService implements RecruitUsecase {
         recruitRepository.saveAll(recruits);
     }
 
+    // 모집공고 상세정보 조회
+    @Override
+    @Cacheable(value = "recruit-detail", key = "#recruitId")
+    @Transactional(readOnly = true)
+    public RecruitResponse getRecruit(Long recruitId) {
+        Recruit recruit = recruitRepository.findByIdWithSemester(recruitId)
+                .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
+        return RecruitResponse.from(recruit);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public ActiveRecruitmentResponses findActiveRecruitments() {
@@ -59,12 +71,20 @@ public class RecruitService implements RecruitUsecase {
 
     @Override
     public void updateRecruit(Long recruitId, RecruitUpdateRequest request) {
-        Recruit recruit = getRecruit(recruitId);
+        Recruit recruit = getRecruitEntity(recruitId);
         if (recruit.isClosed()) {
             throw new RecruitException(RecruitErrorCode.UPDATE_NOT_ALLOW_FOR_CLOSED);
         }
         JobFamily previousJobFamily = recruit.getJobFamily();
-        recruit.update(request.jobFamily(), request.startDate(), request.endDate());
+        recruit.update(
+                request.jobFamily(),
+                request.startDate(),
+                request.endDate(),
+                request.summary(),
+                request.recruitInformation(),
+                request.notice(),
+                request.getFaqsOrNull()
+        );
         eventPublisher.publishEvent(new RecruitUpdatedEvent(
                 recruit.getId(),
                 previousJobFamily,
@@ -75,7 +95,7 @@ public class RecruitService implements RecruitUsecase {
 
     @Override
     public void cancelRecruit(Long recruitId) {
-        Recruit recruit = getRecruit(recruitId);
+        Recruit recruit = getRecruitEntity(recruitId);
         recruitRepository.delete(recruit);
         eventPublisher.publishEvent(new RecruitCanceledEvent(recruit.getId(), recruit.getJobFamily()));
     }
@@ -89,7 +109,7 @@ public class RecruitService implements RecruitUsecase {
         }
     }
 
-    private Recruit getRecruit(Long recruitId) {
+    private Recruit getRecruitEntity(Long recruitId) {
         return recruitRepository.findById(recruitId)
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }

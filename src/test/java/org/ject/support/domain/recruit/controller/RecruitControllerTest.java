@@ -3,6 +3,8 @@ package org.ject.support.domain.recruit.controller;
 import org.ject.support.common.response.ResponseWrapper;
 import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponse;
 import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
+import org.ject.support.domain.recruit.dto.RecruitFaqResponse;
+import org.ject.support.domain.recruit.dto.RecruitResponse;
 import org.ject.support.domain.recruit.service.RecruitUsecase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,10 +56,10 @@ class RecruitControllerTest {
         ActiveRecruitmentResponses responses = new ActiveRecruitmentResponses(List.of(
                 new ActiveRecruitmentResponse(
                         1L, 3L, "3기", SEMESTER, "정규 기수 모집", REGULAR, "정규 모집",
-                        BE, "백엔드 개발자(BE)", now.minusDays(2), now.plusDays(2)),
+                        BE, "백엔드 개발자(BE)", now.minusDays(2), now.plusDays(2), "백엔드 모집 요약"),
                 new ActiveRecruitmentResponse(
                         2L, 3L, "3기", MAKERS, "메이커스 모집", NEW, "신규 모집",
-                        FE, "프론트엔드 개발자(FE)", now.minusDays(1), now.plusDays(2))
+                        FE, "프론트엔드 개발자(FE)", now.minusDays(1), now.plusDays(2), "프론트엔드 모집 요약")
         ));
         given(recruitUsecase.findActiveRecruitments()).willReturn(responses);
 
@@ -70,6 +72,7 @@ class RecruitControllerTest {
                 .andExpect(jsonPath("$.data.recruitments[0].recruitTypeDescription").value("정규 기수 모집"))
                 .andExpect(jsonPath("$.data.recruitments[0].recruitTypeDetail").value("REGULAR"))
                 .andExpect(jsonPath("$.data.recruitments[0].jobFamily").value("BE"))
+                .andExpect(jsonPath("$.data.recruitments[0].summary").value("백엔드 모집 요약"))
                 .andExpect(jsonPath("$.data.recruitments[1].recruitType").value("MAKERS"))
                 .andExpect(jsonPath("$.data.recruitments[1].recruitTypeDetail").value("NEW"))
                 .andExpect(jsonPath("$.data.recruitments[1].jobFamily").value("FE"));
@@ -86,5 +89,25 @@ class RecruitControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.recruitments", hasSize(0)));
+    }
+
+    @Test
+    void 모집공고의_상세정보와_안내사항_및_FAQ를_조회한다() throws Exception {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        RecruitResponse response = new RecruitResponse(
+                1L, 5L, "5기", SEMESTER, "정규 기수 모집", REGULAR, "정규 모집",
+                FE, "프론트엔드 개발자(FE)", now.minusDays(1), now.plusDays(1),
+                "<h2>모집 정보</h2>", "<h2>안내사항</h2>",
+                List.of(new RecruitFaqResponse("지원 자격이 있나요?", "<p>누구나 지원할 수 있습니다.</p>"))
+        );
+        given(recruitUsecase.getRecruit(1L)).willReturn(response);
+
+        // when, then
+        mockMvc.perform(get("/recruits/{recruitId}", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recruitInformation").value("<h2>모집 정보</h2>"))
+                .andExpect(jsonPath("$.data.notice").value("<h2>안내사항</h2>"))
+                .andExpect(jsonPath("$.data.faqs[0].title").value("지원 자격이 있나요?"));
     }
 }

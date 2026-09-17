@@ -6,6 +6,7 @@ import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -20,6 +21,7 @@ public class RecruitUpdatedEventHandler {
     /**
      * 모집 수정 시 호출됨
      */
+    @CacheEvict(value = "recruit-detail", key = "#event.recruitId")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleRecruitUpdated(RecruitUpdatedEvent event) {
         // 기존 스케줄 작업 제거

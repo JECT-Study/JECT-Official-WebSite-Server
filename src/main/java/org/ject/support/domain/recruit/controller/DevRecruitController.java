@@ -42,7 +42,15 @@ public class DevRecruitController {
         Recruit recruit = recruitRepository.findById(recruitId)
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
         JobFamily previousJobFamily = recruit.getJobFamily();
-        recruit.update(request.jobFamily(), request.startDate(), request.endDate());
+        recruit.update(
+                request.jobFamily(),
+                request.startDate(),
+                request.endDate(),
+                request.summary(),
+                request.recruitInformation(),
+                request.notice(),
+                request.getFaqsOrNull()
+        );
 
         eventPublisher.publishEvent(new RecruitUpdatedEvent(
                 recruit.getId(),

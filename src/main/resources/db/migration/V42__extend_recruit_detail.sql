@@ -1,0 +1,11 @@
+ALTER TABLE recruit
+    ADD COLUMN recruit_information MEDIUMTEXT NULL,
+    ADD COLUMN notice MEDIUMTEXT NULL,
+    ADD COLUMN faqs JSON NULL;
+
+UPDATE recruit
+SET faqs = JSON_ARRAY()
+WHERE faqs IS NULL;
+
+ALTER TABLE recruit
+    MODIFY COLUMN faqs JSON NOT NULL;

@@ -1,29 +1,34 @@
 package org.ject.support.domain.recruit.dto;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
-import java.time.LocalDateTime;
+public record RecruitResponse(
+        Long recruitId,
+        Long semesterId,
+        String semesterName,
+        RecruitType recruitType,
+        String recruitTypeDescription,
+        RecruitTypeDetail recruitTypeDetail,
+        String recruitTypeDetailDescription,
+        JobFamily jobFamily,
+        String jobFamilyDescription,
+        LocalDateTime startDate,
+        LocalDateTime endDate,
+        String recruitInformation,
+        String notice,
+        List<RecruitFaqResponse> faqs
+) {
 
-public record ActiveRecruitmentResponse(Long recruitId,
-                                        Long semesterId,
-                                        String semesterName,
-                                        RecruitType recruitType,
-                                        String recruitTypeDescription,
-                                        RecruitTypeDetail recruitTypeDetail,
-                                        String recruitTypeDetailDescription,
-                                        JobFamily jobFamily,
-                                        String jobFamilyDescription,
-                                        LocalDateTime startDate,
-                                        LocalDateTime endDate,
-                                        String summary) {
-
-    public static ActiveRecruitmentResponse from(Recruit recruit) {
+    // 모집공고 상세 응답 변환
+    public static RecruitResponse from(Recruit recruit) {
         RecruitType recruitType = toPublicRecruitType(recruit.getRecruitType());
         RecruitTypeDetail recruitTypeDetail = toPublicRecruitTypeDetail(recruit);
-        return new ActiveRecruitmentResponse(
+        return new RecruitResponse(
                 recruit.getId(),
                 recruit.getSemester().getId(),
                 recruit.getSemester().getName(),
@@ -35,7 +40,9 @@ public record ActiveRecruitmentResponse(Long recruitId,
                 recruit.getJobFamily().getDescription(),
                 recruit.getStartDate(),
                 recruit.getEndDate(),
-                recruit.getSummary()
+                recruit.getRecruitInformation(),
+                recruit.getNotice(),
+                recruit.getFaqs().stream().map(RecruitFaqResponse::from).toList()
         );
     }
 
