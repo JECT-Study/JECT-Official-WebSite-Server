@@ -5,6 +5,7 @@ import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.util.CodeGeneratorUtil;
+import org.ject.support.external.email.config.EmailAuthBypassProperties;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.RateLimitException;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -22,8 +23,15 @@ public class EmailAuthService {
 
     private final SesEmailSendService emailSendService;
     private final RedisTemplate<String, String> redisTemplate;
+    private final EmailAuthBypassProperties emailAuthBypassProperties;
 
     public void sendAuthCode(EmailTemplate sendGroupCode, String toEmail) {
+        if (sendGroupCode == EmailTemplate.AUTH_CODE && emailAuthBypassProperties.isEnabledFor(toEmail)) {
+            // 개발 자동화 계정 인증번호 저장
+            storeAuthCode(toEmail, emailAuthBypassProperties.code());
+            return;
+        }
+
         checkRateLimit(sendGroupCode, toEmail);
 
         String authCode = CodeGeneratorUtil.generateDigitCode(AUTH_CODE_LENGTH);
