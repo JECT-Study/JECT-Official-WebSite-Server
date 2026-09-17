@@ -6,6 +6,7 @@ import org.ject.support.admin.semester.dto.EditSemesterEventsRequest;
 import org.ject.support.admin.semester.dto.SemesterEventsResponse;
 import org.ject.support.admin.semester.service.AdminSemesterEventService;
 import org.ject.support.domain.recruit.domain.SemesterEventType;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -39,5 +40,15 @@ public class AdminSemesterEventController implements AdminSemesterEventApiSpec {
             @RequestBody @Valid EditSemesterEventsRequest request
     ) {
         adminSemesterEventService.editEvents(semesterId, request);
+    }
+
+    // 선택한 기수의 행사 삭제
+    @Override
+    @DeleteMapping("/{semesterEventId}")
+    public void deleteEvent(
+            @PathVariable Long semesterId,
+            @PathVariable Long semesterEventId
+    ) {
+        adminSemesterEventService.deleteEvent(semesterId, semesterEventId);
     }
 }

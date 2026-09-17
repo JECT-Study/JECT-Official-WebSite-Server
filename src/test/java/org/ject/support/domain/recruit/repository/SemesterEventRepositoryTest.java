@@ -13,12 +13,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
+import jakarta.persistence.EntityManager;
+
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
 class SemesterEventRepositoryTest {
 
     @Autowired
     private SemesterEventRepository semesterEventRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
 	@Test
 	@DisplayName("기수에 등록된 행사와 만족도 조사를 등록 순서대로 조회한다")
@@ -80,5 +85,26 @@ class SemesterEventRepositoryTest {
 
         // then
         assertThat(count).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("기수별 행사를 삭제하면 조회에서 제외하고 이력은 유지한다")
+    void 기수별_행사를_삭제하면_조회에서_제외하고_이력은_유지한다() {
+        // given
+        SemesterEvent semesterEvent = semesterEventRepository.save(SemesterEvent.create(4L, EVENT, "오리엔테이션"));
+
+        // when
+        semesterEventRepository.delete(semesterEvent);
+        semesterEventRepository.flush();
+        entityManager.clear();
+
+        // then
+        assertThat(semesterEventRepository.findById(semesterEvent.getId())).isEmpty();
+
+        Number remainingCount = (Number) entityManager.createNativeQuery(
+                "SELECT COUNT(*) FROM semester_event WHERE id = :semesterEventId AND is_deleted = true")
+                .setParameter("semesterEventId", semesterEvent.getId())
+                .getSingleResult();
+        assertThat(remainingCount.longValue()).isEqualTo(1L);
     }
 }

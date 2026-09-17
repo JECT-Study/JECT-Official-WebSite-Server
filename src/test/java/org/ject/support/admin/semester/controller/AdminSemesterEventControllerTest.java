@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -146,5 +147,16 @@ class AdminSemesterEventControllerTest extends UnitTestSupport {
                 .andExpect(status().isBadRequest());
 
         verify(adminSemesterEventService, never()).editEvents(any(), any());
+    }
+
+    @Test
+    @DisplayName("기수별 행사를 삭제한다")
+    void 기수별_행사를_삭제한다() throws Exception {
+        // when, then
+        mockMvc.perform(delete("/admin/semesters/{semesterId}/events/{semesterEventId}", 4L, 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"));
+
+        verify(adminSemesterEventService).deleteEvent(4L, 1L);
     }
 }
