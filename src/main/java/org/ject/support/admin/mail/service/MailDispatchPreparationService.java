@@ -76,15 +76,8 @@ public class MailDispatchPreparationService {
                                                   Map<String, String> inputVariables) {
         MailTemplateRenderService.RenderedMail rendered = mailTemplateRenderService.render(
                 apply, subjectTemplate, bodyTemplate, inputVariables);
-        String subject = rendered.subject().trim();
-        long lengthWithoutWhitespace = subject.codePoints()
-                .filter(character -> !Character.isWhitespace(character))
-                .count();
-        if (lengthWithoutWhitespace < 2 || lengthWithoutWhitespace > 40) {
-            throw new MailException(MailErrorCode.INVALID_SUBJECT);
-        }
         return new MailDispatchPlan.Target(
-                apply.getId(), apply.getApplicant().getEmail(), subject, rendered.body());
+                apply.getId(), apply.getApplicant().getEmail(), rendered.subject(), rendered.body());
     }
 
     private void validateApplyIds(List<Long> applyIds) {

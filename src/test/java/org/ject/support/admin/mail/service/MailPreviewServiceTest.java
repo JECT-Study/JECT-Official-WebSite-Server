@@ -53,7 +53,7 @@ class MailPreviewServiceTest extends UnitTestSupport {
     @DisplayName("지원자 정보와 입력 변수로 제목과 본문을 미리보기한다")
     void 지원자_정보와_입력_변수로_제목과_본문을_미리보기한다() {
         MailScenario scenario = scenario(
-                "${name} ${semester} ${waitlistNumber}",
+                "  ${name} ${semester} ${waitlistNumber}  ",
                 "면접 일시: ${INTERVIEW_AT}",
                 Set.of(dateTimeVariable()),
                 true);
@@ -73,6 +73,20 @@ class MailPreviewServiceTest extends UnitTestSupport {
         assertThat(response.receiverEmail()).isEqualTo("applicant@ject.kr");
         assertThat(response.subject()).isEqualTo("홍길동 10기 3");
         assertThat(response.body()).isEqualTo("면접 일시: 2026-02-28 10:00");
+    }
+
+    @Test
+    @DisplayName("제목이 공백을 제외하고 40자를 초과하면 미리보기를 생성하지 않는다")
+    void 제목이_공백을_제외하고_40자를_초과하면_미리보기를_생성하지_않는다() {
+        MailScenario scenario = scenario("가".repeat(41), "본문", Set.of(), true);
+        given(mailScenarioRepository.findById(1L)).willReturn(Optional.of(scenario));
+        given(applyRepository.findByIdAndStatusWithApplicant(20L, ApplyStatus.SUBMITTED))
+                .willReturn(Optional.of(submittedApply(SelectionResult.PASSED, null)));
+
+        assertThatThrownBy(() -> mailPreviewService.preview(new PreviewMailRequest(1L, 20L, Map.of())))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.INVALID_SUBJECT);
     }
 
     @Test

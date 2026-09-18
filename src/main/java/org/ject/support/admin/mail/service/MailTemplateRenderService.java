@@ -35,9 +35,20 @@ public class MailTemplateRenderService {
                                String bodyTemplate,
                                Map<String, String> inputVariables) {
         Map<String, Object> variables = buildVariables(apply, inputVariables);
-        String subject = render(subjectTemplate, variables, apply.getId());
+        String subject = normalizeSubject(render(subjectTemplate, variables, apply.getId()));
         String body = render(bodyTemplate, variables, apply.getId());
         return new RenderedMail(subject, body);
+    }
+
+    private String normalizeSubject(String subject) {
+        String normalizedSubject = subject.trim();
+        long lengthWithoutWhitespace = normalizedSubject.codePoints()
+                .filter(character -> !Character.isWhitespace(character))
+                .count();
+        if (lengthWithoutWhitespace < 2 || lengthWithoutWhitespace > 40) {
+            throw new MailException(MailErrorCode.INVALID_SUBJECT);
+        }
+        return normalizedSubject;
     }
 
     private Map<String, Object> buildVariables(Apply apply, Map<String, String> inputVariables) {
