@@ -11,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
@@ -23,7 +24,9 @@ import org.ject.support.domain.base.BaseTimeEntity;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "mail_dispatch_target")
+@Table(name = "mail_dispatch_target", uniqueConstraints = @UniqueConstraint(
+        name = "uk_mail_dispatch_target_job_apply",
+        columnNames = {"dispatch_job_id", "apply_id"}))
 public class MailDispatchTarget extends BaseTimeEntity {
 
     @Id
