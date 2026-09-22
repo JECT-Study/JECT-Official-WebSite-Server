@@ -5,7 +5,7 @@ import java.util.Optional;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface MailDispatchTargetRepository extends JpaRepository<MailDispatchTarget, Long> {
+public interface MailDispatchTargetRepository extends JpaRepository<MailDispatchTarget, Long>, MailDispatchTargetQueryRepository {
 
     Optional<MailDispatchTarget> findByDispatchJobIdAndApplyId(Long dispatchJobId, Long applyId);
 
