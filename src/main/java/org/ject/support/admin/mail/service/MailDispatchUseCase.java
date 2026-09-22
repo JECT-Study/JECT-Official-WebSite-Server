@@ -7,8 +7,6 @@ import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
-import org.ject.support.external.email.exception.EmailException;
-import org.ject.support.external.email.service.EmailSendService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +18,7 @@ public class MailDispatchUseCase {
 
     private final MailDispatchPreparationService mailDispatchPreparationService;
     private final MailDispatchPersistenceService mailDispatchPersistenceService;
-    private final EmailSendService emailSendService;
+    private final MailDispatchDeliveryService mailDispatchDeliveryService;
     private final MailDispatchRequestFingerprint requestFingerprint;
 
     public MailDispatchResponse sendMail(SendMailDispatchRequest request,
@@ -53,23 +51,11 @@ public class MailDispatchUseCase {
         }
         mailDispatchPersistenceService.startProcessing(job.getId());
 
-        plan.targets().forEach(target -> sendTarget(job.getId(), target));
+        String claimedBy = "request:" + job.getId();
+        plan.targets().forEach(target -> mailDispatchPersistenceService
+                .claimForImmediateDispatch(job.getId(), target.applyId(), claimedBy)
+                .ifPresent(mailDispatchDeliveryService::deliver));
         return mailDispatchPersistenceService.getResult(job.getId());
-    }
-
-    private void sendTarget(Long dispatchJobId, MailDispatchPlan.Target target) {
-        try {
-            emailSendService.sendEmail(target.email(), target.subject(), target.body());
-        } catch (Exception exception) {
-            // 대상별 실패를 기록하고 다음 대상 발송을 계속한다.
-            String failureReason = exception instanceof EmailException emailException
-                    ? emailException.getErrorCode().getCode()
-                    : MailErrorCode.MAIL_SEND_FAILURE.getCode();
-            mailDispatchPersistenceService.recordFailure(
-                    dispatchJobId, target.applyId(), failureReason);
-            return;
-        }
-        mailDispatchPersistenceService.recordSuccess(dispatchJobId, target.applyId());
     }
 
     private void validateIdempotencyKey(String idempotencyKey) {

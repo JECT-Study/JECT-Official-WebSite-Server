@@ -4,8 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -15,18 +13,15 @@ import java.util.Map;
 import java.util.Optional;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
+import org.ject.support.admin.mail.domain.MailDispatchOutbox;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
 import org.ject.support.base.UnitTestSupport;
-import org.ject.support.external.email.exception.EmailErrorCode;
-import org.ject.support.external.email.exception.EmailException;
-import org.ject.support.external.email.service.EmailSendService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -42,7 +37,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
     private MailDispatchPersistenceService persistenceService;
 
     @Mock
-    private EmailSendService emailSendService;
+    private MailDispatchDeliveryService mailDispatchDeliveryService;
 
     @Mock
     private MailDispatchRequestFingerprint requestFingerprint;
@@ -68,6 +63,10 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 .willReturn(Optional.empty());
         given(preparationService.prepare(request, 3L, "dispatch-key")).willReturn(plan);
         given(persistenceService.createJob(plan, "fingerprint")).willReturn(job);
+        given(persistenceService.claimForImmediateDispatch(100L, 1L, "request:100"))
+                .willReturn(Optional.of(outbox(job, 1L, "one@ject.kr", "첫 번째", "본문 1")));
+        given(persistenceService.claimForImmediateDispatch(100L, 2L, "request:100"))
+                .willReturn(Optional.of(outbox(job, 2L, "two@ject.kr", "두 번째", "본문 2")));
         given(persistenceService.getResult(100L)).willReturn(response);
 
         // when
@@ -75,15 +74,13 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
 
         // then
         assertThat(result).isEqualTo(response);
-        verify(emailSendService).sendEmail("one@ject.kr", "첫 번째", "본문 1");
-        verify(emailSendService).sendEmail("two@ject.kr", "두 번째", "본문 2");
-        verify(persistenceService).recordSuccess(100L, 1L);
-        verify(persistenceService).recordSuccess(100L, 2L);
+        verify(mailDispatchDeliveryService, org.mockito.Mockito.times(2))
+                .deliver(any(MailDispatchOutbox.class));
     }
 
     @Test
-    @DisplayName("한 대상 발송에 실패해도 나머지 대상을 계속 발송하고 실패를 기록한다")
-    void 한_대상_발송에_실패해도_나머지_대상을_계속_발송하고_실패를_기록한다() {
+    @DisplayName("발송 대상별 Outbox를 delivery service에 위임한다")
+    void 발송_대상별_Outbox를_delivery_service에_위임한다() {
         // given
         SendMailDispatchRequest request = request();
         MailDispatchPlan plan = plan();
@@ -94,21 +91,19 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 .willReturn(Optional.empty());
         given(preparationService.prepare(request, 3L, "dispatch-key")).willReturn(plan);
         given(persistenceService.createJob(plan, "fingerprint")).willReturn(job);
+        given(persistenceService.claimForImmediateDispatch(100L, 1L, "request:100"))
+                .willReturn(Optional.of(outbox(job, 1L, "one@ject.kr", "첫 번째", "본문 1")));
+        given(persistenceService.claimForImmediateDispatch(100L, 2L, "request:100"))
+                .willReturn(Optional.of(outbox(job, 2L, "two@ject.kr", "두 번째", "본문 2")));
         given(persistenceService.getResult(100L)).willReturn(response);
-        doThrow(new EmailException(EmailErrorCode.EMAIL_SEND_FAILURE))
-                .when(emailSendService).sendEmail("one@ject.kr", "첫 번째", "본문 1");
 
         // when
         MailDispatchResponse result = mailDispatchUseCase.sendMail(request, 3L, "dispatch-key");
 
         // then
         assertThat(result.failedCount()).isEqualTo(1);
-        verify(persistenceService).recordFailure(
-                100L, 1L, EmailErrorCode.EMAIL_SEND_FAILURE.getCode());
-        verify(persistenceService).recordSuccess(100L, 2L);
-        InOrder order = inOrder(emailSendService);
-        order.verify(emailSendService).sendEmail("one@ject.kr", "첫 번째", "본문 1");
-        order.verify(emailSendService).sendEmail("two@ject.kr", "두 번째", "본문 2");
+        verify(mailDispatchDeliveryService, org.mockito.Mockito.times(2))
+                .deliver(any(MailDispatchOutbox.class));
     }
 
     @Test
@@ -125,7 +120,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
         assertThatThrownBy(() -> mailDispatchUseCase.sendMail(request, 3L, "dispatch-key"))
                 .isInstanceOf(MailException.class);
         verify(persistenceService, never()).createJob(any(), any());
-        verifyNoInteractions(emailSendService);
+        verifyNoInteractions(mailDispatchDeliveryService);
     }
 
     @Test
@@ -145,7 +140,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
 
         // then
         assertThat(result).isEqualTo(response);
-        verifyNoInteractions(preparationService, emailSendService);
+        verifyNoInteractions(preparationService, mailDispatchDeliveryService);
     }
 
     @Test
@@ -166,7 +161,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH);
-        verifyNoInteractions(preparationService, emailSendService);
+        verifyNoInteractions(preparationService, mailDispatchDeliveryService);
     }
 
     @Test
@@ -186,7 +181,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
 
         // then
         assertThat(result).isEqualTo(response);
-        verifyNoInteractions(preparationService, emailSendService);
+        verifyNoInteractions(preparationService, mailDispatchDeliveryService);
     }
 
     @Test
@@ -210,7 +205,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH);
-        verifyNoInteractions(emailSendService);
+        verifyNoInteractions(mailDispatchDeliveryService);
     }
 
     @Test
@@ -234,7 +229,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
 
         // then
         assertThat(result).isEqualTo(response);
-        verifyNoInteractions(emailSendService);
+        verifyNoInteractions(mailDispatchDeliveryService);
     }
 
     @Test
@@ -245,7 +240,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.INVALID_IDEMPOTENCY_KEY);
-        verifyNoInteractions(preparationService, persistenceService, emailSendService);
+        verifyNoInteractions(preparationService, persistenceService, mailDispatchDeliveryService);
     }
 
     private SendMailDispatchRequest request() {
@@ -272,5 +267,13 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 1L, 2L, 3L, "dispatch-key", "제목", "본문", "{}", 2);
         ReflectionTestUtils.setField(job, "id", id);
         return job;
+    }
+
+    private MailDispatchOutbox outbox(MailDispatchJob job,
+                                      Long applyId,
+                                      String email,
+                                      String subject,
+                                      String body) {
+        return MailDispatchOutbox.pending(job, applyId, email, subject, body);
     }
 }
