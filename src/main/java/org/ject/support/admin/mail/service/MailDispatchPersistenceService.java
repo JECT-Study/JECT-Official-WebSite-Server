@@ -4,11 +4,13 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
+import org.ject.support.admin.mail.domain.MailDispatchOutbox;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
 import org.ject.support.admin.mail.repository.MailDispatchJobRepository;
+import org.ject.support.admin.mail.repository.MailDispatchOutboxRepository;
 import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class MailDispatchPersistenceService {
 
     private final MailDispatchJobRepository mailDispatchJobRepository;
     private final MailDispatchTargetRepository mailDispatchTargetRepository;
+    private final MailDispatchOutboxRepository mailDispatchOutboxRepository;
     private final Map2JsonSerializer map2JsonSerializer;
 
     @Transactional
@@ -40,6 +43,11 @@ public class MailDispatchPersistenceService {
                 .map(target -> MailDispatchTarget.pending(savedJob, target.applyId(), target.email()))
                 .toList();
         mailDispatchTargetRepository.saveAll(targets);
+        List<MailDispatchOutbox> outboxes = plan.targets().stream()
+                .map(target -> MailDispatchOutbox.pending(
+                        savedJob, target.applyId(), target.email(), target.subject(), target.body()))
+                .toList();
+        mailDispatchOutboxRepository.saveAll(outboxes);
         return savedJob;
     }
 
@@ -55,6 +63,7 @@ public class MailDispatchPersistenceService {
         MailDispatchTarget target = findTarget(dispatchJobId, applyId);
         target.markSent();
         job.recordSuccess();
+        findOutbox(dispatchJobId, applyId).ifPresent(MailDispatchOutbox::markSent);
     }
 
     @Transactional
@@ -63,6 +72,7 @@ public class MailDispatchPersistenceService {
         MailDispatchTarget target = findTarget(dispatchJobId, applyId);
         target.markFailed(failureReason);
         job.recordFailure();
+        findOutbox(dispatchJobId, applyId).ifPresent(outbox -> outbox.markFailed(failureReason));
     }
 
     @Transactional(readOnly = true)
@@ -94,5 +104,9 @@ public class MailDispatchPersistenceService {
     private MailDispatchTarget findTarget(Long dispatchJobId, Long applyId) {
         return mailDispatchTargetRepository.findByDispatchJobIdAndApplyId(dispatchJobId, applyId)
                 .orElseThrow(() -> new MailException(MailErrorCode.INVALID_DISPATCH_TARGETS));
+    }
+
+    private Optional<MailDispatchOutbox> findOutbox(Long dispatchJobId, Long applyId) {
+        return mailDispatchOutboxRepository.findByDispatchJobIdAndApplyId(dispatchJobId, applyId);
     }
 }

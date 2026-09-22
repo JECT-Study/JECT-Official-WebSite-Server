@@ -8,6 +8,8 @@ import static org.mockito.Mockito.verify;
 import java.util.List;
 import java.util.Map;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
+import org.ject.support.admin.mail.domain.MailDispatchOutbox;
+import org.ject.support.admin.mail.repository.MailDispatchOutboxRepository;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.repository.MailDispatchJobRepository;
 import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
@@ -27,6 +29,9 @@ class MailDispatchPersistenceServiceTest extends UnitTestSupport {
 
     @Mock
     private MailDispatchTargetRepository mailDispatchTargetRepository;
+
+    @Mock
+    private MailDispatchOutboxRepository mailDispatchOutboxRepository;
 
     @Mock
     private Map2JsonSerializer map2JsonSerializer;
@@ -75,6 +80,16 @@ class MailDispatchPersistenceServiceTest extends UnitTestSupport {
             assertThat(target.getApplyId()).isEqualTo(10L);
             assertThat(target.getEmail()).isEqualTo("applicant@ject.kr");
             assertThat(target.getDispatchJob()).isSameAs(savedJob);
+        });
+
+        ArgumentCaptor<List<MailDispatchOutbox>> outboxCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mailDispatchOutboxRepository).saveAll(outboxCaptor.capture());
+        assertThat(outboxCaptor.getValue()).singleElement().satisfies(outbox -> {
+            assertThat(outbox.getApplyId()).isEqualTo(10L);
+            assertThat(outbox.getEmail()).isEqualTo("applicant@ject.kr");
+            assertThat(outbox.getSubject()).isEqualTo("제목");
+            assertThat(outbox.getBody()).isEqualTo("본문");
+            assertThat(outbox.getDispatchJob()).isSameAs(savedJob);
         });
     }
 }
