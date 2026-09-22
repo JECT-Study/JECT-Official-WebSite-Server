@@ -14,7 +14,7 @@ import java.util.Map;
 public class Map2JsonSerializer {
     private final ObjectMapper objectMapper;
 
-    public String serializeAsString(final Map<String, String> map) {
+    public String serializeAsString(final Map<String, ?> map) {
         try {
             return objectMapper.writeValueAsString(map);
         } catch (JsonProcessingException e) {

@@ -35,6 +35,7 @@ public enum MailErrorCode implements ErrorCode {
     INVALID_SUBJECT(BAD_REQUEST, "MAIL-17", "메일 제목은 공백을 제외하고 2~40자여야 합니다."),
     INVALID_IDEMPOTENCY_KEY(BAD_REQUEST, "MAIL-18", "Idempotency-Key가 올바르지 않습니다."),
     MAIL_SEND_FAILURE(SERVICE_UNAVAILABLE, "MAIL-19", "메일 발송에 실패했습니다."),
+    IDEMPOTENCY_KEY_PAYLOAD_MISMATCH(CONFLICT, "MAIL-20", "동일한 Idempotency-Key에 다른 요청 본문을 사용할 수 없습니다."),
     ;
 
     private final HttpStatus httpStatus;
