@@ -60,6 +60,15 @@ public class MailDispatchOutbox extends BaseTimeEntity {
     @Column(name = "lease_until")
     private LocalDateTime leaseUntil;
 
+    @Column(name = "attempt_count", nullable = false)
+    private int attemptCount;
+
+    @Column(name = "next_attempt_at")
+    private LocalDateTime nextAttemptAt;
+
+    @Column(name = "last_failure_reason", columnDefinition = "TEXT")
+    private String lastFailureReason;
+
     @Version
     private Long version;
 
@@ -87,10 +96,26 @@ public class MailDispatchOutbox extends BaseTimeEntity {
     public void markSent() {
         status = MailDispatchOutboxStatus.SENT;
         failureReason = null;
+        lastFailureReason = null;
+        claimedBy = null;
+        leaseUntil = null;
+        nextAttemptAt = null;
     }
 
     public void markFailed(String failureReason) {
         status = MailDispatchOutboxStatus.FAILED;
         this.failureReason = failureReason;
+        this.lastFailureReason = failureReason;
+        claimedBy = null;
+        leaseUntil = null;
+        nextAttemptAt = null;
+    }
+
+    public void scheduleRetry(String failureReason, LocalDateTime nextAttemptAt) {
+        status = MailDispatchOutboxStatus.PENDING;
+        this.lastFailureReason = failureReason;
+        this.nextAttemptAt = nextAttemptAt;
+        claimedBy = null;
+        leaseUntil = null;
     }
 }

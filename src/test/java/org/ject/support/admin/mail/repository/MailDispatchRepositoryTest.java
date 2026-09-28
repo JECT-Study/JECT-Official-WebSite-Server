@@ -115,5 +115,30 @@ class MailDispatchRepositoryTest {
         MailDispatchOutbox reclaimed = mailDispatchOutboxRepository.findById(outbox.getId()).orElseThrow();
         assertThat(reclaimed.getStatus()).isEqualTo(MailDispatchOutboxStatus.PROCESSING);
         assertThat(reclaimed.getClaimedBy()).isEqualTo("worker-2");
+        assertThat(reclaimed.getAttemptCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("재시도 시각이 지난 Outbox만 worker 후보로 조회한다")
+    void 재시도_시각이_지난_Outbox만_worker_후보로_조회한다() {
+        // given
+        MailDispatchJob job = mailDispatchJobRepository.saveAndFlush(
+                MailDispatchJob.create(1L, 2L, 3L, "dispatch-key-retry", "제목", "본문", "{}", 2));
+        MailDispatchOutbox due = MailDispatchOutbox.pending(
+                job, 10L, "due@ject.kr", "제목", "본문");
+        due.scheduleRetry("EMAIL_TRANSIENT_FAILURE", LocalDateTime.now().minusSeconds(1));
+        MailDispatchOutbox future = MailDispatchOutbox.pending(
+                job, 11L, "future@ject.kr", "제목", "본문");
+        future.scheduleRetry("EMAIL_TRANSIENT_FAILURE", LocalDateTime.now().plusMinutes(1));
+        mailDispatchOutboxRepository.saveAllAndFlush(List.of(due, future));
+
+        // when
+        List<MailDispatchOutbox> candidates = mailDispatchOutboxRepository.findCandidates(
+                List.of(MailDispatchOutboxStatus.PENDING),
+                LocalDateTime.now(),
+                PageRequest.of(0, 10));
+
+        // then
+        assertThat(candidates).containsExactly(due);
     }
 }

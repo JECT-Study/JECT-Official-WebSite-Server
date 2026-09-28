@@ -38,7 +38,7 @@ class MailDispatchWorkerTest extends UnitTestSupport {
     void 대기_중인_Outbox를_claim한_뒤_발송한다() {
         // given
         MailDispatchOutbox outbox = outbox();
-        given(mailDispatchOutboxRepository.findCandidates(any(), any(Pageable.class)))
+        given(mailDispatchOutboxRepository.findCandidates(any(), any(), any(Pageable.class)))
                 .willReturn(List.of(outbox));
         given(mailDispatchPersistenceService.claimOutbox(anyLong(), anyString()))
                 .willReturn(Optional.of(outbox));
@@ -56,7 +56,7 @@ class MailDispatchWorkerTest extends UnitTestSupport {
     void 다른_worker가_먼저_claim한_Outbox는_발송하지_않는다() {
         // given
         MailDispatchOutbox outbox = outbox();
-        given(mailDispatchOutboxRepository.findCandidates(any(), any(Pageable.class)))
+        given(mailDispatchOutboxRepository.findCandidates(any(), any(), any(Pageable.class)))
                 .willReturn(List.of(outbox));
         given(mailDispatchPersistenceService.claimOutbox(anyLong(), anyString()))
                 .willReturn(Optional.empty());

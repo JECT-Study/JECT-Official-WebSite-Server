@@ -81,6 +81,13 @@ public class MailDispatchPersistenceService {
     }
 
     @Transactional
+    public void scheduleRetry(Long outboxId, String failureReason, LocalDateTime nextAttemptAt) {
+        MailDispatchOutbox outbox = mailDispatchOutboxRepository.findById(outboxId)
+                .orElseThrow(() -> new MailException(MailErrorCode.DISPATCH_JOB_NOT_FOUND));
+        outbox.scheduleRetry(failureReason, nextAttemptAt);
+    }
+
+    @Transactional
     public Optional<MailDispatchOutbox> claimForImmediateDispatch(Long dispatchJobId,
                                                                     Long applyId,
                                                                     String claimedBy) {

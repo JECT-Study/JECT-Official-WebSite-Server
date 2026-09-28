@@ -27,10 +27,12 @@ public interface MailDispatchOutboxRepository extends JpaRepository<MailDispatch
             select outbox
             from MailDispatchOutbox outbox
             where outbox.status in :statuses
+              and (outbox.nextAttemptAt is null or outbox.nextAttemptAt <= :now)
             order by outbox.id asc
             """)
     List<MailDispatchOutbox> findCandidates(
             @Param("statuses") Collection<MailDispatchOutboxStatus> statuses,
+            @Param("now") LocalDateTime now,
             Pageable pageable);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
@@ -38,7 +40,9 @@ public interface MailDispatchOutboxRepository extends JpaRepository<MailDispatch
             update MailDispatchOutbox outbox
             set outbox.status = :processing,
                 outbox.claimedBy = :claimedBy,
-                outbox.leaseUntil = :leaseUntil
+                outbox.leaseUntil = :leaseUntil,
+                outbox.attemptCount = outbox.attemptCount + 1,
+                outbox.nextAttemptAt = null
             where outbox.id = :id
               and (
                   outbox.status = :pending
