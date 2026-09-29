@@ -2,6 +2,7 @@ package org.ject.support.admin.mail.service;
 
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
@@ -17,31 +18,42 @@ import org.springframework.stereotype.Service;
 public class MailDispatchUseCase {
 
     private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 255;
+    private static final String IDEMPOTENCY_KEY_CONSTRAINT_NAME = "uk_mail_dispatch_job_requester_key";
 
     private final MailDispatchPreparationService mailDispatchPreparationService;
     private final MailDispatchPersistenceService mailDispatchPersistenceService;
     private final EmailSendService emailSendService;
+    private final MailDispatchRequestFingerprintGenerator requestFingerprintGenerator;
 
     public MailDispatchResponse sendMail(SendMailDispatchRequest request,
                                          Long requestedByAdminId,
                                          String idempotencyKey) {
         validateIdempotencyKey(idempotencyKey);
-        Optional<MailDispatchResponse> existingResult =
-                mailDispatchPersistenceService.findResultByIdempotencyKey(
+        String requestFingerprintValue = requestFingerprintGenerator.generate(request);
+        Optional<MailDispatchJob> existingJob =
+                mailDispatchPersistenceService.findJobByIdempotencyKey(
                         requestedByAdminId, idempotencyKey);
-        if (existingResult.isPresent()) {
-            return existingResult.get();
+        if (existingJob.isPresent()) {
+            return reuseExistingJob(existingJob.get(), requestFingerprintValue);
         }
 
         MailDispatchPlan plan = mailDispatchPreparationService.prepare(
                 request, requestedByAdminId, idempotencyKey);
         MailDispatchJob job;
         try {
-            job = mailDispatchPersistenceService.createJob(plan);
+            job = mailDispatchPersistenceService.createJob(plan, requestFingerprintValue);
         } catch (DataIntegrityViolationException exception) {
-            return mailDispatchPersistenceService.findResultByIdempotencyKey(
-                            requestedByAdminId, idempotencyKey)
-                    .orElseThrow(() -> exception);
+            if (!isIdempotencyKeyConflict(exception)) {
+                throw exception;
+            }
+            // 요청 키 유니크 충돌만 재조회해 기존 요청 fingerprint를 검증한다.
+            Optional<MailDispatchJob> concurrentJob =
+                    mailDispatchPersistenceService.findJobByIdempotencyKey(
+                            requestedByAdminId, idempotencyKey);
+            if (concurrentJob.isEmpty()) {
+                throw exception;
+            }
+            return reuseExistingJob(concurrentJob.get(), requestFingerprintValue);
         }
         mailDispatchPersistenceService.startProcessing(job.getId());
 
@@ -70,5 +82,26 @@ public class MailDispatchUseCase {
                 || idempotencyKey.length() > MAX_IDEMPOTENCY_KEY_LENGTH) {
             throw new MailException(MailErrorCode.INVALID_IDEMPOTENCY_KEY);
         }
+    }
+
+    private MailDispatchResponse reuseExistingJob(MailDispatchJob existingJob, String requestFingerprint) {
+        // fingerprint가 없는 기존 작업은 요청 내용을 비교할 수 없어 기존 결과를 유지한다.
+        String existingFingerprint = existingJob.getRequestFingerprint();
+        if (existingFingerprint != null && !existingFingerprint.equals(requestFingerprint)) {
+            throw new MailException(MailErrorCode.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH);
+        }
+        return MailDispatchResponse.from(existingJob);
+    }
+
+    private boolean isIdempotencyKeyConflict(DataIntegrityViolationException exception) {
+        Throwable cause = exception;
+        while (cause != null) {
+            if (cause instanceof ConstraintViolationException constraintViolation
+                    && IDEMPOTENCY_KEY_CONSTRAINT_NAME.equals(constraintViolation.getConstraintName())) {
+                return true;
+            }
+            cause = cause.getCause();
+        }
+        return false;
     }
 }

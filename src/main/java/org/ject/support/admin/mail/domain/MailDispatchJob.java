@@ -70,6 +70,9 @@ public class MailDispatchJob extends BaseTimeEntity {
     @Column(name = "input_variables_json", columnDefinition = "TEXT")
     private String inputVariablesJson;
 
+    @Column(name = "request_fingerprint", columnDefinition = "TEXT")
+    private String requestFingerprint;
+
     @Column(name = "started_at")
     private LocalDateTime startedAt;
 
@@ -86,6 +89,7 @@ public class MailDispatchJob extends BaseTimeEntity {
                             String subjectTemplate,
                             String bodyTemplate,
                             String inputVariablesJson,
+                            String requestFingerprint,
                             int targetCount) {
         this.scenarioId = scenarioId;
         this.recruitId = recruitId;
@@ -94,6 +98,7 @@ public class MailDispatchJob extends BaseTimeEntity {
         this.subjectTemplate = subjectTemplate;
         this.bodyTemplate = bodyTemplate;
         this.inputVariablesJson = inputVariablesJson;
+        this.requestFingerprint = requestFingerprint;
         this.targetCount = targetCount;
         this.status = MailDispatchJobStatus.REQUESTED;
         this.requestedAt = LocalDateTime.now();
@@ -107,6 +112,28 @@ public class MailDispatchJob extends BaseTimeEntity {
                                          String bodyTemplate,
                                          String inputVariablesJson,
                                          int targetCount) {
+        return create(
+                scenarioId,
+                recruitId,
+                requestedByAdminId,
+                idempotencyKey,
+                subjectTemplate,
+                bodyTemplate,
+                inputVariablesJson,
+                null,
+                targetCount
+        );
+    }
+
+    public static MailDispatchJob create(Long scenarioId,
+                                         Long recruitId,
+                                         Long requestedByAdminId,
+                                         String idempotencyKey,
+                                         String subjectTemplate,
+                                         String bodyTemplate,
+                                         String inputVariablesJson,
+                                         String requestFingerprint,
+                                         int targetCount) {
         if (targetCount <= 0) {
             throw new MailException(MailErrorCode.INVALID_DISPATCH_TARGET_COUNT);
         }
@@ -118,6 +145,7 @@ public class MailDispatchJob extends BaseTimeEntity {
                 subjectTemplate,
                 bodyTemplate,
                 inputVariablesJson,
+                requestFingerprint,
                 targetCount
         );
     }

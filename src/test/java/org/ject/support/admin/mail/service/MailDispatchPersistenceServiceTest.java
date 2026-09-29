@@ -56,7 +56,7 @@ class MailDispatchPersistenceServiceTest extends UnitTestSupport {
         });
 
         // when
-        MailDispatchJob savedJob = mailDispatchPersistenceService.createJob(plan);
+        MailDispatchJob savedJob = mailDispatchPersistenceService.createJob(plan, "fingerprint");
 
         // then
         assertThat(savedJob.getScenarioId()).isEqualTo(1L);
@@ -66,6 +66,7 @@ class MailDispatchPersistenceServiceTest extends UnitTestSupport {
         assertThat(savedJob.getSubjectTemplate()).isEqualTo("제목 템플릿");
         assertThat(savedJob.getBodyTemplate()).isEqualTo("본문 템플릿");
         assertThat(savedJob.getInputVariablesJson()).isEqualTo("{\"MESSAGE\":\"안내\"}");
+        assertThat(savedJob.getRequestFingerprint()).isEqualTo("fingerprint");
         assertThat(savedJob.getTargetCount()).isEqualTo(1);
 
         ArgumentCaptor<List<MailDispatchTarget>> captor = ArgumentCaptor.forClass(List.class);
