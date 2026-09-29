@@ -69,11 +69,11 @@ public class MailDispatchOutbox extends BaseTimeEntity {
         this.status = MailDispatchOutboxStatus.PENDING;
     }
 
-    public static MailDispatchOutbox pending(MailDispatchJob dispatchJob,
-                                             Long applyId,
-                                             String email,
-                                             String subject,
-                                             String body) {
+    public static MailDispatchOutbox createPending(MailDispatchJob dispatchJob,
+                                                   Long applyId,
+                                                   String email,
+                                                   String subject,
+                                                   String body) {
         return new MailDispatchOutbox(dispatchJob, applyId, email, subject, body);
     }
 

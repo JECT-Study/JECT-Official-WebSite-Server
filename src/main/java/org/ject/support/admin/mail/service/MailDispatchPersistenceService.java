@@ -45,7 +45,7 @@ public class MailDispatchPersistenceService {
         mailDispatchTargetRepository.saveAll(targets);
         // 발송 전 결과 snapshot을 작업·대상과 같은 트랜잭션에 보존한다.
         List<MailDispatchOutbox> outboxes = plan.targets().stream()
-                .map(target -> MailDispatchOutbox.pending(
+                .map(target -> MailDispatchOutbox.createPending(
                         savedJob, target.applyId(), target.email(), target.subject(), target.body()))
                 .toList();
         mailDispatchOutboxRepository.saveAll(outboxes);
@@ -64,7 +64,9 @@ public class MailDispatchPersistenceService {
         MailDispatchTarget target = findTarget(dispatchJobId, applyId);
         target.markSent();
         job.recordSuccess();
-        findOutbox(dispatchJobId, applyId).ifPresent(MailDispatchOutbox::markSent);
+        // Outbox 도입 전 작업의 결과 저장도 유지한다.
+        mailDispatchOutboxRepository.findByDispatchJobIdAndApplyId(dispatchJobId, applyId)
+                .ifPresent(MailDispatchOutbox::markSent);
     }
 
     @Transactional
@@ -73,7 +75,9 @@ public class MailDispatchPersistenceService {
         MailDispatchTarget target = findTarget(dispatchJobId, applyId);
         target.markFailed(failureReason);
         job.recordFailure();
-        findOutbox(dispatchJobId, applyId).ifPresent(outbox -> outbox.markFailed(failureReason));
+        // Outbox 도입 전 작업의 결과 저장도 유지한다.
+        mailDispatchOutboxRepository.findByDispatchJobIdAndApplyId(dispatchJobId, applyId)
+                .ifPresent(outbox -> outbox.markFailed(failureReason));
     }
 
     @Transactional(readOnly = true)
@@ -96,10 +100,5 @@ public class MailDispatchPersistenceService {
     private MailDispatchTarget findTarget(Long dispatchJobId, Long applyId) {
         return mailDispatchTargetRepository.findByDispatchJobIdAndApplyId(dispatchJobId, applyId)
                 .orElseThrow(() -> new MailException(MailErrorCode.INVALID_DISPATCH_TARGETS));
-    }
-
-    // Outbox 도입 전 작업의 발송 결과 기록도 유지한다.
-    private Optional<MailDispatchOutbox> findOutbox(Long dispatchJobId, Long applyId) {
-        return mailDispatchOutboxRepository.findByDispatchJobIdAndApplyId(dispatchJobId, applyId);
     }
 }

@@ -14,7 +14,7 @@ class MailDispatchOutboxTest {
         MailDispatchJob job = MailDispatchJob.create(1L, 2L, 3L, "dispatch-key", "제목", "본문", "{}", 1);
 
         // when
-        MailDispatchOutbox outbox = MailDispatchOutbox.pending(
+        MailDispatchOutbox outbox = MailDispatchOutbox.createPending(
                 job, 10L, "applicant@ject.kr", "렌더링된 제목", "렌더링된 본문");
 
         // then
@@ -56,7 +56,7 @@ class MailDispatchOutboxTest {
     }
 
     private MailDispatchOutbox createOutbox() {
-        return MailDispatchOutbox.pending(
+        return MailDispatchOutbox.createPending(
                 MailDispatchJob.create(1L, 2L, 3L, "dispatch-key", "제목", "본문", "{}", 1),
                 10L,
                 "applicant@ject.kr",
