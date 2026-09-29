@@ -5,7 +5,7 @@ CREATE TABLE mail_dispatch_outbox
     apply_id        BIGINT                NOT NULL,
     email           VARCHAR(255)          NOT NULL,
     subject         TEXT                  NOT NULL,
-    body            TEXT                  NOT NULL,
+    body            LONGTEXT              NOT NULL,
     status          VARCHAR(30)           NOT NULL,
     failure_reason  TEXT,
     version         BIGINT                NOT NULL DEFAULT 0,

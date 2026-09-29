@@ -43,7 +43,7 @@ public class MailDispatchOutbox extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String subject;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "LONGTEXT")
     private String body;
 
     @Enumerated(EnumType.STRING)

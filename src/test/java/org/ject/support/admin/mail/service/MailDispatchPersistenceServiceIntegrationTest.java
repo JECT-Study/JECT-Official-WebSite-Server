@@ -87,6 +87,22 @@ class MailDispatchPersistenceServiceIntegrationTest {
     }
 
     @Test
+    @DisplayName("대용량 렌더링 본문도 Outbox snapshot으로 보존한다")
+    void 대용량_본문도_Outbox에_보존한다() {
+        // given
+        String body = "a".repeat(65_536);
+
+        // when
+        var savedJob = mailDispatchPersistenceService.createJob(createPlan("large-body-key", body), "fingerprint");
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        assertThat(mailDispatchOutboxRepository.findByDispatchJobIdAndApplyId(savedJob.getId(), 10L).orElseThrow()
+                .getBody()).isEqualTo(body);
+    }
+
+    @Test
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     @DisplayName("Outbox 저장에 실패하면 발송 작업과 대상도 함께 롤백한다")
     void Outbox_저장에_실패하면_발송_작업과_대상도_함께_롤백한다() {
@@ -179,6 +195,10 @@ class MailDispatchPersistenceServiceIntegrationTest {
     }
 
     private MailDispatchPlan createPlan(String idempotencyKey) {
+        return createPlan(idempotencyKey, "렌더링된 본문");
+    }
+
+    private MailDispatchPlan createPlan(String idempotencyKey, String body) {
         return new MailDispatchPlan(
                 1L,
                 2L,
@@ -187,6 +207,6 @@ class MailDispatchPersistenceServiceIntegrationTest {
                 "제목 템플릿",
                 "본문 템플릿",
                 Map.of("MESSAGE", "안내"),
-                List.of(new MailDispatchPlan.Target(10L, "applicant@ject.kr", "렌더링된 제목", "렌더링된 본문")));
+                List.of(new MailDispatchPlan.Target(10L, "applicant@ject.kr", "렌더링된 제목", body)));
     }
 }
