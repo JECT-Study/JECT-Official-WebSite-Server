@@ -8,11 +8,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.support.EncodedResource;
-import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -24,19 +22,36 @@ class MailDispatchOutboxMigrationTest {
     private static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.2");
 
     @Test
-    @DisplayName("MySQL TEXT byte limit을 넘는 본문을 Outbox migration에 저장한다")
-    void MySQL_TEXT_byte_limit을_넘는_본문을_Outbox에_저장한다() throws SQLException {
+    @DisplayName("V44 기준선에서 Flyway로 V45·V46 적용 후 65,536바이트 본문을 저장한다")
+    void V44_기준선에서_Flyway로_V45와_V46_적용_후_긴_본문을_저장한다() throws SQLException {
         // given
         String body = "a".repeat(65_536);
 
         try (Connection connection = DriverManager.getConnection(
                 MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())) {
             try (Statement statement = connection.createStatement()) {
-                statement.execute("CREATE TABLE mail_dispatch_job (id BIGINT NOT NULL PRIMARY KEY) ENGINE=InnoDB");
+                statement.execute("""
+                        CREATE TABLE mail_dispatch_job (
+                            id BIGINT NOT NULL PRIMARY KEY,
+                            input_variables_json TEXT
+                        ) ENGINE=InnoDB
+                        """);
                 statement.execute("INSERT INTO mail_dispatch_job (id) VALUES (1)");
             }
-            ScriptUtils.executeSqlScript(connection, new EncodedResource(
-                    new ClassPathResource("db/migration/V46__create_mail_dispatch_outbox.sql")));
+
+            Flyway flyway = Flyway.configure()
+                    .dataSource(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())
+                    .baselineVersion("44")
+                    .load();
+            flyway.baseline();
+            flyway.migrate();
+
+            try (Statement statement = connection.createStatement();
+                 ResultSet resultSet = statement.executeQuery(
+                         "SELECT request_fingerprint FROM mail_dispatch_job WHERE id = 1")) {
+                assertThat(resultSet.next()).isTrue();
+                assertThat(resultSet.getString("request_fingerprint")).isNull();
+            }
 
             // when
             try (PreparedStatement statement = connection.prepareStatement("""
