@@ -14,6 +14,7 @@ import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.admin.mail.repository.MailDispatchJobRepository;
 import org.ject.support.admin.mail.repository.MailDispatchOutboxRepository;
 import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
+import org.ject.support.base.TestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;
@@ -36,7 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 })
 @ImportAutoConfiguration(JacksonAutoConfiguration.class)
 @DataJpaTest
-class MailDispatchPersistenceServiceIntegrationTest {
+class MailDispatchPersistenceServiceIntegrationTest extends TestSupport {
 
     @Autowired
     private MailDispatchPersistenceService mailDispatchPersistenceService;
