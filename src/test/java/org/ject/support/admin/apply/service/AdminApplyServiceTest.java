@@ -3,6 +3,7 @@ package org.ject.support.admin.apply.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -18,6 +19,7 @@ import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.domain.applicant.service.ApplicantCommandService;
+import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
@@ -41,6 +43,7 @@ import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.exception.QuestionErrorCode;
 import org.ject.support.domain.recruit.exception.QuestionException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -258,7 +261,8 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 단건_삭제_성공() {
+    @DisplayName("지원서를 삭제하면 연결된 지원자도 삭제한다")
+    void 지원서를_삭제하면_연결된_지원자도_삭제한다() {
         // given
         var applyId = submittedApply.getId();
         given(adminApplyRepository.findByIdWithApplicant(applyId))
@@ -270,6 +274,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         // then
         verify(adminApplyRepository).findByIdWithApplicant(applyId);
         verify(adminApplyRepository).delete(submittedApply);
+        verify(applicantCommandService).deleteApplicant(submittedApply.getApplicant().getId());
     }
 
     @Test
@@ -286,7 +291,8 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 다건_삭제하면_개수를_반환한다() {
+    @DisplayName("여러 지원서를 삭제하면 연결된 지원자들도 삭제한다")
+    void 여러_지원서를_삭제하면_연결된_지원자들도_삭제한다() {
         // given
         List<Long> applyIds = List.of(1L, 2L, 3L);
         var request = new SubmittedApplyBulkDeleteRequest(applyIds);
@@ -306,6 +312,70 @@ class AdminApplyServiceTest extends UnitTestSupport {
         // then
         assertThat(deletedCount).isEqualTo(applyIds.size());
         verify(adminApplyRepository).deleteAll(applies);
+        verify(applicantCommandService).deleteApplicants(new DeleteApplicantsRequest(java.util.Set.copyOf(applyIds)));
+    }
+
+    @Test
+    @DisplayName("다건 삭제 시 연결된 지원자 ID는 중복 없이 전달한다")
+    void 다건_삭제시_연결된_지원자_ID는_중복없이_전달한다() {
+        // given
+        List<Long> applyIds = List.of(1L, 2L);
+        Applicant applicant = Applicant.builder().id(1L).build();
+        List<Apply> applies = applyIds.stream()
+                .map(id -> Apply.builder().id(id).applicant(applicant).build())
+                .toList();
+        given(adminApplyRepository.findAllByIdWithApplicant(applyIds)).willReturn(applies);
+
+        // when
+        adminApplyService.deleteApplies(new SubmittedApplyBulkDeleteRequest(applyIds));
+
+        // then
+        verify(applicantCommandService).deleteApplicants(new DeleteApplicantsRequest(java.util.Set.of(1L)));
+    }
+
+    @Test
+    @DisplayName("다건 삭제 대상이 없으면 지원자를 삭제하지 않는다")
+    void 다건_삭제_대상이_없으면_지원자를_삭제하지_않는다() {
+        // given
+        List<Long> applyIds = List.of(999L);
+        given(adminApplyRepository.findAllByIdWithApplicant(applyIds)).willReturn(List.of());
+
+        // when
+        adminApplyService.deleteApplies(new SubmittedApplyBulkDeleteRequest(applyIds));
+
+        // then
+        verifyNoInteractions(applicantCommandService);
+        verify(adminApplyRepository, never()).deleteAll(any());
+    }
+
+    @Test
+    @DisplayName("중복된 지원서 ID로 다건 삭제하면 예외가 발생한다")
+    void 중복된_지원서_ID로_다건_삭제하면_예외가_발생한다() {
+        // given
+        var request = new SubmittedApplyBulkDeleteRequest(List.of(1L, 1L));
+
+        // when & then
+        assertThatThrownBy(() -> adminApplyService.deleteApplies(request))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.DUPLICATE_APPLY_ID);
+        verifyNoInteractions(adminApplyRepository, applicantCommandService);
+    }
+
+    @Test
+    @DisplayName("다건 삭제 시 존재하는 지원서만 삭제하고 삭제한 개수를 반환한다")
+    void 다건_삭제시_존재하는_지원서만_삭제하고_삭제한_개수를_반환한다() {
+        // given
+        List<Long> applyIds = List.of(1L, 999L);
+        List<Apply> applies = List.of(submittedApply);
+        given(adminApplyRepository.findAllByIdWithApplicant(applyIds)).willReturn(applies);
+
+        // when
+        int deletedCount = adminApplyService.deleteApplies(new SubmittedApplyBulkDeleteRequest(applyIds));
+
+        // then
+        assertThat(deletedCount).isEqualTo(1);
+        verify(adminApplyRepository).deleteAll(applies);
+        verify(applicantCommandService).deleteApplicants(new DeleteApplicantsRequest(java.util.Set.of(1L)));
     }
 
     @Test
