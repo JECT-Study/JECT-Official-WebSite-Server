@@ -3,6 +3,7 @@ package org.ject.support.admin.apply.service;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +12,15 @@ import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
 import org.ject.support.domain.applicant.entity.ApplicantEditor;
+import org.ject.support.domain.applicant.service.ApplicantCommandService;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
@@ -40,6 +44,7 @@ public class AdminApplyService {
 
     private final ApplyRepository applyRepository;
     private final AdminApplyRepository adminApplyRepository;
+    private final ApplicantCommandService applicantCommandService;
     private final Map2JsonSerializer map2JsonSerializer;
     private final String2MapSerializer string2MapSerializer;
 
@@ -91,17 +96,32 @@ public class AdminApplyService {
                 .updateContentAndPortfolios(newContent, newPortfolios);
     }
 
+    // 지원서 삭제 후 연결된 지원자를 같은 트랜잭션에서 소프트 삭제
     @Transactional
     public void deleteApply(final Long applyId) {
         Apply apply = adminApplyRepository.findByIdWithApplicant(applyId)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
         adminApplyRepository.delete(apply);
+        applicantCommandService.deleteApplicant(apply.getApplicant().getId());
     }
 
+    // 선택한 지원서와 연결된 지원자를 같은 트랜잭션에서 소프트 삭제
     @Transactional
-    public int deleteApplies(final List<Long> applyIds) {
-        adminApplyRepository.deleteAllByIds(applyIds);
-        return applyIds.size();
+    public int deleteApplies(final SubmittedApplyBulkDeleteRequest request) {
+        List<Long> applyIds = request.applyIds();
+        if (applyIds.stream().distinct().count() != applyIds.size()) {
+            throw new ApplyException(ApplyErrorCode.DUPLICATE_APPLY_ID);
+        }
+        List<Apply> applies = adminApplyRepository.findAllByIdWithApplicant(applyIds);
+        if (applies.isEmpty()) {
+            return 0;
+        }
+        Set<Long> applicantIds = applies.stream()
+                .map(apply -> apply.getApplicant().getId())
+                .collect(Collectors.toSet());
+        adminApplyRepository.deleteAll(applies);
+        applicantCommandService.deleteApplicants(new DeleteApplicantsRequest(applicantIds));
+        return applies.size();
     }
 
     @Transactional

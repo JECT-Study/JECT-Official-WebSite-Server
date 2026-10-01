@@ -62,6 +62,12 @@ public class JwtCookieProvider {
         }
     }
 
+    // 이메일 재인증 쿠키를 유지하고 기존 로그인 쿠키만 만료 처리
+    public void deleteLoginCookies(HttpServletResponse response) {
+        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie("accessToken").toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie("refreshToken").toString());
+    }
+
     private ResponseCookie deleteCookie(String cookieName) {
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(cookieName, "")
                 .domain(domain)
