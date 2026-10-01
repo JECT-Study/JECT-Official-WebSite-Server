@@ -227,21 +227,21 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
     }
 
     @Test
-    @DisplayName("fingerprint가 없는 기존 작업은 요청 내용이 달라도 기존 결과를 반환한다")
-    void fingerprint가_없는_기존_작업은_요청_내용이_달라도_기존_결과를_반환한다() {
+    @DisplayName("fingerprint가 없는 기존 작업은 요청 내용을 비교할 수 없어 충돌한다")
+    void fingerprint가_없는_기존_작업은_요청을_충돌로_거부한다() {
         // given
         SendMailDispatchRequest differentRequest = new SendMailDispatchRequest(
                 2L, 1L, List.of(1L, 2L), "다른 제목", Map.of());
         MailDispatchJob existingJob = completedJob(100L, null, 2);
-        MailDispatchResponse response = MailDispatchResponse.from(existingJob);
         given(persistenceService.findJobByIdempotencyKey(3L, "dispatch-key"))
                 .willReturn(Optional.of(existingJob));
 
-        // when
-        MailDispatchResponse result = mailDispatchUseCase.sendMail(differentRequest, 3L, "dispatch-key");
-
-        // then
-        assertThat(result).isEqualTo(response);
+        // when & then
+        assertThatThrownBy(() -> mailDispatchUseCase.sendMail(differentRequest, 3L, "dispatch-key"))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH);
+        verify(persistenceService, never()).createJob(any(), any());
         verifyNoInteractions(preparationService, emailSendService);
     }
 
