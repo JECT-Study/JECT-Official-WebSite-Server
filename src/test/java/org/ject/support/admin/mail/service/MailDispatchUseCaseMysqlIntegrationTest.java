@@ -66,7 +66,7 @@ class MailDispatchUseCaseMysqlIntegrationTest extends TestSupport {
         registry.add("spring.datasource.driver-class-name", mysqlContainer::getDriverClassName);
         registry.add("spring.datasource.username", mysqlContainer::getUsername);
         registry.add("spring.datasource.password", mysqlContainer::getPassword);
-        registry.add("spring.jpa.database-platform", () -> "org.hibernate.dialect.MySQLDialect");
+        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.MySQLDialect");
     }
 
     @Test
