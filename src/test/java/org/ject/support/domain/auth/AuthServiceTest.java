@@ -126,12 +126,12 @@ class AuthServiceTest {
     }
     
     @Test
-    @DisplayName("리프레시 토큰 검증 성공 - 새 액세스 토큰 발급")
+    @DisplayName("유효한 리프레시 토큰과 지원자가 있으면 재발급 대상 지원자 ID를 반환한다")
     void refreshAccessToken_Success() {
         // given
         given(jwtTokenProvider.validateToken(TEST_REFRESH_TOKEN)).willReturn(true);
         given(jwtTokenProvider.extractApplicantId(TEST_REFRESH_TOKEN)).willReturn(TEST_APPLICANT_ID);
-        given(jwtTokenProvider.reissueAccessToken(TEST_REFRESH_TOKEN, TEST_APPLICANT_ID)).willReturn(TEST_ACCESS_TOKEN);
+        given(applicantRepository.existsById(TEST_APPLICANT_ID)).willReturn(true);
 
         // when
         Long result = authService.refreshAccessToken(TEST_REFRESH_TOKEN);

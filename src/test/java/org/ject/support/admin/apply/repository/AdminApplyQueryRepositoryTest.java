@@ -480,8 +480,9 @@ class AdminApplyQueryRepositoryTest {
                 .getSingleResult()).longValue();
 
         // when
-        adminApplyRepository.deleteAllByIds(List.of(savedApply.getId()));
+        adminApplyRepository.deleteAll(List.of(savedApply));
         entityManager.flush();
+        entityManager.clear();
 
         // then
         Object[] state = (Object[]) entityManager.createNativeQuery(
@@ -513,7 +514,8 @@ class AdminApplyQueryRepositoryTest {
             Apply staleApply = staleEntityManager.find(Apply.class, applyId);
 
             new TransactionTemplate(transactionManager).executeWithoutResult(transactionStatus ->
-                    adminApplyRepository.deleteAllByIds(List.of(applyId)));
+                    adminApplyRepository.deleteAll(
+                            adminApplyRepository.findAllByIdWithApplicant(List.of(applyId))));
 
             // when, then
             staleApply.saveTemporarily();
