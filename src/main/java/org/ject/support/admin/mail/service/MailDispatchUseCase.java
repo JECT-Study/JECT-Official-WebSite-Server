@@ -19,6 +19,8 @@ public class MailDispatchUseCase {
 
     private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 255;
     private static final String IDEMPOTENCY_KEY_CONSTRAINT_NAME = "uk_mail_dispatch_job_requester_key";
+    private static final String MYSQL_IDEMPOTENCY_KEY_CONSTRAINT_NAME =
+            "mail_dispatch_job." + IDEMPOTENCY_KEY_CONSTRAINT_NAME;
 
     private final MailDispatchPreparationService mailDispatchPreparationService;
     private final MailDispatchPersistenceService mailDispatchPersistenceService;
@@ -96,9 +98,12 @@ public class MailDispatchUseCase {
     private boolean isIdempotencyKeyConflict(DataIntegrityViolationException exception) {
         Throwable cause = exception;
         while (cause != null) {
-            if (cause instanceof ConstraintViolationException constraintViolation
-                    && IDEMPOTENCY_KEY_CONSTRAINT_NAME.equals(constraintViolation.getConstraintName())) {
-                return true;
+            if (cause instanceof ConstraintViolationException constraintViolation) {
+                String constraintName = constraintViolation.getConstraintName();
+                if (IDEMPOTENCY_KEY_CONSTRAINT_NAME.equals(constraintName)
+                        || MYSQL_IDEMPOTENCY_KEY_CONSTRAINT_NAME.equals(constraintName)) {
+                    return true;
+                }
             }
             cause = cause.getCause();
         }
