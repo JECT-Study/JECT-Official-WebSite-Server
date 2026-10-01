@@ -9,6 +9,7 @@ import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.admin.mail.dto.MailDispatchJobSearchCondition;
+import org.ject.support.base.TestSupport;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
-class MailDispatchRepositoryTest {
+class MailDispatchRepositoryTest extends TestSupport {
 
     @Autowired
     private MailDispatchJobRepository mailDispatchJobRepository;
