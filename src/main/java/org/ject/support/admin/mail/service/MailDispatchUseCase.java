@@ -85,9 +85,9 @@ public class MailDispatchUseCase {
     }
 
     private MailDispatchResponse reuseExistingJob(MailDispatchJob existingJob, String requestFingerprint) {
-        // fingerprint가 없는 기존 작업은 요청 내용을 비교할 수 없어 기존 결과를 유지한다.
+        // V45 이전 작업은 본문을 비교할 수 없어 같은 키 재사용을 거부한다.
         String existingFingerprint = existingJob.getRequestFingerprint();
-        if (existingFingerprint != null && !existingFingerprint.equals(requestFingerprint)) {
+        if (existingFingerprint == null || !existingFingerprint.equals(requestFingerprint)) {
             throw new MailException(MailErrorCode.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH);
         }
         return MailDispatchResponse.from(existingJob);
