@@ -37,6 +37,8 @@ public class CustomSuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     public void onAuthenticationSuccess(HttpServletResponse response, String email) {
         String verificationToken = jwtTokenProvider.createVerificationToken(email);
 
+        // 기존 로그인 쿠키를 만료시켜 다음 요청에서 이메일 인증 권한 적용
+        jwtCookieProvider.deleteLoginCookies(response);
         response.addHeader(HttpHeaders.SET_COOKIE, jwtCookieProvider.createVerificationCookie(verificationToken).toString());
     }
 
