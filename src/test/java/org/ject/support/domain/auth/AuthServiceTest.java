@@ -127,7 +127,7 @@ class AuthServiceTest {
     
     @Test
     @DisplayName("유효한 리프레시 토큰과 지원자가 있으면 재발급 대상 지원자 ID를 반환한다")
-    void refreshAccessToken_Success() {
+    void 삭제되지_않은_지원자는_리프레시_토큰으로_재발급할_수_있다() {
         // given
         given(jwtTokenProvider.validateToken(TEST_REFRESH_TOKEN)).willReturn(true);
         given(jwtTokenProvider.extractApplicantId(TEST_REFRESH_TOKEN)).willReturn(TEST_APPLICANT_ID);
@@ -138,6 +138,21 @@ class AuthServiceTest {
 
         // then
         assertThat(result).isEqualTo(TEST_APPLICANT_ID);
+    }
+
+    @Test
+    @DisplayName("삭제되거나 존재하지 않는 지원자는 리프레시 토큰으로 재발급할 수 없다")
+    void 삭제되거나_존재하지_않는_지원자는_리프레시_토큰으로_재발급할_수_없다() {
+        // given
+        given(jwtTokenProvider.validateToken(TEST_REFRESH_TOKEN)).willReturn(true);
+        given(jwtTokenProvider.extractApplicantId(TEST_REFRESH_TOKEN)).willReturn(TEST_APPLICANT_ID);
+        given(applicantRepository.existsById(TEST_APPLICANT_ID)).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> authService.refreshAccessToken(TEST_REFRESH_TOKEN))
+                .isInstanceOf(AuthException.class)
+                .extracting(exception -> ((AuthException) exception).getErrorCode())
+                .isEqualTo(INVALID_REFRESH_TOKEN);
     }
     
     @Test
