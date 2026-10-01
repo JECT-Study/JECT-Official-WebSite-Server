@@ -3,7 +3,6 @@ package org.ject.support.admin.apply.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -17,6 +16,8 @@ import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
+import org.ject.support.domain.applicant.service.ApplicantCommandService;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
@@ -60,6 +61,9 @@ class AdminApplyServiceTest extends UnitTestSupport {
     private AdminApplyRepository adminApplyRepository;
 
     @Mock
+    private ApplicantCommandService applicantCommandService;
+
+    @Mock
     private Map2JsonSerializer map2JsonSerializer;
 
     @Mock
@@ -71,6 +75,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
     void setUp() {
         var applyId = 1L;
         var member = Applicant.builder()
+                .id(1L)
                 .name("김젝트")
                 .phoneNumber("010-1234-5678")
                 .email("test@mail.com")
@@ -284,14 +289,23 @@ class AdminApplyServiceTest extends UnitTestSupport {
     void 다건_삭제하면_개수를_반환한다() {
         // given
         List<Long> applyIds = List.of(1L, 2L, 3L);
-        doNothing().when(adminApplyRepository).deleteAllByIds(applyIds);
+        var request = new SubmittedApplyBulkDeleteRequest(applyIds);
+        List<Apply> applies = applyIds.stream()
+                .map(id -> Apply.builder()
+                        .id(id)
+                        .applicant(Applicant.builder().id(id).build())
+                        .recruit(submittedApply.getRecruit())
+                        .status(ApplyStatus.SUBMITTED)
+                        .build())
+                .toList();
+        given(adminApplyRepository.findAllByIdWithApplicant(applyIds)).willReturn(applies);
 
         // when
-        int deletedCount = adminApplyService.deleteApplies(applyIds);
+        int deletedCount = adminApplyService.deleteApplies(request);
 
         // then
         assertThat(deletedCount).isEqualTo(applyIds.size());
-        verify(adminApplyRepository).deleteAllByIds(applyIds);
+        verify(adminApplyRepository).deleteAll(applies);
     }
 
     @Test
