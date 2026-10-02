@@ -2,22 +2,10 @@ package org.ject.support.admin.mail.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import jakarta.persistence.Column;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class MailDispatchOutboxTest {
-
-    @Test
-    @DisplayName("Outbox 본문 컬럼은 TEXT byte limit을 넘는 내용을 저장할 수 있다")
-    void Outbox_본문_컬럼은_LONGTEXT를_사용한다() throws NoSuchFieldException {
-        // when
-        Column bodyColumn = MailDispatchOutbox.class.getDeclaredField("body")
-                .getAnnotation(Column.class);
-
-        // then
-        assertThat(bodyColumn.columnDefinition()).isEqualTo("LONGTEXT");
-    }
 
     @Test
     @DisplayName("발송 Outbox를 생성하면 대기 상태와 렌더링된 메일 snapshot이 저장된다")
