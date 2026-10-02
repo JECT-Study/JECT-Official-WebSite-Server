@@ -2,7 +2,9 @@ package org.ject.support.admin.mail.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -12,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.LongStream;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
+import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
@@ -19,6 +22,8 @@ import org.ject.support.admin.mail.exception.MailException;
 import org.ject.support.admin.mail.repository.MailDispatchJobRepository;
 import org.ject.support.base.TestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.external.email.exception.EmailErrorCode;
+import org.ject.support.external.email.exception.EmailException;
 import org.ject.support.external.email.service.EmailSendService;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;
@@ -71,6 +76,46 @@ class MailDispatchUseCaseMysqlIntegrationTest extends TestSupport {
         registry.add("spring.datasource.username", mysqlContainer::getUsername);
         registry.add("spring.datasource.password", mysqlContainer::getPassword);
         registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.MySQLDialect");
+    }
+
+    @Test
+    @DisplayName("모든 수신자 실패를 최종 결과로 저장하고 같은 요청의 재발송을 막는다")
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void 모든_수신자_실패를_최종_결과로_저장하고_같은_요청의_재발송을_막는다() {
+        // given
+        Long requestedByAdminId = 5L;
+        String idempotencyKey = "all-failed-dispatch-key";
+        SendMailDispatchRequest request = new SendMailDispatchRequest(
+                2L, 1L, List.of(10L, 20L), "안내 제목", Map.of());
+        MailDispatchPlan plan = new MailDispatchPlan(
+                1L,
+                2L,
+                requestedByAdminId,
+                idempotencyKey,
+                "안내 제목",
+                "안내 본문",
+                Map.of(),
+                List.of(
+                        new MailDispatchPlan.Target(10L, "first@ject.kr", "안내 제목", "안내 본문"),
+                        new MailDispatchPlan.Target(20L, "second@ject.kr", "안내 제목", "안내 본문"))
+        );
+        given(preparationService.prepare(request, requestedByAdminId, idempotencyKey))
+                .willReturn(plan);
+        willThrow(new EmailException(EmailErrorCode.EMAIL_SEND_FAILURE))
+                .given(emailSendService).sendEmail(anyString(), anyString(), anyString());
+
+        // when
+        MailDispatchResponse first = mailDispatchUseCase.sendMail(request, requestedByAdminId, idempotencyKey);
+        MailDispatchResponse repeated = mailDispatchUseCase.sendMail(request, requestedByAdminId, idempotencyKey);
+
+        // then
+        assertThat(first.status()).isEqualTo(MailDispatchJobStatus.FAILED);
+        assertThat(first.targetCount()).isEqualTo(2);
+        assertThat(first.processingCount()).isZero();
+        assertThat(first.successCount()).isZero();
+        assertThat(first.failedCount()).isEqualTo(2);
+        assertThat(repeated).isEqualTo(first);
+        verify(emailSendService, times(2)).sendEmail(anyString(), anyString(), anyString());
     }
 
     @Test
