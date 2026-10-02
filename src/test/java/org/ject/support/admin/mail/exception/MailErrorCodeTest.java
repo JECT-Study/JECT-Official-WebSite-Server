@@ -12,4 +12,10 @@ class MailErrorCodeTest {
         assertThat(MailErrorCode.INVALID_DISPATCH_TARGETS.getCode()).isEqualTo("MAIL-16");
         assertThat(MailErrorCode.INVALID_SUBJECT.getCode()).isEqualTo("MAIL-17");
     }
+
+    @Test
+    void 요청_fingerprint가_다르면_충돌_오류를_반환한다() {
+        assertThat(MailErrorCode.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH.getCode()).isEqualTo("MAIL-20");
+        assertThat(MailErrorCode.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH.getHttpStatus().value()).isEqualTo(409);
+    }
 }

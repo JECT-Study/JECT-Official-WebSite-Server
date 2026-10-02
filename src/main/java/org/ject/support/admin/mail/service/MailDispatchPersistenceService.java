@@ -23,7 +23,7 @@ public class MailDispatchPersistenceService {
     private final Map2JsonSerializer map2JsonSerializer;
 
     @Transactional
-    public MailDispatchJob createJob(MailDispatchPlan plan) {
+    public MailDispatchJob createJob(MailDispatchPlan plan, String requestFingerprint) {
         MailDispatchJob job = MailDispatchJob.create(
                 plan.scenarioId(),
                 plan.recruitId(),
@@ -32,6 +32,7 @@ public class MailDispatchPersistenceService {
                 plan.subjectTemplate(),
                 plan.bodyTemplate(),
                 map2JsonSerializer.serializeAsString(plan.inputVariables()),
+                requestFingerprint,
                 plan.targets().size()
         );
         MailDispatchJob savedJob = mailDispatchJobRepository.save(job);
@@ -65,11 +66,10 @@ public class MailDispatchPersistenceService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<MailDispatchResponse> findResultByIdempotencyKey(Long requestedByAdminId,
-                                                                      String idempotencyKey) {
+    public Optional<MailDispatchJob> findJobByIdempotencyKey(Long requestedByAdminId,
+                                                              String idempotencyKey) {
         return mailDispatchJobRepository
-                .findByRequestedByAdminIdAndIdempotencyKey(requestedByAdminId, idempotencyKey)
-                .map(MailDispatchResponse::from);
+                .findByRequestedByAdminIdAndIdempotencyKey(requestedByAdminId, idempotencyKey);
     }
 
     @Transactional(readOnly = true)

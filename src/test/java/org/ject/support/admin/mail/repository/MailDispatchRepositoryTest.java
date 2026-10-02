@@ -9,6 +9,7 @@ import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.admin.mail.dto.MailDispatchJobSearchCondition;
+import org.ject.support.base.TestSupport;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +22,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
-class MailDispatchRepositoryTest {
+class MailDispatchRepositoryTest extends TestSupport {
 
     @Autowired
     private MailDispatchJobRepository mailDispatchJobRepository;
@@ -52,6 +53,29 @@ class MailDispatchRepositoryTest {
         assertThat(mailDispatchJobRepository
                 .findByRequestedByAdminIdAndIdempotencyKey(3L, "dispatch-key"))
                 .containsSame(job);
+    }
+
+    @Test
+    @DisplayName("같은 키를 다른 관리자에게 분리하고 fingerprint를 저장한다")
+    void 같은_키를_다른_관리자에게_분리하고_fingerprint를_저장한다() {
+        // given
+        MailDispatchJob firstAdminJob = mailDispatchJobRepository.saveAndFlush(
+                MailDispatchJob.create(1L, 2L, 3L, "shared-key", "제목", "본문", "{}", "first", 1));
+        MailDispatchJob secondAdminJob = mailDispatchJobRepository.saveAndFlush(
+                MailDispatchJob.create(1L, 2L, 4L, "shared-key", "제목", "본문", "{}", "second", 1));
+        MailDispatchJob legacyJob = mailDispatchJobRepository.saveAndFlush(
+                MailDispatchJob.create(1L, 2L, 3L, "legacy-key", "제목", "본문", "{}", 1));
+
+        // when & then
+        assertThat(mailDispatchJobRepository
+                .findByRequestedByAdminIdAndIdempotencyKey(3L, "shared-key"))
+                .containsSame(firstAdminJob);
+        assertThat(mailDispatchJobRepository
+                .findByRequestedByAdminIdAndIdempotencyKey(4L, "shared-key"))
+                .containsSame(secondAdminJob);
+        assertThat(firstAdminJob.getRequestFingerprint()).isEqualTo("first");
+        assertThat(secondAdminJob.getRequestFingerprint()).isEqualTo("second");
+        assertThat(legacyJob.getRequestFingerprint()).isNull();
     }
 
     @Test
