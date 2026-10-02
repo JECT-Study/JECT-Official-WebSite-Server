@@ -3,12 +3,16 @@ package org.ject.support.admin.mail.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.LongStream;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
+import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
@@ -67,6 +71,48 @@ class MailDispatchUseCaseMysqlIntegrationTest extends TestSupport {
         registry.add("spring.datasource.username", mysqlContainer::getUsername);
         registry.add("spring.datasource.password", mysqlContainer::getPassword);
         registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.MySQLDialect");
+    }
+
+    @Test
+    @DisplayName("큰 입력 변수와 최대 500명 대상 요청을 저장하고 같은 요청을 재사용한다")
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void 큰_입력_변수와_최대_500명_대상_요청을_저장하고_같은_요청을_재사용한다() {
+        // given
+        Long requestedByAdminId = 4L;
+        String idempotencyKey = "large-dispatch-key";
+        String message = "x".repeat(60_000);
+        List<Long> applyIds = LongStream.range(1_000_000_000L, 1_000_000_500L)
+                .boxed()
+                .toList();
+        Map<String, String> inputVariables = Map.of("MESSAGE", message);
+        SendMailDispatchRequest request = new SendMailDispatchRequest(
+                2L, 1L, applyIds, "안내 제목", inputVariables);
+        MailDispatchPlan plan = new MailDispatchPlan(
+                1L,
+                2L,
+                requestedByAdminId,
+                idempotencyKey,
+                "안내 제목",
+                "{{MESSAGE}}",
+                inputVariables,
+                applyIds.stream()
+                        .map(applyId -> new MailDispatchPlan.Target(
+                                applyId, "applicant@ject.kr", "안내 제목", message))
+                        .toList()
+        );
+        given(preparationService.prepare(request, requestedByAdminId, idempotencyKey))
+                .willReturn(plan);
+
+        // when
+        MailDispatchResponse first = mailDispatchUseCase.sendMail(request, requestedByAdminId, idempotencyKey);
+        MailDispatchResponse repeated = mailDispatchUseCase.sendMail(request, requestedByAdminId, idempotencyKey);
+
+        // then
+        assertThat(first.targetCount()).isEqualTo(500);
+        assertThat(first.successCount()).isEqualTo(500);
+        assertThat(first.failedCount()).isZero();
+        assertThat(repeated).isEqualTo(first);
+        verify(emailSendService, times(500)).sendEmail("applicant@ject.kr", "안내 제목", message);
     }
 
     @Test

@@ -18,8 +18,8 @@ class MailDispatchRequestFingerprintGeneratorTest {
                     new Map2JsonSerializer(new ObjectMapper()));
 
     @Test
-    @DisplayName("요청 필드를 고정된 순서로 직렬화하고 순서 없는 값은 정렬한다")
-    void 요청_필드를_고정된_순서로_직렬화하고_순서_없는_값은_정렬한다() {
+    @DisplayName("정규화된 요청을 고정 길이 SHA-256 fingerprint로 식별한다")
+    void 정규화된_요청을_고정_길이_SHA256_fingerprint로_식별한다() {
         // given
         Map<String, String> inputVariables = new LinkedHashMap<>();
         inputVariables.put("B", "두 번째");
@@ -32,8 +32,7 @@ class MailDispatchRequestFingerprintGeneratorTest {
 
         // then
         assertThat(result).isEqualTo(
-                "{\"applyIds\":[10,20],\"inputVariables\":{\"A\":\"첫 번째\",\"B\":\"두 번째\"},"
-                        + "\"recruitId\":2,\"scenarioId\":1,\"subjectOverride\":\"제목\"}");
+                "8199090e675fc69cd072439b857f3c396382d7a73809a2be689926cf49d55437");
     }
 
     @Test
