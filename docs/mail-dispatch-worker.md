@@ -51,7 +51,22 @@ worker의 배치 처리 오류는 예외 종류만 기록하고 다음 주기에
 
 ## 검증과 남은 작업
 
-자동 실행·비활성·worker 컨텍스트 재생성·만료 격리·모집 scheduler 격리·DB 저장 장애의 후속 주기 처리는 실제 MySQL과 대체 SES로 검증한다. 실제 서버 프로세스 재기동·운영 배포·AWS 발송 검증과 구분한다. SDK 시간 초과는 로컬 HTTP 서버에서 짧은 한도로 검증하고 30초·20초 기본값은 별도로 확인한다.
+자동 실행·비활성·worker 컨텍스트 재생성·만료 격리·모집 scheduler 격리·DB 저장 장애의 후속 주기 처리는 실제 MySQL과 대체 SES로 검증한다. SDK 시간 초과는 로컬 HTTP 서버에서 짧은 한도로 검증하고 30초·20초 기본값은 별도로 확인한다.
+
+`MailDispatchProcessRestartMysqlTest`는 별도 OS 프로세스의 메일 실행 모듈을 강제로 종료하고 새 JVM에서 같은 MySQL 기록을 복구한다. 검증 대상은 운영 저장·claim·실행 서비스·worker와 로컬 HTTP 대체 메일 서버다. 전체 운영 애플리케이션 진입점, 운영 배포, 실제 AWS 수락·배달 검증은 아니다.
+
+- 저장 트랜잭션 커밋 직후 `Runtime.halt`로 shutdown hook·finally 없이 중단한다. 새 worker는 저장된 snapshot을 한 번만 발송하고 완료 집계를 남긴다.
+- 로컬 외부 서버의 수락 응답 직후, DB 성공 기록 전 중단한다. 새 worker는 실제 2분 lease가 만료되기 전까지 재발송하지 않고 만료 후 `UNKNOWN / MAIL-21`로 격리한다. 테스트에서 lease 시각이나 운영 시간을 단축하지 않는다.
+- 자식 JVM은 부모가 생성한 테스트 DB 스키마를 `validate`로 확인한다. 실제 Flyway upgrade 검증과는 별도다. 메일 서버는 loopback으로 제한하며 AWS SES 구현을 로드하지 않는다.
+- 테스트가 실패해도 생성한 자식 프로세스만 종료한다. 실패 진단용 자식 로그는 임시 디렉터리에 남으며 이메일 주소·본문은 검증용 가상 데이터다. 부모 환경 상속을 제거하고 검증 DB 접속값과 loopback 주소만 명령행이 아닌 자식 환경으로 전달한다.
+
+프로세스 장애 검증만 실행하려면 Java 21과 Docker를 준비한 뒤 다음 명령을 사용한다. 외부 수락 후 장애 사례는 운영 lease의 실제 만료를 기다리므로 최소 2분이 필요하다.
+
+```sh
+./gradlew test --tests '*MailDispatchProcessRestartMysqlTest' -x jacocoTestCoverageVerification
+```
+
+위 focused 실행은 전역 커버리지 판정을 제외한다. PR 전에는 `./gradlew test`로 전체 테스트와 70% 커버리지 검증을 별도로 실행한다. 자식 JVM의 실행 자체는 부모 JaCoCo 세션에 합산하지 않으므로 커버리지 숫자를 프로세스 장애 검증의 증명으로 사용하지 않는다.
 
 `GET /admin/mails/dispatches/{dispatchJobId}/targets`는 기존 필드에 `attemptCount`, `nextAttemptAt`, `lastAttemptFailureReason`을 추가한다. 관리자 본인 작업만 조회하며 기존 상태 필터·ID 오름차순·페이징을 유지한다. 과거 Outbox 없는 이력은 세 필드가 모두 null이다. 미시도 Outbox의 횟수 0과 정보 부재를 구분한다.
 
@@ -80,3 +95,4 @@ worker의 배치 처리 오류는 예외 종류만 기록하고 다음 주기에
 - [발송 불확실 결과 격리 결정](adr/0002-quarantine-uncertain-mail-delivery.md)
 - [AWS SDK timeout 계약](https://docs.aws.amazon.com/sdk-for-java/latest/developer-guide/timeouts.html)
 - [Spring fixed-delay와 scheduler 지정 계약](https://docs.spring.io/spring-framework/docs/6.2.x/javadoc-api/org/springframework/scheduling/annotation/Scheduled.html)
+- [Java 21 Runtime.halt의 강제 종료 계약](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Runtime.html#halt(int))
