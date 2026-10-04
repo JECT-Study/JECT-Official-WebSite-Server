@@ -127,6 +127,43 @@ public class MailDispatchOutbox extends BaseTimeEntity {
         return true;
     }
 
+    public boolean quarantineUnclaimed() {
+        if (status != MailDispatchOutboxStatus.PENDING) {
+            return false;
+        }
+        status = MailDispatchOutboxStatus.UNKNOWN;
+        failureReason = MailErrorCode.MAIL_SEND_RESULT_UNKNOWN.getCode();
+        return true;
+    }
+
+    public boolean hasClaimToken(String token) {
+        return status == MailDispatchOutboxStatus.PROCESSING
+                && token != null && token.equals(claimToken);
+    }
+
+    public boolean markClaimSent(String token, LocalDateTime now) {
+        if (!hasActiveClaim(token, now)) {
+            return false;
+        }
+        status = MailDispatchOutboxStatus.SENT;
+        failureReason = null;
+        return true;
+    }
+
+    public boolean markClaimFailed(String token, LocalDateTime now, String failureReason) {
+        if (!hasActiveClaim(token, now)) {
+            return false;
+        }
+        status = MailDispatchOutboxStatus.FAILED;
+        this.failureReason = failureReason;
+        return true;
+    }
+
+    private boolean hasActiveClaim(String token, LocalDateTime now) {
+        Objects.requireNonNull(now);
+        return hasClaimToken(token) && leaseUntil != null && leaseUntil.isAfter(now);
+    }
+
     private void validatePending() {
         if (status != MailDispatchOutboxStatus.PENDING) {
             throw new MailException(MailErrorCode.INVALID_DISPATCH_TARGET_STATUS);

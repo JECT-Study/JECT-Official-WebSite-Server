@@ -64,7 +64,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
         MailDispatchPlan plan = plan();
         MailDispatchJob job = job(100L);
         MailDispatchResponse response = new MailDispatchResponse(
-                100L, MailDispatchJobStatus.COMPLETED, 2, 0, 2, 0);
+                100L, MailDispatchJobStatus.COMPLETED, 2, 0, 2, 0, 0);
         given(persistenceService.findJobByIdempotencyKey(3L, "dispatch-key"))
                 .willReturn(Optional.empty());
         given(preparationService.prepare(request, 3L, "dispatch-key")).willReturn(plan);
@@ -90,7 +90,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
         MailDispatchPlan plan = plan();
         MailDispatchJob job = job(100L);
         MailDispatchResponse response = new MailDispatchResponse(
-                100L, MailDispatchJobStatus.COMPLETED, 2, 0, 1, 1);
+                100L, MailDispatchJobStatus.COMPLETED, 2, 0, 1, 1, 0);
         given(persistenceService.findJobByIdempotencyKey(3L, "dispatch-key"))
                 .willReturn(Optional.empty());
         given(preparationService.prepare(request, 3L, "dispatch-key")).willReturn(plan);
@@ -209,7 +209,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 1L, 2L, 4L, "dispatch-key", "제목", "본문", "{}", 1);
         ReflectionTestUtils.setField(otherAdminJob, "id", 101L);
         MailDispatchResponse response = new MailDispatchResponse(
-                101L, MailDispatchJobStatus.COMPLETED, 1, 0, 1, 0);
+                101L, MailDispatchJobStatus.COMPLETED, 1, 0, 1, 0, 0);
         String fingerprint = requestFingerprintGenerator.generate(request);
         given(persistenceService.findJobByIdempotencyKey(4L, "dispatch-key"))
                 .willReturn(Optional.empty());
