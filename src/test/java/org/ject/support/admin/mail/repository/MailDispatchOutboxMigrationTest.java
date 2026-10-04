@@ -49,9 +49,42 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
             Flyway flyway = Flyway.configure()
                     .dataSource(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())
                     .baselineVersion("44")
+                    .target("48")
                     .load();
             flyway.baseline();
             flyway.migrate();
+
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("""
+                        INSERT INTO mail_dispatch_outbox
+                            (dispatch_job_id, apply_id, email, subject, body, status, claim_token)
+                        VALUES (1, 90, 'pending@ject.kr', '제목', '본문', 'PENDING', NULL),
+                               (1, 91, 'processing@ject.kr', '제목', '본문', 'PROCESSING', 'old-claim'),
+                               (1, 92, 'unknown@ject.kr', '제목', '본문', 'UNKNOWN', 'unknown-claim')
+                        """);
+            }
+            Flyway.configure()
+                    .dataSource(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())
+                    .load().migrate();
+            try (Statement statement = connection.createStatement();
+                 ResultSet resultSet = statement.executeQuery("""
+                         SELECT status, attempt_count, next_attempt_at
+                         FROM mail_dispatch_outbox WHERE apply_id IN (90, 91, 92) ORDER BY apply_id
+                         """)) {
+                assertThat(resultSet.next()).isTrue();
+                assertThat(resultSet.getString("status")).isEqualTo("PENDING");
+                assertThat(resultSet.getInt("attempt_count")).isZero();
+                assertThat(resultSet.getTimestamp("next_attempt_at")).isNull();
+                assertThat(resultSet.next()).isTrue();
+                assertThat(resultSet.getString("status")).isEqualTo("PROCESSING");
+                assertThat(resultSet.getInt("attempt_count")).isEqualTo(1);
+                assertThat(resultSet.getTimestamp("next_attempt_at")).isNull();
+                assertThat(resultSet.next()).isTrue();
+                assertThat(resultSet.getString("status")).isEqualTo("UNKNOWN");
+                assertThat(resultSet.getInt("attempt_count")).isEqualTo(1);
+                assertThat(resultSet.getTimestamp("next_attempt_at")).isNull();
+                assertThat(resultSet.next()).isFalse();
+            }
 
             try (PreparedStatement statement = connection.prepareStatement("""
                     SELECT COLUMN_NAME
