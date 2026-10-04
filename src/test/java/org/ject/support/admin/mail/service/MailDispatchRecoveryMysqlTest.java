@@ -1,12 +1,16 @@
 package org.ject.support.admin.mail.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -15,24 +19,31 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import org.ject.support.admin.mail.config.MailDispatchWorkerConfig;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.admin.mail.repository.MailDispatchJobRepository;
 import org.ject.support.admin.mail.repository.MailDispatchOutboxRepository;
 import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
 import org.ject.support.base.TestSupport;
+import org.ject.support.common.schedule.SchedulingConfig;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.external.email.service.EmailSendService;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -74,6 +85,9 @@ class MailDispatchRecoveryMysqlTest extends TestSupport {
 
     @Autowired
     private MailDispatchTargetRepository targetRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @MockitoBean
     private EmailSendService emailSendService;
@@ -220,6 +234,192 @@ class MailDispatchRecoveryMysqlTest extends TestSupport {
         } finally {
             start.countDown();
         }
+    }
+
+    @Test
+    void 활성화된_worker가_시작_전_저장된_미처리_메일을_자동으로_발송한다() {
+        // given
+        var job = persistenceService.createJob(plan(10L), "fixture");
+
+        // when
+        workerContext()
+                .withPropertyValues("mail.dispatch.worker.enabled=true", "mail.dispatch.worker.poll-delay=50")
+                .run(context -> {
+                    // then
+                    assertThat(context).hasNotFailed();
+                    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+                        var result = queryService.getJob(3L, job.getId());
+                        assertThat(result.status()).isEqualTo(MailDispatchJobStatus.COMPLETED);
+                        assertThat(result.successCount()).isEqualTo(1);
+                    });
+                    verify(emailSendService).sendEmail("10@ject.kr", "저장된 제목", "저장된 본문");
+                    verifyNoMoreInteractions(emailSendService);
+                });
+    }
+
+    @Test
+    void 중단된_실행자는_미처리_대상을_새로_획득하거나_발송하지_않는다() {
+        // given
+        var job = persistenceService.createJob(plan(10L, 20L), "fixture");
+
+        // when
+        Thread.currentThread().interrupt();
+        try {
+            executionService.executePendingBatch(10);
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        } finally {
+            Thread.interrupted();
+        }
+
+        // then
+        var result = queryService.getJob(3L, job.getId());
+        assertThat(result.status()).isEqualTo(MailDispatchJobStatus.REQUESTED);
+        assertThat(result.successCount()).isZero();
+        verifyNoInteractions(emailSendService);
+    }
+
+    @Test
+    void 설정이_없거나_비활성이면_worker를_만들거나_발송하지_않는다() {
+        // given
+        var job = persistenceService.createJob(plan(10L), "fixture");
+        var runner = workerContext();
+
+        // when, then
+        for (var disabled : List.of(runner, runner.withPropertyValues("mail.dispatch.worker.enabled=false"))) {
+            disabled.run(context -> {
+                assertThat(context).hasNotFailed().doesNotHaveBean(MailDispatchWorkerService.class);
+                assertThat(context).doesNotHaveBean("mailDispatchScheduler");
+                assertThat(queryService.getJob(3L, job.getId()).status())
+                        .isEqualTo(MailDispatchJobStatus.REQUESTED);
+                verifyNoInteractions(emailSendService);
+            });
+        }
+    }
+
+    @Test
+    void worker를_다시_만들면_미처리는_복구하고_만료_대상은_재발송_없이_격리한다() {
+        // given
+        var expiredJob = persistenceService.createJob(plan(10L), "fixture");
+        var expired = outboxRepository.findByDispatchJobIdAndApplyId(expiredJob.getId(), 10L).orElseThrow();
+        claimService.claim(expired.getId(), LocalDateTime.now().minusMinutes(3), Duration.ofMinutes(2))
+                .orElseThrow();
+        var firstJob = persistenceService.createJob(plan(20L), "fixture");
+        var runner = workerContext()
+                .withPropertyValues("mail.dispatch.worker.enabled=true", "mail.dispatch.worker.poll-delay=50");
+
+        // when
+        runner.run(context -> await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+            assertThat(context).hasNotFailed();
+            assertThat(queryService.getJob(3L, firstJob.getId()).status())
+                    .isEqualTo(MailDispatchJobStatus.COMPLETED);
+            assertThat(queryService.getJob(3L, expiredJob.getId()).status())
+                    .isEqualTo(MailDispatchJobStatus.UNKNOWN);
+        }));
+        var secondJob = persistenceService.createJob(plan(30L), "fixture");
+        runner.run(context -> await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+            assertThat(context).hasNotFailed();
+            assertThat(queryService.getJob(3L, secondJob.getId()).status())
+                    .isEqualTo(MailDispatchJobStatus.COMPLETED);
+        }));
+
+        // then
+        assertThat(queryService.getJob(3L, expiredJob.getId()).unknownCount()).isEqualTo(1);
+        verify(emailSendService).sendEmail("20@ject.kr", "저장된 제목", "저장된 본문");
+        verify(emailSendService).sendEmail("30@ject.kr", "저장된 제목", "저장된 본문");
+        verifyNoMoreInteractions(emailSendService);
+    }
+
+    @Test
+    void 메일_worker는_겹쳐_실행하지_않고_모집_스케줄러를_막지_않는다() {
+        // given
+        var job = persistenceService.createJob(plan(10L, 20L), "fixture");
+        CountDownLatch sendStarted = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            sendStarted.countDown();
+            assertThat(release.await(10, TimeUnit.SECONDS)).isTrue();
+            return null;
+        }).when(emailSendService).sendEmail("10@ject.kr", "저장된 제목", "저장된 본문");
+
+        // when
+        new ApplicationContextRunner()
+                .withUserConfiguration(MailDispatchWorkerConfig.class, SchedulingConfig.class)
+                .withBean(MailDispatchExecutionService.class, () -> executionService)
+                .withPropertyValues("mail.dispatch.worker.enabled=true", "mail.dispatch.worker.poll-delay=50")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    try {
+                        assertThat(sendStarted.await(10, TimeUnit.SECONDS)).isTrue();
+                        CountDownLatch recruitmentRan = new CountDownLatch(1);
+                        context.getBean("recruitScheduler", TaskScheduler.class)
+                                .schedule(recruitmentRan::countDown, Instant.now());
+                        assertThat(recruitmentRan.await(10, TimeUnit.SECONDS)).isTrue();
+                        verify(emailSendService, never()).sendEmail("20@ject.kr", "저장된 제목", "저장된 본문");
+                    } finally {
+                        release.countDown();
+                    }
+
+                    // then
+                    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
+                            assertThat(queryService.getJob(3L, job.getId()).status())
+                                    .isEqualTo(MailDispatchJobStatus.COMPLETED));
+                    verify(emailSendService).sendEmail("10@ject.kr", "저장된 제목", "저장된 본문");
+                    verify(emailSendService).sendEmail("20@ject.kr", "저장된 제목", "저장된 본문");
+                    verifyNoMoreInteractions(emailSendService);
+                });
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 101})
+    void worker_배치_한도가_범위를_벗어나면_시작하지_않는다(int batchSize) {
+        // given, when
+        workerContext()
+                .withPropertyValues("mail.dispatch.worker.enabled=true",
+                        "mail.dispatch.worker.batch-size=" + batchSize)
+                .run(context -> {
+                    // then
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure()).hasRootCauseInstanceOf(IllegalArgumentException.class);
+                    verifyNoInteractions(emailSendService);
+                });
+    }
+
+    @Test
+    void worker가_결과_DB_저장에_실패해도_다음_주기에_다른_미처리를_발송한다() {
+        // given
+        var failedJob = persistenceService.createJob(plan(10L), "fixture");
+        var remainingJob = persistenceService.createJob(plan(20L), "fixture");
+        jdbcTemplate.execute("ALTER TABLE mail_dispatch_outbox ADD CONSTRAINT simulated_worker_result_failure "
+                + "CHECK (apply_id <> 10 OR status <> 'SENT')");
+
+        try {
+            // when
+            workerContext()
+                    .withPropertyValues("mail.dispatch.worker.enabled=true", "mail.dispatch.worker.poll-delay=50")
+                    .run(context -> {
+                        assertThat(context).hasNotFailed();
+                        await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
+                                assertThat(queryService.getJob(3L, remainingJob.getId()).status())
+                                        .isEqualTo(MailDispatchJobStatus.COMPLETED));
+                    });
+
+            // then
+            var failed = queryService.getJob(3L, failedJob.getId());
+            assertThat(failed.status()).isEqualTo(MailDispatchJobStatus.PROCESSING);
+            assertThat(failed.successCount()).isZero();
+            assertThat(failed.processingCount()).isEqualTo(1);
+            verify(emailSendService).sendEmail("10@ject.kr", "저장된 제목", "저장된 본문");
+            verify(emailSendService).sendEmail("20@ject.kr", "저장된 제목", "저장된 본문");
+            verifyNoMoreInteractions(emailSendService);
+        } finally {
+            jdbcTemplate.execute("ALTER TABLE mail_dispatch_outbox DROP CHECK simulated_worker_result_failure");
+        }
+    }
+
+    private ApplicationContextRunner workerContext() {
+        return new ApplicationContextRunner()
+                .withUserConfiguration(MailDispatchWorkerConfig.class)
+                .withBean(MailDispatchExecutionService.class, () -> executionService);
     }
 
     private MailDispatchPlan plan(Long... applyIds) {
