@@ -5,6 +5,7 @@ import static org.ject.support.external.email.exception.EmailErrorCode.EMAIL_SEN
 import static org.ject.support.external.email.exception.EmailErrorCode.TOO_MANY_EMAIL_REQUESTS;
 
 import com.google.common.collect.Lists;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -45,6 +46,7 @@ import software.amazon.awssdk.services.sesv2.model.TooManyRequestsException;
 public class SesEmailSendService implements EmailSendService {
 
     private static final String GROUP_CODE_TAG_NAME = "group_code";
+    private static final Duration SEND_PERMIT_MAX_WAIT = Duration.ofSeconds(10);
 
     private final Map2JsonSerializer map2JsonSerializer;
     private final SesV2Client sesV2Client;
@@ -129,7 +131,7 @@ public class SesEmailSendService implements EmailSendService {
                 .build();
 
         try {
-            rateLimiter.consume(1);
+            rateLimiter.consume(1, SEND_PERMIT_MAX_WAIT);
         } catch (RuntimeException exception) {
             // SES 호출 전 실패는 발송하지 않았다는 근거가 있어 확정 실패로 처리한다.
             log.error("단건 이메일 호출 전 실패 errorType={}", exception.getClass().getSimpleName());
