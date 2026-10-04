@@ -25,6 +25,8 @@ import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
 import org.ject.support.base.TestSupport;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -77,6 +79,75 @@ class MailDispatchClaimServiceMysqlTest extends TestSupport {
     }
 
     @Test
+    void 확정된_요청_제한은_30초_후에만_다시_획득한다() {
+        // given
+        MailDispatchJob job = jobRepository.saveAndFlush(MailDispatchJob.create(
+                1L, 2L, 3L, UUID.randomUUID().toString(), "제목", "본문", "{}", 1));
+        targetRepository.saveAndFlush(MailDispatchTarget.pending(job, 10L, "applicant@ject.kr"));
+        MailDispatchOutbox outbox = outboxRepository.saveAndFlush(MailDispatchOutbox.createPending(
+                job, 10L, "applicant@ject.kr", "제목", "본문"));
+        LocalDateTime now = LocalDateTime.of(2026, 10, 4, 12, 0);
+        var claim = claimService.claim(outbox.getId(), now, Duration.ofMinutes(2)).orElseThrow();
+
+        // when
+        assertThat(claimService.recordThrottling(outbox.getId(), claim.claimToken(), now.plusSeconds(1))).isTrue();
+
+        // then
+        var result = queryService.getJob(3L, job.getId());
+        assertThat(result.status()).isEqualTo(MailDispatchJobStatus.PROCESSING);
+        assertThat(result.failedCount()).isZero();
+        assertThat(result.processingCount()).isEqualTo(1);
+        assertThat(outboxRepository.findById(outbox.getId())).get().satisfies(saved -> {
+            assertThat(saved.getAttemptCount()).isEqualTo(1);
+            assertThat(saved.getNextAttemptAt()).isEqualTo(now.plusSeconds(31));
+            assertThat(saved.getFailureReason()).isEqualTo("TOO_MANY_EMAIL_REQUESTS");
+        });
+        assertThat(claimService.claim(outbox.getId(), now.plusSeconds(30), Duration.ofMinutes(2))).isEmpty();
+        var nextClaim = claimService.claim(outbox.getId(), now.plusSeconds(31), Duration.ofMinutes(2))
+                .orElseThrow();
+        assertThat(nextClaim.claimToken()).isNotEqualTo(claim.claimToken());
+        assertThat(claimService.recordSuccess(outbox.getId(), claim.claimToken(), now.plusSeconds(32))).isFalse();
+        assertThat(claimService.recordSuccess(outbox.getId(), nextClaim.claimToken(), now.plusSeconds(32))).isTrue();
+        assertThat(queryService.getJob(3L, job.getId()).successCount()).isEqualTo(1);
+    }
+
+    @Test
+    void 두_번째_거부는_60초_대기하고_세_번째_거부는_최종_실패로_종료한다() {
+        // given
+        MailDispatchJob job = jobRepository.saveAndFlush(MailDispatchJob.create(
+                1L, 2L, 3L, UUID.randomUUID().toString(), "제목", "본문", "{}", 1));
+        targetRepository.saveAndFlush(MailDispatchTarget.pending(job, 10L, "applicant@ject.kr"));
+        MailDispatchOutbox outbox = outboxRepository.saveAndFlush(MailDispatchOutbox.createPending(
+                job, 10L, "applicant@ject.kr", "제목", "본문"));
+        LocalDateTime now = LocalDateTime.of(2026, 10, 4, 12, 0);
+        var first = claimService.claim(outbox.getId(), now, Duration.ofMinutes(2)).orElseThrow();
+        claimService.recordThrottling(outbox.getId(), first.claimToken(), now.plusSeconds(1));
+        var second = claimService.claim(outbox.getId(), now.plusSeconds(31), Duration.ofMinutes(2)).orElseThrow();
+
+        // when
+        assertThat(claimService.recordThrottling(outbox.getId(), second.claimToken(), now.plusSeconds(32))).isTrue();
+
+        // then
+        assertThat(outboxRepository.findById(outbox.getId())).get().satisfies(saved -> {
+            assertThat(saved.getAttemptCount()).isEqualTo(2);
+            assertThat(saved.getNextAttemptAt()).isEqualTo(now.plusSeconds(92));
+        });
+        assertThat(claimService.claim(outbox.getId(), now.plusSeconds(91), Duration.ofMinutes(2))).isEmpty();
+        var third = claimService.claim(outbox.getId(), now.plusSeconds(92), Duration.ofMinutes(2)).orElseThrow();
+        assertThat(claimService.recordThrottling(outbox.getId(), third.claimToken(), now.plusSeconds(93))).isTrue();
+        assertThat(claimService.recordThrottling(outbox.getId(), third.claimToken(), now.plusSeconds(94))).isFalse();
+        assertThat(claimService.claim(outbox.getId(), now.plusDays(1), Duration.ofMinutes(2))).isEmpty();
+        assertThat(outboxRepository.findById(outbox.getId())).get().satisfies(saved -> {
+            assertThat(saved.getAttemptCount()).isEqualTo(3);
+            assertThat(saved.getNextAttemptAt()).isNull();
+            assertThat(saved.getStatus()).isEqualTo(MailDispatchOutboxStatus.FAILED);
+        });
+        var result = queryService.getJob(3L, job.getId());
+        assertThat(result.failedCount()).isEqualTo(1);
+        assertThat(result.processingCount()).isZero();
+    }
+
+    @Test
     void 만료된_실행은_재획득하지_않고_불확실_결과로_격리한다() {
         // given
         MailDispatchJob job = jobRepository.saveAndFlush(MailDispatchJob.create(
@@ -99,10 +170,12 @@ class MailDispatchClaimServiceMysqlTest extends TestSupport {
         });
         assertThat(claimService.claim(outbox.getId(), now.plusSeconds(60), Duration.ofSeconds(30)))
                 .isEmpty();
+        assertThat(claimService.recordThrottling(outbox.getId(), claim.claimToken(), now.plusSeconds(60))).isFalse();
     }
 
-    @Test
-    void 동시_실행자_중_한_실행자만_같은_대상을_획득한다() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void 동시_실행자_중_한_실행자만_같은_대상을_획득한다(boolean retry) throws Exception {
         // given
         MailDispatchJob job = jobRepository.saveAndFlush(MailDispatchJob.create(
                 1L, 2L, 3L, UUID.randomUUID().toString(), "제목", "본문", "{}", 1));
@@ -110,6 +183,11 @@ class MailDispatchClaimServiceMysqlTest extends TestSupport {
         MailDispatchOutbox outbox = outboxRepository.saveAndFlush(MailDispatchOutbox.createPending(
                 job, 10L, "applicant@ject.kr", "제목", "본문"));
         LocalDateTime now = LocalDateTime.of(2026, 10, 2, 12, 0);
+        if (retry) {
+            var previous = claimService.claim(outbox.getId(), now.minusSeconds(31), Duration.ofMinutes(2))
+                    .orElseThrow();
+            claimService.recordThrottling(outbox.getId(), previous.claimToken(), now.minusSeconds(30));
+        }
         CountDownLatch ready = new CountDownLatch(2);
         CountDownLatch start = new CountDownLatch(1);
 

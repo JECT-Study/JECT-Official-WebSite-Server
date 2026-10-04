@@ -3,6 +3,7 @@ package org.ject.support.admin.mail.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -28,6 +29,8 @@ import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
 import org.ject.support.base.TestSupport;
 import org.ject.support.common.schedule.SchedulingConfig;
 import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.external.email.exception.EmailErrorCode;
+import org.ject.support.external.email.exception.EmailException;
 import org.ject.support.external.email.service.EmailSendService;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.BeforeEach;
@@ -106,6 +109,92 @@ class MailDispatchRecoveryMysqlTest extends TestSupport {
         outboxRepository.deleteAllInBatch();
         targetRepository.deleteAllInBatch();
         jobRepository.deleteAllInBatch();
+    }
+
+    @Test
+    void 도래한_재시도_대상을_worker가_발송하고_한_번만_성공_집계한다() {
+        // given
+        var job = persistenceService.createJob(plan(10L), "fixture");
+        var outbox = outboxRepository.findByDispatchJobIdAndApplyId(job.getId(), 10L).orElseThrow();
+        LocalDateTime startedAt = LocalDateTime.now().minusMinutes(1);
+        var first = claimService.claim(outbox.getId(), startedAt, Duration.ofMinutes(2)).orElseThrow();
+        claimService.recordThrottling(outbox.getId(), first.claimToken(), startedAt.plusSeconds(1));
+
+        // when
+        workerContext()
+                .withPropertyValues("mail.dispatch.worker.enabled=true", "mail.dispatch.worker.poll-delay=50")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
+                            assertThat(queryService.getJob(3L, job.getId()).status())
+                                    .isEqualTo(MailDispatchJobStatus.COMPLETED));
+                });
+
+        // then
+        assertThat(queryService.getJob(3L, job.getId()).successCount()).isEqualTo(1);
+        assertThat(outboxRepository.findById(outbox.getId())).get().satisfies(saved -> {
+            assertThat(saved.getAttemptCount()).isEqualTo(2);
+            assertThat(saved.getNextAttemptAt()).isNull();
+            assertThat(saved.getFailureReason()).isNull();
+        });
+        assertThat(claimService.recordSuccess(outbox.getId(), first.claimToken(), LocalDateTime.now())).isFalse();
+        executionService.executePendingBatch(10);
+        verify(emailSendService).sendEmail("10@ject.kr", "저장된 제목", "저장된 본문");
+        verifyNoMoreInteractions(emailSendService);
+    }
+
+    @Test
+    void 활성_worker는_요청_제한을_대기로_보존하고_다른_대상을_계속_발송한다() {
+        // given
+        var job = persistenceService.createJob(plan(10L, 20L), "fixture");
+        doThrow(new EmailException(EmailErrorCode.TOO_MANY_EMAIL_REQUESTS))
+                .when(emailSendService).sendEmail("10@ject.kr", "저장된 제목", "저장된 본문");
+
+        // when
+        workerContext()
+                .withPropertyValues("mail.dispatch.worker.enabled=true", "mail.dispatch.worker.poll-delay=50")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
+                            assertThat(queryService.getJob(3L, job.getId()).successCount()).isEqualTo(1));
+                });
+
+        // then
+        var result = queryService.getJob(3L, job.getId());
+        assertThat(result.status()).isEqualTo(MailDispatchJobStatus.PROCESSING);
+        assertThat(result.processingCount()).isEqualTo(1);
+        assertThat(result.failedCount()).isZero();
+        assertThat(outboxRepository.findByDispatchJobIdAndApplyId(job.getId(), 10L)).get().satisfies(saved -> {
+            assertThat(saved.getAttemptCount()).isEqualTo(1);
+            assertThat(saved.getNextAttemptAt()).isNotNull();
+            assertThat(saved.getFailureReason()).isEqualTo("TOO_MANY_EMAIL_REQUESTS");
+        });
+        verify(emailSendService).sendEmail("10@ject.kr", "저장된 제목", "저장된 본문");
+        verify(emailSendService).sendEmail("20@ject.kr", "저장된 제목", "저장된 본문");
+        verifyNoMoreInteractions(emailSendService);
+    }
+
+    @Test
+    void 재시도_대기_대상을_건너뛰고_다른_미처리를_발송한다() {
+        // given
+        var job = persistenceService.createJob(plan(10L, 20L), "fixture");
+        var outbox = outboxRepository.findByDispatchJobIdAndApplyId(job.getId(), 10L).orElseThrow();
+        LocalDateTime future = LocalDateTime.now().plusDays(1);
+        var claim = claimService.claim(outbox.getId(), future, Duration.ofMinutes(2)).orElseThrow();
+        claimService.recordThrottling(outbox.getId(), claim.claimToken(), future.plusSeconds(1));
+
+        // when
+        executionService.executePendingBatch(1);
+        executionService.executePendingBatch(1);
+
+        // then
+        var result = queryService.getJob(3L, job.getId());
+        assertThat(result.status()).isEqualTo(MailDispatchJobStatus.PROCESSING);
+        assertThat(result.successCount()).isEqualTo(1);
+        assertThat(result.processingCount()).isEqualTo(1);
+        assertThat(result.failedCount()).isZero();
+        verify(emailSendService).sendEmail("20@ject.kr", "저장된 제목", "저장된 본문");
+        verifyNoMoreInteractions(emailSendService);
     }
 
     @Test
@@ -419,7 +508,8 @@ class MailDispatchRecoveryMysqlTest extends TestSupport {
     private ApplicationContextRunner workerContext() {
         return new ApplicationContextRunner()
                 .withUserConfiguration(MailDispatchWorkerConfig.class)
-                .withBean(MailDispatchExecutionService.class, () -> executionService);
+                .withBean(MailDispatchExecutionService.class,
+                        () -> new MailDispatchExecutionService(claimService, outboxRepository, emailSendService));
     }
 
     private MailDispatchPlan plan(Long... applyIds) {
