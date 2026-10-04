@@ -29,8 +29,8 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
     private static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.2");
 
     @Test
-    @DisplayName("V44 기준선에서 Flyway로 V45·V46 적용 후 Outbox 제약과 긴 본문을 검증한다")
-    void V44_기준선에서_Flyway로_V45와_V46_적용_후_Outbox_제약과_긴_본문을_검증한다() throws SQLException {
+    @DisplayName("V44 기준선에서 Flyway로 후속 메일 migration 적용 후 기존 작업과 Outbox를 검증한다")
+    void V44_기준선에서_후속_메일_migration_적용_후_기존_작업과_Outbox를_검증한다() throws SQLException {
         // given
         String body = "a".repeat(65_536);
 
@@ -72,9 +72,11 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
 
             try (Statement statement = connection.createStatement();
                  ResultSet resultSet = statement.executeQuery(
-                         "SELECT request_fingerprint FROM mail_dispatch_job WHERE id = 1")) {
+                         "SELECT request_fingerprint, unknown_count, claim_started_at FROM mail_dispatch_job WHERE id = 1")) {
                 assertThat(resultSet.next()).isTrue();
                 assertThat(resultSet.getString("request_fingerprint")).isNull();
+                assertThat(resultSet.getInt("unknown_count")).isZero();
+                assertThat(resultSet.getTimestamp("claim_started_at")).isNull();
             }
 
             // when
