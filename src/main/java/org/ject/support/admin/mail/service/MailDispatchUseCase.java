@@ -8,14 +8,14 @@ import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
-import org.ject.support.external.email.exception.EmailErrorCode;
-import org.ject.support.external.email.exception.EmailException;
-import org.ject.support.external.email.service.EmailSendService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(propagation = Propagation.NOT_SUPPORTED)
 public class MailDispatchUseCase {
 
     private static final int MAX_IDEMPOTENCY_KEY_LENGTH = 255;
@@ -25,7 +25,7 @@ public class MailDispatchUseCase {
 
     private final MailDispatchPreparationService mailDispatchPreparationService;
     private final MailDispatchPersistenceService mailDispatchPersistenceService;
-    private final EmailSendService emailSendService;
+    private final MailDispatchExecutionService executionService;
     private final MailDispatchRequestFingerprintGenerator requestFingerprintGenerator;
 
     public MailDispatchResponse sendMail(SendMailDispatchRequest request,
@@ -58,28 +58,8 @@ public class MailDispatchUseCase {
             }
             return reuseExistingJob(concurrentJob.get(), requestFingerprintValue);
         }
-        mailDispatchPersistenceService.startProcessing(job.getId());
-
-        plan.targets().forEach(target -> sendTarget(job.getId(), target));
+        executionService.executeJob(job.getId());
         return mailDispatchPersistenceService.getResult(job.getId());
-    }
-
-    private void sendTarget(Long dispatchJobId, MailDispatchPlan.Target target) {
-        try {
-            emailSendService.sendEmail(target.email(), target.subject(), target.body());
-        } catch (Exception exception) {
-            // 명확한 실패만 확정하고 발송 여부를 모르는 예외는 격리 처리한다.
-            if (exception instanceof EmailException emailException
-                    && (emailException.getErrorCode() == EmailErrorCode.EMAIL_SEND_FAILURE
-                    || emailException.getErrorCode() == EmailErrorCode.TOO_MANY_EMAIL_REQUESTS)) {
-                mailDispatchPersistenceService.recordFailure(
-                        dispatchJobId, target.applyId(), emailException.getErrorCode().getCode());
-            } else {
-                mailDispatchPersistenceService.recordUnknown(dispatchJobId, target.applyId());
-            }
-            return;
-        }
-        mailDispatchPersistenceService.recordSuccess(dispatchJobId, target.applyId());
     }
 
     private void validateIdempotencyKey(String idempotencyKey) {
