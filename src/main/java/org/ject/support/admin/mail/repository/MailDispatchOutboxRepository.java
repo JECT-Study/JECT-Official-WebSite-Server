@@ -32,12 +32,13 @@ public interface MailDispatchOutboxRepository extends JpaRepository<MailDispatch
             select outbox.id from MailDispatchOutbox outbox
             join outbox.dispatchJob job
             where outbox.status = org.ject.support.admin.mail.domain.MailDispatchOutboxStatus.PENDING
+              and (outbox.nextAttemptAt is null or outbox.nextAttemptAt <= :now)
               and (job.status = org.ject.support.admin.mail.domain.MailDispatchJobStatus.REQUESTED
                    or (job.status = org.ject.support.admin.mail.domain.MailDispatchJobStatus.PROCESSING
                        and job.claimStartedAt is not null))
             order by outbox.id asc
             """)
-    List<Long> findPendingExecutionIds(Pageable pageable);
+    List<Long> findPendingExecutionIds(@Param("now") LocalDateTime now, Pageable pageable);
 
     @Query("""
             select outbox.id from MailDispatchOutbox outbox
