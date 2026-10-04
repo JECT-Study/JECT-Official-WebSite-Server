@@ -11,6 +11,7 @@ import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.domain.MailDispatchOutbox;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.dto.MailDispatchOutboxClaim;
+import org.ject.support.admin.mail.dto.MailDispatchTransitionEvent;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
 import org.ject.support.admin.mail.repository.MailDispatchJobRepository;
@@ -18,6 +19,7 @@ import org.ject.support.admin.mail.repository.MailDispatchOutboxRepository;
 import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
 import org.ject.support.common.exception.ErrorCode;
 import org.ject.support.external.email.exception.EmailErrorCode;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +32,7 @@ public class MailDispatchClaimService {
     private final MailDispatchOutboxRepository mailDispatchOutboxRepository;
     private final MailDispatchJobRepository mailDispatchJobRepository;
     private final MailDispatchTargetRepository mailDispatchTargetRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 호출자의 트랜잭션과 분리해 외부 발송 전에 claim 커밋을 완료한다.
     public Optional<MailDispatchOutboxClaim> claim(Long outboxId, LocalDateTime now, Duration leaseDuration) {
@@ -42,6 +45,7 @@ public class MailDispatchClaimService {
                 .filter(execution -> claimIfSafe(execution, now, leaseDuration))
                 .map(execution -> {
                     startIfRequested(execution.job());
+                    publishTransition(execution);
                     return MailDispatchOutboxClaim.from(execution.outbox());
                 });
     }
@@ -101,6 +105,7 @@ public class MailDispatchClaimService {
             // 재시도 대기는 최종 실패가 아니므로 대상·작업 종료 집계에서 제외한다.
             if (retryAllowed
                     && execution.outbox().scheduleClaimRetry(claimToken, now, failureCode)) {
+                publishTransition(execution);
                 return true;
             }
             boolean recorded = failureCode == null
@@ -117,6 +122,7 @@ public class MailDispatchClaimService {
                 execution.target().markFailed(failureCode);
                 execution.job().recordFailure();
             }
+            publishTransition(execution);
             return true;
         }).orElse(false);
     }
@@ -149,12 +155,20 @@ public class MailDispatchClaimService {
         startIfRequested(execution.job());
         execution.target().markUnknown(MailErrorCode.MAIL_SEND_RESULT_UNKNOWN.getCode());
         execution.job().recordUnknown();
+        publishTransition(execution);
     }
 
     private void startIfRequested(MailDispatchJob job) {
         if (job.getStatus() == MailDispatchJobStatus.REQUESTED) {
             job.startClaimProcessing();
         }
+    }
+
+    private void publishTransition(LockedExecution execution) {
+        // 엔티티·주소·본문·token 대신 변경 시점의 안전한 값만 커밋 후 관측에 전달
+        eventPublisher.publishEvent(new MailDispatchTransitionEvent(
+                execution.job().getId(), execution.target().getId(), execution.outbox().getStatus(),
+                execution.outbox().getAttemptCount(), execution.outbox().getNextAttemptAt()));
     }
 
     private Optional<LockedExecution> findLockedExecution(Long outboxId) {
