@@ -17,6 +17,7 @@ import org.ject.support.admin.mail.service.MailDispatchClaimService;
 import org.ject.support.admin.mail.service.MailDispatchExecutionService;
 import org.ject.support.admin.mail.service.MailDispatchPersistenceService;
 import org.ject.support.admin.mail.service.MailDispatchPlan;
+import org.ject.support.admin.mail.service.MailDispatchTransitionTelemetryService;
 import org.ject.support.common.config.JpaAuditConfig;
 import org.ject.support.common.data.querydsl.QueryDslConfig;
 import org.ject.support.common.response.ObjectMapperConfig;
@@ -43,7 +44,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EntityScan(basePackageClasses = MailDispatchJob.class)
 @EnableJpaRepositories(basePackageClasses = MailDispatchJobRepository.class)
 @Import({MailDispatchPersistenceService.class, MailDispatchClaimService.class,
-        MailDispatchExecutionService.class, MailDispatchWorkerConfig.class,
+        MailDispatchExecutionService.class, MailDispatchWorkerConfig.class, MailDispatchTransitionTelemetryService.class,
         QueryDslConfig.class, JpaAuditConfig.class, Map2JsonSerializer.class, ObjectMapperConfig.class})
 public class MailDispatchProcessTestApplication {
 
