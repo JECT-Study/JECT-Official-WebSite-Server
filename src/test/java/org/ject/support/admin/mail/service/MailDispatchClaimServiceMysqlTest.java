@@ -97,6 +97,13 @@ class MailDispatchClaimServiceMysqlTest extends TestSupport {
         assertThat(result.status()).isEqualTo(MailDispatchJobStatus.PROCESSING);
         assertThat(result.failedCount()).isZero();
         assertThat(result.processingCount()).isEqualTo(1);
+        assertThat(queryService.searchTargets(3L, job.getId(), MailDispatchTargetStatus.PENDING,
+                PageRequest.of(0, 10)).getContent()).singleElement().satisfies(target -> {
+                    assertThat(target.attemptCount()).isEqualTo(1);
+                    assertThat(target.nextAttemptAt()).isEqualTo(now.plusSeconds(31));
+                    assertThat(target.lastAttemptFailureReason()).isEqualTo("TOO_MANY_EMAIL_REQUESTS");
+                    assertThat(target.failureReason()).isNull();
+                });
         assertThat(outboxRepository.findById(outbox.getId())).get().satisfies(saved -> {
             assertThat(saved.getAttemptCount()).isEqualTo(1);
             assertThat(saved.getNextAttemptAt()).isEqualTo(now.plusSeconds(31));
@@ -109,6 +116,12 @@ class MailDispatchClaimServiceMysqlTest extends TestSupport {
         assertThat(claimService.recordSuccess(outbox.getId(), claim.claimToken(), now.plusSeconds(32))).isFalse();
         assertThat(claimService.recordSuccess(outbox.getId(), nextClaim.claimToken(), now.plusSeconds(32))).isTrue();
         assertThat(queryService.getJob(3L, job.getId()).successCount()).isEqualTo(1);
+        assertThat(queryService.searchTargets(3L, job.getId(), MailDispatchTargetStatus.SENT,
+                PageRequest.of(0, 10)).getContent()).singleElement().satisfies(target -> {
+                    assertThat(target.attemptCount()).isEqualTo(2);
+                    assertThat(target.nextAttemptAt()).isNull();
+                    assertThat(target.lastAttemptFailureReason()).isNull();
+                });
     }
 
     @Test
@@ -145,6 +158,56 @@ class MailDispatchClaimServiceMysqlTest extends TestSupport {
         var result = queryService.getJob(3L, job.getId());
         assertThat(result.failedCount()).isEqualTo(1);
         assertThat(result.processingCount()).isZero();
+        assertThat(queryService.searchTargets(3L, job.getId(), MailDispatchTargetStatus.FAILED,
+                PageRequest.of(0, 10)).getContent()).singleElement().satisfies(target -> {
+                    assertThat(target.attemptCount()).isEqualTo(3);
+                    assertThat(target.nextAttemptAt()).isNull();
+                    assertThat(target.failureReason()).isEqualTo("TOO_MANY_EMAIL_REQUESTS");
+                    assertThat(target.lastAttemptFailureReason()).isEqualTo("TOO_MANY_EMAIL_REQUESTS");
+                });
+    }
+
+    @Test
+    void 과거_이력과_미시도_대상을_페이지로_조회하고_다른_작업의_재시도_정보를_섞지_않는다() {
+        // given
+        MailDispatchJob job = jobRepository.saveAndFlush(MailDispatchJob.create(
+                1L, 2L, 3L, UUID.randomUUID().toString(), "제목", "본문", "{}", 2));
+        targetRepository.saveAndFlush(MailDispatchTarget.pending(job, 10L, "legacy@ject.kr"));
+        targetRepository.saveAndFlush(MailDispatchTarget.pending(job, 20L, "pending@ject.kr"));
+        outboxRepository.saveAndFlush(MailDispatchOutbox.createPending(
+                job, 20L, "pending@ject.kr", "제목", "본문"));
+        MailDispatchJob otherJob = jobRepository.saveAndFlush(MailDispatchJob.create(
+                1L, 2L, 4L, UUID.randomUUID().toString(), "제목", "본문", "{}", 1));
+        targetRepository.saveAndFlush(MailDispatchTarget.pending(otherJob, 20L, "other@ject.kr"));
+        var otherOutbox = outboxRepository.saveAndFlush(MailDispatchOutbox.createPending(
+                otherJob, 20L, "other@ject.kr", "다른 제목", "다른 본문"));
+        LocalDateTime now = LocalDateTime.of(2026, 10, 4, 12, 0);
+        var otherClaim = claimService.claim(otherOutbox.getId(), now, Duration.ofMinutes(2)).orElseThrow();
+        claimService.recordThrottling(otherOutbox.getId(), otherClaim.claimToken(), now.plusSeconds(1));
+
+        // when
+        var first = queryService.searchTargets(3L, job.getId(), null, PageRequest.of(0, 1));
+        var second = queryService.searchTargets(3L, job.getId(), null, PageRequest.of(1, 1));
+
+        // then
+        assertThat(first.getTotalElements()).isEqualTo(2);
+        assertThat(first.getContent()).singleElement().satisfies(target -> {
+            assertThat(target.applyId()).isEqualTo(10L);
+            assertThat(target.attemptCount()).isNull();
+            assertThat(target.nextAttemptAt()).isNull();
+            assertThat(target.lastAttemptFailureReason()).isNull();
+        });
+        assertThat(second.getTotalElements()).isEqualTo(2);
+        assertThat(second.getContent()).singleElement().satisfies(target -> {
+            assertThat(target.applyId()).isEqualTo(20L);
+            assertThat(target.attemptCount()).isZero();
+            assertThat(target.nextAttemptAt()).isNull();
+            assertThat(target.lastAttemptFailureReason()).isNull();
+        });
+        assertThat(queryService.searchTargets(3L, job.getId(), null, PageRequest.of(2, 1)).getContent()).isEmpty();
+        assertThatThrownBy(() -> queryService.searchTargets(4L, job.getId(), null, PageRequest.of(0, 10)))
+                .isInstanceOf(MailException.class)
+                .hasFieldOrPropertyWithValue("errorCode", MailErrorCode.DISPATCH_JOB_NOT_FOUND);
     }
 
     @Test
@@ -271,6 +334,9 @@ class MailDispatchClaimServiceMysqlTest extends TestSupport {
                 PageRequest.of(0, 10)).getContent()).singleElement().satisfies(target -> {
                     assertThat(target.applyId()).isEqualTo(20L);
                     assertThat(target.failureReason()).isEqualTo("MAIL-21");
+                    assertThat(target.attemptCount()).isEqualTo(1);
+                    assertThat(target.nextAttemptAt()).isNull();
+                    assertThat(target.lastAttemptFailureReason()).isEqualTo("MAIL-21");
                     assertThat(target.sentAt()).isNull();
                 });
     }
