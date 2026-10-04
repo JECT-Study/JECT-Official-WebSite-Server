@@ -87,6 +87,21 @@ public class MailDispatchPersistenceService {
                 .findByRequestedByAdminIdAndIdempotencyKey(requestedByAdminId, idempotencyKey);
     }
 
+    @Transactional
+    public void recordUnknown(Long dispatchJobId, Long applyId) {
+        // claim 경로와 같은 작업 우선 잠금으로 격리 결과와 집계를 원자적으로 처리한다.
+        MailDispatchJob job = mailDispatchJobRepository.findByIdForUpdate(dispatchJobId)
+                .orElseThrow(() -> new MailException(MailErrorCode.DISPATCH_JOB_NOT_FOUND));
+        Optional<MailDispatchOutbox> outbox = mailDispatchOutboxRepository
+                .findByDispatchJobIdAndApplyId(dispatchJobId, applyId);
+        if (outbox.isPresent() && !outbox.get().quarantineUnclaimed()) {
+            return;
+        }
+        // Outbox 도입 전 대상의 불확실 결과 저장도 유지한다.
+        findTarget(dispatchJobId, applyId).markUnknown(MailErrorCode.MAIL_SEND_RESULT_UNKNOWN.getCode());
+        job.recordUnknown();
+    }
+
     @Transactional(readOnly = true)
     public MailDispatchResponse getResult(Long dispatchJobId) {
         return MailDispatchResponse.from(findJob(dispatchJobId));

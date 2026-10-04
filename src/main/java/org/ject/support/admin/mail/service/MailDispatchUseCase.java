@@ -8,6 +8,7 @@ import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
+import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
 import org.ject.support.external.email.service.EmailSendService;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -67,12 +68,15 @@ public class MailDispatchUseCase {
         try {
             emailSendService.sendEmail(target.email(), target.subject(), target.body());
         } catch (Exception exception) {
-            // 대상별 실패를 기록하고 다음 대상 발송을 계속한다.
-            String failureReason = exception instanceof EmailException emailException
-                    ? emailException.getErrorCode().getCode()
-                    : MailErrorCode.MAIL_SEND_FAILURE.getCode();
-            mailDispatchPersistenceService.recordFailure(
-                    dispatchJobId, target.applyId(), failureReason);
+            // 명확한 실패만 확정하고 발송 여부를 모르는 예외는 격리 처리한다.
+            if (exception instanceof EmailException emailException
+                    && (emailException.getErrorCode() == EmailErrorCode.EMAIL_SEND_FAILURE
+                    || emailException.getErrorCode() == EmailErrorCode.TOO_MANY_EMAIL_REQUESTS)) {
+                mailDispatchPersistenceService.recordFailure(
+                        dispatchJobId, target.applyId(), emailException.getErrorCode().getCode());
+            } else {
+                mailDispatchPersistenceService.recordUnknown(dispatchJobId, target.applyId());
+            }
             return;
         }
         mailDispatchPersistenceService.recordSuccess(dispatchJobId, target.applyId());

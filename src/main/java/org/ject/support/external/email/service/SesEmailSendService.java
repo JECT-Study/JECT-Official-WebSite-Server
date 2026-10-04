@@ -1,6 +1,8 @@
 package org.ject.support.external.email.service;
 
 import static org.ject.support.external.email.exception.EmailErrorCode.EMAIL_SEND_FAILURE;
+import static org.ject.support.external.email.exception.EmailErrorCode.EMAIL_SEND_RESULT_UNKNOWN;
+import static org.ject.support.external.email.exception.EmailErrorCode.TOO_MANY_EMAIL_REQUESTS;
 
 import com.google.common.collect.Lists;
 import java.time.LocalDate;
@@ -16,17 +18,26 @@ import org.ject.support.external.infrastructure.SesRateLimiter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.services.sesv2.SesV2Client;
+import software.amazon.awssdk.services.sesv2.model.AccountSuspendedException;
+import software.amazon.awssdk.services.sesv2.model.BadRequestException;
 import software.amazon.awssdk.services.sesv2.model.Body;
 import software.amazon.awssdk.services.sesv2.model.BulkEmailContent;
 import software.amazon.awssdk.services.sesv2.model.BulkEmailEntry;
 import software.amazon.awssdk.services.sesv2.model.Content;
 import software.amazon.awssdk.services.sesv2.model.Destination;
 import software.amazon.awssdk.services.sesv2.model.EmailContent;
+import software.amazon.awssdk.services.sesv2.model.LimitExceededException;
+import software.amazon.awssdk.services.sesv2.model.MailFromDomainNotVerifiedException;
 import software.amazon.awssdk.services.sesv2.model.Message;
+import software.amazon.awssdk.services.sesv2.model.MessageRejectedException;
 import software.amazon.awssdk.services.sesv2.model.MessageTag;
+import software.amazon.awssdk.services.sesv2.model.NotFoundException;
 import software.amazon.awssdk.services.sesv2.model.SendBulkEmailRequest;
 import software.amazon.awssdk.services.sesv2.model.SendEmailRequest;
+import software.amazon.awssdk.services.sesv2.model.SendingPausedException;
+import software.amazon.awssdk.services.sesv2.model.SesV2Exception;
 import software.amazon.awssdk.services.sesv2.model.Template;
+import software.amazon.awssdk.services.sesv2.model.TooManyRequestsException;
 
 @Slf4j
 @Service
@@ -119,11 +130,36 @@ public class SesEmailSendService implements EmailSendService {
 
         try {
             rateLimiter.consume(1);
-            sesV2Client.sendEmail(emailRequest);
-        } catch (Exception e) {
-            log.error("단건 이메일 전송 실패 errorType={}", e.getClass().getSimpleName(), e);
+        } catch (RuntimeException exception) {
+            // SES 호출 전 실패는 발송하지 않았다는 근거가 있어 확정 실패로 처리한다.
+            log.error("단건 이메일 호출 전 실패 errorType={}", exception.getClass().getSimpleName());
             throw new EmailException(EMAIL_SEND_FAILURE);
         }
+
+        try {
+            sesV2Client.sendEmail(emailRequest);
+        } catch (Exception e) {
+            log.error("단건 이메일 호출 오류 errorType={}", e.getClass().getSimpleName());
+            if (e instanceof TooManyRequestsException limited && limited.statusCode() == 429) {
+                throw new EmailException(TOO_MANY_EMAIL_REQUESTS);
+            }
+            if (e instanceof SesV2Exception sesException && isConfirmedRejection(sesException)) {
+                throw new EmailException(EMAIL_SEND_FAILURE);
+            }
+            throw new EmailException(EMAIL_SEND_RESULT_UNKNOWN);
+        }
+    }
+
+    private boolean isConfirmedRejection(SesV2Exception exception) {
+        // 문서화된 거부 응답만 확정 실패로 분류하고 나머지는 보수적으로 격리한다.
+        return (exception.statusCode() == 404 && exception instanceof NotFoundException)
+                || (exception.statusCode() == 400
+                && (exception instanceof BadRequestException
+                || exception instanceof AccountSuspendedException
+                || exception instanceof LimitExceededException
+                || exception instanceof MailFromDomainNotVerifiedException
+                || exception instanceof MessageRejectedException
+                || exception instanceof SendingPausedException));
     }
 
     private Template getTemplate(String templateName, Map<String, String> parameter) {
