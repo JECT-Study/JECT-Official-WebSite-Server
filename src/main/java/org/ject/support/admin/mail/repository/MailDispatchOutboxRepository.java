@@ -15,6 +15,9 @@ public interface MailDispatchOutboxRepository extends JpaRepository<MailDispatch
     @Query("select outbox from MailDispatchOutbox outbox where outbox.id = :id")
     Optional<MailDispatchOutbox> findByIdForUpdate(@Param("id") Long id);
 
+    @Query("select outbox.dispatchJob.id from MailDispatchOutbox outbox where outbox.id = :id")
+    Optional<Long> findDispatchJobIdById(@Param("id") Long id);
+
     Optional<MailDispatchOutbox> findByDispatchJobIdAndApplyId(Long dispatchJobId, Long applyId);
 
     List<MailDispatchOutbox> findAllByDispatchJobIdOrderByIdAsc(Long dispatchJobId);
