@@ -53,7 +53,27 @@ worker의 배치 처리 오류는 예외 종류만 기록하고 다음 주기에
 
 자동 실행·비활성·worker 컨텍스트 재생성·만료 격리·모집 scheduler 격리·DB 저장 장애의 후속 주기 처리는 실제 MySQL과 대체 SES로 검증한다. 실제 서버 프로세스 재기동·운영 배포·AWS 발송 검증과 구분한다. SDK 시간 초과는 로컬 HTTP 서버에서 짧은 한도로 검증하고 30초·20초 기본값은 별도로 확인한다.
 
-재시도 횟수·다음 시각은 Outbox에 저장되며 기존 관리자 응답에는 아직 추가하지 않았다. 재시도 정보 조회, 호출 전 일시 실패의 명시적 분류, 운영자 확인·해제, 운영 메트릭·알림은 후속 작업이다. `UNKNOWN` 해제나 재발송은 이 worker의 권한이 아니다.
+`GET /admin/mails/dispatches/{dispatchJobId}/targets`는 기존 필드에 `attemptCount`, `nextAttemptAt`, `lastAttemptFailureReason`을 추가한다. 관리자 본인 작업만 조회하며 기존 상태 필터·ID 오름차순·페이징을 유지한다. 과거 Outbox 없는 이력은 세 필드가 모두 null이다. 미시도 Outbox의 횟수 0과 정보 부재를 구분한다.
+
+`attemptCount`는 claim 획득 횟수이며 SES가 실제 수락한 횟수나 최종 배달 횟수가 아니다. V49 이전 claim 보유 이력은 migration에서 1로 채운 값이므로 전체 과거 시도 횟수로 해석하지 않는다. `nextAttemptAt=null`은 재시도 대기 시각이 없다는 뜻일 뿐 성공·재발송 허가를 뜻하지 않는다. 마지막 저장 오류는 진행 중 재시도에서도 이전 거부 코드를 보여줄 수 있다. 최종 대상 실패를 뜻하는 기존 `failureReason`과 구분한다.
+
+재시도 대기 중인 수신자 응답 데이터 예시다. 공통 wrapper·페이지는 생략했다.
+
+```json
+{
+  "targetId": 1,
+  "applyId": 10,
+  "email": "applicant@example.com",
+  "status": "PENDING",
+  "sentAt": null,
+  "failureReason": null,
+  "attemptCount": 1,
+  "nextAttemptAt": "2026-10-04T12:00:30",
+  "lastAttemptFailureReason": "TOO_MANY_EMAIL_REQUESTS"
+}
+```
+
+조회는 필요한 필드만 투영하며 제목·본문·claim token·lease를 응답에 추가하지 않는다. 호출 전 일시 실패의 명시적 분류, 운영자 확인·해제, 운영 메트릭·알림은 후속 작업이다. `UNKNOWN` 해제나 재발송은 이 worker의 권한이 아니다.
 
 ## 참고
 

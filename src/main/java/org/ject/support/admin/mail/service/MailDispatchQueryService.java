@@ -3,7 +3,6 @@ package org.ject.support.admin.mail.service;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
-import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.admin.mail.dto.MailDispatchJobResponse;
 import org.ject.support.admin.mail.dto.MailDispatchJobSearchCondition;
@@ -46,12 +45,7 @@ public class MailDispatchQueryService {
                                                             MailDispatchTargetStatus status,
                                                             Pageable pageable) {
         findJob(requestedByAdminId, dispatchJobId);
-        Page<MailDispatchTarget> page = mailDispatchTargetRepository.findTargets(
-                dispatchJobId, status, pageable);
-        List<MailDispatchTargetResponse> content = page.getContent().stream()
-                .map(MailDispatchTargetResponse::from)
-                .toList();
-        return PageResponse.from(content, pageable, page.getTotalElements());
+        return mailDispatchTargetRepository.findTargets(dispatchJobId, status, pageable);
     }
 
     private MailDispatchJob findJob(Long requestedByAdminId, Long dispatchJobId) {
