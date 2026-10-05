@@ -35,7 +35,10 @@ public interface AdminMailDispatchApiSpec {
             @Parameter(hidden = true) @AuthPrincipal Long requestedByAdminId,
             @PathVariable Long dispatchJobId);
 
-    @Operation(summary = "단체 메일 수신자별 결과 조회", description = "발송 작업의 수신자별 결과를 상태로 필터링해 조회합니다.")
+    @Operation(summary = "단체 메일 수신자별 결과 조회", description = """
+            관리자 본인의 발송 작업에서 수신자별 결과와 시도 횟수·다음 재시도 시각·마지막 시도 오류를
+            상태로 필터링해 조회합니다. Outbox 없는 과거 이력의 재시도 정보는 null입니다.
+            """)
     Page<MailDispatchTargetResponse> searchTargets(
             @Parameter(hidden = true) @AuthPrincipal Long requestedByAdminId,
             @PathVariable Long dispatchJobId,

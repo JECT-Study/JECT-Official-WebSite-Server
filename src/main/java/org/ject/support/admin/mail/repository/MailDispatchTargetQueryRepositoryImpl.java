@@ -1,14 +1,16 @@
 package org.ject.support.admin.mail.repository;
 
+import static org.ject.support.admin.mail.domain.QMailDispatchOutbox.mailDispatchOutbox;
 import static org.ject.support.admin.mail.domain.QMailDispatchTarget.mailDispatchTarget;
 
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
+import org.ject.support.admin.mail.dto.MailDispatchTargetResponse;
 import org.ject.support.common.data.PageResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,11 +23,20 @@ public class MailDispatchTargetQueryRepositoryImpl implements MailDispatchTarget
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<MailDispatchTarget> findTargets(Long dispatchJobId,
-                                                MailDispatchTargetStatus status,
-                                                Pageable pageable) {
-        List<MailDispatchTarget> content = queryFactory
-                .selectFrom(mailDispatchTarget)
+    public Page<MailDispatchTargetResponse> findTargets(Long dispatchJobId,
+                                                      MailDispatchTargetStatus status,
+                                                      Pageable pageable) {
+        // Outbox 없는 과거 이력을 유지하고 본문·claim token 없이 조회 필드만 투영
+        List<MailDispatchTargetResponse> content = queryFactory
+                .select(Projections.constructor(MailDispatchTargetResponse.class,
+                        mailDispatchTarget.id, mailDispatchTarget.applyId, mailDispatchTarget.email,
+                        mailDispatchTarget.status, mailDispatchTarget.sentAt, mailDispatchTarget.failureReason,
+                        mailDispatchOutbox.attemptCount, mailDispatchOutbox.nextAttemptAt,
+                        mailDispatchOutbox.failureReason))
+                .from(mailDispatchTarget)
+                .leftJoin(mailDispatchOutbox).on(
+                        mailDispatchOutbox.dispatchJob.id.eq(mailDispatchTarget.dispatchJob.id),
+                        mailDispatchOutbox.applyId.eq(mailDispatchTarget.applyId))
                 .where(
                         mailDispatchTarget.dispatchJob.id.eq(dispatchJobId),
                         eqStatus(status)

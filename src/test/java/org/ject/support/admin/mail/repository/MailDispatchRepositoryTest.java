@@ -9,6 +9,7 @@ import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.admin.mail.dto.MailDispatchJobSearchCondition;
+import org.ject.support.admin.mail.dto.MailDispatchTargetResponse;
 import org.ject.support.base.TestSupport;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;
@@ -186,16 +187,23 @@ class MailDispatchRepositoryTest extends TestSupport {
         saveTarget(otherJob, 20L, "other@ject.kr");
 
         // when
-        Page<MailDispatchTarget> result = mailDispatchTargetRepository.findTargets(
+        Page<MailDispatchTargetResponse> result = mailDispatchTargetRepository.findTargets(
                 job.getId(), null, PageRequest.of(0, 2));
-        Page<MailDispatchTarget> nextPage = mailDispatchTargetRepository.findTargets(
+        Page<MailDispatchTargetResponse> nextPage = mailDispatchTargetRepository.findTargets(
                 job.getId(), null, PageRequest.of(1, 2));
 
         // then
-        assertThat(result.getContent()).containsExactly(first, second);
+        assertThat(result.getContent()).extracting(MailDispatchTargetResponse::targetId)
+                .containsExactly(first.getId(), second.getId());
+        assertThat(result.getContent()).allSatisfy(target -> {
+            assertThat(target.attemptCount()).isNull();
+            assertThat(target.nextAttemptAt()).isNull();
+            assertThat(target.lastAttemptFailureReason()).isNull();
+        });
         assertThat(result.getTotalElements()).isEqualTo(3);
         assertThat(result.hasNext()).isTrue();
-        assertThat(nextPage.getContent()).containsExactly(third);
+        assertThat(nextPage.getContent()).extracting(MailDispatchTargetResponse::targetId)
+                .containsExactly(third.getId());
         assertThat(nextPage.getTotalElements()).isEqualTo(3);
         assertThat(nextPage.hasNext()).isFalse();
     }
@@ -220,11 +228,12 @@ class MailDispatchRepositoryTest extends TestSupport {
         mailDispatchTargetRepository.saveAndFlush(otherSent);
 
         // when
-        Page<MailDispatchTarget> result = mailDispatchTargetRepository.findTargets(
+        Page<MailDispatchTargetResponse> result = mailDispatchTargetRepository.findTargets(
                 job.getId(), MailDispatchTargetStatus.SENT, PageRequest.of(0, 10));
 
         // then
-        assertThat(result.getContent()).containsExactly(sent);
+        assertThat(result.getContent()).extracting(MailDispatchTargetResponse::targetId)
+                .containsExactly(sent.getId());
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.hasNext()).isFalse();
     }
