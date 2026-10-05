@@ -29,6 +29,9 @@ public class MailDispatchExecutionService {
     }
 
     public void executePendingBatch(int batchSize) {
+        if (Thread.currentThread().isInterrupted()) {
+            return;
+        }
         outboxRepository.findPendingExecutionIds(PageRequest.of(0, batchSize)).forEach(this::execute);
     }
 
@@ -45,6 +48,10 @@ public class MailDispatchExecutionService {
     }
 
     public void execute(Long outboxId) {
+        // 종료 신호 뒤 새 claim을 만들지 않아 다음 실행자가 미처리 대상을 복구할 수 있게 유지한다.
+        if (Thread.currentThread().isInterrupted()) {
+            return;
+        }
         var claimed = claimService.claim(outboxId, LocalDateTime.now(), CLAIM_LEASE);
         if (claimed.isEmpty()) {
             return;
