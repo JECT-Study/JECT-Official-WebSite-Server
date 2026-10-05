@@ -59,6 +59,16 @@ public class MailDispatchClaimService {
         return recordResult(outboxId, claimToken, now, Objects.requireNonNull(errorCode).getCode());
     }
 
+    public boolean recordUnknown(Long outboxId, String claimToken) {
+        return findLockedExecution(outboxId).map(execution -> {
+            if (!execution.outbox().quarantineClaim(claimToken)) {
+                return false;
+            }
+            recordUnknown(execution);
+            return true;
+        }).orElse(false);
+    }
+
     private boolean recordResult(Long outboxId, String claimToken, LocalDateTime now, String failureCode) {
         return findLockedExecution(outboxId).map(execution -> {
             if (!execution.outbox().hasClaimToken(claimToken)) {

@@ -141,6 +141,15 @@ public class MailDispatchOutbox extends BaseTimeEntity {
                 && token != null && token.equals(claimToken);
     }
 
+    public boolean quarantineClaim(String token) {
+        if (!hasClaimToken(token)) {
+            return false;
+        }
+        status = MailDispatchOutboxStatus.UNKNOWN;
+        failureReason = MailErrorCode.MAIL_SEND_RESULT_UNKNOWN.getCode();
+        return true;
+    }
+
     public boolean markClaimSent(String token, LocalDateTime now) {
         if (!hasActiveClaim(token, now)) {
             return false;
