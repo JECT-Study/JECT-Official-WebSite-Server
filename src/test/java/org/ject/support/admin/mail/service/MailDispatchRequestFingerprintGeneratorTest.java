@@ -6,16 +6,49 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class MailDispatchRequestFingerprintGeneratorTest {
 
     private final MailDispatchRequestFingerprintGenerator fingerprintGenerator =
             new MailDispatchRequestFingerprintGenerator(
                     new Map2JsonSerializer(new ObjectMapper()));
+
+    @ParameterizedTest(name = "{0} 변경은 다른 요청으로 식별한다")
+    @MethodSource("changedRequests")
+    void 요청_필드가_달라지면_다른_fingerprint를_만든다(String field, SendMailDispatchRequest changedRequest) {
+        // given
+        SendMailDispatchRequest original = new SendMailDispatchRequest(
+                2L, 1L, List.of(10L, 20L), "제목", Map.of("A", "첫 번째", "B", "두 번째"));
+
+        // when
+        String changedFingerprint = fingerprintGenerator.generate(changedRequest);
+
+        // then
+        assertThat(changedFingerprint).isNotEqualTo(fingerprintGenerator.generate(original));
+    }
+
+    private static Stream<Arguments> changedRequests() {
+        Map<String, String> variables = Map.of("A", "첫 번째", "B", "두 번째");
+        return Stream.of(
+                Arguments.of("recruitId", new SendMailDispatchRequest(
+                        3L, 1L, List.of(10L, 20L), "제목", variables)),
+                Arguments.of("scenarioId", new SendMailDispatchRequest(
+                        2L, 3L, List.of(10L, 20L), "제목", variables)),
+                Arguments.of("applyIds", new SendMailDispatchRequest(
+                        2L, 1L, List.of(10L, 30L), "제목", variables)),
+                Arguments.of("subjectOverride", new SendMailDispatchRequest(
+                        2L, 1L, List.of(10L, 20L), "다른 제목", variables)),
+                Arguments.of("inputVariables", new SendMailDispatchRequest(
+                        2L, 1L, List.of(10L, 20L), "제목", Map.of("A", "다른 값", "B", "두 번째"))));
+    }
 
     @Test
     @DisplayName("정규화된 요청을 고정 길이 SHA-256 fingerprint로 식별한다")
