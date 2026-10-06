@@ -11,13 +11,19 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.domain.MailDispatchOutbox;
+import org.ject.support.admin.mail.domain.MailDispatchOutboxStatus;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.admin.mail.dto.MailDispatchJobResponse;
 import org.ject.support.admin.mail.dto.MailDispatchJobSearchCondition;
+import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.MailDispatchTargetResponse;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
@@ -50,7 +56,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({MailDispatchPersistenceService.class, MailDispatchClaimService.class, MailDispatchQueryService.class,
-        QueryDslTestConfig.class, ObjectMapperConfig.class, Map2JsonSerializer.class})
+        MailDispatchCancellationService.class, QueryDslTestConfig.class, ObjectMapperConfig.class,
+        Map2JsonSerializer.class})
 @Testcontainers
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class MailDispatchQueryMysqlTest extends TestSupport {
@@ -66,6 +73,9 @@ class MailDispatchQueryMysqlTest extends TestSupport {
 
     @Autowired
     private MailDispatchQueryService queryService;
+
+    @Autowired
+    private MailDispatchCancellationService cancellationService;
 
     @Autowired
     private MailDispatchJobRepository jobRepository;
@@ -96,6 +106,102 @@ class MailDispatchQueryMysqlTest extends TestSupport {
         outboxRepository.deleteAllInBatch();
         targetRepository.deleteAllInBatch();
         jobRepository.deleteAllInBatch();
+    }
+
+    @Test
+    void 본인의_예약을_취소하면_작업과_수신자를_취소로_조회하고_발송하지_않는다() {
+        // given
+        var scheduledAt = OffsetDateTime.parse("2099-10-07T10:00:00+09:00").toInstant();
+        var job = createScheduledJob(3L);
+
+        // when
+        var result = cancellationService.cancelMail(3L, job.getId());
+        var detail = queryService.getJob(3L, job.getId());
+        var targets = queryService.searchTargets(
+                3L, job.getId(), MailDispatchTargetStatus.CANCELLED, PageRequest.of(0, 10));
+
+        // then
+        assertThat(result.status()).isEqualTo(MailDispatchJobStatus.CANCELLED);
+        assertThat(result.failedCount()).isZero();
+        assertThat(detail.status()).isEqualTo(MailDispatchJobStatus.CANCELLED);
+        assertThat(detail.scheduledAt()).isEqualTo(scheduledAt);
+        assertThat(detail.finishedAt()).isNotNull();
+        assertThat(targets.getTotalElements()).isEqualTo(1);
+        assertThat(targets.getContent()).singleElement().satisfies(target -> {
+            assertThat(target.status()).isEqualTo(MailDispatchTargetStatus.CANCELLED);
+            assertThat(target.attemptCount()).isZero();
+            assertThat(target.sentAt()).isNull();
+            assertThat(target.failureReason()).isNull();
+        });
+        var outbox = outboxRepository.findByDispatchJobIdAndApplyId(job.getId(), 10L).orElseThrow();
+        assertThat(outbox.getStatus()).isEqualTo(MailDispatchOutboxStatus.CANCELLED);
+        var afterScheduledAt = LocalDateTime.ofInstant(scheduledAt.plusSeconds(1), ZoneOffset.UTC);
+        assertThat(outboxRepository.findPendingExecutionIds(afterScheduledAt, PageRequest.of(0, 10))).isEmpty();
+        assertThat(claimService.claim(outbox.getId(), afterScheduledAt, Duration.ofMinutes(2))).isEmpty();
+        assertThat(cancellationService.cancelMail(3L, job.getId())).isEqualTo(result);
+        assertThat(queryService.getJob(3L, job.getId()).finishedAt()).isEqualTo(detail.finishedAt());
+    }
+
+    @Test
+    void 타_관리자의_예약과_없는_작업은_같은_취소_오류로_거부한다() {
+        // given
+        var job = createScheduledJob(3L);
+
+        // when & then
+        for (Long inaccessibleId : List.of(job.getId(), Long.MAX_VALUE)) {
+            assertThatThrownBy(() -> cancellationService.cancelMail(4L, inaccessibleId))
+                    .isInstanceOf(MailException.class)
+                    .extracting("errorCode").isEqualTo(MailErrorCode.DISPATCH_JOB_NOT_FOUND);
+        }
+        assertThat(queryService.getJob(3L, job.getId()).status()).isEqualTo(MailDispatchJobStatus.SCHEDULED);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = MailDispatchJobStatus.class, names = {"REQUESTED", "PROCESSING", "COMPLETED"})
+    void 예약_대기가_아니거나_처리_시작한_작업은_취소해도_기존_상태를_유지한다(MailDispatchJobStatus status) {
+        // given
+        var job = createJob(3L, 2L, 10L);
+        if (status != MailDispatchJobStatus.REQUESTED) {
+            persistenceService.startProcessing(job.getId());
+        }
+        if (status == MailDispatchJobStatus.COMPLETED) {
+            persistenceService.recordSuccess(job.getId(), 10L);
+        }
+
+        // when & then
+        assertThatThrownBy(() -> cancellationService.cancelMail(3L, job.getId()))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode").isEqualTo(MailErrorCode.DISPATCH_CANCELLATION_NOT_ALLOWED);
+        assertThat(queryService.getJob(3L, job.getId()).status()).isEqualTo(status);
+    }
+
+    @Test
+    void 같은_예약을_동시에_취소해도_두_요청이_같은_취소_결과를_반환한다() throws Exception {
+        // given
+        var job = createScheduledJob(3L);
+        var ready = new CountDownLatch(2);
+        var start = new CountDownLatch(1);
+        Callable<MailDispatchResponse> cancel = () -> {
+            ready.countDown();
+            assertThat(start.await(10, TimeUnit.SECONDS)).isTrue();
+            return cancellationService.cancelMail(3L, job.getId());
+        };
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(cancel);
+            var second = executor.submit(cancel);
+            assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue();
+
+            // when
+            start.countDown();
+            var firstResult = first.get(10, TimeUnit.SECONDS);
+            var secondResult = second.get(10, TimeUnit.SECONDS);
+
+            // then
+            assertThat(firstResult.status()).isEqualTo(MailDispatchJobStatus.CANCELLED);
+            assertThat(secondResult).isEqualTo(firstResult);
+            assertThat(queryService.getJob(3L, job.getId()).status()).isEqualTo(MailDispatchJobStatus.CANCELLED);
+        }
     }
 
     @Test
@@ -227,7 +333,7 @@ class MailDispatchQueryMysqlTest extends TestSupport {
     }
 
     @ParameterizedTest
-    @EnumSource(MailDispatchTargetStatus.class)
+    @EnumSource(value = MailDispatchTargetStatus.class, names = {"PENDING", "SENT", "FAILED", "UNKNOWN"})
     void 대상_상태별_페이지와_전체_건수에_다른_작업의_같은_지원_ID를_섞지_않는다(
             MailDispatchTargetStatus status) {
         // given
@@ -249,12 +355,9 @@ class MailDispatchQueryMysqlTest extends TestSupport {
         var page1 = queryService.searchTargets(3L, job.getId(), status, PageRequest.of(1, 1));
 
         // then
-        Long firstApplyId = switch (status) {
-            case PENDING -> 10L;
-            case SENT -> 20L;
-            case FAILED -> 30L;
-            case UNKNOWN -> 50L;
-        };
+        Long firstApplyId = Map.of(MailDispatchTargetStatus.PENDING, 10L,
+                MailDispatchTargetStatus.SENT, 20L, MailDispatchTargetStatus.FAILED, 30L,
+                MailDispatchTargetStatus.UNKNOWN, 50L).get(status);
         assertThat(page0.getContent()).singleElement().satisfies(target -> {
             assertThat(target.applyId()).isEqualTo(firstApplyId);
             assertThat(target.status()).isEqualTo(status);
@@ -337,6 +440,14 @@ class MailDispatchQueryMysqlTest extends TestSupport {
 
     private Long outboxId(Long jobId, Long applyId) {
         return outboxRepository.findByDispatchJobIdAndApplyId(jobId, applyId).orElseThrow().getId();
+    }
+
+    private MailDispatchJob createScheduledJob(Long adminId) {
+        return persistenceService.createScheduledJob(new MailDispatchPlan(
+                1L, 2L, adminId, UUID.randomUUID().toString(), "예약 제목", "예약 본문", Map.of(),
+                List.of(new MailDispatchPlan.Target(
+                        10L, "scheduled@example.com", "확정 제목", "확정 본문", "PASSED"))),
+                "scheduled-fingerprint", OffsetDateTime.parse("2099-10-07T10:00:00+09:00").toInstant());
     }
 
     private MailDispatchJob createJob(Long adminId, Long recruitId, Long... applyIds) {

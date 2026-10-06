@@ -13,6 +13,7 @@ import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
+import org.ject.support.admin.mail.service.MailDispatchCancellationService;
 import org.ject.support.admin.mail.service.MailDispatchQueryService;
 import org.ject.support.admin.mail.service.MailDispatchUseCase;
 import org.ject.support.testconfig.ApplicationPeriodTest;
@@ -40,6 +41,9 @@ class AdminMailDispatchSecurityTest extends ApplicationPeriodTest {
 
     @MockitoBean
     private MailDispatchQueryService mailDispatchQueryService;
+
+    @MockitoBean
+    private MailDispatchCancellationService mailDispatchCancellationService;
 
     @Test
     @DisplayName("인증되지 않은 사용자는 단체 메일을 발송할 수 없다")
@@ -69,6 +73,15 @@ class AdminMailDispatchSecurityTest extends ApplicationPeriodTest {
     }
 
     @Test
+    @DisplayName("인증되지 않은 사용자는 예약 발송 작업을 취소할 수 없다")
+    void 인증되지_않은_사용자는_예약_발송_작업을_취소할_수_없다() throws Exception {
+        mockMvc.perform(post("/admin/mails/dispatches/{dispatchJobId}/cancel", 100L))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(mailDispatchCancellationService);
+    }
+
+    @Test
     @AuthenticatedUser(isAdmin = false)
     @DisplayName("일반 사용자는 단체 메일을 발송할 수 없다")
     void 일반_사용자는_단체_메일을_발송할_수_없다() throws Exception {
@@ -90,6 +103,16 @@ class AdminMailDispatchSecurityTest extends ApplicationPeriodTest {
                 .andExpect(status().isUnauthorized());
 
         verifyNoInteractions(mailDispatchUseCase);
+    }
+
+    @Test
+    @AuthenticatedUser(isAdmin = false)
+    @DisplayName("관리자가 아닌 사용자는 예약 발송 작업을 취소할 수 없다")
+    void 관리자가_아닌_사용자는_예약_발송_작업을_취소할_수_없다() throws Exception {
+        mockMvc.perform(post("/admin/mails/dispatches/{dispatchJobId}/cancel", 100L))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(mailDispatchCancellationService);
     }
 
     @Test
