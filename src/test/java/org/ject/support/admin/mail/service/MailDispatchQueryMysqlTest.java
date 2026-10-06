@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.UUID;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
+import org.ject.support.admin.mail.domain.MailDispatchOutbox;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.admin.mail.dto.MailDispatchJobResponse;
@@ -114,19 +115,28 @@ class MailDispatchQueryMysqlTest extends TestSupport {
     }
 
     @Test
-    void Outbox_없는_과거_이력은_재시도_정보_null로_미시도_0회와_구분한다() {
+    void 과거_이력과_미시도_대상을_구분하고_다른_작업의_재시도_정보를_섞지_않는다() {
         // given
         var legacy = jobRepository.save(MailDispatchJob.create(
-                1L, 2L, 3L, "legacy-key", "과거 제목", "과거 본문", "{}", 1));
+                1L, 2L, 3L, "legacy-key", "과거 제목", "과거 본문", "{}", 2));
         targetRepository.save(MailDispatchTarget.pending(legacy, 10L, "legacy@example.com"));
+        targetRepository.save(MailDispatchTarget.pending(legacy, 20L, "pending@example.com"));
+        outboxRepository.save(MailDispatchOutbox.createPending(
+                legacy, 20L, "pending@example.com", "제목", "본문"));
         persistenceService.startProcessing(legacy.getId());
         persistenceService.recordSuccess(legacy.getId(), 10L);
-        var current = createJob(3L, 2L, 10L);
+        var otherJob = createJob(4L, 99L, 20L);
+        LocalDateTime now = LocalDateTime.of(2026, 10, 5, 12, 0);
+        var otherClaim = claimService.claim(outboxId(otherJob.getId(), 20L), now, Duration.ofMinutes(2))
+                .orElseThrow();
+        assertThat(claimService.recordThrottling(
+                outboxId(otherJob.getId(), 20L), otherClaim.claimToken(), now.plusSeconds(1))).isTrue();
 
         // when
         var legacyResult = queryService.searchTargets(
                 3L, legacy.getId(), MailDispatchTargetStatus.SENT, PageRequest.of(0, 10));
-        var currentResult = queryService.searchTargets(3L, current.getId(), null, PageRequest.of(0, 10));
+        var first = queryService.searchTargets(3L, legacy.getId(), null, PageRequest.of(0, 1));
+        var second = queryService.searchTargets(3L, legacy.getId(), null, PageRequest.of(1, 1));
 
         // then
         assertThat(legacyResult.getTotalElements()).isEqualTo(1);
@@ -138,11 +148,17 @@ class MailDispatchQueryMysqlTest extends TestSupport {
             assertThat(target.nextAttemptAt()).isNull();
             assertThat(target.lastAttemptFailureReason()).isNull();
         });
-        assertThat(currentResult.getContent()).singleElement().satisfies(target -> {
+        assertThat(first.getTotalElements()).isEqualTo(2);
+        assertThat(first.getContent()).extracting(MailDispatchTargetResponse::applyId).containsExactly(10L);
+        assertThat(second.getTotalElements()).isEqualTo(2);
+        assertThat(second.getContent()).singleElement().satisfies(target -> {
+            assertThat(target.applyId()).isEqualTo(20L);
             assertThat(target.status()).isEqualTo(MailDispatchTargetStatus.PENDING);
             assertThat(target.attemptCount()).isZero();
             assertThat(target.nextAttemptAt()).isNull();
+            assertThat(target.lastAttemptFailureReason()).isNull();
         });
+        assertThat(queryService.searchTargets(3L, legacy.getId(), null, PageRequest.of(2, 1)).getContent()).isEmpty();
     }
 
     @Test
