@@ -9,6 +9,7 @@ import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
 import org.ject.support.admin.mail.dto.MailDispatchJobResponse;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.MailDispatchTargetResponse;
+import org.ject.support.admin.mail.dto.ScheduleMailDispatchRequest;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.common.security.AuthPrincipal;
 import org.springframework.data.domain.Page;
@@ -53,4 +54,15 @@ public interface AdminMailDispatchApiSpec {
             @Parameter(hidden = true) @AuthPrincipal Long requestedByAdminId,
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestBody @Valid SendMailDispatchRequest request);
+
+    @Operation(summary = "단체 메일 예약", description = """
+            예약 시점에 선택된 대상자와 렌더링된 메일 제목·본문을 snapshot으로 저장합니다.
+            scheduledAt은 시간대가 포함된 ISO-8601 형식이며 UTC Instant로 저장합니다. 한국 시간 예시는 2026-10-07T10:00:00+09:00입니다.
+            현재 예약 시각 이후 자동 실행은 연결되어 있지 않으며, SCHEDULED 작업은 worker와 claim 대상이 아닙니다.
+            생성 응답에 예약 시각은 포함되지 않으므로 기존 작업 상세 조회에서 확인합니다.
+            """)
+    MailDispatchResponse scheduleMail(
+            @Parameter(hidden = true) @AuthPrincipal Long requestedByAdminId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody @Valid ScheduleMailDispatchRequest request);
 }

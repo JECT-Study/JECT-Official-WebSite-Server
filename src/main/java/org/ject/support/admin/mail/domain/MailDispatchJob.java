@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -85,6 +86,9 @@ public class MailDispatchJob extends BaseTimeEntity {
     @Column(name = "finished_at")
     private LocalDateTime finishedAt;
 
+    @Column(name = "scheduled_at", columnDefinition = "DATETIME(6)")
+    private Instant scheduledAt;
+
     @Version
     private Long version;
 
@@ -154,6 +158,15 @@ public class MailDispatchJob extends BaseTimeEntity {
                 requestFingerprint,
                 targetCount
         );
+    }
+
+    public void schedule(Instant scheduledAt) {
+        validateStatus(MailDispatchJobStatus.REQUESTED);
+        if (scheduledAt == null || !scheduledAt.isAfter(Instant.now())) {
+            throw new MailException(MailErrorCode.INVALID_SCHEDULED_AT);
+        }
+        this.scheduledAt = scheduledAt;
+        status = MailDispatchJobStatus.SCHEDULED;
     }
 
     public void startProcessing() {

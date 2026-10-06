@@ -3,6 +3,7 @@ package org.ject.support.admin.mail.service;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,22 @@ class MailDispatchRequestFingerprintGeneratorTest {
     private final MailDispatchRequestFingerprintGenerator fingerprintGenerator =
             new MailDispatchRequestFingerprintGenerator(
                     new Map2JsonSerializer(new ObjectMapper()));
+
+    @Test
+    void 같은_절대_예약_시각은_시간대와_관계없이_같고_다른_시각과_즉시_발송은_구분한다() {
+        // given
+        SendMailDispatchRequest request = new SendMailDispatchRequest(2L, 1L, List.of(10L), "제목", Map.of());
+        var koreanTime = OffsetDateTime.parse("2099-10-07T10:00:00+09:00").toInstant();
+        var utcTime = OffsetDateTime.parse("2099-10-07T01:00:00Z").toInstant();
+
+        // when
+        String scheduledFingerprint = fingerprintGenerator.generate(request, koreanTime);
+
+        // then
+        assertThat(scheduledFingerprint).isEqualTo(fingerprintGenerator.generate(request, utcTime))
+                .isNotEqualTo(fingerprintGenerator.generate(request, koreanTime.plusSeconds(1)))
+                .isNotEqualTo(fingerprintGenerator.generate(request));
+    }
 
     @ParameterizedTest(name = "{0} 변경은 다른 요청으로 식별한다")
     @MethodSource("changedRequests")

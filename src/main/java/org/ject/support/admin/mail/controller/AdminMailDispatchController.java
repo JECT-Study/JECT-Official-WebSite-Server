@@ -8,6 +8,7 @@ import org.ject.support.admin.mail.dto.MailDispatchJobResponse;
 import org.ject.support.admin.mail.dto.MailDispatchJobSearchCondition;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.MailDispatchTargetResponse;
+import org.ject.support.admin.mail.dto.ScheduleMailDispatchRequest;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.service.MailDispatchQueryService;
 import org.ject.support.admin.mail.service.MailDispatchUseCase;
@@ -72,5 +73,15 @@ public class AdminMailDispatchController implements AdminMailDispatchApiSpec {
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestBody @Valid SendMailDispatchRequest request) {
         return mailDispatchUseCase.sendMail(request, requestedByAdminId, idempotencyKey);
+    }
+
+    @Override
+    @PostMapping("/scheduled")
+    @ResponseStatus(HttpStatus.CREATED)
+    public MailDispatchResponse scheduleMail(
+            @AuthPrincipal Long requestedByAdminId,
+            @RequestHeader("Idempotency-Key") String idempotencyKey,
+            @RequestBody @Valid ScheduleMailDispatchRequest request) {
+        return mailDispatchUseCase.scheduleMail(request, requestedByAdminId, idempotencyKey);
     }
 }

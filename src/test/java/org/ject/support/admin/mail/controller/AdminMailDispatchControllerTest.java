@@ -1,5 +1,6 @@
 package org.ject.support.admin.mail.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -10,7 +11,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
@@ -19,6 +22,7 @@ import org.ject.support.admin.mail.dto.MailDispatchJobResponse;
 import org.ject.support.admin.mail.dto.MailDispatchJobSearchCondition;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.MailDispatchTargetResponse;
+import org.ject.support.admin.mail.dto.ScheduleMailDispatchRequest;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
@@ -36,6 +40,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.domain.PageRequest;
@@ -103,13 +108,89 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
     }
 
     @Test
+    @DisplayName("예약 요청을 받아 SCHEDULED 작업을 생성한다")
+    void 예약_요청을_받아_SCHEDULED_작업을_생성한다() throws Exception {
+        // given
+        ScheduleMailDispatchRequest request = new ScheduleMailDispatchRequest(
+                2L, 1L, List.of(10L), "안내 메일", Map.of("date", "2026-10-10"),
+                OffsetDateTime.parse("2026-10-07T10:00:00+09:00"));
+        MailDispatchResponse response = new MailDispatchResponse(
+                100L, MailDispatchJobStatus.SCHEDULED, 1, 0, 0, 0, 0);
+        given(mailDispatchUseCase.scheduleMail(
+                any(ScheduleMailDispatchRequest.class), eq(50L), eq("scheduled-key")))
+                .willReturn(response);
+
+        // when & then
+        mockMvc.perform(post("/admin/mails/dispatches/scheduled")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "scheduled-key")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.data.dispatchJobId").value(100))
+                .andExpect(jsonPath("$.data.status").value("SCHEDULED"))
+                .andExpect(jsonPath("$.data.targetCount").value(1))
+                .andExpect(jsonPath("$.data.scheduledAt").doesNotExist());
+
+        ArgumentCaptor<ScheduleMailDispatchRequest> requestCaptor =
+                ArgumentCaptor.forClass(ScheduleMailDispatchRequest.class);
+        verify(mailDispatchUseCase).scheduleMail(requestCaptor.capture(), eq(50L), eq("scheduled-key"));
+        assertThat(requestCaptor.getValue())
+                .usingRecursiveComparison()
+                .ignoringFields("scheduledAt")
+                .isEqualTo(request);
+        assertThat(requestCaptor.getValue().scheduledAt().toInstant())
+                .isEqualTo(request.scheduledAt().toInstant());
+    }
+
+    @Test
+    @DisplayName("예약 시각이 없으면 요청을 거부한다")
+    void 예약_시각이_없으면_요청을_거부한다() throws Exception {
+        mockMvc.perform(post("/admin/mails/dispatches/scheduled")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "scheduled-key")
+                        .content("""
+                                {"recruitId":2,"scenarioId":1,"applyIds":[10],"inputVariables":{}}
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("과거 예약 시각을 서비스 오류 MAIL-22로 거부한다")
+    void 과거_예약_시각을_서비스_오류_MAIL_22로_거부한다() throws Exception {
+        // given
+        ScheduleMailDispatchRequest request = new ScheduleMailDispatchRequest(
+                2L, 1L, List.of(10L), null, Map.of(), OffsetDateTime.parse("2026-10-05T10:00:00+09:00"));
+        given(mailDispatchUseCase.scheduleMail(
+                any(ScheduleMailDispatchRequest.class), eq(50L), eq("scheduled-key")))
+                .willThrow(new MailException(MailErrorCode.INVALID_SCHEDULED_AT));
+
+        // when & then
+        mockMvc.perform(post("/admin/mails/dispatches/scheduled")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "scheduled-key")
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value("MAIL-22"));
+
+        ArgumentCaptor<ScheduleMailDispatchRequest> requestCaptor =
+                ArgumentCaptor.forClass(ScheduleMailDispatchRequest.class);
+        verify(mailDispatchUseCase).scheduleMail(requestCaptor.capture(), eq(50L), eq("scheduled-key"));
+        assertThat(requestCaptor.getValue())
+                .usingRecursiveComparison()
+                .ignoringFields("scheduledAt")
+                .isEqualTo(request);
+        assertThat(requestCaptor.getValue().scheduledAt().toInstant())
+                .isEqualTo(request.scheduledAt().toInstant());
+    }
+
+    @Test
     @DisplayName("관리자 본인의 발송 작업 목록을 기본 페이지로 최신순 조회한다")
     void 관리자_본인의_발송_작업_목록을_기본_페이지로_최신순_조회한다() throws Exception {
         // given
         LocalDateTime requestedAt = LocalDateTime.of(2026, 9, 22, 12, 0);
         MailDispatchJobResponse response = new MailDispatchJobResponse(
                 100L, 1L, 2L, 50L, MailDispatchJobStatus.COMPLETED,
-                2, 0, 2, 0, 0, requestedAt, requestedAt, requestedAt);
+                2, 0, 2, 0, 0, requestedAt, requestedAt, requestedAt, null);
         given(mailDispatchQueryService.searchJobs(
                 eq(50L), eq(new MailDispatchJobSearchCondition(null, null)), any()))
                 .willReturn(PageResponse.from(List.of(response), PageRequest.of(0, 10), 1));
@@ -133,7 +214,7 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
         LocalDateTime requestedAt = LocalDateTime.of(2026, 9, 22, 12, 0);
         MailDispatchJobResponse response = new MailDispatchJobResponse(
                 101L, 1L, 2L, 50L, MailDispatchJobStatus.COMPLETED,
-                2, 0, 2, 0, 0, requestedAt, requestedAt, requestedAt);
+                2, 0, 2, 0, 0, requestedAt, requestedAt, requestedAt, null);
         given(mailDispatchQueryService.searchJobs(
                 eq(50L), eq(new MailDispatchJobSearchCondition(2L, MailDispatchJobStatus.COMPLETED)), any()))
                 .willReturn(PageResponse.from(List.of(response), PageRequest.of(1, 2), 3));
@@ -159,7 +240,7 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
         LocalDateTime requestedAt = LocalDateTime.of(2026, 9, 22, 12, 0);
         MailDispatchJobResponse response = new MailDispatchJobResponse(
                 100L, 1L, 2L, 50L, MailDispatchJobStatus.COMPLETED,
-                2, 0, 2, 0, 0, requestedAt, requestedAt, requestedAt);
+                2, 0, 2, 0, 0, requestedAt, requestedAt, requestedAt, null);
         given(mailDispatchQueryService.getJob(eq(50L), eq(100L))).willReturn(response);
 
         // when & then
@@ -170,6 +251,24 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.data.requestedByAdminId").value(50))
                 .andExpect(jsonPath("$.data.status").value("COMPLETED"))
                 .andExpect(jsonPath("$.data.successCount").value(2));
+    }
+
+    @Test
+    @DisplayName("예약 시각을 발송 작업 상세에서 조회한다")
+    void 예약_시각을_발송_작업_상세에서_조회한다() throws Exception {
+        // given
+        LocalDateTime requestedAt = LocalDateTime.of(2026, 10, 6, 12, 0);
+        Instant scheduledAt = Instant.parse("2026-10-07T01:00:00Z");
+        MailDispatchJobResponse response = new MailDispatchJobResponse(
+                100L, 1L, 2L, 50L, MailDispatchJobStatus.SCHEDULED,
+                1, 0, 0, 0, 0, requestedAt, null, null, scheduledAt);
+        given(mailDispatchQueryService.getJob(eq(50L), eq(100L))).willReturn(response);
+
+        // when & then
+        mockMvc.perform(get("/admin/mails/dispatches/{dispatchJobId}", 100L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("SCHEDULED"))
+                .andExpect(jsonPath("$.data.scheduledAt").value("2026-10-07T01:00:00Z"));
     }
 
     @Test
@@ -267,7 +366,7 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
         LocalDateTime requestedAt = LocalDateTime.of(2026, 10, 2, 12, 0);
         MailDispatchJobResponse response = new MailDispatchJobResponse(
                 100L, 1L, 2L, 50L, MailDispatchJobStatus.UNKNOWN,
-                2, 0, 1, 0, 1, requestedAt, requestedAt, requestedAt);
+                2, 0, 1, 0, 1, requestedAt, requestedAt, requestedAt, null);
         given(mailDispatchQueryService.getJob(eq(50L), eq(100L))).willReturn(response);
 
         // when & then

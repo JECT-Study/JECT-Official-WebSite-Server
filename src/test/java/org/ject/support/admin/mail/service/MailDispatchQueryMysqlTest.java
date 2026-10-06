@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -94,6 +96,37 @@ class MailDispatchQueryMysqlTest extends TestSupport {
         outboxRepository.deleteAllInBatch();
         targetRepository.deleteAllInBatch();
         jobRepository.deleteAllInBatch();
+    }
+
+    @Test
+    void 예약_내용과_선정_결과를_저장하고_기존_worker의_실행에서_제외한다() {
+        // given
+        var scheduledAt = OffsetDateTime.parse("2099-10-07T10:00:00+09:00").toInstant();
+        var job = persistenceService.createScheduledJob(new MailDispatchPlan(
+                1L, 2L, 3L, "scheduled-key", "예약 제목", "예약 본문", Map.of(),
+                List.of(new MailDispatchPlan.Target(
+                        10L, "scheduled@example.com", "확정 제목", "확정 본문", "PASSED"))),
+                "scheduled-fingerprint", scheduledAt);
+        var outbox = outboxRepository.findByDispatchJobIdAndApplyId(job.getId(), 10L).orElseThrow();
+        var afterScheduledAt = LocalDateTime.ofInstant(scheduledAt.plusSeconds(1), ZoneOffset.UTC);
+
+        // when
+        var detail = queryService.getJob(3L, job.getId());
+        var scheduledJobs = queryService.searchJobs(3L,
+                new MailDispatchJobSearchCondition(null, MailDispatchJobStatus.SCHEDULED), PageRequest.of(0, 10));
+
+        // then
+        assertThat(detail.status()).isEqualTo(MailDispatchJobStatus.SCHEDULED);
+        assertThat(detail.scheduledAt()).isEqualTo(scheduledAt);
+        assertThat(scheduledJobs.getContent()).extracting(MailDispatchJobResponse::dispatchJobId)
+                .containsExactly(job.getId());
+        assertThat(targetRepository.findByDispatchJobIdAndApplyId(job.getId(), 10L).orElseThrow()
+                .getSelectionResultSnapshot()).isEqualTo("PASSED");
+        assertThat(outbox.getEmail()).isEqualTo("scheduled@example.com");
+        assertThat(outbox.getSubject()).isEqualTo("확정 제목");
+        assertThat(outbox.getBody()).isEqualTo("확정 본문");
+        assertThat(outboxRepository.findPendingExecutionIds(afterScheduledAt, PageRequest.of(0, 10))).isEmpty();
+        assertThat(claimService.claim(outbox.getId(), afterScheduledAt, Duration.ofMinutes(2))).isEmpty();
     }
 
     @Test

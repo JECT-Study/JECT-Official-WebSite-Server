@@ -11,6 +11,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.sql.SQLException;
+import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +20,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
+import org.ject.support.admin.mail.dto.ScheduleMailDispatchRequest;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
@@ -49,6 +51,63 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
 
     @InjectMocks
     private MailDispatchUseCase mailDispatchUseCase;
+
+    @Test
+    void 예약은_렌더링된_내용을_저장하고_즉시_발송하지_않는다() {
+        // given
+        OffsetDateTime scheduledAt = OffsetDateTime.parse("2099-10-07T10:00:00+09:00");
+        ScheduleMailDispatchRequest scheduledRequest = new ScheduleMailDispatchRequest(
+                2L, 1L, List.of(1L, 2L), null, Map.of(), scheduledAt);
+        MailDispatchPlan plan = plan();
+        String fingerprint = requestFingerprintGenerator.generate(request(), scheduledAt.toInstant());
+        MailDispatchJob job = MailDispatchJob.create(
+                1L, 2L, 3L, "dispatch-key", "제목", "본문", "{}", fingerprint, 2);
+        job.schedule(scheduledAt.toInstant());
+        given(preparationService.prepare(request(), 3L, "dispatch-key")).willReturn(plan);
+        given(persistenceService.createScheduledJob(plan, fingerprint, scheduledAt.toInstant())).willReturn(job);
+        given(persistenceService.getResult(job.getId())).willReturn(MailDispatchResponse.from(job));
+
+        // when
+        MailDispatchResponse result = mailDispatchUseCase.scheduleMail(scheduledRequest, 3L, "dispatch-key");
+
+        // then
+        assertThat(result.status()).isEqualTo(MailDispatchJobStatus.SCHEDULED);
+        assertThat(result.targetCount()).isEqualTo(2);
+        verifyNoInteractions(executionService);
+    }
+
+    @Test
+    void 과거_시각의_신규_예약은_내용을_준비하거나_저장하지_않는다() {
+        // given
+        ScheduleMailDispatchRequest scheduledRequest = new ScheduleMailDispatchRequest(
+                2L, 1L, List.of(1L, 2L), null, Map.of(), OffsetDateTime.parse("2000-01-01T10:00:00+09:00"));
+
+        // when & then
+        assertThatThrownBy(() -> mailDispatchUseCase.scheduleMail(scheduledRequest, 3L, "dispatch-key"))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode").isEqualTo(MailErrorCode.INVALID_SCHEDULED_AT);
+        verifyNoInteractions(preparationService, executionService);
+        verify(persistenceService, never()).createScheduledJob(any(), any(), any());
+    }
+
+    @Test
+    void 예약_시각이_지나도_같은_예약_요청은_기존_결과를_반환한다() {
+        // given
+        OffsetDateTime scheduledAt = OffsetDateTime.parse("2000-01-01T10:00:00+09:00");
+        ScheduleMailDispatchRequest scheduledRequest = new ScheduleMailDispatchRequest(
+                2L, 1L, List.of(1L, 2L), null, Map.of(), scheduledAt);
+        MailDispatchJob existing = completedJob(100L,
+                requestFingerprintGenerator.generate(request(), scheduledAt.toInstant()), 2);
+        given(persistenceService.findJobByIdempotencyKey(3L, "dispatch-key")).willReturn(Optional.of(existing));
+
+        // when
+        MailDispatchResponse result = mailDispatchUseCase.scheduleMail(scheduledRequest, 3L, "dispatch-key");
+
+        // then
+        assertThat(result.dispatchJobId()).isEqualTo(100L);
+        assertThat(result.status()).isEqualTo(MailDispatchJobStatus.COMPLETED);
+        verifyNoInteractions(preparationService, executionService);
+    }
 
     @Test
     @DisplayName("대상 검증에 실패하면 작업을 저장하거나 메일을 발송하지 않는다")

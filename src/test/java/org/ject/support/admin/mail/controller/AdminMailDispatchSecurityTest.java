@@ -4,6 +4,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -51,6 +52,16 @@ class AdminMailDispatchSecurityTest extends ApplicationPeriodTest {
     }
 
     @Test
+    @DisplayName("인증되지 않은 사용자는 단체 메일을 예약할 수 없다")
+    void 인증되지_않은_사용자는_단체_메일을_예약할_수_없다() throws Exception {
+        mockMvc.perform(post("/admin/mails/dispatches/scheduled")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "scheduled-key")
+                        .content(validScheduledRequest()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     @DisplayName("인증되지 않은 사용자는 발송 작업 목록을 조회할 수 없다")
     void 인증되지_않은_사용자는_발송_작업_목록을_조회할_수_없다() throws Exception {
         mockMvc.perform(get("/admin/mails/dispatches"))
@@ -66,6 +77,19 @@ class AdminMailDispatchSecurityTest extends ApplicationPeriodTest {
                         .header("Idempotency-Key", "dispatch-key")
                         .content(validRequest()))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @AuthenticatedUser(isAdmin = false)
+    @DisplayName("관리자가 아닌 사용자는 단체 메일을 예약할 수 없다")
+    void 관리자가_아닌_사용자는_단체_메일을_예약할_수_없다() throws Exception {
+        mockMvc.perform(post("/admin/mails/dispatches/scheduled")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "scheduled-key")
+                        .content(validScheduledRequest()))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(mailDispatchUseCase);
     }
 
     @Test
@@ -105,6 +129,20 @@ class AdminMailDispatchSecurityTest extends ApplicationPeriodTest {
     }
 
     @Test
+    @AuthenticatedUser(isAdmin = true)
+    @DisplayName("관리자는 단체 메일을 예약할 수 있다")
+    void 관리자는_단체_메일을_예약할_수_있다() throws Exception {
+        given(mailDispatchUseCase.scheduleMail(any(), any(), any())).willReturn(
+                new MailDispatchResponse(100L, MailDispatchJobStatus.SCHEDULED, 1, 0, 0, 0, 0));
+
+        mockMvc.perform(post("/admin/mails/dispatches/scheduled")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Idempotency-Key", "scheduled-key")
+                        .content(validScheduledRequest()))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
     @AuthenticatedUser(isAdmin = true, memberId = 51L)
     @DisplayName("다른 관리자는 발송 작업 상세를 조회할 수 없다")
     void 다른_관리자는_발송_작업_상세를_조회할_수_없다() throws Exception {
@@ -133,5 +171,10 @@ class AdminMailDispatchSecurityTest extends ApplicationPeriodTest {
 
     private String validRequest() {
         return "{\"recruitId\":2,\"scenarioId\":1,\"applyIds\":[10],\"inputVariables\":{}}";
+    }
+
+    private String validScheduledRequest() {
+        return "{\"recruitId\":2,\"scenarioId\":1,\"applyIds\":[10],\"inputVariables\":{},"
+                + "\"scheduledAt\":\"2026-10-07T10:00:00+09:00\"}";
     }
 }
