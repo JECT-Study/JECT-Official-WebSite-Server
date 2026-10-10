@@ -4,5 +4,6 @@ public enum MailDispatchJobStatus {
     REQUESTED,
     PROCESSING,
     COMPLETED,
-    FAILED
+    FAILED,
+    UNKNOWN
 }

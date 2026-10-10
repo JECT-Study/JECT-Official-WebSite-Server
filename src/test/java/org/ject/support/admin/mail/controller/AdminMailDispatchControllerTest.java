@@ -82,7 +82,7 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
         // given
         SendMailDispatchRequest request = new SendMailDispatchRequest(2L, 1L, List.of(10L), null, Map.of());
         MailDispatchResponse response = new MailDispatchResponse(
-                100L, MailDispatchJobStatus.COMPLETED, 1, 0, 1, 0);
+                100L, MailDispatchJobStatus.COMPLETED, 1, 0, 1, 0, 0);
         given(mailDispatchUseCase.sendMail(
                 any(SendMailDispatchRequest.class), eq(50L), eq("dispatch-key"))).willReturn(response);
 
@@ -106,7 +106,7 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
         LocalDateTime requestedAt = LocalDateTime.of(2026, 9, 22, 12, 0);
         MailDispatchJobResponse response = new MailDispatchJobResponse(
                 100L, 1L, 2L, 50L, MailDispatchJobStatus.COMPLETED,
-                2, 0, 2, 0, requestedAt, requestedAt, requestedAt);
+                2, 0, 2, 0, 0, requestedAt, requestedAt, requestedAt);
         given(mailDispatchQueryService.searchJobs(
                 eq(50L), eq(new MailDispatchJobSearchCondition(null, null)), any()))
                 .willReturn(PageResponse.from(List.of(response), PageRequest.of(0, 10), 1));
@@ -130,7 +130,7 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
         LocalDateTime requestedAt = LocalDateTime.of(2026, 9, 22, 12, 0);
         MailDispatchJobResponse response = new MailDispatchJobResponse(
                 101L, 1L, 2L, 50L, MailDispatchJobStatus.COMPLETED,
-                2, 0, 2, 0, requestedAt, requestedAt, requestedAt);
+                2, 0, 2, 0, 0, requestedAt, requestedAt, requestedAt);
         given(mailDispatchQueryService.searchJobs(
                 eq(50L), eq(new MailDispatchJobSearchCondition(2L, MailDispatchJobStatus.COMPLETED)), any()))
                 .willReturn(PageResponse.from(List.of(response), PageRequest.of(1, 2), 3));
@@ -156,7 +156,7 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
         LocalDateTime requestedAt = LocalDateTime.of(2026, 9, 22, 12, 0);
         MailDispatchJobResponse response = new MailDispatchJobResponse(
                 100L, 1L, 2L, 50L, MailDispatchJobStatus.COMPLETED,
-                2, 0, 2, 0, requestedAt, requestedAt, requestedAt);
+                2, 0, 2, 0, 0, requestedAt, requestedAt, requestedAt);
         given(mailDispatchQueryService.getJob(eq(50L), eq(100L))).willReturn(response);
 
         // when & then
@@ -232,6 +232,24 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
                         .header("Idempotency-Key", "dispatch-key")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void 격리된_발송_작업의_상태와_불확실_건수를_응답한다() throws Exception {
+        // given
+        LocalDateTime requestedAt = LocalDateTime.of(2026, 10, 2, 12, 0);
+        MailDispatchJobResponse response = new MailDispatchJobResponse(
+                100L, 1L, 2L, 50L, MailDispatchJobStatus.UNKNOWN,
+                2, 0, 1, 0, 1, requestedAt, requestedAt, requestedAt);
+        given(mailDispatchQueryService.getJob(eq(50L), eq(100L))).willReturn(response);
+
+        // when & then
+        mockMvc.perform(get("/admin/mails/dispatches/{dispatchJobId}", 100L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("UNKNOWN"))
+                .andExpect(jsonPath("$.data.unknownCount").value(1))
+                .andExpect(jsonPath("$.data.successCount").value(1))
+                .andExpect(jsonPath("$.data.processingCount").value(0));
     }
 
     private void setAuthentication() {
