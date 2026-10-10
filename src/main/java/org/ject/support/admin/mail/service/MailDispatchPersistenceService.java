@@ -1,5 +1,6 @@
 package org.ject.support.admin.mail.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,22 @@ public class MailDispatchPersistenceService {
 
     @Transactional
     public MailDispatchJob createJob(MailDispatchPlan plan, String requestFingerprint) {
+        return persistJob(plan, requestFingerprint, null);
+    }
+
+    @Transactional
+    public MailDispatchJob createScheduledJob(MailDispatchPlan plan, String requestFingerprint, Instant scheduledAt) {
+        if (scheduledAt == null) {
+            throw new MailException(MailErrorCode.INVALID_SCHEDULED_AT);
+        }
+        if (plan.targets().stream().anyMatch(target -> target.selectionResultSnapshot() == null
+                || target.selectionResultSnapshot().isBlank())) {
+            throw new MailException(MailErrorCode.INVALID_DISPATCH_TARGETS);
+        }
+        return persistJob(plan, requestFingerprint, scheduledAt);
+    }
+
+    private MailDispatchJob persistJob(MailDispatchPlan plan, String requestFingerprint, Instant scheduledAt) {
         MailDispatchJob job = MailDispatchJob.create(
                 plan.scenarioId(),
                 plan.recruitId(),
@@ -38,9 +55,15 @@ public class MailDispatchPersistenceService {
                 requestFingerprint,
                 plan.targets().size()
         );
+        if (scheduledAt != null) {
+            job.schedule(scheduledAt);
+        }
         MailDispatchJob savedJob = mailDispatchJobRepository.save(job);
         List<MailDispatchTarget> targets = plan.targets().stream()
-                .map(target -> MailDispatchTarget.pending(savedJob, target.applyId(), target.email()))
+                .map(target -> scheduledAt == null
+                        ? MailDispatchTarget.pending(savedJob, target.applyId(), target.email())
+                        : MailDispatchTarget.pending(savedJob, target.applyId(), target.email(),
+                                target.selectionResultSnapshot()))
                 .toList();
         mailDispatchTargetRepository.saveAll(targets);
         // 발송 전 결과 snapshot을 작업·대상과 같은 트랜잭션에 보존한다.

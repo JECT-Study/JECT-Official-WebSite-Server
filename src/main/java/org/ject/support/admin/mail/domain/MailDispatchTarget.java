@@ -53,6 +53,9 @@ public class MailDispatchTarget extends BaseTimeEntity {
     @Column(name = "sent_at")
     private LocalDateTime sentAt;
 
+    @Column(name = "selection_result_snapshot", length = 50)
+    private String selectionResultSnapshot;
+
     @Version
     private Long version;
 
@@ -67,11 +70,23 @@ public class MailDispatchTarget extends BaseTimeEntity {
         return new MailDispatchTarget(dispatchJob, applyId, email);
     }
 
+    public static MailDispatchTarget pending(MailDispatchJob dispatchJob, Long applyId, String email,
+                                             String selectionResultSnapshot) {
+        MailDispatchTarget target = new MailDispatchTarget(dispatchJob, applyId, email);
+        target.selectionResultSnapshot = selectionResultSnapshot;
+        return target;
+    }
+
     public void markSent() {
         validatePending();
         status = MailDispatchTargetStatus.SENT;
         sentAt = LocalDateTime.now();
         failureReason = null;
+    }
+
+    public void cancel() {
+        validatePending();
+        status = MailDispatchTargetStatus.CANCELLED;
     }
 
     public void markFailed(String failureReason) {

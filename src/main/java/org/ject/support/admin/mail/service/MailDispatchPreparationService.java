@@ -77,7 +77,8 @@ public class MailDispatchPreparationService {
         MailTemplateRenderService.RenderedMail rendered = mailTemplateRenderService.render(
                 apply, subjectTemplate, bodyTemplate, inputVariables);
         return new MailDispatchPlan.Target(
-                apply.getId(), apply.getApplicant().getEmail(), rendered.subject(), rendered.body());
+                apply.getId(), apply.getApplicant().getEmail(), rendered.subject(), rendered.body(),
+                apply.getSelectionResult().name());
     }
 
     private void validateApplyIds(List<Long> applyIds) {
