@@ -58,6 +58,9 @@ public class MailDispatchJob extends BaseTimeEntity {
     @Column(name = "failed_count", nullable = false)
     private int failedCount;
 
+    @Column(name = "unknown_count", nullable = false)
+    private int unknownCount;
+
     @Column(name = "requested_at", nullable = false)
     private LocalDateTime requestedAt;
 
@@ -70,8 +73,14 @@ public class MailDispatchJob extends BaseTimeEntity {
     @Column(name = "input_variables_json", columnDefinition = "TEXT")
     private String inputVariablesJson;
 
+    @Column(name = "request_fingerprint", columnDefinition = "TEXT")
+    private String requestFingerprint;
+
     @Column(name = "started_at")
     private LocalDateTime startedAt;
+
+    @Column(name = "claim_started_at")
+    private LocalDateTime claimStartedAt;
 
     @Column(name = "finished_at")
     private LocalDateTime finishedAt;
@@ -86,6 +95,7 @@ public class MailDispatchJob extends BaseTimeEntity {
                             String subjectTemplate,
                             String bodyTemplate,
                             String inputVariablesJson,
+                            String requestFingerprint,
                             int targetCount) {
         this.scenarioId = scenarioId;
         this.recruitId = recruitId;
@@ -94,6 +104,7 @@ public class MailDispatchJob extends BaseTimeEntity {
         this.subjectTemplate = subjectTemplate;
         this.bodyTemplate = bodyTemplate;
         this.inputVariablesJson = inputVariablesJson;
+        this.requestFingerprint = requestFingerprint;
         this.targetCount = targetCount;
         this.status = MailDispatchJobStatus.REQUESTED;
         this.requestedAt = LocalDateTime.now();
@@ -107,6 +118,28 @@ public class MailDispatchJob extends BaseTimeEntity {
                                          String bodyTemplate,
                                          String inputVariablesJson,
                                          int targetCount) {
+        return create(
+                scenarioId,
+                recruitId,
+                requestedByAdminId,
+                idempotencyKey,
+                subjectTemplate,
+                bodyTemplate,
+                inputVariablesJson,
+                null,
+                targetCount
+        );
+    }
+
+    public static MailDispatchJob create(Long scenarioId,
+                                         Long recruitId,
+                                         Long requestedByAdminId,
+                                         String idempotencyKey,
+                                         String subjectTemplate,
+                                         String bodyTemplate,
+                                         String inputVariablesJson,
+                                         String requestFingerprint,
+                                         int targetCount) {
         if (targetCount <= 0) {
             throw new MailException(MailErrorCode.INVALID_DISPATCH_TARGET_COUNT);
         }
@@ -118,6 +151,7 @@ public class MailDispatchJob extends BaseTimeEntity {
                 subjectTemplate,
                 bodyTemplate,
                 inputVariablesJson,
+                requestFingerprint,
                 targetCount
         );
     }
@@ -127,6 +161,11 @@ public class MailDispatchJob extends BaseTimeEntity {
         status = MailDispatchJobStatus.PROCESSING;
         processingCount = targetCount;
         startedAt = LocalDateTime.now();
+    }
+
+    public void startClaimProcessing() {
+        startProcessing();
+        claimStartedAt = startedAt;
     }
 
     public void recordSuccess() {
@@ -143,12 +182,21 @@ public class MailDispatchJob extends BaseTimeEntity {
         finishIfCompleted();
     }
 
+    public void recordUnknown() {
+        validateStatus(MailDispatchJobStatus.PROCESSING);
+        processingCount--;
+        unknownCount++;
+        finishIfCompleted();
+    }
+
     private void finishIfCompleted() {
         if (processingCount > 0) {
             return;
         }
         // 모든 대상이 실패한 경우에만 작업을 실패로 마무리한다.
-        status = failedCount == targetCount
+        status = unknownCount > 0
+                ? MailDispatchJobStatus.UNKNOWN
+                : failedCount == targetCount
                 ? MailDispatchJobStatus.FAILED
                 : MailDispatchJobStatus.COMPLETED;
         finishedAt = LocalDateTime.now();

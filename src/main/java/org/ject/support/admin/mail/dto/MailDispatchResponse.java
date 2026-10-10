@@ -9,7 +9,8 @@ public record MailDispatchResponse(
         int targetCount,
         int processingCount,
         int successCount,
-        int failedCount
+        int failedCount,
+        int unknownCount
 ) {
 
     public static MailDispatchResponse from(MailDispatchJob job) {
@@ -19,7 +20,8 @@ public record MailDispatchResponse(
                 job.getTargetCount(),
                 job.getProcessingCount(),
                 job.getSuccessCount(),
-                job.getFailedCount()
+                job.getFailedCount(),
+                job.getUnknownCount()
         );
     }
 }

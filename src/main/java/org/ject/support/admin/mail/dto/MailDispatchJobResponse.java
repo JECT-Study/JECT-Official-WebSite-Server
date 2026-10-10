@@ -14,6 +14,7 @@ public record MailDispatchJobResponse(
         int processingCount,
         int successCount,
         int failedCount,
+        int unknownCount,
         LocalDateTime requestedAt,
         LocalDateTime startedAt,
         LocalDateTime finishedAt
@@ -30,6 +31,7 @@ public record MailDispatchJobResponse(
                 job.getProcessingCount(),
                 job.getSuccessCount(),
                 job.getFailedCount(),
+                job.getUnknownCount(),
                 job.getRequestedAt(),
                 job.getStartedAt(),
                 job.getFinishedAt()

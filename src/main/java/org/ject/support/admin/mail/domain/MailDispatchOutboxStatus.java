@@ -1,7 +1,8 @@
 package org.ject.support.admin.mail.domain;
 
-public enum MailDispatchTargetStatus {
+public enum MailDispatchOutboxStatus {
     PENDING,
+    PROCESSING,
     SENT,
     FAILED,
     UNKNOWN
