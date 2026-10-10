@@ -10,6 +10,7 @@ import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.MailDispatchTargetResponse;
 import org.ject.support.admin.mail.dto.ScheduleMailDispatchRequest;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
+import org.ject.support.admin.mail.service.MailDispatchCancellationService;
 import org.ject.support.admin.mail.service.MailDispatchQueryService;
 import org.ject.support.admin.mail.service.MailDispatchUseCase;
 import org.ject.support.common.security.AuthPrincipal;
@@ -35,6 +36,7 @@ public class AdminMailDispatchController implements AdminMailDispatchApiSpec {
 
     private final MailDispatchUseCase mailDispatchUseCase;
     private final MailDispatchQueryService mailDispatchQueryService;
+    private final MailDispatchCancellationService mailDispatchCancellationService;
 
     @Override
     @GetMapping
@@ -83,5 +85,13 @@ public class AdminMailDispatchController implements AdminMailDispatchApiSpec {
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestBody @Valid ScheduleMailDispatchRequest request) {
         return mailDispatchUseCase.scheduleMail(request, requestedByAdminId, idempotencyKey);
+    }
+
+    @Override
+    @PostMapping("/{dispatchJobId}/cancel")
+    public MailDispatchResponse cancelMail(
+            @AuthPrincipal Long requestedByAdminId,
+            @PathVariable Long dispatchJobId) {
+        return mailDispatchCancellationService.cancelMail(requestedByAdminId, dispatchJobId);
     }
 }

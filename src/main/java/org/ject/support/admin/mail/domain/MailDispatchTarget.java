@@ -84,6 +84,11 @@ public class MailDispatchTarget extends BaseTimeEntity {
         failureReason = null;
     }
 
+    public void cancel() {
+        validatePending();
+        status = MailDispatchTargetStatus.CANCELLED;
+    }
+
     public void markFailed(String failureReason) {
         validatePending();
         status = MailDispatchTargetStatus.FAILED;

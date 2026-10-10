@@ -26,6 +26,7 @@ import org.ject.support.admin.mail.dto.ScheduleMailDispatchRequest;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
+import org.ject.support.admin.mail.service.MailDispatchCancellationService;
 import org.ject.support.admin.mail.service.MailDispatchQueryService;
 import org.ject.support.admin.mail.service.MailDispatchUseCase;
 import org.ject.support.base.UnitTestSupport;
@@ -63,6 +64,9 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
 
     @Mock
     private MailDispatchQueryService mailDispatchQueryService;
+
+    @Mock
+    private MailDispatchCancellationService mailDispatchCancellationService;
 
     @InjectMocks
     private AdminMailDispatchController adminMailDispatchController;
@@ -140,6 +144,35 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
                 .isEqualTo(request);
         assertThat(requestCaptor.getValue().scheduledAt().toInstant())
                 .isEqualTo(request.scheduledAt().toInstant());
+    }
+
+    @Test
+    @DisplayName("관리자 본인의 예약 발송 작업을 취소한다")
+    void 관리자_본인의_예약_발송_작업을_취소한다() throws Exception {
+        // given
+        given(mailDispatchCancellationService.cancelMail(50L, 100L))
+                .willReturn(new MailDispatchResponse(100L, MailDispatchJobStatus.CANCELLED, 1, 0, 0, 0, 0));
+
+        // when & then
+        mockMvc.perform(post("/admin/mails/dispatches/{dispatchJobId}/cancel", 100L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.dispatchJobId").value(100))
+                .andExpect(jsonPath("$.data.status").value("CANCELLED"));
+
+        verify(mailDispatchCancellationService).cancelMail(50L, 100L);
+    }
+
+    @Test
+    @DisplayName("취소할 수 없는 발송 작업은 MAIL-23으로 응답한다")
+    void 취소할_수_없는_발송_작업은_MAIL_23으로_응답한다() throws Exception {
+        // given
+        given(mailDispatchCancellationService.cancelMail(50L, 100L))
+                .willThrow(new MailException(MailErrorCode.DISPATCH_CANCELLATION_NOT_ALLOWED));
+
+        // when & then
+        mockMvc.perform(post("/admin/mails/dispatches/{dispatchJobId}/cancel", 100L))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value("MAIL-23"));
     }
 
     @Test

@@ -176,6 +176,14 @@ public class MailDispatchJob extends BaseTimeEntity {
         startedAt = LocalDateTime.now();
     }
 
+    public void cancel() {
+        if (status != MailDispatchJobStatus.SCHEDULED) {
+            throw new MailException(MailErrorCode.DISPATCH_CANCELLATION_NOT_ALLOWED);
+        }
+        status = MailDispatchJobStatus.CANCELLED;
+        finishedAt = LocalDateTime.now();
+    }
+
     public void startClaimProcessing() {
         startProcessing();
         claimStartedAt = startedAt;

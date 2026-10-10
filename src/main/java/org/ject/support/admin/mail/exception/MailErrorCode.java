@@ -38,6 +38,7 @@ public enum MailErrorCode implements ErrorCode {
     IDEMPOTENCY_KEY_PAYLOAD_MISMATCH(CONFLICT, "MAIL-20", "동일한 Idempotency-Key에 다른 요청 본문을 사용할 수 없습니다."),
     MAIL_SEND_RESULT_UNKNOWN(SERVICE_UNAVAILABLE, "MAIL-21", "메일 발송 여부를 확인할 수 없어 운영자 확인이 필요합니다."),
     INVALID_SCHEDULED_AT(BAD_REQUEST, "MAIL-22", "예약 시각은 현재보다 미래여야 합니다."),
+    DISPATCH_CANCELLATION_NOT_ALLOWED(CONFLICT, "MAIL-23", "발송 처리 시작 전의 예약만 취소할 수 있습니다."),
     ;
 
     private final HttpStatus httpStatus;

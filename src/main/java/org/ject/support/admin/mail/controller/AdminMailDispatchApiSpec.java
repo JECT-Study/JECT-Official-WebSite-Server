@@ -65,4 +65,9 @@ public interface AdminMailDispatchApiSpec {
             @Parameter(hidden = true) @AuthPrincipal Long requestedByAdminId,
             @RequestHeader("Idempotency-Key") String idempotencyKey,
             @RequestBody @Valid ScheduleMailDispatchRequest request);
+
+    @Operation(summary = "예약 발송 취소", description = "관리자 본인의 예약 발송 작업을 발송 처리가 시작되기 전에 취소합니다.")
+    MailDispatchResponse cancelMail(
+            @Parameter(hidden = true) @AuthPrincipal Long requestedByAdminId,
+            @PathVariable Long dispatchJobId);
 }
