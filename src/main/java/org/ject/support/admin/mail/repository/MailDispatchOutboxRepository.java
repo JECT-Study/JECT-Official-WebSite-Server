@@ -21,4 +21,8 @@ public interface MailDispatchOutboxRepository extends JpaRepository<MailDispatch
     Optional<MailDispatchOutbox> findByDispatchJobIdAndApplyId(Long dispatchJobId, Long applyId);
 
     List<MailDispatchOutbox> findAllByDispatchJobIdOrderByIdAsc(Long dispatchJobId);
+
+    @Query("select outbox.id from MailDispatchOutbox outbox "
+            + "where outbox.dispatchJob.id = :dispatchJobId order by outbox.id asc")
+    List<Long> findIdsByDispatchJobId(@Param("dispatchJobId") Long dispatchJobId);
 }
