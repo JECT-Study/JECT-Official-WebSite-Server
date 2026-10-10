@@ -77,6 +77,6 @@ public class AdminApplyController implements AdminApplyApiSpec {
     @Override
     @DeleteMapping
     public int deleteSubmittedApplies(@RequestBody @Valid final SubmittedApplyBulkDeleteRequest request) {
-        return adminApplyService.deleteApplies(request.applyIds());
+        return adminApplyService.deleteApplies(request);
     }
 }

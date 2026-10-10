@@ -53,11 +53,13 @@ public interface AdminApplyApiSpec {
 
     @Operation(
             summary = "지원서 삭제",
-            description = "전달한 ID에 해당하는 지원서를 삭제합니다.")
+            description = "지원서와 연결된 지원자를 함께 소프트 삭제합니다. 재지원 시 이메일 인증부터 다시 진행해야 합니다.")
     void deleteApply(@PathVariable Long applyId);
 
     @Operation(
             summary = "지원서 다수 삭제",
-            description = "선택한 다수의 지원서들을 삭제합니다. 삭제한 수를 반환합니다.")
+            description = "조회된 지원서와 연결된 지원자를 함께 소프트 삭제하고 실제 삭제한 지원서 수를 반환합니다. "
+                    + "중복 ID는 허용하지 않으며 존재하지 않거나 이미 삭제된 지원서는 제외합니다. "
+                    + "재지원 시 이메일 인증부터 다시 진행해야 합니다.")
     int deleteSubmittedApplies(@RequestBody @Valid SubmittedApplyBulkDeleteRequest request);
 }
