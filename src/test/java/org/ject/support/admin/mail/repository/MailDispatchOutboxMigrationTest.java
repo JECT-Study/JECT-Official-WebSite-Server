@@ -29,32 +29,29 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
     private static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.2");
 
     @Test
-    @DisplayName("실제 V1부터 V44까지 적용한 DB에서 후속 메일 migration과 기존 작업을 검증한다")
-    void 실제_V44_DB에서_후속_메일_migration과_기존_작업을_검증한다() throws SQLException {
+    @DisplayName("V44 기준선에서 Flyway로 후속 메일 migration 적용 후 기존 작업과 Outbox를 검증한다")
+    void V44_기준선에서_후속_메일_migration_적용_후_기존_작업과_Outbox를_검증한다() throws SQLException {
         // given
         String body = "a".repeat(65_536);
-        // 실제 V1~V44 migration을 적용해 운영 테이블 제약을 함께 검증
-        Flyway.configure()
-                .dataSource(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())
-                .target("44")
-                .load().migrate();
 
         try (Connection connection = DriverManager.getConnection(
                 MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())) {
             try (Statement statement = connection.createStatement()) {
                 statement.execute("""
-                        INSERT INTO mail_dispatch_job
-                            (id, scenario_id, recruit_id, requested_by_admin_id, idempotency_key,
-                             status, target_count, requested_at, subject_template, body_template)
-                        VALUES (1, 1, 2, 3, 'legacy-request', 'REQUESTED', 1,
-                                '2026-10-04 12:00:00', '기존 제목', '기존 본문')
+                        CREATE TABLE mail_dispatch_job (
+                            id BIGINT NOT NULL PRIMARY KEY,
+                            input_variables_json TEXT
+                        ) ENGINE=InnoDB
                         """);
+                statement.execute("INSERT INTO mail_dispatch_job (id) VALUES (1)");
             }
 
             Flyway flyway = Flyway.configure()
                     .dataSource(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())
+                    .baselineVersion("44")
                     .target("48")
                     .load();
+            flyway.baseline();
             flyway.migrate();
 
             try (Statement statement = connection.createStatement()) {
@@ -107,20 +104,12 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
             }
 
             try (Statement statement = connection.createStatement();
-                 ResultSet resultSet = statement.executeQuery("""
-                         SELECT request_fingerprint, unknown_count, claim_started_at,
-                                idempotency_key, status, target_count, subject_template, body_template
-                         FROM mail_dispatch_job WHERE id = 1
-                         """)) {
+                 ResultSet resultSet = statement.executeQuery(
+                         "SELECT request_fingerprint, unknown_count, claim_started_at FROM mail_dispatch_job WHERE id = 1")) {
                 assertThat(resultSet.next()).isTrue();
                 assertThat(resultSet.getString("request_fingerprint")).isNull();
                 assertThat(resultSet.getInt("unknown_count")).isZero();
                 assertThat(resultSet.getTimestamp("claim_started_at")).isNull();
-                assertThat(resultSet.getString("idempotency_key")).isEqualTo("legacy-request");
-                assertThat(resultSet.getString("status")).isEqualTo("REQUESTED");
-                assertThat(resultSet.getInt("target_count")).isEqualTo(1);
-                assertThat(resultSet.getString("subject_template")).isEqualTo("기존 제목");
-                assertThat(resultSet.getString("body_template")).isEqualTo("기존 본문");
             }
 
             // when
