@@ -81,6 +81,13 @@ public class MailDispatchTarget extends BaseTimeEntity {
         sentAt = null;
     }
 
+    public void markUnknown(String failureReason) {
+        validatePending();
+        status = MailDispatchTargetStatus.UNKNOWN;
+        this.failureReason = failureReason;
+        sentAt = null;
+    }
+
     private void validatePending() {
         if (status != MailDispatchTargetStatus.PENDING) {
             throw new MailException(MailErrorCode.INVALID_DISPATCH_TARGET_STATUS);

@@ -4,8 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,12 +24,8 @@ import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.util.Map2JsonSerializer;
-import org.ject.support.external.email.exception.EmailErrorCode;
-import org.ject.support.external.email.exception.EmailException;
-import org.ject.support.external.email.service.EmailSendService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
@@ -47,7 +41,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
     private MailDispatchPersistenceService persistenceService;
 
     @Mock
-    private EmailSendService emailSendService;
+    private MailDispatchExecutionService executionService;
 
     @Spy
     private MailDispatchRequestFingerprintGenerator requestFingerprintGenerator =
@@ -55,62 +49,6 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
 
     @InjectMocks
     private MailDispatchUseCase mailDispatchUseCase;
-
-    @Test
-    @DisplayName("대상별 발송에 성공하면 완료 결과를 반환한다")
-    void 대상별_발송에_성공하면_완료_결과를_반환한다() {
-        // given
-        SendMailDispatchRequest request = request();
-        MailDispatchPlan plan = plan();
-        MailDispatchJob job = job(100L);
-        MailDispatchResponse response = new MailDispatchResponse(
-                100L, MailDispatchJobStatus.COMPLETED, 2, 0, 2, 0);
-        given(persistenceService.findJobByIdempotencyKey(3L, "dispatch-key"))
-                .willReturn(Optional.empty());
-        given(preparationService.prepare(request, 3L, "dispatch-key")).willReturn(plan);
-        given(persistenceService.createJob(plan, requestFingerprintGenerator.generate(request))).willReturn(job);
-        given(persistenceService.getResult(100L)).willReturn(response);
-
-        // when
-        MailDispatchResponse result = mailDispatchUseCase.sendMail(request, 3L, "dispatch-key");
-
-        // then
-        assertThat(result).isEqualTo(response);
-        verify(emailSendService).sendEmail("one@ject.kr", "첫 번째", "본문 1");
-        verify(emailSendService).sendEmail("two@ject.kr", "두 번째", "본문 2");
-        verify(persistenceService).recordSuccess(100L, 1L);
-        verify(persistenceService).recordSuccess(100L, 2L);
-    }
-
-    @Test
-    @DisplayName("한 대상 발송에 실패해도 나머지 대상을 계속 발송하고 실패를 기록한다")
-    void 한_대상_발송에_실패해도_나머지_대상을_계속_발송하고_실패를_기록한다() {
-        // given
-        SendMailDispatchRequest request = request();
-        MailDispatchPlan plan = plan();
-        MailDispatchJob job = job(100L);
-        MailDispatchResponse response = new MailDispatchResponse(
-                100L, MailDispatchJobStatus.COMPLETED, 2, 0, 1, 1);
-        given(persistenceService.findJobByIdempotencyKey(3L, "dispatch-key"))
-                .willReturn(Optional.empty());
-        given(preparationService.prepare(request, 3L, "dispatch-key")).willReturn(plan);
-        given(persistenceService.createJob(plan, requestFingerprintGenerator.generate(request))).willReturn(job);
-        given(persistenceService.getResult(100L)).willReturn(response);
-        doThrow(new EmailException(EmailErrorCode.EMAIL_SEND_FAILURE))
-                .when(emailSendService).sendEmail("one@ject.kr", "첫 번째", "본문 1");
-
-        // when
-        MailDispatchResponse result = mailDispatchUseCase.sendMail(request, 3L, "dispatch-key");
-
-        // then
-        assertThat(result.failedCount()).isEqualTo(1);
-        verify(persistenceService).recordFailure(
-                100L, 1L, EmailErrorCode.EMAIL_SEND_FAILURE.getCode());
-        verify(persistenceService).recordSuccess(100L, 2L);
-        InOrder order = inOrder(emailSendService);
-        order.verify(emailSendService).sendEmail("one@ject.kr", "첫 번째", "본문 1");
-        order.verify(emailSendService).sendEmail("two@ject.kr", "두 번째", "본문 2");
-    }
 
     @Test
     @DisplayName("대상 검증에 실패하면 작업을 저장하거나 메일을 발송하지 않는다")
@@ -126,7 +64,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
         assertThatThrownBy(() -> mailDispatchUseCase.sendMail(request, 3L, "dispatch-key"))
                 .isInstanceOf(MailException.class);
         verify(persistenceService, never()).createJob(any(), any());
-        verifyNoInteractions(emailSendService);
+        verifyNoInteractions(executionService);
     }
 
     @Test
@@ -146,7 +84,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
         // then
         assertThat(result).isEqualTo(response);
         verify(persistenceService, times(1)).findJobByIdempotencyKey(3L, "dispatch-key");
-        verifyNoInteractions(preparationService, emailSendService);
+        verifyNoInteractions(preparationService, executionService);
     }
 
     @Test
@@ -188,7 +126,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
 
         // then
         assertThat(result).isEqualTo(response);
-        verifyNoInteractions(preparationService, emailSendService);
+        verifyNoInteractions(preparationService, executionService);
     }
 
     @Test
@@ -209,7 +147,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 1L, 2L, 4L, "dispatch-key", "제목", "본문", "{}", 1);
         ReflectionTestUtils.setField(otherAdminJob, "id", 101L);
         MailDispatchResponse response = new MailDispatchResponse(
-                101L, MailDispatchJobStatus.COMPLETED, 1, 0, 1, 0);
+                101L, MailDispatchJobStatus.COMPLETED, 1, 0, 1, 0, 0);
         String fingerprint = requestFingerprintGenerator.generate(request);
         given(persistenceService.findJobByIdempotencyKey(4L, "dispatch-key"))
                 .willReturn(Optional.empty());
@@ -223,7 +161,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
         // then
         assertThat(result).isEqualTo(response);
         verify(persistenceService).findJobByIdempotencyKey(4L, "dispatch-key");
-        verify(emailSendService).sendEmail("one@ject.kr", "제목", "본문");
+        verify(executionService).executeJob(101L);
     }
 
     @Test
@@ -242,7 +180,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH);
         verify(persistenceService, never()).createJob(any(), any());
-        verifyNoInteractions(preparationService, emailSendService);
+        verifyNoInteractions(preparationService, executionService);
     }
 
     @Test
@@ -265,7 +203,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
 
         // then
         assertThat(result).isEqualTo(response);
-        verifyNoInteractions(emailSendService);
+        verifyNoInteractions(executionService);
         verify(persistenceService, times(2)).findJobByIdempotencyKey(3L, "dispatch-key");
     }
 
@@ -291,7 +229,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
         assertThatThrownBy(() -> mailDispatchUseCase.sendMail(request, 3L, "dispatch-key"))
                 .isSameAs(integrityException);
         verify(persistenceService).findJobByIdempotencyKey(3L, "dispatch-key");
-        verifyNoInteractions(emailSendService);
+        verifyNoInteractions(executionService);
     }
 
     @Test
@@ -314,7 +252,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.IDEMPOTENCY_KEY_PAYLOAD_MISMATCH);
-        verifyNoInteractions(emailSendService);
+        verifyNoInteractions(executionService);
         verify(persistenceService, times(2)).findJobByIdempotencyKey(3L, "dispatch-key");
     }
 
@@ -326,7 +264,7 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                 .isInstanceOf(MailException.class)
                 .extracting("errorCode")
                 .isEqualTo(MailErrorCode.INVALID_IDEMPOTENCY_KEY);
-        verifyNoInteractions(preparationService, persistenceService, emailSendService);
+        verifyNoInteractions(preparationService, persistenceService, executionService);
     }
 
     private SendMailDispatchRequest request() {
@@ -346,13 +284,6 @@ class MailDispatchUseCaseTest extends UnitTestSupport {
                         new MailDispatchPlan.Target(1L, "one@ject.kr", "첫 번째", "본문 1"),
                         new MailDispatchPlan.Target(2L, "two@ject.kr", "두 번째", "본문 2")
                 ));
-    }
-
-    private MailDispatchJob job(Long id) {
-        MailDispatchJob job = MailDispatchJob.create(
-                1L, 2L, 3L, "dispatch-key", "제목", "본문", "{}", 2);
-        ReflectionTestUtils.setField(job, "id", id);
-        return job;
     }
 
     private MailDispatchJob completedJob(Long id, String fingerprint, int targetCount) {

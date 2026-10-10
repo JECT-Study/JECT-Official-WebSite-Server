@@ -95,7 +95,7 @@ class AdminMailDispatchSecurityTest extends ApplicationPeriodTest {
     @DisplayName("관리자는 단체 메일을 발송할 수 있다")
     void 관리자는_단체_메일을_발송할_수_있다() throws Exception {
         given(mailDispatchUseCase.sendMail(any(), any(), any())).willReturn(
-                new MailDispatchResponse(100L, MailDispatchJobStatus.COMPLETED, 1, 0, 1, 0));
+                new MailDispatchResponse(100L, MailDispatchJobStatus.COMPLETED, 1, 0, 1, 0, 0));
 
         mockMvc.perform(post("/admin/mails/dispatches")
                         .contentType(MediaType.APPLICATION_JSON)
