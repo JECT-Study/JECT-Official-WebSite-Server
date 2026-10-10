@@ -1,9 +1,11 @@
 package org.ject.support.admin.mail.repository;
 
 import jakarta.persistence.LockModeType;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.ject.support.admin.mail.domain.MailDispatchOutbox;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -25,4 +27,27 @@ public interface MailDispatchOutboxRepository extends JpaRepository<MailDispatch
     @Query("select outbox.id from MailDispatchOutbox outbox "
             + "where outbox.dispatchJob.id = :dispatchJobId order by outbox.id asc")
     List<Long> findIdsByDispatchJobId(@Param("dispatchJobId") Long dispatchJobId);
+
+    @Query("""
+            select outbox.id from MailDispatchOutbox outbox
+            join outbox.dispatchJob job
+            where outbox.status = org.ject.support.admin.mail.domain.MailDispatchOutboxStatus.PENDING
+              and (job.status = org.ject.support.admin.mail.domain.MailDispatchJobStatus.REQUESTED
+                   or (job.status = org.ject.support.admin.mail.domain.MailDispatchJobStatus.PROCESSING
+                       and job.claimStartedAt is not null))
+            order by outbox.id asc
+            """)
+    List<Long> findPendingExecutionIds(Pageable pageable);
+
+    @Query("""
+            select outbox.id from MailDispatchOutbox outbox
+            join outbox.dispatchJob job
+            where job.status = org.ject.support.admin.mail.domain.MailDispatchJobStatus.PROCESSING
+              and ((outbox.status = org.ject.support.admin.mail.domain.MailDispatchOutboxStatus.PROCESSING
+                    and outbox.leaseUntil <= :now)
+                   or (outbox.status = org.ject.support.admin.mail.domain.MailDispatchOutboxStatus.PENDING
+                       and job.claimStartedAt is null))
+            order by outbox.id asc
+            """)
+    List<Long> findInterruptedExecutionIds(@Param("now") LocalDateTime now, Pageable pageable);
 }

@@ -43,6 +43,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
@@ -381,6 +382,39 @@ class MailDispatchUseCaseMysqlIntegrationTest extends TestSupport {
         } finally {
             release.countDown();
         }
+    }
+
+    @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    void worker_활성화_요청은_발송_의도를_저장하고_외부_호출을_기다리지_않는다() {
+        // given
+        String key = "async-submission";
+        var request = new SendMailDispatchRequest(2L, 1L, List.of(81L), "제목", Map.of());
+        var plan = new MailDispatchPlan(1L, 2L, 3L, key, "제목", "본문", Map.of(),
+                List.of(new MailDispatchPlan.Target(81L, "queued@ject.kr", "저장된 제목", "저장된 본문")));
+        given(preparationService.prepare(request, 3L, key)).willReturn(plan);
+
+        // when
+        new ApplicationContextRunner()
+                .withUserConfiguration(TestDependencies.class)
+                .withBean(MailDispatchUseCase.class)
+                .withBean(MailDispatchPreparationService.class, () -> preparationService)
+                .withBean(MailDispatchPersistenceService.class, () -> persistenceService)
+                .withBean(MailDispatchExecutionService.class, () -> executionService)
+                .withPropertyValues("mail.dispatch.worker.enabled=true")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    var result = context.getBean(MailDispatchUseCase.class).sendMail(request, 3L, key);
+
+                    // then
+                    assertThat(result.status()).isEqualTo(MailDispatchJobStatus.REQUESTED);
+                    assertThat(result.successCount()).isZero();
+                    verifyNoInteractions(emailSendService);
+                    executionService.executePendingBatch(1);
+                    assertThat(queryService.getJob(3L, result.dispatchJobId()).status())
+                            .isEqualTo(MailDispatchJobStatus.COMPLETED);
+                    verify(emailSendService).sendEmail("queued@ject.kr", "저장된 제목", "저장된 본문");
+                });
     }
 
     @TestConfiguration

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.ject.support.base.UnitTestSupport;
@@ -119,7 +120,7 @@ class SesEmailSendServiceTest extends UnitTestSupport {
         sesEmailSendService.sendEmail("user@recipient.com", "JECT 안내", "<h1>본문</h1>");
 
         verify(sesV2Client).sendEmail(any(SendEmailRequest.class));
-        verify(rateLimiter).consume(1);
+        verify(rateLimiter).consume(1, Duration.ofSeconds(10));
     }
 
     @Test
@@ -174,7 +175,8 @@ class SesEmailSendServiceTest extends UnitTestSupport {
     @Test
     void 외부_호출_전_처리_실패는_발송하지_않은_확정_실패로_구분한다() {
         // given
-        doThrow(new RuntimeException("local wait interrupted")).when(rateLimiter).consume(1);
+        doThrow(new RuntimeException("local wait interrupted")).when(rateLimiter)
+                .consume(1, Duration.ofSeconds(10));
 
         // when, then
         assertThatThrownBy(() -> sesEmailSendService.sendEmail("user@recipient.com", "제목", "본문"))
