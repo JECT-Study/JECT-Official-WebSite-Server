@@ -101,6 +101,11 @@ public class MailDispatchOutbox extends BaseTimeEntity {
         failureReason = null;
     }
 
+    public void cancel() {
+        validatePending();
+        status = MailDispatchOutboxStatus.CANCELLED;
+    }
+
     public void markFailed(String failureReason) {
         validatePending();
         status = MailDispatchOutboxStatus.FAILED;

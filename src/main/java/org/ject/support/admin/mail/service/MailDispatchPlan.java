@@ -14,6 +14,9 @@ public record MailDispatchPlan(
         List<Target> targets
 ) {
 
-    public record Target(Long applyId, String email, String subject, String body) {
+    public record Target(Long applyId, String email, String subject, String body, String selectionResultSnapshot) {
+        public Target(Long applyId, String email, String subject, String body) {
+            this(applyId, email, subject, body, null);
+        }
     }
 }
