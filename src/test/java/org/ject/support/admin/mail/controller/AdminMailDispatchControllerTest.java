@@ -27,6 +27,7 @@ import org.ject.support.admin.mail.service.MailDispatchUseCase;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.data.PageResponse;
 import org.ject.support.common.exception.GlobalExceptionHandler;
+import org.ject.support.common.response.ObjectMapperConfig;
 import org.ject.support.common.response.ResponseWrapper;
 import org.ject.support.common.security.AuthenticatedApplicantIdResolver;
 import org.ject.support.common.security.CustomUserDetails;
@@ -37,9 +38,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.http.MediaType;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
+import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -49,7 +51,7 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
 
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+    private final ObjectMapper objectMapper = new ObjectMapperConfig().objectMapper();
 
     @Mock
     private MailDispatchUseCase mailDispatchUseCase;
@@ -63,6 +65,7 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(adminMailDispatchController)
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .setCustomArgumentResolvers(
                         new AuthenticatedApplicantIdResolver(),
                         new PageableHandlerMethodArgumentResolver())
@@ -175,7 +178,7 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
         // given
         LocalDateTime sentAt = LocalDateTime.of(2026, 9, 22, 12, 1);
         MailDispatchTargetResponse response = new MailDispatchTargetResponse(
-                1L, 10L, "applicant@ject.kr", MailDispatchTargetStatus.SENT, sentAt, null);
+                1L, 10L, "applicant@ject.kr", MailDispatchTargetStatus.SENT, sentAt, null, 2, null, null);
         given(mailDispatchQueryService.searchTargets(
                 eq(50L), eq(100L), eq(MailDispatchTargetStatus.SENT), any()))
                 .willReturn(PageResponse.from(List.of(response), PageRequest.of(0, 1), 1));
@@ -190,7 +193,31 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
                 .andExpect(jsonPath("$.data.content[0].applyId").value(10))
                 .andExpect(jsonPath("$.data.content[0].email").value("applicant@ject.kr"))
                 .andExpect(jsonPath("$.data.content[0].status").value("SENT"))
+                .andExpect(jsonPath("$.data.content[0].attemptCount").value(2))
                 .andExpect(jsonPath("$.data.totalElements").value(1));
+    }
+
+    @Test
+    void 재시도_대기_정보를_기존_수신자_결과_응답으로_제공한다() throws Exception {
+        // given
+        LocalDateTime nextAttemptAt = LocalDateTime.of(2026, 10, 4, 12, 0, 30);
+        MailDispatchTargetResponse response = new MailDispatchTargetResponse(
+                1L, 10L, "applicant@ject.kr", MailDispatchTargetStatus.PENDING, null, null,
+                1, nextAttemptAt, "TOO_MANY_EMAIL_REQUESTS");
+        given(mailDispatchQueryService.searchTargets(
+                eq(50L), eq(100L), eq(MailDispatchTargetStatus.PENDING), any()))
+                .willReturn(PageResponse.from(List.of(response), PageRequest.of(0, 10), 1));
+
+        // when, then
+        mockMvc.perform(get("/admin/mails/dispatches/{dispatchJobId}/targets", 100L)
+                        .queryParam("status", "PENDING"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].attemptCount").value(1))
+                .andExpect(jsonPath("$.data.content[0].nextAttemptAt").value("2026-10-04T12:00:30"))
+                .andExpect(jsonPath("$.data.content[0].lastAttemptFailureReason").value("TOO_MANY_EMAIL_REQUESTS"))
+                .andExpect(jsonPath("$.data.content[0].failureReason").isEmpty())
+                .andExpect(jsonPath("$.data.content[0].body").doesNotExist())
+                .andExpect(jsonPath("$.data.content[0].claimToken").doesNotExist());
     }
 
     @Test

@@ -8,6 +8,7 @@ import org.ject.support.admin.mail.repository.MailDispatchOutboxRepository;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
 import org.ject.support.external.email.service.EmailSendService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -24,6 +25,9 @@ public class MailDispatchExecutionService {
     private final MailDispatchOutboxRepository outboxRepository;
     private final EmailSendService emailSendService;
 
+    @Value("${mail.dispatch.worker.enabled:false}")
+    private String workerEnabledProperty;
+
     public void executeJob(Long dispatchJobId) {
         outboxRepository.findIdsByDispatchJobId(dispatchJobId).forEach(this::execute);
     }
@@ -32,7 +36,8 @@ public class MailDispatchExecutionService {
         if (Thread.currentThread().isInterrupted()) {
             return;
         }
-        outboxRepository.findPendingExecutionIds(PageRequest.of(0, batchSize)).forEach(this::execute);
+        outboxRepository.findPendingExecutionIds(LocalDateTime.now(), PageRequest.of(0, batchSize))
+                .forEach(this::execute);
     }
 
     public int quarantineInterruptedBatch(LocalDateTime now, int batchSize) {
@@ -64,8 +69,14 @@ public class MailDispatchExecutionService {
             if (exception instanceof EmailException emailException
                     && (emailException.getErrorCode() == EmailErrorCode.EMAIL_SEND_FAILURE
                     || emailException.getErrorCode() == EmailErrorCode.TOO_MANY_EMAIL_REQUESTS)) {
-                claimService.recordFailure(outboxId, claim.claimToken(), LocalDateTime.now(),
-                        emailException.getErrorCode());
+                // 자동 실행자가 있는 환경만 재시도를 예약하고 비활성 즉시 경로는 기존 종료를 유지한다.
+                if (emailException.getErrorCode() == EmailErrorCode.TOO_MANY_EMAIL_REQUESTS
+                        && "true".equalsIgnoreCase(workerEnabledProperty)) {
+                    claimService.recordThrottling(outboxId, claim.claimToken(), LocalDateTime.now());
+                } else {
+                    claimService.recordFailure(outboxId, claim.claimToken(), LocalDateTime.now(),
+                            emailException.getErrorCode());
+                }
             } else {
                 claimService.recordUnknown(outboxId, claim.claimToken());
             }
