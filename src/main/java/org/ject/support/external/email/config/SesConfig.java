@@ -1,5 +1,6 @@
 package org.ject.support.external.email.config;
 
+import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
@@ -19,7 +20,9 @@ public class SesConfig {
                 .credentialsProvider(StaticCredentialsProvider.create(awsCredentials))
                 .region(region)
                 // 발송 결과가 불확실한 호출의 SDK 내부 자동 재발송을 차단한다.
-                .overrideConfiguration(configuration -> configuration.retryPolicy(RetryPolicy.none()))
+                .overrideConfiguration(configuration -> configuration.retryPolicy(RetryPolicy.none())
+                        .apiCallTimeout(Duration.ofSeconds(30))
+                        .apiCallAttemptTimeout(Duration.ofSeconds(20)))
                 .build();
     }
 }

@@ -2,11 +2,13 @@ package org.ject.support.admin.mail.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.mail.repository.MailDispatchOutboxRepository;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
 import org.ject.support.external.email.service.EmailSendService;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +28,30 @@ public class MailDispatchExecutionService {
         outboxRepository.findIdsByDispatchJobId(dispatchJobId).forEach(this::execute);
     }
 
+    public void executePendingBatch(int batchSize) {
+        if (Thread.currentThread().isInterrupted()) {
+            return;
+        }
+        outboxRepository.findPendingExecutionIds(PageRequest.of(0, batchSize)).forEach(this::execute);
+    }
+
+    public int quarantineInterruptedBatch(LocalDateTime now, int batchSize) {
+        Objects.requireNonNull(now);
+        int quarantined = 0;
+        // 후보 조회 뒤 대상별 별도 트랜잭션에서 상태를 재검증해 격리 및 집계를 처리한다.
+        for (Long outboxId : outboxRepository.findInterruptedExecutionIds(now, PageRequest.of(0, batchSize))) {
+            if (claimService.quarantineInterrupted(outboxId, now)) {
+                quarantined++;
+            }
+        }
+        return quarantined;
+    }
+
     public void execute(Long outboxId) {
+        // 종료 신호 뒤 새 claim을 만들지 않아 다음 실행자가 미처리 대상을 복구할 수 있게 유지한다.
+        if (Thread.currentThread().isInterrupted()) {
+            return;
+        }
         var claimed = claimService.claim(outboxId, LocalDateTime.now(), CLAIM_LEASE);
         if (claimed.isEmpty()) {
             return;

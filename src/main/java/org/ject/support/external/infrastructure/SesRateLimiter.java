@@ -1,9 +1,8 @@
 package org.ject.support.external.infrastructure;
 
 import io.github.bucket4j.Bucket;
-import org.springframework.stereotype.Component;
-
 import java.time.Duration;
+import org.springframework.stereotype.Component;
 
 @Component
 public class SesRateLimiter {
@@ -26,5 +25,16 @@ public class SesRateLimiter {
 
     public int getRateLimitPerSecond() {
         return RATE_LIMIT_PER_SECOND;
+    }
+
+    public void consume(int permits, Duration maxWait) {
+        try {
+            if (!bucket.asBlocking().tryConsume(permits, maxWait)) {
+                throw new IllegalStateException("SES rate limit wait exceeded");
+            }
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Rate limiter interrupted", exception);
+        }
     }
 }

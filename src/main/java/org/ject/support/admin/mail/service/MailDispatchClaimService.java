@@ -51,6 +51,21 @@ public class MailDispatchClaimService {
                 .orElse(false);
     }
 
+    public boolean quarantineInterrupted(Long outboxId, LocalDateTime now) {
+        Objects.requireNonNull(now);
+        return findLockedExecution(outboxId).map(execution -> {
+            if (execution.job().getStatus() != MailDispatchJobStatus.PROCESSING) {
+                return false;
+            }
+            // 기존 동기 실행은 claim 표식이 없어 미호출을 증명할 수 없으므로 격리 처리한다.
+            if (execution.job().getClaimStartedAt() == null && execution.outbox().quarantineUnclaimed()) {
+                recordUnknown(execution);
+                return true;
+            }
+            return quarantineIfExpired(execution, now);
+        }).orElse(false);
+    }
+
     public boolean recordSuccess(Long outboxId, String claimToken, LocalDateTime now) {
         return recordResult(outboxId, claimToken, now, null);
     }

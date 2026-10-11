@@ -8,6 +8,7 @@ import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -27,6 +28,9 @@ public class MailDispatchUseCase {
     private final MailDispatchPersistenceService mailDispatchPersistenceService;
     private final MailDispatchExecutionService executionService;
     private final MailDispatchRequestFingerprintGenerator requestFingerprintGenerator;
+
+    @Value("${mail.dispatch.worker.enabled:false}")
+    private String workerEnabledProperty;
 
     public MailDispatchResponse sendMail(SendMailDispatchRequest request,
                                          Long requestedByAdminId,
@@ -58,7 +62,10 @@ public class MailDispatchUseCase {
             }
             return reuseExistingJob(concurrentJob.get(), requestFingerprintValue);
         }
-        executionService.executeJob(job.getId());
+        // worker 생성 조건과 같은 true 판정으로 활성화 시에는 발송 의도만 반환한다.
+        if (!"true".equalsIgnoreCase(workerEnabledProperty)) {
+            executionService.executeJob(job.getId());
+        }
         return mailDispatchPersistenceService.getResult(job.getId());
     }
 
