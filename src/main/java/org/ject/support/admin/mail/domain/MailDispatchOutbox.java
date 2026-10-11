@@ -30,6 +30,8 @@ import org.ject.support.domain.base.BaseTimeEntity;
         columnNames = {"dispatch_job_id", "apply_id"}))
 public class MailDispatchOutbox extends BaseTimeEntity {
 
+    private static final int MAX_ATTEMPTS = 3;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -62,6 +64,12 @@ public class MailDispatchOutbox extends BaseTimeEntity {
 
     @Column(name = "lease_until")
     private LocalDateTime leaseUntil;
+
+    @Column(name = "attempt_count", nullable = false)
+    private int attemptCount;
+
+    @Column(name = "next_attempt_at")
+    private LocalDateTime nextAttemptAt;
 
     @Version
     private Long version;
@@ -106,12 +114,28 @@ public class MailDispatchOutbox extends BaseTimeEntity {
         if (!leaseUntil.isAfter(now)) {
             throw new IllegalArgumentException("leaseUntil must be after now");
         }
-        if (status != MailDispatchOutboxStatus.PENDING) {
+        if (status != MailDispatchOutboxStatus.PENDING || attemptCount >= MAX_ATTEMPTS
+                || (nextAttemptAt != null && nextAttemptAt.isAfter(now))) {
             return false;
         }
         this.claimToken = claimToken;
         this.leaseUntil = leaseUntil;
+        attemptCount++;
+        nextAttemptAt = null;
         status = MailDispatchOutboxStatus.PROCESSING;
+        return true;
+    }
+
+    public boolean scheduleClaimRetry(String token, LocalDateTime now, String failureReason) {
+        if (!hasActiveClaim(token, now) || attemptCount >= MAX_ATTEMPTS) {
+            return false;
+        }
+        // 확정 거부된 실행만 대기로 돌리고 이전 token의 늦은 결과를 차단한다.
+        status = MailDispatchOutboxStatus.PENDING;
+        this.failureReason = failureReason;
+        nextAttemptAt = now.plusSeconds(attemptCount == 1 ? 30 : 60);
+        claimToken = null;
+        leaseUntil = null;
         return true;
     }
 

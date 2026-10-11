@@ -158,7 +158,9 @@ class MailDispatchQueryServiceTest extends UnitTestSupport {
         given(mailDispatchJobRepository.findByIdAndRequestedByAdminId(jobId, adminId))
                 .willReturn(Optional.of(job));
         given(mailDispatchTargetRepository.findTargets(jobId, MailDispatchTargetStatus.SENT, pageable))
-                .willReturn(new PageImpl<>(List.of(target), pageable, 1));
+                .willReturn(new PageImpl<>(List.of(new MailDispatchTargetResponse(
+                        target.getId(), target.getApplyId(), target.getEmail(), target.getStatus(),
+                        target.getSentAt(), target.getFailureReason(), null, null, null)), pageable, 1));
 
         // when
         Page<MailDispatchTargetResponse> result = mailDispatchQueryService.searchTargets(
