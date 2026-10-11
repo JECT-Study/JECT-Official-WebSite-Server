@@ -238,6 +238,49 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
                 .isEqualTo(MailErrorCode.UNSUPPORTED_TEMPLATE_VARIABLE);
     }
 
+    @Test
+    @DisplayName("요청한 지원 일부가 조회되지 않으면 전체 발송 계획을 거부한다")
+    void 요청한_지원_일부가_조회되지_않으면_전체_발송_계획을_거부한다() {
+        // given
+        given(mailScenarioRepository.findById(1L)).willReturn(Optional.of(scenario("제목", "본문")));
+        given(recruitRepository.existsById(2L)).willReturn(true);
+        given(applyRepository.findAllByIdAndStatusWithApplicantRecruitAndForm(
+                List.of(20L, 21L), ApplyStatus.SUBMITTED))
+                .willReturn(List.of(apply(20L, 2L, "first@ject.kr", "홍길동")));
+
+        // when & then
+        assertThatThrownBy(() -> mailDispatchPreparationService.prepare(
+                new SendMailDispatchRequest(2L, 1L, List.of(20L, 21L), null, Map.of()),
+                3L,
+                "dispatch-key"))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.INVALID_DISPATCH_TARGETS);
+    }
+
+    @Test
+    @DisplayName("마지막 대상의 시스템 변수가 미해결이면 전체 발송 계획을 거부한다")
+    void 마지막_대상의_시스템_변수가_미해결이면_전체_발송_계획을_거부한다() {
+        // given
+        given(mailScenarioRepository.findById(1L))
+                .willReturn(Optional.of(scenario("안내 제목", "안녕하세요 ${name}")));
+        given(recruitRepository.existsById(2L)).willReturn(true);
+        given(applyRepository.findAllByIdAndStatusWithApplicantRecruitAndForm(
+                List.of(20L, 21L), ApplyStatus.SUBMITTED))
+                .willReturn(List.of(
+                        apply(20L, 2L, "first@ject.kr", "홍길동"),
+                        apply(21L, 2L, "second@ject.kr", null)));
+
+        // when & then
+        assertThatThrownBy(() -> mailDispatchPreparationService.prepare(
+                new SendMailDispatchRequest(2L, 1L, List.of(20L, 21L), null, Map.of()),
+                3L,
+                "dispatch-key"))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode")
+                .isEqualTo(MailErrorCode.UNRESOLVED_TEMPLATE_VARIABLE);
+    }
+
     private MailScenario scenario(String subject, String body) {
         return MailScenario.builder()
                 .name("발송 시나리오")
