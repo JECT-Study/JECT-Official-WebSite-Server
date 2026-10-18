@@ -49,6 +49,7 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
             Flyway flyway = Flyway.configure()
                     .dataSource(MYSQL.getJdbcUrl(), MYSQL.getUsername(), MYSQL.getPassword())
                     .baselineVersion("44")
+                    .target("48")
                     .load();
             flyway.baseline();
             flyway.migrate();
