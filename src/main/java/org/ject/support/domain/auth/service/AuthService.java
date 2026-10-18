@@ -143,7 +143,7 @@ public class AuthService {
      * @return 새로 발급된 액세스 토큰이 포함된 응답 객체
      * @throws AuthException 리프레시 토큰이 유효하지 않거나 만료된 경우
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public Long refreshAccessToken(String refreshToken) {
         try {
             // 리프레시 토큰 유효성 검증
@@ -151,7 +151,12 @@ public class AuthService {
                 throw new AuthException(INVALID_REFRESH_TOKEN);
             }
 
-            return jwtTokenProvider.extractApplicantId(refreshToken);
+            // 삭제된 지원자의 기존 토큰 재발급 차단
+            Long applicantId = jwtTokenProvider.extractApplicantId(refreshToken);
+            if (!applicantRepository.existsById(applicantId)) {
+                throw new AuthException(INVALID_REFRESH_TOKEN);
+            }
+            return applicantId;
         } catch (ExpiredJwtException e) {
             throw new AuthException(EXPIRED_REFRESH_TOKEN);
         } catch (JwtException e) {
