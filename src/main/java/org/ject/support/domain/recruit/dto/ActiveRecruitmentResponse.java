@@ -21,8 +21,8 @@ public record ActiveRecruitmentResponse(Long recruitId,
                                         String summary) {
 
     public static ActiveRecruitmentResponse from(Recruit recruit) {
-        RecruitType recruitType = toPublicRecruitType(recruit.getRecruitType());
-        RecruitTypeDetail recruitTypeDetail = toPublicRecruitTypeDetail(recruit);
+        RecruitType recruitType = recruit.getRecruitType();
+        RecruitTypeDetail recruitTypeDetail = recruit.getRecruitTypeDetail();
         return new ActiveRecruitmentResponse(
                 recruit.getId(),
                 recruit.getSemester().getId(),
@@ -37,19 +37,5 @@ public record ActiveRecruitmentResponse(Long recruitId,
                 recruit.getEndDate(),
                 recruit.getSummary()
         );
-    }
-
-    private static RecruitType toPublicRecruitType(RecruitType recruitType) {
-        return switch (recruitType) {
-            case REGULAR, REGULAR_WAITLIST, BACKFILL, MANUAL -> RecruitType.SEMESTER;
-            case SEMESTER, MAKERS, SUPPORTERS -> recruitType;
-        };
-    }
-
-    private static RecruitTypeDetail toPublicRecruitTypeDetail(Recruit recruit) {
-        if (recruit.getRecruitType() == RecruitType.BACKFILL) {
-            return RecruitTypeDetail.REFILL;
-        }
-        return recruit.getRecruitTypeDetail();
     }
 }
