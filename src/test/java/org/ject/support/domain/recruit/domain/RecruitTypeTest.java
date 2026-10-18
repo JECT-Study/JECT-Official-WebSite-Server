@@ -10,16 +10,12 @@ import static org.ject.support.domain.member.MemberType.SUPPORTERS;
 class RecruitTypeTest {
 
     @Test
-    void 신규_모집_유형과_기존_모집_유형을_함께_제공한다() {
+    void 지원하는_모집_유형을_제공한다() {
         assertThat(RecruitType.values())
-                .contains(
+                .containsExactly(
                         RecruitType.SEMESTER,
                         RecruitType.MAKERS,
-                        RecruitType.SUPPORTERS,
-                        RecruitType.REGULAR,
-                        RecruitType.REGULAR_WAITLIST,
-                        RecruitType.BACKFILL,
-                        RecruitType.MANUAL
+                        RecruitType.SUPPORTERS
                 );
     }
 
@@ -49,25 +45,9 @@ class RecruitTypeTest {
     }
 
     @Test
-    void 기존_모집_유형은_호환_기간_동안_모집_사유_검증에서_차단하지_않는다() {
-        assertThat(RecruitType.REGULAR.supports(RecruitTypeDetail.REGULAR)).isTrue();
-        assertThat(RecruitType.REGULAR_WAITLIST.supports(RecruitTypeDetail.REGULAR)).isTrue();
-        assertThat(RecruitType.BACKFILL.supports(RecruitTypeDetail.REFILL)).isTrue();
-        assertThat(RecruitType.MANUAL.supports(RecruitTypeDetail.REGULAR)).isTrue();
-    }
-
-    @Test
     void 모집_유형을_구성원_타입으로_변환한다() {
         assertThat(RecruitType.SEMESTER.toMemberType()).isEqualTo(SEMESTER);
         assertThat(RecruitType.MAKERS.toMemberType()).isEqualTo(MAKERS);
         assertThat(RecruitType.SUPPORTERS.toMemberType()).isEqualTo(SUPPORTERS);
-    }
-
-    @Test
-    void 기존_모집_유형은_정규_기수_구성원_타입으로_변환한다() {
-        assertThat(RecruitType.REGULAR.toMemberType()).isEqualTo(SEMESTER);
-        assertThat(RecruitType.REGULAR_WAITLIST.toMemberType()).isEqualTo(SEMESTER);
-        assertThat(RecruitType.BACKFILL.toMemberType()).isEqualTo(SEMESTER);
-        assertThat(RecruitType.MANUAL.toMemberType()).isEqualTo(SEMESTER);
     }
 }
