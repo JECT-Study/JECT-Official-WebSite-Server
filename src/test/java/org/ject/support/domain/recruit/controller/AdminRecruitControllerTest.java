@@ -1,7 +1,10 @@
 package org.ject.support.domain.recruit.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
@@ -10,6 +13,7 @@ import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.AuthenticatedUser;
 import org.ject.support.testconfig.IntegrationTest;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -21,14 +25,18 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.containsString;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.recruit.exception.RecruitErrorCode.DUPLICATED_JOB_FAMILY;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @IntegrationTest
 @AutoConfigureMockMvc
@@ -53,6 +61,48 @@ class AdminRecruitControllerTest {
         semesterRepository.deleteAll();
         recruitRepository.deleteAll();
         semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+    }
+
+    @Test
+    @DisplayName("지원서 관리용 모집공고 목록과 유형별 공고 수를 조회한다")
+    void 지원서_관리용_모집공고_목록과_유형별_공고_수를_조회한다() throws Exception {
+        // given
+        Semester semester = semesterRepository.findRecruitingSemester().orElseThrow();
+        saveRecruit(semester, FE, RecruitType.SEMESTER);
+        Recruit beRecruit = saveRecruit(semester, BE, RecruitType.SEMESTER);
+        saveRecruit(semester, FE, RecruitType.MAKERS);
+
+        // when, then
+        mockMvc.perform(get("/admin/recruits/apply-management")
+                        .param("status", "SUBMITTED")
+                        .param("recruitType", "SEMESTER")
+                        .param("jobFamilies", "FE", "BE")
+                        .param("size", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recruitTypeCounts", hasSize(3)))
+                .andExpect(jsonPath("$.data.recruitTypeCounts[0].recruitType").value("SEMESTER"))
+                .andExpect(jsonPath("$.data.recruitTypeCounts[0].count").value(2))
+                .andExpect(jsonPath("$.data.recruitTypeCounts[1].recruitType").value("MAKERS"))
+                .andExpect(jsonPath("$.data.recruitTypeCounts[1].count").value(1))
+                .andExpect(jsonPath("$.data.recruitTypeCounts[2].recruitType").value("SUPPORTERS"))
+                .andExpect(jsonPath("$.data.recruitTypeCounts[2].count").value(0))
+                .andExpect(jsonPath("$.data.recruits.content", hasSize(1)))
+                .andExpect(jsonPath("$.data.recruits.content[0].recruitId").value(beRecruit.getId()))
+                .andExpect(jsonPath("$.data.recruits.content[0].semesterId").value(semester.getId()))
+                .andExpect(jsonPath("$.data.recruits.content[0].jobFamily").value("BE"))
+                .andExpect(jsonPath("$.data.recruits.content[0].submittedApplyCount").value(0))
+                .andExpect(jsonPath("$.data.recruits.size").value(1))
+                .andExpect(jsonPath("$.data.recruits.hasNext").value(true))
+                .andExpect(jsonPath("$.data.recruits.nextCursor").value(beRecruit.getId()))
+                .andExpect(jsonPath("$.data.recruits.totalCount").value(2));
+
+    }
+
+    @Test
+    @DisplayName("필수 조회 조건이 없으면 지원서 관리용 모집공고를 조회하지 않는다")
+    void 필수_조회_조건이_없으면_지원서_관리용_모집공고를_조회하지_않는다() throws Exception {
+        mockMvc.perform(get("/admin/recruits/apply-management"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -152,5 +202,18 @@ class AdminRecruitControllerTest {
         // then
         List<Recruit> recruits = recruitRepository.findActiveRecruits(LocalDateTime.now());
         assertThat(recruits).isEmpty();
+    }
+
+    private Recruit saveRecruit(Semester semester, JobFamily jobFamily, RecruitType recruitType) {
+        return recruitRepository.save(Recruit.builder()
+                .semester(semester)
+                .startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1))
+                .jobFamily(jobFamily)
+                .recruitType(recruitType)
+                .recruitTypeDetail(recruitType == RecruitType.SEMESTER
+                        ? RecruitTypeDetail.REGULAR
+                        : RecruitTypeDetail.NEW)
+                .build());
     }
 }

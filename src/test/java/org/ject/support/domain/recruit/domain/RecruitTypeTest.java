@@ -1,5 +1,7 @@
 package org.ject.support.domain.recruit.domain;
 
+import org.ject.support.domain.member.JobFamily;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -8,6 +10,20 @@ import static org.ject.support.domain.member.MemberType.SEMESTER;
 import static org.ject.support.domain.member.MemberType.SUPPORTERS;
 
 class RecruitTypeTest {
+
+    @Test
+    @DisplayName("모집 유형별 지원 가능한 직군을 판별한다")
+    void 모집_유형별_지원_가능한_직군을_판별한다() {
+        assertThat(JobFamily.values())
+                .filteredOn(jobFamily -> RecruitType.SEMESTER.supports(jobFamily))
+                .containsExactlyInAnyOrder(JobFamily.FE, JobFamily.BE, JobFamily.APP, JobFamily.PM, JobFamily.PD);
+        assertThat(JobFamily.values())
+                .filteredOn(jobFamily -> RecruitType.MAKERS.supports(jobFamily))
+                .containsExactlyInAnyOrder(JobFamily.FE, JobFamily.BE, JobFamily.PM, JobFamily.PD);
+        assertThat(JobFamily.values())
+                .filteredOn(jobFamily -> RecruitType.SUPPORTERS.supports(jobFamily))
+                .containsExactlyInAnyOrder(JobFamily.BX, JobFamily.INFRA, JobFamily.ER, JobFamily.OPS);
+    }
 
     @Test
     void 신규_모집_유형과_기존_모집_유형을_함께_제공한다() {
