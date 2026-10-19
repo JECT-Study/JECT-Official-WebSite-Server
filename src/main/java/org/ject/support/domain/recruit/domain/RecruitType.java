@@ -1,6 +1,7 @@
 package org.ject.support.domain.recruit.domain;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberType;
 
 @Getter
@@ -30,6 +31,10 @@ public enum RecruitType {
                     || recruitTypeDetail == RecruitTypeDetail.REFILL;
             case REGULAR, REGULAR_WAITLIST, BACKFILL, MANUAL -> true;
         };
+    }
+
+    public boolean supports(final JobFamily jobFamily) {
+        return jobFamily != null && jobFamily.isAvailableFor(toMemberType());
     }
 
     public MemberType toMemberType() {
