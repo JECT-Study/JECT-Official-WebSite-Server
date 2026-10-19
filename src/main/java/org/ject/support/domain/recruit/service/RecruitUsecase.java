@@ -1,6 +1,8 @@
 package org.ject.support.domain.recruit.service;
 
 import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
+import org.ject.support.domain.recruit.dto.ApplyManagementRecruitSearchCondition;
+import org.ject.support.domain.recruit.dto.ApplyManagementRecruitsResponse;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitResponse;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
@@ -13,6 +15,12 @@ public interface RecruitUsecase {
      * 모집 정보를 등록합니다.
      */
     void registerRecruits(List<RecruitRegisterRequest> requests);
+
+    /**
+     * 지원서 관리용 모집공고와 통계를 조회합니다.
+     */
+    ApplyManagementRecruitsResponse searchApplyManagementRecruits(
+            ApplyManagementRecruitSearchCondition condition);
 
     /**
      * 모집공고 상세정보를 조회합니다.
