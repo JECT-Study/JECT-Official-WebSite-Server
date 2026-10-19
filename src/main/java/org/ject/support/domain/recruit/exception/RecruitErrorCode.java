@@ -15,7 +15,9 @@ public enum RecruitErrorCode implements ErrorCode {
     NOT_FOUND_RECRUIT(NOT_FOUND, "RECRUIT-1", "모집 공고를 찾을 수 없습니다."),
     DUPLICATED_JOB_FAMILY(CONFLICT, "RECRUIT-2", "이미 모집중인 직군입니다."),
     UPDATE_NOT_ALLOW_FOR_CLOSED(CONFLICT, "RECRUIT-3", "마감된 모집 정보는 수정할 수 없습니다."),
-    INVALID_RECRUIT_TYPE_DETAIL(BAD_REQUEST, "RECRUIT-4", "모집 유형과 모집 사유 조합이 올바르지 않습니다.");
+    INVALID_RECRUIT_TYPE_DETAIL(BAD_REQUEST, "RECRUIT-4", "모집 유형과 모집 사유 조합이 올바르지 않습니다."),
+    INVALID_APPLY_MANAGEMENT_STATUS(BAD_REQUEST, "RECRUIT-5", "지원서 관리에서 조회할 수 없는 지원 상태입니다."),
+    INVALID_JOB_FAMILY(BAD_REQUEST, "RECRUIT-6", "모집 유형에서 지원하지 않는 직군입니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
