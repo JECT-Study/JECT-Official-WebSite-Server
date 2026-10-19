@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface RecruitRepository extends JpaRepository<Recruit, Long> {
+public interface RecruitRepository extends JpaRepository<Recruit, Long>, RecruitQueryRepository {
     @Query("SELECT r FROM Recruit r JOIN FETCH r.semester WHERE r.id = :recruitId")
     Optional<Recruit> findByIdWithSemester(@Param("recruitId") Long recruitId);
 
