@@ -207,6 +207,35 @@ class ApplyRepositoryTest {
         assertThat(persistenceUnitUtil.isLoaded(result.getRecruit())).isTrue();
     }
 
+    @Test
+    void 삭제된_지원과_지원자는_지원ID_목록_조회에서_제외한다() {
+        // given
+        Applicant activeApplicant = createApplicant("active@test.com", Role.APPLY);
+        Applicant deletedApplyApplicant = createApplicant("deleted-apply@test.com", Role.APPLY);
+        Applicant deletedApplicant = createApplicant("deleted-applicant@test.com", Role.APPLY);
+        applicantRepository.saveAll(List.of(activeApplicant, deletedApplyApplicant, deletedApplicant));
+
+        Apply activeApply = getApply(activeApplicant, beRecruit, SUBMITTED);
+        Apply deletedApply = getApply(deletedApplyApplicant, beRecruit, SUBMITTED);
+        Apply applyForDeletedApplicant = getApply(deletedApplicant, beRecruit, SUBMITTED);
+        applyRepository.saveAll(List.of(activeApply, deletedApply, applyForDeletedApplicant));
+        entityManager.flush();
+
+        applyRepository.delete(deletedApply);
+        applicantRepository.delete(deletedApplicant);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        List<Apply> result = applyRepository.findAllByIdWithApplicant(List.of(
+                activeApply.getId(), deletedApply.getId(), applyForDeletedApplicant.getId()));
+
+        // then
+        assertThat(result)
+                .extracting(Apply::getId)
+                .containsExactly(activeApply.getId());
+    }
+
     private Recruit getRecruit(JobFamily jobFamily) {
         return Recruit.builder()
                 .semester(semester)
