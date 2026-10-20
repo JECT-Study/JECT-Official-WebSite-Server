@@ -17,6 +17,7 @@ import org.ject.support.admin.mail.repository.MailDispatchJobRepository;
 import org.ject.support.admin.mail.repository.MailDispatchOutboxRepository;
 import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
 import org.ject.support.common.exception.ErrorCode;
+import org.ject.support.external.email.exception.EmailErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,12 +52,31 @@ public class MailDispatchClaimService {
                 .orElse(false);
     }
 
+    public boolean quarantineInterrupted(Long outboxId, LocalDateTime now) {
+        Objects.requireNonNull(now);
+        return findLockedExecution(outboxId).map(execution -> {
+            if (execution.job().getStatus() != MailDispatchJobStatus.PROCESSING) {
+                return false;
+            }
+            // 기존 동기 실행은 claim 표식이 없어 미호출을 증명할 수 없으므로 격리 처리한다.
+            if (execution.job().getClaimStartedAt() == null && execution.outbox().quarantineUnclaimed()) {
+                recordUnknown(execution);
+                return true;
+            }
+            return quarantineIfExpired(execution, now);
+        }).orElse(false);
+    }
+
     public boolean recordSuccess(Long outboxId, String claimToken, LocalDateTime now) {
-        return recordResult(outboxId, claimToken, now, null);
+        return recordResult(outboxId, claimToken, now, null, false);
     }
 
     public boolean recordFailure(Long outboxId, String claimToken, LocalDateTime now, ErrorCode errorCode) {
-        return recordResult(outboxId, claimToken, now, Objects.requireNonNull(errorCode).getCode());
+        return recordResult(outboxId, claimToken, now, Objects.requireNonNull(errorCode).getCode(), false);
+    }
+
+    public boolean recordThrottling(Long outboxId, String claimToken, LocalDateTime now) {
+        return recordResult(outboxId, claimToken, now, EmailErrorCode.TOO_MANY_EMAIL_REQUESTS.getCode(), true);
     }
 
     public boolean recordUnknown(Long outboxId, String claimToken) {
@@ -69,13 +89,19 @@ public class MailDispatchClaimService {
         }).orElse(false);
     }
 
-    private boolean recordResult(Long outboxId, String claimToken, LocalDateTime now, String failureCode) {
+    private boolean recordResult(Long outboxId, String claimToken, LocalDateTime now,
+                                 String failureCode, boolean retryAllowed) {
         return findLockedExecution(outboxId).map(execution -> {
             if (!execution.outbox().hasClaimToken(claimToken)) {
                 return false;
             }
             if (quarantineIfExpired(execution, now)) {
                 return false;
+            }
+            // 재시도 대기는 최종 실패가 아니므로 대상·작업 종료 집계에서 제외한다.
+            if (retryAllowed
+                    && execution.outbox().scheduleClaimRetry(claimToken, now, failureCode)) {
+                return true;
             }
             boolean recorded = failureCode == null
                     ? execution.outbox().markClaimSent(claimToken, now)
