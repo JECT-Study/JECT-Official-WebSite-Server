@@ -13,6 +13,7 @@ import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.Portfolio;
+import org.ject.support.domain.apply.dto.ApplyEligibilityFacts;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
@@ -59,6 +60,22 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
     @Transactional(readOnly = true)
     public Optional<Long> getRecruitIdByApplicantId(Long applicantId) {
         return applyRepository.findRecruitIdByApplicantId(applicantId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ApplyEligibilityFacts> findCurrentEligibilityFactsByApplyIds(List<Long> applyIds) {
+        if (applyIds.isEmpty()) {
+            return List.of();
+        }
+
+        return applyRepository.findAllByIdWithApplicant(applyIds).stream()
+                .map(apply -> new ApplyEligibilityFacts(
+                        apply.getId(),
+                        apply.getRecruit().getId(),
+                        apply.getStatus(),
+                        apply.getSelectionResult()))
+                .toList();
     }
 
     @Override
