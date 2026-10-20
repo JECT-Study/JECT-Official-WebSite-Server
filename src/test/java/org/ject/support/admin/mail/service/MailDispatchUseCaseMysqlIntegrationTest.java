@@ -4,10 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -23,10 +22,8 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
-
 import org.ject.support.admin.mail.domain.MailDispatchOutboxStatus;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
-
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
