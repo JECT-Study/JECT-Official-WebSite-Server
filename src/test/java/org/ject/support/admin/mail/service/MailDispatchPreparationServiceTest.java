@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import org.ject.support.admin.mail.domain.MailScenario;
 import org.ject.support.admin.mail.domain.MailScenarioRepository;
+import org.ject.support.admin.mail.domain.MailScenarioType;
 import org.ject.support.admin.mail.domain.MailScenarioVariable;
 import org.ject.support.admin.mail.domain.VariableInputType;
 import org.ject.support.admin.mail.dto.SendMailDispatchRequest;
@@ -78,6 +79,7 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
         assertThat(plan.requestedByAdminId()).isEqualTo(3L);
         assertThat(plan.idempotencyKey()).isEqualTo("dispatch-key");
         assertThat(plan.subjectTemplate()).isEqualTo("  ${name}  ");
+        assertThat(plan.scenarioTypeSnapshot()).isEqualTo(MailScenarioType.ETC);
         assertThat(plan.targets()).singleElement().satisfies(target -> {
             assertThat(target.applyId()).isEqualTo(20L);
             assertThat(target.email()).isEqualTo("applicant@ject.kr");
@@ -284,6 +286,7 @@ class MailDispatchPreparationServiceTest extends UnitTestSupport {
     private MailScenario scenario(String subject, String body) {
         return MailScenario.builder()
                 .name("발송 시나리오")
+                .type(MailScenarioType.ETC)
                 .subjectTemplate(subject)
                 .bodyTemplate(body)
                 .active(true)

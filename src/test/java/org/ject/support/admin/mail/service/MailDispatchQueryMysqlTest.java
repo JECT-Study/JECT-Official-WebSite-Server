@@ -133,12 +133,13 @@ class MailDispatchQueryMysqlTest extends TestSupport {
                 Map.of("place", "서울"), List.of(new MailDispatchPlan.Target(
                         10L, "scheduled@example.com",
                         templateEngine.render("${place} 안내", Map.of("place", "서울")),
-                        scenarioService.renderScenario(scenario.id(), Map.of("place", "서울")), "PASSED"))),
+                        scenarioService.renderScenario(scenario.id(), Map.of("place", "서울")), "PASSED")),
+                scenario.type()),
                 "frozen-fingerprint", scheduledAt);
 
         // when
         scenarioService.updateScenario(scenario.id(), new MailScenarioRequest(
-                "수정 안내", MailScenarioCategory.GENERAL, MailScenarioType.ETC,
+                "수정 안내", MailScenarioCategory.GENERAL, MailScenarioType.FIRST_PASS,
                 scenario.scenarioCode(), "변경 제목", "변경 본문", true, List.of()));
         assertThat(scenarioService.getScenarioVariables(scenario.id()).customVariables()).isEmpty();
         assertThat(scenarioService.renderScenario(scenario.id(), Map.of())).isEqualTo("변경 본문");
@@ -158,6 +159,7 @@ class MailDispatchQueryMysqlTest extends TestSupport {
             assertThat(saved.getBody()).isEqualTo("장소: 서울");
         });
         assertThat(jobRepository.findById(job.getId())).get().satisfies(saved -> {
+            assertThat(saved.getScenarioTypeSnapshot()).isEqualTo(MailScenarioType.ETC);
             assertThat(saved.getSubjectTemplate()).isEqualTo("${place} 안내");
             assertThat(saved.getBodyTemplate()).isEqualTo("장소: ${place}");
             assertThat(saved.getInputVariablesJson()).isEqualTo("{\"place\":\"서울\"}");
