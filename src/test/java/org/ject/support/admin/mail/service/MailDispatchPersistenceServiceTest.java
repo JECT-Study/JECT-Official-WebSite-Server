@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
@@ -91,5 +92,34 @@ class MailDispatchPersistenceServiceTest extends UnitTestSupport {
             assertThat(outbox.getBody()).isEqualTo("본문");
             assertThat(outbox.getDispatchJob()).isSameAs(savedJob);
         });
+    }
+
+    @Test
+    @DisplayName("기존 발송 계획으로 예약하면 시나리오 유형 snapshot 없이 저장한다")
+    void 기존_발송_계획으로_예약하면_null_시나리오_유형을_허용한다() {
+        // given
+        MailDispatchPlan plan = new MailDispatchPlan(
+                1L,
+                2L,
+                3L,
+                "scheduled-key",
+                "제목 템플릿",
+                "본문 템플릿",
+                Map.of(),
+                List.of(new MailDispatchPlan.Target(
+                        10L, "applicant@ject.kr", "제목", "본문", "PASSED")));
+        given(map2JsonSerializer.serializeAsString(plan.inputVariables())).willReturn("{}");
+        given(mailDispatchJobRepository.save(any(MailDispatchJob.class))).willAnswer(invocation -> {
+            MailDispatchJob job = invocation.getArgument(0);
+            ReflectionTestUtils.setField(job, "id", 101L);
+            return job;
+        });
+
+        // when
+        MailDispatchJob savedJob = mailDispatchPersistenceService.createScheduledJob(
+                plan, "fingerprint", Instant.now().plusSeconds(60));
+
+        // then
+        assertThat(savedJob.getScenarioTypeSnapshot()).isNull();
     }
 }

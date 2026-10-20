@@ -53,7 +53,8 @@ public class MailDispatchPersistenceService {
                 plan.bodyTemplate(),
                 map2JsonSerializer.serializeAsString(plan.inputVariables()),
                 requestFingerprint,
-                plan.targets().size()
+                plan.targets().size(),
+                scheduledAt == null ? null : plan.scenarioTypeSnapshot()
         );
         if (scheduledAt != null) {
             job.schedule(scheduledAt);

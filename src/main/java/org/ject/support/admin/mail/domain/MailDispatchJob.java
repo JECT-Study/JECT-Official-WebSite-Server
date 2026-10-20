@@ -34,6 +34,10 @@ public class MailDispatchJob extends BaseTimeEntity {
     @Column(name = "scenario_id", nullable = false)
     private Long scenarioId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scenario_type_snapshot", length = 50)
+    private MailScenarioType scenarioTypeSnapshot;
+
     @Column(name = "recruit_id", nullable = false)
     private Long recruitId;
 
@@ -100,8 +104,10 @@ public class MailDispatchJob extends BaseTimeEntity {
                             String bodyTemplate,
                             String inputVariablesJson,
                             String requestFingerprint,
-                            int targetCount) {
+                            int targetCount,
+                            MailScenarioType scenarioTypeSnapshot) {
         this.scenarioId = scenarioId;
+        this.scenarioTypeSnapshot = scenarioTypeSnapshot;
         this.recruitId = recruitId;
         this.requestedByAdminId = requestedByAdminId;
         this.idempotencyKey = idempotencyKey;
@@ -144,6 +150,20 @@ public class MailDispatchJob extends BaseTimeEntity {
                                          String inputVariablesJson,
                                          String requestFingerprint,
                                          int targetCount) {
+        return create(scenarioId, recruitId, requestedByAdminId, idempotencyKey, subjectTemplate, bodyTemplate,
+                inputVariablesJson, requestFingerprint, targetCount, null);
+    }
+
+    public static MailDispatchJob create(Long scenarioId,
+                                         Long recruitId,
+                                         Long requestedByAdminId,
+                                         String idempotencyKey,
+                                         String subjectTemplate,
+                                         String bodyTemplate,
+                                         String inputVariablesJson,
+                                         String requestFingerprint,
+                                         int targetCount,
+                                         MailScenarioType scenarioTypeSnapshot) {
         if (targetCount <= 0) {
             throw new MailException(MailErrorCode.INVALID_DISPATCH_TARGET_COUNT);
         }
@@ -156,7 +176,8 @@ public class MailDispatchJob extends BaseTimeEntity {
                 bodyTemplate,
                 inputVariablesJson,
                 requestFingerprint,
-                targetCount
+                targetCount,
+                scenarioTypeSnapshot
         );
     }
 
