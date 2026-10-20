@@ -37,6 +37,7 @@ import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
 import org.ject.support.base.TestSupport;
 import org.ject.support.common.response.ObjectMapperConfig;
 import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.domain.apply.service.ApplyQueryService;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.BeforeEach;
@@ -51,6 +52,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.MySQLContainer;
@@ -92,6 +94,9 @@ class MailDispatchQueryMysqlTest extends TestSupport {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @MockitoBean
+    private ApplyQueryService applyQueryService;
 
     @Autowired
     private ObjectMapper objectMapper;

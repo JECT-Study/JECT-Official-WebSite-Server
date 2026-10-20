@@ -19,8 +19,18 @@ public record MailDispatchJobResponse(
         LocalDateTime requestedAt,
         LocalDateTime startedAt,
         LocalDateTime finishedAt,
-        Instant scheduledAt
+        Instant scheduledAt,
+        int excludedCount
 ) {
+
+    public MailDispatchJobResponse(Long dispatchJobId, Long scenarioId, Long recruitId, Long requestedByAdminId,
+                                   MailDispatchJobStatus status, int targetCount, int processingCount,
+                                   int successCount, int failedCount, int unknownCount,
+                                   LocalDateTime requestedAt, LocalDateTime startedAt, LocalDateTime finishedAt,
+                                   Instant scheduledAt) {
+        this(dispatchJobId, scenarioId, recruitId, requestedByAdminId, status, targetCount, processingCount,
+                successCount, failedCount, unknownCount, requestedAt, startedAt, finishedAt, scheduledAt, 0);
+    }
 
     public static MailDispatchJobResponse from(MailDispatchJob job) {
         return new MailDispatchJobResponse(
@@ -37,7 +47,8 @@ public record MailDispatchJobResponse(
                 job.getRequestedAt(),
                 job.getStartedAt(),
                 job.getFinishedAt(),
-                job.getScheduledAt()
+                job.getScheduledAt(),
+                job.getExcludedCount()
         );
     }
 }
