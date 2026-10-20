@@ -2,14 +2,18 @@ package org.ject.support.admin.mail.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import org.ject.support.admin.mail.domain.MailDispatchExclusionReason;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 import org.ject.support.admin.mail.domain.MailDispatchOutbox;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
+import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
+import org.ject.support.admin.mail.domain.MailScenarioType;
 import org.ject.support.admin.mail.dto.MailDispatchOutboxClaim;
 import org.ject.support.admin.mail.dto.MailDispatchTransitionEvent;
 import org.ject.support.admin.mail.exception.MailErrorCode;
@@ -18,6 +22,10 @@ import org.ject.support.admin.mail.repository.MailDispatchJobRepository;
 import org.ject.support.admin.mail.repository.MailDispatchOutboxRepository;
 import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
 import org.ject.support.common.exception.ErrorCode;
+import org.ject.support.domain.apply.domain.ApplyStatus;
+import org.ject.support.domain.apply.domain.SelectionResult;
+import org.ject.support.domain.apply.dto.ApplyEligibilityFacts;
+import org.ject.support.domain.apply.service.ApplyQueryService;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -32,6 +40,7 @@ public class MailDispatchClaimService {
     private final MailDispatchOutboxRepository mailDispatchOutboxRepository;
     private final MailDispatchJobRepository mailDispatchJobRepository;
     private final MailDispatchTargetRepository mailDispatchTargetRepository;
+    private final ApplyQueryService applyQueryService;
     private final ApplicationEventPublisher eventPublisher;
 
     // 호출자의 트랜잭션과 분리해 외부 발송 전에 claim 커밋을 완료한다.
@@ -41,13 +50,29 @@ public class MailDispatchClaimService {
         if (leaseDuration.isZero() || leaseDuration.isNegative()) {
             throw new IllegalArgumentException("leaseDuration must be positive");
         }
-        return findLockedExecution(outboxId)
-                .filter(execution -> claimIfSafe(execution, now, leaseDuration))
-                .map(execution -> {
-                    startIfRequested(execution.job());
+        return findLockedExecution(outboxId).flatMap(execution -> {
+            if (!canClaim(execution, now)) {
+                return Optional.empty();
+            }
+            if (execution.job().getScheduledAt() != null) {
+                Optional<MailDispatchExclusionReason> exclusionReason = findExclusionReason(execution);
+                if (exclusionReason.isPresent()) {
+                    if (!execution.outbox().exclude()) {
+                        return Optional.empty();
+                    }
+                    execution.target().exclude(exclusionReason.get());
+                    execution.job().recordExcluded();
                     publishTransition(execution);
-                    return MailDispatchOutboxClaim.from(execution.outbox());
-                });
+                    return Optional.empty();
+                }
+            }
+            if (!execution.outbox().claim(UUID.randomUUID().toString(), now, now.plus(leaseDuration))) {
+                return Optional.empty();
+            }
+            startIfRequested(execution.job());
+            publishTransition(execution);
+            return Optional.of(MailDispatchOutboxClaim.from(execution.outbox()));
+        });
     }
 
     public boolean quarantineExpired(Long outboxId, LocalDateTime now) {
@@ -135,7 +160,7 @@ public class MailDispatchClaimService {
         return true;
     }
 
-    private boolean claimIfSafe(LockedExecution execution, LocalDateTime now, Duration leaseDuration) {
+    private boolean canClaim(LockedExecution execution, LocalDateTime now) {
         MailDispatchJob job = execution.job();
         if (job.getStatus() == MailDispatchJobStatus.PROCESSING && job.getClaimStartedAt() == null) {
             // 기존 동기 실행의 PENDING은 SES 미호출 증거가 아니므로 재발송하지 않는다.
@@ -148,7 +173,64 @@ public class MailDispatchClaimService {
                 && job.getStatus() != MailDispatchJobStatus.PROCESSING) {
             return false;
         }
-        return execution.outbox().claim(UUID.randomUUID().toString(), now, now.plus(leaseDuration));
+        if (job.getScheduledAt() != null && job.getStatus() != MailDispatchJobStatus.PROCESSING) {
+            return false;
+        }
+        return execution.target().getStatus() == MailDispatchTargetStatus.PENDING
+                && execution.outbox().isReadyForClaim(now);
+    }
+
+    private Optional<MailDispatchExclusionReason> findExclusionReason(LockedExecution execution) {
+        List<ApplyEligibilityFacts> facts = applyQueryService.findCurrentEligibilityFactsByApplyIds(
+                List.of(execution.target().getApplyId()));
+        if (facts == null) {
+            return Optional.of(MailDispatchExclusionReason.APPLY_ELIGIBILITY_UNAVAILABLE);
+        }
+        List<ApplyEligibilityFacts> matchingFacts = facts.stream()
+                .filter(Objects::nonNull)
+                .filter(current -> Objects.equals(current.applyId(), execution.target().getApplyId()))
+                .toList();
+        if (matchingFacts.isEmpty()) {
+            return Optional.of(MailDispatchExclusionReason.APPLY_NOT_FOUND);
+        }
+        if (matchingFacts.size() != 1) {
+            return Optional.of(MailDispatchExclusionReason.APPLY_ELIGIBILITY_UNAVAILABLE);
+        }
+
+        ApplyEligibilityFacts current = matchingFacts.getFirst();
+        if (current.recruitId() == null || current.status() == null) {
+            return Optional.of(MailDispatchExclusionReason.APPLY_ELIGIBILITY_UNAVAILABLE);
+        }
+        if (!current.recruitId().equals(execution.job().getRecruitId())) {
+            return Optional.of(MailDispatchExclusionReason.RECRUIT_MISMATCH);
+        }
+        if (current.status() != ApplyStatus.SUBMITTED) {
+            return Optional.of(MailDispatchExclusionReason.APPLY_NOT_SUBMITTED);
+        }
+
+        MailScenarioType scenarioType = execution.job().getScenarioTypeSnapshot();
+        if (scenarioType == null) {
+            return Optional.of(MailDispatchExclusionReason.SCENARIO_TYPE_SNAPSHOT_MISSING);
+        }
+        if (scenarioType == MailScenarioType.ETC) {
+            return Optional.empty();
+        }
+        if (execution.target().getSelectionResultSnapshot() == null
+                || execution.target().getSelectionResultSnapshot().isBlank()) {
+            return Optional.of(MailDispatchExclusionReason.SELECTION_RESULT_SNAPSHOT_MISSING);
+        }
+        SelectionResult selectionSnapshot;
+        try {
+            selectionSnapshot = SelectionResult.valueOf(execution.target().getSelectionResultSnapshot());
+        } catch (IllegalArgumentException exception) {
+            return Optional.of(MailDispatchExclusionReason.SELECTION_RESULT_SNAPSHOT_INVALID);
+        }
+        if (current.selectionResult() == null) {
+            return Optional.of(MailDispatchExclusionReason.SELECTION_RESULT_UNAVAILABLE);
+        }
+        return selectionSnapshot == current.selectionResult()
+                ? Optional.empty()
+                : Optional.of(MailDispatchExclusionReason.SELECTION_RESULT_CHANGED);
     }
 
     private void recordUnknown(LockedExecution execution) {

@@ -32,7 +32,7 @@ public class MailDispatchTargetQueryRepositoryImpl implements MailDispatchTarget
                         mailDispatchTarget.id, mailDispatchTarget.applyId, mailDispatchTarget.email,
                         mailDispatchTarget.status, mailDispatchTarget.sentAt, mailDispatchTarget.failureReason,
                         mailDispatchOutbox.attemptCount, mailDispatchOutbox.nextAttemptAt,
-                        mailDispatchOutbox.failureReason))
+                        mailDispatchOutbox.failureReason, mailDispatchTarget.exclusionReason))
                 .from(mailDispatchTarget)
                 .leftJoin(mailDispatchOutbox).on(
                         mailDispatchOutbox.dispatchJob.id.eq(mailDispatchTarget.dispatchJob.id),
