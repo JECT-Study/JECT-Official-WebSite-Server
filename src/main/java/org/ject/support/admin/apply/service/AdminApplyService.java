@@ -8,13 +8,17 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
-import org.ject.support.admin.apply.dto.AdminApplyResponse;
-import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyProjection;
+import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
+import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
+import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
+import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
-import org.ject.support.common.data.PageResponse;
+import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.applicant.entity.Applicant;
@@ -32,8 +36,6 @@ import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.exception.QuestionErrorCode;
 import org.ject.support.domain.recruit.exception.QuestionException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,16 +50,50 @@ public class AdminApplyService {
     private final Map2JsonSerializer map2JsonSerializer;
     private final String2MapSerializer string2MapSerializer;
 
+    // 공고별 제출완료 지원서를 선정 결과와 지원자 신분으로 조회
     @Transactional(readOnly = true)
-    public Page<AdminApplyResponse> findApplies(final AdminApplySearchCondition condition,
-                                                final Pageable pageable) {
-        Page<Apply> applyPage = adminApplyRepository.findApplies(condition, pageable);
-
-        List<AdminApplyResponse> content = applyPage.getContent().stream()
-                .map(AdminApplyResponse::from)
+    public CursorPageResponse<SubmittedApplyResponse> searchSubmittedApplies(
+            SubmittedApplySearchCondition condition
+    ) {
+        int size = condition.getSizeOrDefault();
+        List<SubmittedApplyProjection> queriedApplies =
+                adminApplyRepository.searchSubmittedApplies(condition, size + 1);
+        boolean hasNext = queriedApplies.size() > size;
+        List<SubmittedApplyProjection> pageContent = hasNext
+                ? queriedApplies.subList(0, size)
+                : queriedApplies;
+        Long nextCursor = hasNext && !pageContent.isEmpty()
+                ? pageContent.get(pageContent.size() - 1).applyId()
+                : null;
+        List<SubmittedApplyResponse> content = pageContent.stream()
+                .map(SubmittedApplyResponse::from)
                 .toList();
+        long totalCount = adminApplyRepository.countSubmittedApplies(condition);
 
-        return PageResponse.from(content, pageable, applyPage.getTotalElements());
+        return CursorPageResponse.of(content, size, hasNext, nextCursor, totalCount);
+    }
+
+    // 공고별 임시저장 지원서를 지원자 신분으로 조회
+    @Transactional(readOnly = true)
+    public CursorPageResponse<TempSavedApplyResponse> searchTempSavedApplies(
+            TempSavedApplySearchCondition condition
+    ) {
+        int size = condition.getSizeOrDefault();
+        List<TempSavedApplyProjection> queriedApplies =
+                adminApplyRepository.searchTempSavedApplies(condition, size + 1);
+        boolean hasNext = queriedApplies.size() > size;
+        List<TempSavedApplyProjection> pageContent = hasNext
+                ? queriedApplies.subList(0, size)
+                : queriedApplies;
+        Long nextCursor = hasNext && !pageContent.isEmpty()
+                ? pageContent.get(pageContent.size() - 1).applyId()
+                : null;
+        List<TempSavedApplyResponse> content = pageContent.stream()
+                .map(TempSavedApplyResponse::from)
+                .toList();
+        long totalCount = adminApplyRepository.countTempSavedApplies(condition);
+
+        return CursorPageResponse.of(content, size, hasNext, nextCursor, totalCount);
     }
 
     @Transactional(readOnly = true)
