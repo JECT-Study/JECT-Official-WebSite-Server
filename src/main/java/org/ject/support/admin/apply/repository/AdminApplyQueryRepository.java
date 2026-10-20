@@ -2,19 +2,14 @@ package org.ject.support.admin.apply.repository;
 
 import java.util.List;
 import java.util.Optional;
-import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.admin.apply.dto.SubmittedApplyProjection;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 public interface AdminApplyQueryRepository {
-    Page<Apply> findApplies(AdminApplySearchCondition condition, Pageable pageable);
-
     List<SubmittedApplyProjection> searchSubmittedApplies(
             SubmittedApplySearchCondition condition,
             int limit);

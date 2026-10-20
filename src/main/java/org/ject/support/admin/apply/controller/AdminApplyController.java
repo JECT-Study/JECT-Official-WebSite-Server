@@ -3,22 +3,19 @@ package org.ject.support.admin.apply.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
-import org.ject.support.admin.apply.dto.AdminApplyResponse;
-import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
+import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
+import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.service.AdminApplyService;
+import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
-import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.recruit.domain.RecruitType;
-import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -35,17 +32,19 @@ public class AdminApplyController implements AdminApplyApiSpec {
     private final AdminApplyService adminApplyService;
 
     @Override
-    @GetMapping
-    public Page<AdminApplyResponse> findApplies(@RequestParam(required = false) final ApplyStatus applyStatus,
-                                                @RequestParam(required = false) final Long semesterId,
-                                                @RequestParam(required = false) final JobFamily jobFamily,
-                                                @RequestParam(required = false) final RecruitType recruitType,
-                                                @RequestParam(required = false) final RecruitTypeDetail recruitTypeDetail,
-                                                @RequestParam(required = false) final Long recruitId,
-                                                @PageableDefault(sort = "createdAt", direction = Direction.DESC) final Pageable pageable) {
-        AdminApplySearchCondition condition = new AdminApplySearchCondition(
-                applyStatus, semesterId, jobFamily, recruitType, recruitTypeDetail, recruitId);
-        return adminApplyService.findApplies(condition, pageable);
+    @GetMapping("/submitted")
+    public CursorPageResponse<SubmittedApplyResponse> searchSubmittedApplies(
+            @Valid @ModelAttribute SubmittedApplySearchCondition condition
+    ) {
+        return adminApplyService.searchSubmittedApplies(condition);
+    }
+
+    @Override
+    @GetMapping("/temp-saved")
+    public CursorPageResponse<TempSavedApplyResponse> searchTempSavedApplies(
+            @Valid @ModelAttribute TempSavedApplySearchCondition condition
+    ) {
+        return adminApplyService.searchTempSavedApplies(condition);
     }
 
     @Override
