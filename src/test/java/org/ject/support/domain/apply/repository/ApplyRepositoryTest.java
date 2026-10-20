@@ -220,9 +220,12 @@ class ApplyRepositoryTest {
         Apply applyForDeletedApplicant = getApply(deletedApplicant, beRecruit, SUBMITTED);
         applyRepository.saveAll(List.of(activeApply, deletedApply, applyForDeletedApplicant));
         entityManager.flush();
+        entityManager.clear();
 
-        applyRepository.delete(deletedApply);
-        applicantRepository.delete(deletedApplicant);
+        applyRepository.deleteById(deletedApply.getId());
+        entityManager.flush();
+        entityManager.clear();
+        applicantRepository.deleteById(deletedApplicant.getId());
         entityManager.flush();
         entityManager.clear();
 
