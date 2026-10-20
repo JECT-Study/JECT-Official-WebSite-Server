@@ -6,6 +6,7 @@ import org.ject.support.domain.applicant.dto.ApplicantDto.InitialProfileRequest;
 import org.ject.support.domain.applicant.dto.ApplicantDto.RegisterRequest;
 import org.ject.support.domain.applicant.dto.ApplicantDto.UpdatePinRequest;
 import org.ject.support.domain.applicant.dto.ApplicantProfileResponse;
+import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.applicant.exception.ApplicantErrorCode;
 import org.ject.support.domain.applicant.exception.ApplicantException;
@@ -16,6 +17,7 @@ import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -24,12 +26,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 class ApplicantServiceTest extends UnitTestSupport {
 
@@ -62,6 +66,69 @@ class ApplicantServiceTest extends UnitTestSupport {
     @BeforeEach
     void setUp() {
         // 기본 설정
+    }
+
+    @Test
+    @DisplayName("지원자를 삭제한다")
+    void 지원자를_삭제한다() {
+        // given
+        Long applicantId = 1L;
+        Applicant applicant = Applicant.builder().id(applicantId).build();
+        given(applicantRepository.findById(applicantId)).willReturn(Optional.of(applicant));
+
+        // when
+        applicantService.deleteApplicant(applicantId);
+
+        // then
+        verify(applicantRepository).delete(applicant);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 지원자를 삭제하면 예외가 발생한다")
+    void 존재하지_않는_지원자를_삭제하면_예외가_발생한다() {
+        // given
+        Long applicantId = 1L;
+        given(applicantRepository.findById(applicantId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> applicantService.deleteApplicant(applicantId))
+                .isInstanceOf(ApplicantException.class)
+                .extracting(exception -> ((ApplicantException) exception).getErrorCode())
+                .isEqualTo(ApplicantErrorCode.NOT_FOUND_APPLICANT);
+        verify(applicantRepository, never()).delete(any(Applicant.class));
+    }
+
+    @Test
+    @DisplayName("여러 지원자를 삭제한다")
+    void 여러_지원자를_삭제한다() {
+        // given
+        Set<Long> applicantIds = Set.of(1L, 2L);
+        List<Applicant> applicants = applicantIds.stream()
+                .map(id -> Applicant.builder().id(id).build())
+                .toList();
+        given(applicantRepository.findAllById(applicantIds)).willReturn(applicants);
+
+        // when
+        applicantService.deleteApplicants(new DeleteApplicantsRequest(applicantIds));
+
+        // then
+        verify(applicantRepository).deleteAll(applicants);
+    }
+
+    @Test
+    @DisplayName("다건 삭제 대상에 존재하지 않는 지원자가 포함되면 예외가 발생한다")
+    void 다건_삭제_대상에_존재하지_않는_지원자가_포함되면_예외가_발생한다() {
+        // given
+        Set<Long> applicantIds = Set.of(1L, 2L);
+        given(applicantRepository.findAllById(applicantIds))
+                .willReturn(List.of(Applicant.builder().id(1L).build()));
+
+        // when & then
+        assertThatThrownBy(() -> applicantService.deleteApplicants(new DeleteApplicantsRequest(applicantIds)))
+                .isInstanceOf(ApplicantException.class)
+                .extracting(exception -> ((ApplicantException) exception).getErrorCode())
+                .isEqualTo(ApplicantErrorCode.NOT_FOUND_APPLICANT);
+        verify(applicantRepository, never()).deleteAll(any());
     }
 
     @Test
