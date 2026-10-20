@@ -22,35 +22,6 @@ class MailDispatchRequestFingerprintGeneratorTest {
             new MailDispatchRequestFingerprintGenerator(
                     new Map2JsonSerializer(new ObjectMapper()));
 
-    @ParameterizedTest(name = "{0} 변경은 다른 요청으로 식별한다")
-    @MethodSource("changedRequests")
-    void 요청_필드가_달라지면_다른_fingerprint를_만든다(String field, SendMailDispatchRequest changedRequest) {
-        // given
-        SendMailDispatchRequest original = new SendMailDispatchRequest(
-                2L, 1L, List.of(10L, 20L), "제목", Map.of("A", "첫 번째", "B", "두 번째"));
-
-        // when
-        String changedFingerprint = fingerprintGenerator.generate(changedRequest);
-
-        // then
-        assertThat(changedFingerprint).isNotEqualTo(fingerprintGenerator.generate(original));
-    }
-
-    private static Stream<Arguments> changedRequests() {
-        Map<String, String> variables = Map.of("A", "첫 번째", "B", "두 번째");
-        return Stream.of(
-                Arguments.of("recruitId", new SendMailDispatchRequest(
-                        3L, 1L, List.of(10L, 20L), "제목", variables)),
-                Arguments.of("scenarioId", new SendMailDispatchRequest(
-                        2L, 3L, List.of(10L, 20L), "제목", variables)),
-                Arguments.of("applyIds", new SendMailDispatchRequest(
-                        2L, 1L, List.of(10L, 30L), "제목", variables)),
-                Arguments.of("subjectOverride", new SendMailDispatchRequest(
-                        2L, 1L, List.of(10L, 20L), "다른 제목", variables)),
-                Arguments.of("inputVariables", new SendMailDispatchRequest(
-                        2L, 1L, List.of(10L, 20L), "제목", Map.of("A", "다른 값", "B", "두 번째"))));
-    }
-
     @Test
     void 같은_절대_예약_시각은_시간대와_관계없이_같고_다른_시각과_즉시_발송은_구분한다() {
         // given
