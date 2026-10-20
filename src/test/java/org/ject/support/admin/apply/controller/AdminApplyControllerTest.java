@@ -1,7 +1,6 @@
 package org.ject.support.admin.apply.controller;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -10,22 +9,21 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
-import org.ject.support.admin.apply.dto.AdminApplyResponse;
-import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
+import java.util.Set;
+import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
+import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.service.AdminApplyService;
 import org.ject.support.base.UnitTestSupport;
-import org.ject.support.domain.apply.domain.ApplyStatus;
-import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.recruit.domain.RecruitType;
-import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
+import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.domain.apply.domain.SelectionResult;
+import org.ject.support.domain.member.CareerDetails;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -43,36 +41,66 @@ class AdminApplyControllerTest extends UnitTestSupport {
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(adminApplyController)
-                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .setControllerAdvice(new org.ject.support.common.exception.GlobalExceptionHandler())
                 .build();
     }
 
     @Test
-    void 지원서_목록_조회시_공고_필터를_전달한다() throws Exception {
+    @DisplayName("제출완료 지원서 목록 조회 조건을 전달한다")
+    void 제출완료_지원서_목록_조회조건을_전달한다() throws Exception {
         // given
-        var condition = new AdminApplySearchCondition(
-                ApplyStatus.SUBMITTED, 1L, JobFamily.BE, RecruitType.SEMESTER, RecruitTypeDetail.REFILL, 10L);
-        var pageable = PageRequest.of(0, 15);
-        var page = new PageImpl<AdminApplyResponse>(List.of(), pageable, 0);
-
-        given(adminApplyService.findApplies(eq(condition), any(Pageable.class)))
-                .willReturn(page);
+        var condition = new SubmittedApplySearchCondition(
+                10L,
+                Set.of(CareerDetails.STUDENT, CareerDetails.EMPLOYEE),
+                Set.of(SelectionResult.PASSED, SelectionResult.WAITLISTED),
+                100L,
+                20);
+        given(adminApplyService.searchSubmittedApplies(condition))
+                .willReturn(CursorPageResponse.of(List.of(), 20, false, null, 0L));
 
         // when, then
-        mockMvc.perform(get("/admin/applies")
-                        .param("applyStatus", "SUBMITTED")
-                        .param("semesterId", "1")
-                        .param("jobFamily", "BE")
-                        .param("recruitType", "SEMESTER")
-                        .param("recruitTypeDetail", "REFILL")
+        mockMvc.perform(get("/admin/applies/submitted")
                         .param("recruitId", "10")
-                        .param("page", "0")
-                        .param("size", "15")
+                        .param("careerDetails", "STUDENT", "EMPLOYEE")
+                        .param("selectionResults", "PASSED", "WAITLISTED")
+                        .param("cursor", "100")
+                        .param("size", "20")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
-        verify(adminApplyService).findApplies(eq(condition), any(Pageable.class));
+        verify(adminApplyService).searchSubmittedApplies(condition);
+    }
+
+    @Test
+    @DisplayName("임시저장 지원서 목록 조회 조건을 전달한다")
+    void 임시저장_지원서_목록_조회조건을_전달한다() throws Exception {
+        // given
+        var condition = new TempSavedApplySearchCondition(
+                10L,
+                Set.of(CareerDetails.STUDENT, CareerDetails.EMPLOYEE),
+                100L,
+                20);
+        given(adminApplyService.searchTempSavedApplies(condition))
+                .willReturn(CursorPageResponse.of(List.of(), 20, false, null, 0L));
+
+        // when, then
+        mockMvc.perform(get("/admin/applies/temp-saved")
+                        .param("recruitId", "10")
+                        .param("careerDetails", "STUDENT", "EMPLOYEE")
+                        .param("cursor", "100")
+                        .param("size", "20")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        verify(adminApplyService).searchTempSavedApplies(condition);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/admin/applies/submitted", "/admin/applies/temp-saved"})
+    @DisplayName("공고 ID가 없으면 지원서 목록 조회에 실패한다")
+    void 공고_ID가_없으면_지원서_목록_조회에_실패한다(String path) throws Exception {
+        mockMvc.perform(get(path).contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
