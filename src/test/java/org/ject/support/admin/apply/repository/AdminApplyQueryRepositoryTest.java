@@ -33,6 +33,7 @@ import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -466,6 +467,7 @@ class AdminApplyQueryRepositoryTest {
     }
 
     @Test
+    @DisplayName("다건 삭제하면 선정 결과를 미정으로 바꾸고 예비 번호를 비운다")
     void 다건_삭제하면_선정_결과와_예비_번호를_초기화한다() {
         // given
         Applicant applicant = createApplicant("bulk-delete@test.com", BE);
@@ -480,8 +482,9 @@ class AdminApplyQueryRepositoryTest {
                 .getSingleResult()).longValue();
 
         // when
-        adminApplyRepository.deleteAllByIds(List.of(savedApply.getId()));
+        adminApplyRepository.deleteAll(List.of(savedApply));
         entityManager.flush();
+        entityManager.clear();
 
         // then
         Object[] state = (Object[]) entityManager.createNativeQuery(
@@ -495,6 +498,7 @@ class AdminApplyQueryRepositoryTest {
     }
 
     @Test
+    @DisplayName("다건 삭제와 동시에 수정하면 낙관적 락 예외가 발생한다")
     @DirtiesContext(methodMode = DirtiesContext.MethodMode.AFTER_METHOD)
     void 다건_삭제와_동시에_수정하면_낙관적_락_예외가_발생한다() {
         // given
@@ -513,7 +517,8 @@ class AdminApplyQueryRepositoryTest {
             Apply staleApply = staleEntityManager.find(Apply.class, applyId);
 
             new TransactionTemplate(transactionManager).executeWithoutResult(transactionStatus ->
-                    adminApplyRepository.deleteAllByIds(List.of(applyId)));
+                    adminApplyRepository.deleteAll(
+                            adminApplyRepository.findAllByIdWithApplicant(List.of(applyId))));
 
             // when, then
             staleApply.saveTemporarily();

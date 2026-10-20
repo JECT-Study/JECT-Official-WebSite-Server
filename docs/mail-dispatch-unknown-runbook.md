@@ -32,7 +32,7 @@ GET /admin/mails/dispatches?status=PROCESSING&page=0&size=10
 
 확인할 항목은 작업 ID·대상 ID·지원 ID, 요청한 관리자, 모집 공고, 요청·시작·종료 시각, 대상 상태와 오류 코드다. `failureReason=MAIL-21`은 확인 필요 사유이며 확정 실패 코드가 아니다.
 
-- `attemptCount`: 발송 시도를 획득한 횟수다. 실제 배달 횟수가 아니다. V49 이전 claim 기록의 1은 migration 보정값이다.
+- `attemptCount`: 발송 시도를 획득한 횟수다. 실제 배달 횟수가 아니다. V50 이전 claim 기록의 1은 migration 보정값이다.
 - `nextAttemptAt`: 안전한 거부에 대한 재시도 대기 시각이다. null이면 성공이나 재발송 허가라는 뜻이 아니다.
 - `lastAttemptFailureReason`: 마지막 저장된 시도 오류다. 오류 코드만으로 재시도 가능 여부를 판단하지 않고 현재 대상 상태를 함께 확인한다. `UNKNOWN`은 자동 재시도 대상이 아니다.
 - `sentAt`: 성공 기록 시각이다. null이라고 외부 발송이 없었다고 단정하지 않는다.
