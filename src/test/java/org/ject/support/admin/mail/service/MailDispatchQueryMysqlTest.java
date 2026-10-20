@@ -21,10 +21,14 @@ import org.ject.support.admin.mail.domain.MailDispatchOutbox;
 import org.ject.support.admin.mail.domain.MailDispatchOutboxStatus;
 import org.ject.support.admin.mail.domain.MailDispatchTarget;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
+import org.ject.support.admin.mail.domain.MailScenarioCategory;
+import org.ject.support.admin.mail.domain.MailScenarioType;
+import org.ject.support.admin.mail.domain.VariableInputType;
 import org.ject.support.admin.mail.dto.MailDispatchJobResponse;
 import org.ject.support.admin.mail.dto.MailDispatchJobSearchCondition;
 import org.ject.support.admin.mail.dto.MailDispatchResponse;
 import org.ject.support.admin.mail.dto.MailDispatchTargetResponse;
+import org.ject.support.admin.mail.dto.MailScenarioRequest;
 import org.ject.support.admin.mail.exception.MailErrorCode;
 import org.ject.support.admin.mail.exception.MailException;
 import org.ject.support.admin.mail.repository.MailDispatchJobRepository;
@@ -57,7 +61,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({MailDispatchPersistenceService.class, MailDispatchClaimService.class, MailDispatchQueryService.class,
         MailDispatchCancellationService.class, QueryDslTestConfig.class, ObjectMapperConfig.class,
-        Map2JsonSerializer.class})
+        Map2JsonSerializer.class, MailScenarioService.class, MailTemplateEngine.class, MailTemplateValidator.class})
 @Testcontainers
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class MailDispatchQueryMysqlTest extends TestSupport {
@@ -92,6 +96,12 @@ class MailDispatchQueryMysqlTest extends TestSupport {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private MailScenarioService scenarioService;
+
+    @Autowired
+    private MailTemplateEngine templateEngine;
+
     @DynamicPropertySource
     static void configureDataSource(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
@@ -106,6 +116,52 @@ class MailDispatchQueryMysqlTest extends TestSupport {
         outboxRepository.deleteAllInBatch();
         targetRepository.deleteAllInBatch();
         jobRepository.deleteAllInBatch();
+    }
+
+    @Test
+    void 예약_후_템플릿과_입력_변수를_수정하고_삭제해도_확정_내용을_보존한다() {
+        // given
+        var scenario = scenarioService.createScenario(new MailScenarioRequest(
+                "예약 안내", MailScenarioCategory.GENERAL, MailScenarioType.ETC,
+                "SNAPSHOT_" + UUID.randomUUID().toString().replace("-", ""),
+                "${place} 안내", "장소: ${place}", true,
+                List.of(new MailScenarioRequest.CustomVariableRequest(
+                        "place", "장소", VariableInputType.TEXT, true, "모임 장소"))));
+        var scheduledAt = OffsetDateTime.parse("2099-10-07T10:00:00+09:00").toInstant();
+        var job = persistenceService.createScheduledJob(new MailDispatchPlan(
+                scenario.id(), 2L, 3L, "frozen-content", "${place} 안내", "장소: ${place}",
+                Map.of("place", "서울"), List.of(new MailDispatchPlan.Target(
+                        10L, "scheduled@example.com",
+                        templateEngine.render("${place} 안내", Map.of("place", "서울")),
+                        scenarioService.renderScenario(scenario.id(), Map.of("place", "서울")), "PASSED"))),
+                "frozen-fingerprint", scheduledAt);
+
+        // when
+        scenarioService.updateScenario(scenario.id(), new MailScenarioRequest(
+                "수정 안내", MailScenarioCategory.GENERAL, MailScenarioType.ETC,
+                scenario.scenarioCode(), "변경 제목", "변경 본문", true, List.of()));
+        assertThat(scenarioService.getScenarioVariables(scenario.id()).customVariables()).isEmpty();
+        assertThat(scenarioService.renderScenario(scenario.id(), Map.of())).isEqualTo("변경 본문");
+        assertThat(outboxRepository.findByDispatchJobIdAndApplyId(job.getId(), 10L)).get()
+                .extracting(MailDispatchOutbox::getBody).isEqualTo("장소: 서울");
+        scenarioService.deleteScenario(scenario.id());
+
+        // then
+        assertThatThrownBy(() -> scenarioService.getScenarioVariables(scenario.id()))
+                .isInstanceOf(MailException.class)
+                .extracting("errorCode").isEqualTo(MailErrorCode.SCENARIO_NOT_FOUND);
+        assertThat(queryService.getJob(3L, job.getId()).status()).isEqualTo(MailDispatchJobStatus.SCHEDULED);
+        assertThat(queryService.getJob(3L, job.getId()).scheduledAt()).isEqualTo(scheduledAt);
+        assertThat(outboxRepository.findByDispatchJobIdAndApplyId(job.getId(), 10L)).get().satisfies(saved -> {
+            assertThat(saved.getEmail()).isEqualTo("scheduled@example.com");
+            assertThat(saved.getSubject()).isEqualTo("서울 안내");
+            assertThat(saved.getBody()).isEqualTo("장소: 서울");
+        });
+        assertThat(jobRepository.findById(job.getId())).get().satisfies(saved -> {
+            assertThat(saved.getSubjectTemplate()).isEqualTo("${place} 안내");
+            assertThat(saved.getBodyTemplate()).isEqualTo("장소: ${place}");
+            assertThat(saved.getInputVariablesJson()).isEqualTo("{\"place\":\"서울\"}");
+        });
     }
 
     @Test
