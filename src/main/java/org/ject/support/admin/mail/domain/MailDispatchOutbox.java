@@ -112,6 +112,24 @@ public class MailDispatchOutbox extends BaseTimeEntity {
         this.failureReason = failureReason;
     }
 
+    public boolean isReadyForClaim(LocalDateTime now) {
+        Objects.requireNonNull(now);
+        return status == MailDispatchOutboxStatus.PENDING && attemptCount < MAX_ATTEMPTS
+                && (nextAttemptAt == null || !nextAttemptAt.isAfter(now));
+    }
+
+    public boolean exclude() {
+        if (status != MailDispatchOutboxStatus.PENDING) {
+            return false;
+        }
+        status = MailDispatchOutboxStatus.EXCLUDED;
+        failureReason = null;
+        claimToken = null;
+        leaseUntil = null;
+        nextAttemptAt = null;
+        return true;
+    }
+
     public boolean claim(String claimToken, LocalDateTime now, LocalDateTime leaseUntil) {
         Objects.requireNonNull(claimToken);
         Objects.requireNonNull(now);
@@ -119,8 +137,7 @@ public class MailDispatchOutbox extends BaseTimeEntity {
         if (!leaseUntil.isAfter(now)) {
             throw new IllegalArgumentException("leaseUntil must be after now");
         }
-        if (status != MailDispatchOutboxStatus.PENDING || attemptCount >= MAX_ATTEMPTS
-                || (nextAttemptAt != null && nextAttemptAt.isAfter(now))) {
+        if (!isReadyForClaim(now)) {
             return false;
         }
         this.claimToken = claimToken;

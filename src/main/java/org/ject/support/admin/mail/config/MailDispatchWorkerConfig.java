@@ -1,6 +1,7 @@
 package org.ject.support.admin.mail.config;
 
 import org.ject.support.admin.mail.service.MailDispatchExecutionService;
+import org.ject.support.admin.mail.service.MailDispatchScheduledActivationService;
 import org.ject.support.admin.mail.service.MailDispatchWorkerService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -26,7 +27,8 @@ public class MailDispatchWorkerConfig {
 
     @Bean
     public MailDispatchWorkerService mailDispatchWorkerService(MailDispatchExecutionService executionService,
+            MailDispatchScheduledActivationService scheduledActivationService,
             @Value("${mail.dispatch.worker.batch-size:10}") int batchSize) {
-        return new MailDispatchWorkerService(executionService, batchSize);
+        return new MailDispatchWorkerService(executionService, scheduledActivationService, batchSize);
     }
 }

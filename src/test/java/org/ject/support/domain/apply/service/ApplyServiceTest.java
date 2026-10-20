@@ -6,6 +6,8 @@ import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
+import org.ject.support.domain.apply.domain.SelectionResult;
+import org.ject.support.domain.apply.dto.ApplyEligibilityFacts;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.dto.ApplyProfileRequest;
 import org.ject.support.domain.apply.dto.ApplyStatusResponse;
@@ -80,6 +82,52 @@ class ApplyServiceTest extends UnitTestSupport {
 
     @Mock
     ApplicationEventPublisher applicationEventPublisher;
+
+    @Test
+    void 지원ID_목록으로_현재_자격_사실을_조회한다() {
+        // given
+        List<Long> applyIds = List.of(1L, 2L);
+        Recruit recruit = getActiveRecruit(BE, List.of());
+        Applicant applicant = getApplicant(1L, "email@test.com");
+        Apply passedApply = Apply.builder()
+                .id(1L)
+                .recruit(recruit)
+                .applicant(applicant)
+                .status(SUBMITTED)
+                .selectionResult(SelectionResult.PASSED)
+                .build();
+        Apply rejectedApply = Apply.builder()
+                .id(2L)
+                .recruit(recruit)
+                .applicant(applicant)
+                .status(ApplyStatus.REJECTED)
+                .selectionResult(SelectionResult.UNDECIDED)
+                .build();
+        given(applyRepository.findAllByIdWithApplicant(applyIds))
+                .willReturn(List.of(passedApply, rejectedApply));
+
+        // when
+        List<ApplyEligibilityFacts> result = applyService.findCurrentEligibilityFactsByApplyIds(applyIds);
+
+        // then
+        assertThat(result).containsExactly(
+                new ApplyEligibilityFacts(1L, recruit.getId(), SUBMITTED, SelectionResult.PASSED),
+                new ApplyEligibilityFacts(2L, recruit.getId(), ApplyStatus.REJECTED, SelectionResult.UNDECIDED));
+        verify(applyRepository).findAllByIdWithApplicant(applyIds);
+    }
+
+    @Test
+    void 지원ID_목록이_비어있으면_빈결과를_반환한다() {
+        // given
+        List<Long> applyIds = List.of();
+
+        // when
+        List<ApplyEligibilityFacts> result = applyService.findCurrentEligibilityFactsByApplyIds(applyIds);
+
+        // then
+        assertThat(result).isEmpty();
+        verify(applyRepository, never()).findAllByIdWithApplicant(any());
+    }
 
     @Test
     void 지원서_제출_성공() {

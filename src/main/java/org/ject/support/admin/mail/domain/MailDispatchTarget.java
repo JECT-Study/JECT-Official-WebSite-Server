@@ -56,6 +56,9 @@ public class MailDispatchTarget extends BaseTimeEntity {
     @Column(name = "selection_result_snapshot", length = 50)
     private String selectionResultSnapshot;
 
+    @Column(name = "exclusion_reason", length = 50)
+    private String exclusionReason;
+
     @Version
     private Long version;
 
@@ -82,11 +85,13 @@ public class MailDispatchTarget extends BaseTimeEntity {
         status = MailDispatchTargetStatus.SENT;
         sentAt = LocalDateTime.now();
         failureReason = null;
+        exclusionReason = null;
     }
 
     public void cancel() {
         validatePending();
         status = MailDispatchTargetStatus.CANCELLED;
+        exclusionReason = null;
     }
 
     public void markFailed(String failureReason) {
@@ -94,12 +99,22 @@ public class MailDispatchTarget extends BaseTimeEntity {
         status = MailDispatchTargetStatus.FAILED;
         this.failureReason = failureReason;
         sentAt = null;
+        exclusionReason = null;
     }
 
     public void markUnknown(String failureReason) {
         validatePending();
         status = MailDispatchTargetStatus.UNKNOWN;
         this.failureReason = failureReason;
+        sentAt = null;
+        exclusionReason = null;
+    }
+
+    public void exclude(MailDispatchExclusionReason reason) {
+        validatePending();
+        status = MailDispatchTargetStatus.EXCLUDED;
+        failureReason = null;
+        exclusionReason = reason.name();
         sentAt = null;
     }
 
