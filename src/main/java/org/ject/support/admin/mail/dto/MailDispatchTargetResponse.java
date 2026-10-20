@@ -3,6 +3,7 @@ package org.ject.support.admin.mail.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
+import org.ject.support.external.email.exception.EmailErrorCode;
 
 public record MailDispatchTargetResponse(
         Long targetId,
@@ -18,4 +19,8 @@ public record MailDispatchTargetResponse(
         @Schema(description = "가장 최근 저장된 시도 오류 코드. 대기 중 오류는 최종 실패 사유와 구분")
         String lastAttemptFailureReason
 ) {
+    public MailDispatchTargetResponse {
+        failureReason = EmailErrorCode.normalizeCode(failureReason);
+        lastAttemptFailureReason = EmailErrorCode.normalizeCode(lastAttemptFailureReason);
+    }
 }

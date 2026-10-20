@@ -346,7 +346,7 @@ class AdminMailDispatchControllerTest extends UnitTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.content[0].attemptCount").value(1))
                 .andExpect(jsonPath("$.data.content[0].nextAttemptAt").value("2026-10-04T12:00:30"))
-                .andExpect(jsonPath("$.data.content[0].lastAttemptFailureReason").value("TOO_MANY_EMAIL_REQUESTS"))
+                .andExpect(jsonPath("$.data.content[0].lastAttemptFailureReason").value("EMAIL-4"))
                 .andExpect(jsonPath("$.data.content[0].failureReason").isEmpty())
                 .andExpect(jsonPath("$.data.content[0].body").doesNotExist())
                 .andExpect(jsonPath("$.data.content[0].claimToken").doesNotExist());

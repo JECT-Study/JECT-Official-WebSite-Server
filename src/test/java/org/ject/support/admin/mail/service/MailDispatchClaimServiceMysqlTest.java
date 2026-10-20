@@ -101,13 +101,13 @@ class MailDispatchClaimServiceMysqlTest extends TestSupport {
                 PageRequest.of(0, 10)).getContent()).singleElement().satisfies(target -> {
                     assertThat(target.attemptCount()).isEqualTo(1);
                     assertThat(target.nextAttemptAt()).isEqualTo(now.plusSeconds(31));
-                    assertThat(target.lastAttemptFailureReason()).isEqualTo("TOO_MANY_EMAIL_REQUESTS");
+                    assertThat(target.lastAttemptFailureReason()).isEqualTo("EMAIL-4");
                     assertThat(target.failureReason()).isNull();
                 });
         assertThat(outboxRepository.findById(outbox.getId())).get().satisfies(saved -> {
             assertThat(saved.getAttemptCount()).isEqualTo(1);
             assertThat(saved.getNextAttemptAt()).isEqualTo(now.plusSeconds(31));
-            assertThat(saved.getFailureReason()).isEqualTo("TOO_MANY_EMAIL_REQUESTS");
+            assertThat(saved.getFailureReason()).isEqualTo("EMAIL-4");
         });
         assertThat(claimService.claim(outbox.getId(), now.plusSeconds(30), Duration.ofMinutes(2))).isEmpty();
         var nextClaim = claimService.claim(outbox.getId(), now.plusSeconds(31), Duration.ofMinutes(2))
@@ -162,8 +162,8 @@ class MailDispatchClaimServiceMysqlTest extends TestSupport {
                 PageRequest.of(0, 10)).getContent()).singleElement().satisfies(target -> {
                     assertThat(target.attemptCount()).isEqualTo(3);
                     assertThat(target.nextAttemptAt()).isNull();
-                    assertThat(target.failureReason()).isEqualTo("TOO_MANY_EMAIL_REQUESTS");
-                    assertThat(target.lastAttemptFailureReason()).isEqualTo("TOO_MANY_EMAIL_REQUESTS");
+                    assertThat(target.failureReason()).isEqualTo("EMAIL-4");
+                    assertThat(target.lastAttemptFailureReason()).isEqualTo("EMAIL-4");
                 });
     }
 
