@@ -15,11 +15,16 @@ import jakarta.persistence.OptimisticLockException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
+import java.util.Set;
+import org.ject.support.admin.apply.dto.SubmittedApplyProjection;
+import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
+import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
+import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.SelectionResult;
+import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Role;
@@ -38,9 +43,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.transaction.TestTransaction;
@@ -94,137 +96,244 @@ class AdminApplyQueryRepositoryTest {
     }
 
     @Test
-    void JobFamily로_제출된_지원서_목록_조회_성공() {
+    @DisplayName("선택한 공고의 제출완료 지원서만 조회한다")
+    void 선택한_공고의_제출완료_지원서만_조회한다() {
         // given
-        Applicant beApplicant1 = createApplicant("be1@test.com", BE);
-        Applicant beApplicant2 = createApplicant("be2@test.com", BE);
-        Applicant feApplicant = createApplicant("fe@test.com", FE);
-        applicantRepository.saveAll(List.of(beApplicant1, beApplicant2, feApplicant));
-
-        Apply beApply1 = getApply(beApplicant1, beRecruit, SUBMITTED);
-        Apply beApply2 = getApply(beApplicant2, beRecruit, SUBMITTED);
-        Apply feApply = getApply(feApplicant, feRecruit, SUBMITTED);
-        applyRepository.saveAll(List.of(beApply1, beApply2, feApply));
-
-        Pageable pageable = PageRequest.of(0, 15);
-        ApplyStatus status = SUBMITTED;
+        Applicant submittedApplicant = saveApplicant("submitted@test.com", BE, CareerDetails.STUDENT);
+        Applicant tempSavedApplicant = saveApplicant("temp@test.com", BE, CareerDetails.STUDENT);
+        Applicant otherRecruitApplicant = saveApplicant("other@test.com", FE, CareerDetails.STUDENT);
+        Apply submittedApply = applyRepository.save(getApply(submittedApplicant, beRecruit, SUBMITTED));
+        applyRepository.save(getApply(tempSavedApplicant, beRecruit, TEMP_SAVED));
+        applyRepository.save(getApply(otherRecruitApplicant, feRecruit, SUBMITTED));
+        var condition = submittedCondition(beRecruit.getId(), null, null, null);
 
         // when
-        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
+        List<SubmittedApplyProjection> result =
+                adminApplyRepository.searchSubmittedApplies(condition, 20);
 
         // then
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getTotalElements()).isEqualTo(2);
-        assertThat(result.getContent())
-                .extracting(Apply::getApplicant)
-                .containsExactlyInAnyOrder(beApplicant1, beApplicant2);
+        assertThat(result)
+                .extracting(SubmittedApplyProjection::applyId)
+                .containsExactly(submittedApply.getId());
     }
 
     @Test
-    void JobFamily가_null이면_전체_제출된_지원서_조회() {
+    @DisplayName("지원자 신분과 선정 결과 다중 필터를 함께 적용한다")
+    void 지원자_신분과_선정_결과_다중_필터를_함께_적용한다() {
         // given
-        Applicant beApplicant = createApplicant("be@test.com", BE);
-        Applicant feApplicant = createApplicant("fe@test.com", FE);
-        Applicant pmApplicant = createApplicant("pm@test.com", PM);
-        applicantRepository.saveAll(List.of(beApplicant, feApplicant, pmApplicant));
-
-        Apply beApply = getApply(beApplicant, beRecruit, SUBMITTED);
-        Apply feApply = getApply(feApplicant, feRecruit, SUBMITTED);
-        Apply pmApply = getApply(pmApplicant, pmRecruit, SUBMITTED);
-        applyRepository.saveAll(List.of(beApply, feApply, pmApply));
-
-        Pageable pageable = PageRequest.of(0, 15);
-        ApplyStatus status = SUBMITTED;
+        Apply studentPassed = saveSubmittedApply(
+                "student-passed@test.com", CareerDetails.STUDENT, SelectionResult.PASSED, null);
+        Apply employeeWaitlisted = saveSubmittedApply(
+                "employee-waitlisted@test.com", CareerDetails.EMPLOYEE, SelectionResult.WAITLISTED, 1);
+        saveSubmittedApply(
+                "between-jobs-passed@test.com", CareerDetails.BETWEEN_JOBS, SelectionResult.PASSED, null);
+        saveSubmittedApply(
+                "student-failed@test.com", CareerDetails.STUDENT, SelectionResult.FAILED, null);
+        var condition = new SubmittedApplySearchCondition(
+                beRecruit.getId(),
+                Set.of(CareerDetails.STUDENT, CareerDetails.EMPLOYEE),
+                Set.of(SelectionResult.PASSED, SelectionResult.WAITLISTED),
+                null,
+                20);
 
         // when
-        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, null, null), pageable);
+        List<SubmittedApplyProjection> result =
+                adminApplyRepository.searchSubmittedApplies(condition, 20);
 
         // then
-        assertThat(result.getContent()).hasSize(3);
-        assertThat(result.getTotalElements()).isEqualTo(3);
+        assertThat(result)
+                .extracting(SubmittedApplyProjection::applyId)
+                .containsExactlyInAnyOrder(studentPassed.getId(), employeeWaitlisted.getId());
     }
 
     @Test
-    void 임시저장_상태는_조회되지_않음() {
+    @DisplayName("제출완료 지원서를 ID 내림차순으로 조회하고 커서 이전 지원서만 반환한다")
+    void 제출완료_지원서를_ID_내림차순으로_조회하고_커서_이전_지원서만_반환한다() {
         // given
-        Applicant beApplicant1 = createApplicant("be1@test.com", BE);
-        Applicant beApplicant2 = createApplicant("be2@test.com", BE);
-        applicantRepository.saveAll(List.of(beApplicant1, beApplicant2));
-
-        Apply submittedApply = getApply(beApplicant1, beRecruit, SUBMITTED);
-        Apply tempApply = getApply(beApplicant2, beRecruit, TEMP_SAVED);
-        applyRepository.saveAll(List.of(submittedApply, tempApply));
-
-        Pageable pageable = PageRequest.of(0, 15);
-        ApplyStatus status = SUBMITTED;
+        Apply first = saveSubmittedApply(
+                "cursor-first@test.com", CareerDetails.STUDENT, SelectionResult.UNDECIDED, null);
+        Apply second = saveSubmittedApply(
+                "cursor-second@test.com", CareerDetails.STUDENT, SelectionResult.UNDECIDED, null);
+        Apply third = saveSubmittedApply(
+                "cursor-third@test.com", CareerDetails.STUDENT, SelectionResult.UNDECIDED, null);
+        var condition = submittedCondition(beRecruit.getId(), null, null, third.getId());
 
         // when
-        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
+        List<SubmittedApplyProjection> result =
+                adminApplyRepository.searchSubmittedApplies(condition, 20);
 
         // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().getFirst().getStatus()).isEqualTo(SUBMITTED);
+        assertThat(result)
+                .extracting(SubmittedApplyProjection::applyId)
+                .containsExactly(second.getId(), first.getId());
     }
 
     @Test
-    void 삭제된_회원의_지원서는_조회되지_않음() {
+    @DisplayName("제출완료 지원서 전체 개수는 커서와 관계없이 필터 조건으로 계산한다")
+    void 제출완료_지원서_전체_개수는_커서와_관계없이_필터_조건으로_계산한다() {
         // given
-        Applicant activeApplicant = createApplicant("active@test.com", BE);
-        Applicant deletedApplicant = createApplicant("deleted@test.com", BE);
-        deletedApplicant.deleteProfile();
-        applicantRepository.saveAll(List.of(activeApplicant, deletedApplicant));
-
-        Apply activeApply = getApply(activeApplicant, beRecruit, SUBMITTED);
-        Apply deletedApply = getApply(deletedApplicant, beRecruit, SUBMITTED);
-        applyRepository.saveAll(List.of(activeApply, deletedApply));
-
-        Pageable pageable = PageRequest.of(0, 15);
-        ApplyStatus status = SUBMITTED;
+        saveSubmittedApply("count-first@test.com", CareerDetails.STUDENT, SelectionResult.PASSED, null);
+        Apply second = saveSubmittedApply(
+                "count-second@test.com", CareerDetails.STUDENT, SelectionResult.PASSED, null);
+        saveSubmittedApply("count-third@test.com", CareerDetails.STUDENT, SelectionResult.PASSED, null);
+        saveSubmittedApply("count-excluded@test.com", CareerDetails.EMPLOYEE, SelectionResult.PASSED, null);
+        var condition = new SubmittedApplySearchCondition(
+                beRecruit.getId(),
+                Set.of(CareerDetails.STUDENT),
+                Set.of(SelectionResult.PASSED),
+                second.getId(),
+                20);
 
         // when
-        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
+        long result = adminApplyRepository.countSubmittedApplies(condition);
 
         // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().getFirst().getApplicant()).isEqualTo(activeApplicant);
+        assertThat(result).isEqualTo(3L);
     }
 
     @Test
-    void 페이징_정상_작동() {
+    @DisplayName("삭제된 지원서와 삭제된 지원자의 지원서는 제출완료 목록에서 제외한다")
+    void 삭제된_지원서와_삭제된_지원자의_지원서는_제출완료_목록에서_제외한다() {
         // given
-        for (int i = 1; i <= 25; i++) {
-            Applicant applicant = createApplicant("be" + i + "@test.com", BE);
-            applicantRepository.save(applicant);
-            Apply apply = getApply(applicant, beRecruit, SUBMITTED);
-            applyRepository.save(apply);
-        }
-
-        Pageable pageable = PageRequest.of(1, 10);
-        ApplyStatus status = SUBMITTED;
+        Apply activeApply = saveSubmittedApply(
+                "active-submitted@test.com", CareerDetails.STUDENT, SelectionResult.UNDECIDED, null);
+        Apply deletedApply = saveSubmittedApply(
+                "deleted-apply@test.com", CareerDetails.STUDENT, SelectionResult.UNDECIDED, null);
+        Applicant deletedApplicant = saveApplicant(
+                "deleted-user@test.com", BE, CareerDetails.STUDENT);
+        Long deletedApplicantId = deletedApplicant.getId();
+        applyRepository.save(getApply(deletedApplicant, beRecruit, SUBMITTED));
+        applyRepository.flush();
+        applyRepository.delete(deletedApply);
+        applyRepository.flush();
+        entityManager.clear();
+        applicantRepository.deleteById(deletedApplicantId);
+        applicantRepository.flush();
+        entityManager.clear();
+        var condition = submittedCondition(beRecruit.getId(), null, null, null);
 
         // when
-        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
+        List<SubmittedApplyProjection> result =
+                adminApplyRepository.searchSubmittedApplies(condition, 20);
 
         // then
-        assertThat(result.getContent()).hasSize(10);
-        assertThat(result.getTotalElements()).isEqualTo(25);
-        assertThat(result.getTotalPages()).isEqualTo(3);
-        assertThat(result.getNumber()).isEqualTo(1);
+        assertThat(result)
+                .extracting(SubmittedApplyProjection::applyId)
+                .containsExactly(activeApply.getId());
     }
 
     @Test
-    void 제출된_지원서가_없으면_빈_페이지_반환() {
+    @DisplayName("선택한 공고의 임시저장 지원서만 조회한다")
+    void 선택한_공고의_임시저장_지원서만_조회한다() {
         // given
-        Pageable pageable = PageRequest.of(0, 15);
-        ApplyStatus status = SUBMITTED;
+        Applicant tempSavedApplicant = saveApplicant("temp-only@test.com", BE, CareerDetails.STUDENT);
+        Applicant submittedApplicant = saveApplicant("submitted-excluded@test.com", BE, CareerDetails.STUDENT);
+        Applicant otherRecruitApplicant = saveApplicant("other-temp@test.com", FE, CareerDetails.STUDENT);
+        Apply tempSavedApply = applyRepository.save(getApply(tempSavedApplicant, beRecruit, TEMP_SAVED));
+        applyRepository.save(getApply(submittedApplicant, beRecruit, SUBMITTED));
+        applyRepository.save(getApply(otherRecruitApplicant, feRecruit, TEMP_SAVED));
+        var condition = tempSavedCondition(beRecruit.getId(), null, null);
 
         // when
-        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
-
+        List<TempSavedApplyProjection> result =
+                adminApplyRepository.searchTempSavedApplies(condition, 20);
 
         // then
-        assertThat(result.getContent()).isEmpty();
-        assertThat(result.getTotalElements()).isZero();
+        assertThat(result)
+                .extracting(TempSavedApplyProjection::applyId)
+                .containsExactly(tempSavedApply.getId());
+    }
+
+    @Test
+    @DisplayName("지원자 신분을 여러 개 선택하면 해당하는 임시저장 지원서를 조회한다")
+    void 지원자_신분을_여러개_선택하면_해당하는_임시저장_지원서를_조회한다() {
+        // given
+        Apply student = saveTempSavedApply("temp-student@test.com", CareerDetails.STUDENT);
+        Apply employee = saveTempSavedApply("temp-employee@test.com", CareerDetails.EMPLOYEE);
+        saveTempSavedApply("temp-excluded@test.com", CareerDetails.JOB_SEEKER);
+        var condition = new TempSavedApplySearchCondition(
+                beRecruit.getId(),
+                Set.of(CareerDetails.STUDENT, CareerDetails.EMPLOYEE),
+                null,
+                20);
+
+        // when
+        List<TempSavedApplyProjection> result =
+                adminApplyRepository.searchTempSavedApplies(condition, 20);
+
+        // then
+        assertThat(result)
+                .extracting(TempSavedApplyProjection::applyId)
+                .containsExactlyInAnyOrder(student.getId(), employee.getId());
+    }
+
+    @Test
+    @DisplayName("임시저장 지원서를 ID 내림차순으로 조회하고 커서 이전 지원서만 반환한다")
+    void 임시저장_지원서를_ID_내림차순으로_조회하고_커서_이전_지원서만_반환한다() {
+        // given
+        Apply first = saveTempSavedApply("temp-cursor-first@test.com", CareerDetails.STUDENT);
+        Apply second = saveTempSavedApply("temp-cursor-second@test.com", CareerDetails.STUDENT);
+        Apply third = saveTempSavedApply("temp-cursor-third@test.com", CareerDetails.STUDENT);
+        var condition = tempSavedCondition(beRecruit.getId(), null, third.getId());
+
+        // when
+        List<TempSavedApplyProjection> result =
+                adminApplyRepository.searchTempSavedApplies(condition, 20);
+
+        // then
+        assertThat(result)
+                .extracting(TempSavedApplyProjection::applyId)
+                .containsExactly(second.getId(), first.getId());
+    }
+
+    @Test
+    @DisplayName("임시저장 지원서 전체 개수는 커서와 관계없이 신분 필터로 계산한다")
+    void 임시저장_지원서_전체_개수는_커서와_관계없이_신분_필터로_계산한다() {
+        // given
+        saveTempSavedApply("temp-count-first@test.com", CareerDetails.STUDENT);
+        Apply second = saveTempSavedApply("temp-count-second@test.com", CareerDetails.STUDENT);
+        saveTempSavedApply("temp-count-third@test.com", CareerDetails.STUDENT);
+        saveTempSavedApply("temp-count-excluded@test.com", CareerDetails.EMPLOYEE);
+        var condition = new TempSavedApplySearchCondition(
+                beRecruit.getId(),
+                Set.of(CareerDetails.STUDENT),
+                second.getId(),
+                20);
+
+        // when
+        long result = adminApplyRepository.countTempSavedApplies(condition);
+
+        // then
+        assertThat(result).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("삭제된 지원서와 삭제된 지원자의 지원서는 임시저장 목록에서 제외한다")
+    void 삭제된_지원서와_삭제된_지원자의_지원서는_임시저장_목록에서_제외한다() {
+        // given
+        Apply activeApply = saveTempSavedApply("active-temp@test.com", CareerDetails.STUDENT);
+        Apply deletedApply = saveTempSavedApply("deleted-temp-apply@test.com", CareerDetails.STUDENT);
+        Applicant deletedApplicant = saveApplicant(
+                "deleted-temp@test.com", BE, CareerDetails.STUDENT);
+        Long deletedApplicantId = deletedApplicant.getId();
+        applyRepository.save(getApply(deletedApplicant, beRecruit, TEMP_SAVED));
+        applyRepository.flush();
+        applyRepository.delete(deletedApply);
+        applyRepository.flush();
+        entityManager.clear();
+        applicantRepository.deleteById(deletedApplicantId);
+        applicantRepository.flush();
+        entityManager.clear();
+        var condition = tempSavedCondition(beRecruit.getId(), null, null);
+
+        // when
+        List<TempSavedApplyProjection> result =
+                adminApplyRepository.searchTempSavedApplies(condition, 20);
+
+        // then
+        assertThat(result)
+                .extracting(TempSavedApplyProjection::applyId)
+                .containsExactly(activeApply.getId());
     }
 
     @Test
@@ -245,185 +354,6 @@ class AdminApplyQueryRepositoryTest {
         // then
         assertThat(result).isPresent();
         assertThat(result.get().getApplicationForm()).isNull();
-    }
-
-    @Test
-    void createdAt_기준_내림차순_정렬()  {
-        // given
-        Applicant applicant1 = createApplicant("be1@test.com", BE);
-        Applicant applicant2 = createApplicant("be2@test.com", BE);
-        Applicant applicant3 = createApplicant("be3@test.com", BE);
-        applicantRepository.saveAll(List.of(applicant1, applicant2, applicant3));
-
-        Apply apply1 = getApply(applicant1, beRecruit, SUBMITTED);
-        applyRepository.save(apply1);
-
-        Apply apply2 = getApply(applicant2, beRecruit, SUBMITTED);
-        applyRepository.save(apply2);
-
-        Apply apply3 = getApply(applicant3, beRecruit, SUBMITTED);
-        applyRepository.save(apply3);
-
-        Pageable pageable = PageRequest.of(0, 15);
-        ApplyStatus status = SUBMITTED;
-
-        // when
-        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, BE, null), pageable);
-
-        // then
-        assertThat(result.getContent()).hasSize(3);
-        assertThat(result.getContent().get(0)).isEqualTo(apply3);
-        assertThat(result.getContent().get(1)).isEqualTo(apply2);
-        assertThat(result.getContent().get(2)).isEqualTo(apply1);
-    }
-
-    @Test
-    void semesterId로_제출된_지원서_필터링_조회() {
-        // given
-        Semester semester2 = semesterRepository.save(Semester.builder()
-                .name("2기")
-                .isRecruiting(false)
-                .build());
-
-        Recruit recruit1 = recruitRepository.save(Recruit.builder()
-                .semester(semester)
-                .startDate(LocalDateTime.now().minusDays(1))
-                .endDate(LocalDateTime.now().plusDays(7))
-                .jobFamily(BE)
-                .build());
-
-        Recruit recruit2 = recruitRepository.save(Recruit.builder()
-                .semester(semester2)
-                .startDate(LocalDateTime.now().minusDays(1))
-                .endDate(LocalDateTime.now().plusDays(7))
-                .jobFamily(BE)
-                .build());
-
-        Applicant applicant1 = createApplicant("be1@test.com", BE);
-        Applicant applicant2 = createApplicant("be2@test.com", BE);
-        applicantRepository.saveAll(List.of(applicant1, applicant2));
-
-        Apply apply1 = getApply(applicant1, recruit1, SUBMITTED);
-        Apply apply2 = getApply(applicant2, recruit2, SUBMITTED);
-        applyRepository.saveAll(List.of(apply1, apply2));
-
-        Pageable pageable = PageRequest.of(0, 15);
-        ApplyStatus status = SUBMITTED;
-
-        // when
-        Page<Apply> result = adminApplyRepository.findApplies(condition(status, semester.getId(), BE, null), pageable);
-
-        // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().getFirst().getRecruit().getSemester()).isEqualTo(semester);
-    }
-
-    @Test
-    void recruitType으로_제출된_지원서_필터링_조회() {
-        // given
-        Recruit semesterRecruit = recruitRepository.save(Recruit.builder()
-                .semester(semester)
-                .startDate(LocalDateTime.now().minusDays(1))
-                .endDate(LocalDateTime.now().plusDays(7))
-                .jobFamily(BE)
-                .recruitType(RecruitType.SEMESTER)
-                .build());
-
-        Recruit makersRecruit = recruitRepository.save(Recruit.builder()
-                .semester(semester)
-                .startDate(LocalDateTime.now().minusDays(1))
-                .endDate(LocalDateTime.now().plusDays(7))
-                .jobFamily(BE)
-                .recruitType(RecruitType.MAKERS)
-                .recruitTypeDetail(RecruitTypeDetail.NEW)
-                .build());
-
-        Applicant applicant1 = createApplicant("semester@test.com", BE);
-        Applicant applicant2 = createApplicant("makers@test.com", BE);
-        applicantRepository.saveAll(List.of(applicant1, applicant2));
-
-        Apply apply1 = getApply(applicant1, semesterRecruit, SUBMITTED);
-        Apply apply2 = getApply(applicant2, makersRecruit, SUBMITTED);
-        applyRepository.saveAll(List.of(apply1, apply2));
-
-        Pageable pageable = PageRequest.of(0, 15);
-        ApplyStatus status = SUBMITTED;
-
-        // when
-        Page<Apply> result = adminApplyRepository.findApplies(
-                condition(status, null, null, RecruitType.MAKERS), pageable);
-
-        // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().getFirst().getRecruit().getRecruitType()).isEqualTo(RecruitType.MAKERS);
-    }
-
-    @Test
-    void recruitTypeDetail로_제출된_지원서_필터링_조회() {
-        // given
-        Recruit regularRecruit = recruitRepository.save(Recruit.builder()
-                .semester(semester)
-                .startDate(LocalDateTime.now().minusDays(1))
-                .endDate(LocalDateTime.now().plusDays(7))
-                .jobFamily(BE)
-                .recruitType(RecruitType.SEMESTER)
-                .recruitTypeDetail(RecruitTypeDetail.REGULAR)
-                .build());
-
-        Recruit refillRecruit = recruitRepository.save(Recruit.builder()
-                .semester(semester)
-                .startDate(LocalDateTime.now().minusDays(1))
-                .endDate(LocalDateTime.now().plusDays(7))
-                .jobFamily(BE)
-                .recruitType(RecruitType.SEMESTER)
-                .recruitTypeDetail(RecruitTypeDetail.REFILL)
-                .build());
-
-        Applicant regularApplicant = createApplicant("regular-detail@test.com", BE);
-        Applicant refillApplicant = createApplicant("refill-detail@test.com", BE);
-        applicantRepository.saveAll(List.of(regularApplicant, refillApplicant));
-
-        Apply regularApply = getApply(regularApplicant, regularRecruit, SUBMITTED);
-        Apply refillApply = getApply(refillApplicant, refillRecruit, SUBMITTED);
-        applyRepository.saveAll(List.of(regularApply, refillApply));
-
-        Pageable pageable = PageRequest.of(0, 15);
-        ApplyStatus status = SUBMITTED;
-
-        // when
-        Page<Apply> result = adminApplyRepository.findApplies(
-                condition(status, null, null, null, RecruitTypeDetail.REFILL, null), pageable);
-
-        // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().getFirst().getRecruit().getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REFILL);
-    }
-
-    @Test
-    void recruitId로_제출된_지원서_필터링_조회() {
-        // given
-        Applicant beApplicant = createApplicant("be-recruit-id@test.com", BE);
-        Applicant feApplicant = createApplicant("fe-recruit-id@test.com", FE);
-        applicantRepository.saveAll(List.of(beApplicant, feApplicant));
-
-        Apply beApply = getApply(beApplicant, beRecruit, SUBMITTED);
-        Apply feApply = getApply(feApplicant, feRecruit, SUBMITTED);
-        applyRepository.saveAll(List.of(beApply, feApply));
-
-        Pageable pageable = PageRequest.of(0, 15);
-        ApplyStatus status = SUBMITTED;
-
-        // when
-        Page<Apply> result = adminApplyRepository.findApplies(
-                condition(status, null, null, null, null, beRecruit.getId()), pageable);
-
-        // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().getFirst().getRecruit()).isEqualTo(beRecruit);
     }
 
     @Test
@@ -595,19 +525,54 @@ class AdminApplyQueryRepositoryTest {
                 .build();
     }
 
-    private AdminApplySearchCondition condition(ApplyStatus status,
-                                                Long semesterId,
-                                                JobFamily jobFamily,
-                                                RecruitType recruitType) {
-        return condition(status, semesterId, jobFamily, recruitType, null, null);
+
+    private Applicant saveApplicant(String email, JobFamily jobFamily, CareerDetails careerDetails) {
+        Applicant applicant = Applicant.builder()
+                .email(email)
+                .name("지원자")
+                .phoneNumber("01012345678")
+                .jobFamily(jobFamily)
+                .careerDetails(careerDetails)
+                .semesterId(1L)
+                .role(Role.APPLY)
+                .pin("123456")
+                .status(MemberStatus.ACTIVE)
+                .build();
+        return applicantRepository.save(applicant);
     }
 
-    private AdminApplySearchCondition condition(ApplyStatus status,
-                                                Long semesterId,
-                                                JobFamily jobFamily,
-                                                RecruitType recruitType,
-                                                RecruitTypeDetail recruitTypeDetail,
-                                                Long recruitId) {
-        return new AdminApplySearchCondition(status, semesterId, jobFamily, recruitType, recruitTypeDetail, recruitId);
+    private Apply saveSubmittedApply(
+            String email,
+            CareerDetails careerDetails,
+            SelectionResult selectionResult,
+            Integer waitlistNumber
+    ) {
+        Applicant applicant = saveApplicant(email, BE, careerDetails);
+        Apply apply = getApply(applicant, beRecruit, SUBMITTED);
+        apply.decideSelectionResult(selectionResult, waitlistNumber);
+        return applyRepository.save(apply);
+    }
+
+    private Apply saveTempSavedApply(String email, CareerDetails careerDetails) {
+        Applicant applicant = saveApplicant(email, BE, careerDetails);
+        return applyRepository.save(getApply(applicant, beRecruit, TEMP_SAVED));
+    }
+
+    private SubmittedApplySearchCondition submittedCondition(
+            Long recruitId,
+            Set<CareerDetails> careerDetails,
+            Set<SelectionResult> selectionResults,
+            Long cursor
+    ) {
+        return new SubmittedApplySearchCondition(
+                recruitId, careerDetails, selectionResults, cursor, 20);
+    }
+
+    private TempSavedApplySearchCondition tempSavedCondition(
+            Long recruitId,
+            Set<CareerDetails> careerDetails,
+            Long cursor
+    ) {
+        return new TempSavedApplySearchCondition(recruitId, careerDetails, cursor, 20);
     }
 }

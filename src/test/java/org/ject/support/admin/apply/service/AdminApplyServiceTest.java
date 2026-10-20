@@ -13,15 +13,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
-import org.ject.support.admin.apply.dto.AdminApplyResponse;
-import org.ject.support.admin.apply.dto.AdminApplySearchCondition;
 import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyProjection;
+import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
+import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
+import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
+import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.domain.applicant.service.ApplicantCommandService;
 import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.base.UnitTestSupport;
+import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.apply.domain.ApplicationForm;
@@ -33,6 +38,7 @@ import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
+import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.recruit.domain.Question;
@@ -47,10 +53,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 
 class AdminApplyServiceTest extends UnitTestSupport {
 
@@ -379,146 +381,109 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 제출된_지원서_목록_조회_성공() {
+    @DisplayName("제출완료 지원서 목록에 지원자 정보와 선정 정보를 반환한다")
+    void 제출완료_지원서_목록에_지원자_정보와_선정_정보를_반환한다() {
         // given
-        var pageable = PageRequest.of(0, 15);
-        var jobFamily = JobFamily.BE;
-        Long semesterId = null;
-
-        var applies = List.of(submittedApply);
-        var page = new PageImpl<>(applies, pageable, 1L);
-        var condition = condition(ApplyStatus.SUBMITTED, semesterId, jobFamily, null);
-
-        given(adminApplyRepository.findApplies(condition, pageable))
-                .willReturn(page);
+        var condition = new SubmittedApplySearchCondition(1L, null, null, null, 20);
+        var projection = new SubmittedApplyProjection(
+                1L,
+                "김젝트",
+                "01012345678",
+                CareerDetails.STUDENT,
+                SelectionResult.WAITLISTED,
+                2,
+                "활동 의사 확인 필요");
+        given(adminApplyRepository.searchSubmittedApplies(condition, 21))
+                .willReturn(List.of(projection));
+        given(adminApplyRepository.countSubmittedApplies(condition)).willReturn(1L);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
+        CursorPageResponse<SubmittedApplyResponse> result =
+                adminApplyService.searchSubmittedApplies(condition);
 
         // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(adminApplyRepository).findApplies(condition, pageable);
+        assertThat(result.content()).singleElement().satisfies(apply -> {
+            assertThat(apply.applyId()).isEqualTo(1L);
+            assertThat(apply.name()).isEqualTo("김젝트");
+            assertThat(apply.phoneNumber()).isEqualTo("01012345678");
+            assertThat(apply.careerDetails()).isEqualTo(CareerDetails.STUDENT);
+            assertThat(apply.selectionResult()).isEqualTo(SelectionResult.WAITLISTED);
+            assertThat(apply.waitlistNumber()).isEqualTo(2);
+            assertThat(apply.note()).isEqualTo("활동 의사 확인 필요");
+        });
+        assertThat(result.hasNext()).isFalse();
+        assertThat(result.nextCursor()).isNull();
+        assertThat(result.totalCount()).isEqualTo(1L);
     }
 
     @Test
-    void 제출된_지원서_목록_조회시_JobFamily가_null이면_전체_조회() {
+    @DisplayName("제출완료 지원서 조회 결과가 요청 크기보다 많으면 다음 지원서 커서를 반환한다")
+    void 제출완료_지원서_조회결과가_요청_크기보다_많으면_다음_지원서_커서를_반환한다() {
         // given
-        var pageable = PageRequest.of(0, 15);
-        Long semesterId = null;
-        var applies = List.of(submittedApply);
-        var page = new PageImpl<>(applies, pageable, 1L);
-        var condition = condition(ApplyStatus.SUBMITTED, semesterId, null, null);
-
-        given(adminApplyRepository.findApplies(condition, pageable))
-                .willReturn(page);
+        var condition = new SubmittedApplySearchCondition(1L, null, null, null, 2);
+        given(adminApplyRepository.searchSubmittedApplies(condition, 3)).willReturn(List.of(
+                submittedProjection(3L),
+                submittedProjection(2L),
+                submittedProjection(1L)));
+        given(adminApplyRepository.countSubmittedApplies(condition)).willReturn(3L);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
+        CursorPageResponse<SubmittedApplyResponse> result =
+                adminApplyService.searchSubmittedApplies(condition);
 
         // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(adminApplyRepository).findApplies(condition, pageable);
+        assertThat(result.content()).hasSize(2);
+        assertThat(result.hasNext()).isTrue();
+        assertThat(result.nextCursor()).isEqualTo(2L);
+        assertThat(result.totalCount()).isEqualTo(3L);
     }
 
     @Test
-    void 제출된_지원서_목록_조회시_결과가_없으면_빈_페이지_반환() {
+    @DisplayName("임시저장 지원서 목록에 지원자 정보만 반환한다")
+    void 임시저장_지원서_목록에_지원자_정보만_반환한다() {
         // given
-        var pageable = PageRequest.of(0, 15);
-        var jobFamily = JobFamily.BE;
-        Long semesterId = null;
-        var page = new PageImpl<Apply>(List.of(), pageable, 0L);
-        var condition = condition(ApplyStatus.SUBMITTED, semesterId, jobFamily, null);
-
-        given(adminApplyRepository.findApplies(condition, pageable))
-                .willReturn(page);
+        var condition = new TempSavedApplySearchCondition(1L, null, null, 20);
+        var projection = new TempSavedApplyProjection(
+                1L,
+                "김젝트",
+                "01012345678",
+                CareerDetails.EMPLOYEE);
+        given(adminApplyRepository.searchTempSavedApplies(condition, 21))
+                .willReturn(List.of(projection));
+        given(adminApplyRepository.countTempSavedApplies(condition)).willReturn(1L);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
+        CursorPageResponse<TempSavedApplyResponse> result =
+                adminApplyService.searchTempSavedApplies(condition);
 
         // then
-        assertThat(result.getContent()).isEmpty();
-        assertThat(result.getTotalElements()).isZero();
-        verify(adminApplyRepository).findApplies(condition, pageable);
+        assertThat(result.content()).containsExactly(
+                new TempSavedApplyResponse(1L, "김젝트", "01012345678", CareerDetails.EMPLOYEE));
+        assertThat(result.hasNext()).isFalse();
+        assertThat(result.nextCursor()).isNull();
+        assertThat(result.totalCount()).isEqualTo(1L);
     }
 
     @Test
-    void 제출된_지원서_목록_조회시_페이징_정보_정확히_전달() {
+    @DisplayName("임시저장 지원서 조회 결과가 요청 크기보다 많으면 다음 지원서 커서를 반환한다")
+    void 임시저장_지원서_조회결과가_요청_크기보다_많으면_다음_지원서_커서를_반환한다() {
         // given
-        var pageable = PageRequest.of(1, 10, Sort.by("createdAt").descending());
-        var jobFamily = JobFamily.BE;
-        Long semesterId = null;
-
-        var member2 = Applicant.builder().name("김젝트2").build();
-        var apply2 = Apply.builder()
-                .id(2L)
-                .applicant(member2)
-                .recruit(submittedApply.getRecruit())
-                .status(ApplyStatus.SUBMITTED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-
-        var applies = List.of(submittedApply, apply2);
-        var page = new PageImpl<>(applies, pageable, 25L);
-        var condition = condition(ApplyStatus.SUBMITTED, semesterId, jobFamily, null);
-
-        given(adminApplyRepository.findApplies(condition, pageable))
-                .willReturn(page);
+        var condition = new TempSavedApplySearchCondition(1L, null, null, 2);
+        given(adminApplyRepository.searchTempSavedApplies(condition, 3)).willReturn(List.of(
+                tempSavedProjection(3L),
+                tempSavedProjection(2L),
+                tempSavedProjection(1L)));
+        given(adminApplyRepository.countTempSavedApplies(condition)).willReturn(3L);
 
         // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
+        CursorPageResponse<TempSavedApplyResponse> result =
+                adminApplyService.searchTempSavedApplies(condition);
 
         // then
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getTotalElements()).isEqualTo(25L);
-        assertThat(result.getNumber()).isEqualTo(1);
-        assertThat(result.getSize()).isEqualTo(10);
-        verify(adminApplyRepository).findApplies(condition, pageable);
-    }
-
-    @Test
-    void 제출된_지원서_목록을_semesterId로_필터링하여_조회() {
-        // given
-        var pageable = PageRequest.of(0, 15);
-        var jobFamily = JobFamily.BE;
-        Long semesterId = 1L;
-
-        var applies = List.of(submittedApply);
-        var page = new PageImpl<>(applies, pageable, 1L);
-        var condition = condition(ApplyStatus.SUBMITTED, semesterId, jobFamily, null);
-
-        given(adminApplyRepository.findApplies(condition, pageable))
-                .willReturn(page);
-
-        // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
-
-        // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        verify(adminApplyRepository).findApplies(condition, pageable);
-    }
-
-    @Test
-    void 지원서_목록_조회시_공고_필터_조건을_전달한다() {
-        // given
-        var pageable = PageRequest.of(0, 15);
-        var recruitId = 1L;
-        var condition = condition(
-                ApplyStatus.SUBMITTED, null, null, RecruitType.SEMESTER, RecruitTypeDetail.REFILL, recruitId);
-        var applies = List.of(submittedApply);
-        var page = new PageImpl<>(applies, pageable, 1L);
-
-        given(adminApplyRepository.findApplies(condition, pageable))
-                .willReturn(page);
-
-        // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
-
-        // then
-        assertThat(result.getContent()).hasSize(1);
-        verify(adminApplyRepository).findApplies(condition, pageable);
+        assertThat(result.content()).hasSize(2);
+        assertThat(result.hasNext()).isTrue();
+        assertThat(result.nextCursor()).isEqualTo(2L);
+        assertThat(result.totalCount()).isEqualTo(3L);
     }
 
     @Test
@@ -868,126 +833,23 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .hasFieldOrPropertyWithValue("errorCode", QuestionErrorCode.NOT_FOUND_QUESTION);
     }
 
-    @Test
-    void 임시_저장된_지원서_목록_조회시_결과가_없으면_빈_페이지_반환() {
-        // given
-        var pageable = PageRequest.of(0, 10);
-        Long semesterId = null;
-        var page = new PageImpl<Apply>(List.of(), pageable, 0);
-        var condition = condition(ApplyStatus.TEMP_SAVED, semesterId, null, null);
 
-        given(adminApplyRepository.findApplies(condition, pageable))
-                .willReturn(page);
-
-        // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
-
-        // then
-        verify(adminApplyRepository).findApplies(condition, pageable);
-        assertThat(result.getTotalElements()).isZero();
-        assertThat(result.getContent()).isEmpty();
+    private SubmittedApplyProjection submittedProjection(Long applyId) {
+        return new SubmittedApplyProjection(
+                applyId,
+                "지원자" + applyId,
+                "01012345678",
+                CareerDetails.STUDENT,
+                SelectionResult.UNDECIDED,
+                null,
+                "");
     }
 
-    @Test
-    void 임시_저장된_지원서_목록_조회_성공() {
-        // given
-        var pageable = PageRequest.of(0, 10);
-        Long semesterId = null;
-
-        var m1 = Applicant.builder().name("김1").jobFamily(JobFamily.BE).build();
-        var m2 = Applicant.builder().name("김2").jobFamily(JobFamily.BE).build();
-        var semester = Semester.builder().name("1").build();
-        var recruit = Recruit.builder()
-                .semester(semester)
-                .recruitType(RecruitType.SEMESTER)
-                .build();
-
-        var a1 = Apply.builder()
-                .id(1L)
-                .applicant(m1)
-                .recruit(recruit)
-                .status(ApplyStatus.TEMP_SAVED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-
-        var a2 = Apply.builder()
-                .id(2L)
-                .applicant(m2)
-                .recruit(recruit)
-                .status(ApplyStatus.TEMP_SAVED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-
-        var applies = List.of(a1, a2);
-        var page = new PageImpl<>(applies, pageable, applies.size());
-        var condition = condition(ApplyStatus.TEMP_SAVED, semesterId, null, null);
-
-        given(adminApplyRepository.findApplies(condition, pageable))
-                .willReturn(page);
-
-        // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
-
-        // then
-        verify(adminApplyRepository).findApplies(condition, pageable);
-        assertThat(result.getTotalElements()).isEqualTo(2);
-        assertThat(result.getContent()).hasSize(2);
-        assertThat(result.getContent().get(0).applyId()).isEqualTo(1L);
-        assertThat(result.getContent().get(1).applyId()).isEqualTo(2L);
-    }
-
-    @Test
-    void 임시_저장된_지원서_목록을_semesterId로_필터링하여_조회() {
-        // given
-        var pageable = PageRequest.of(0, 10);
-        Long semesterId = 1L;
-
-        var member = Applicant.builder().name("김젝트").jobFamily(JobFamily.BE).build();
-        var semester = Semester.builder().name("1").build();
-        var recruit = Recruit.builder()
-                .semester(semester)
-                .recruitType(RecruitType.SEMESTER)
-                .build();
-
-        var apply = Apply.builder()
-                .id(1L)
-                .applicant(member)
-                .recruit(recruit)
-                .status(ApplyStatus.TEMP_SAVED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-
-        var applies = List.of(apply);
-        var page = new PageImpl<>(applies, pageable, applies.size());
-        var condition = condition(ApplyStatus.TEMP_SAVED, semesterId, null, null);
-
-        given(adminApplyRepository.findApplies(condition, pageable))
-                .willReturn(page);
-
-        // when
-        Page<AdminApplyResponse> result = adminApplyService.findApplies(condition, pageable);
-
-        // then
-        verify(adminApplyRepository).findApplies(condition, pageable);
-        assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().getFirst().applyId()).isEqualTo(1L);
-    }
-
-    private AdminApplySearchCondition condition(ApplyStatus applyStatus,
-                                                Long semesterId,
-                                                JobFamily jobFamily,
-                                                RecruitType recruitType) {
-        return condition(applyStatus, semesterId, jobFamily, recruitType, null, null);
-    }
-
-    private AdminApplySearchCondition condition(ApplyStatus applyStatus,
-                                                Long semesterId,
-                                                JobFamily jobFamily,
-                                                RecruitType recruitType,
-                                                RecruitTypeDetail recruitTypeDetail,
-                                                Long recruitId) {
-        return new AdminApplySearchCondition(
-                applyStatus, semesterId, jobFamily, recruitType, recruitTypeDetail, recruitId);
+    private TempSavedApplyProjection tempSavedProjection(Long applyId) {
+        return new TempSavedApplyProjection(
+                applyId,
+                "지원자" + applyId,
+                "01012345678",
+                CareerDetails.STUDENT);
     }
 }
