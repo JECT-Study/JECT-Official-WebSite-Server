@@ -167,7 +167,7 @@ class MailDispatchRecoveryMysqlTest extends TestSupport {
         assertThat(outboxRepository.findByDispatchJobIdAndApplyId(job.getId(), 10L)).get().satisfies(saved -> {
             assertThat(saved.getAttemptCount()).isEqualTo(1);
             assertThat(saved.getNextAttemptAt()).isNotNull();
-            assertThat(saved.getFailureReason()).isEqualTo("TOO_MANY_EMAIL_REQUESTS");
+            assertThat(saved.getFailureReason()).isEqualTo("EMAIL-4");
         });
         verify(emailSendService).sendEmail("10@ject.kr", "저장된 제목", "저장된 본문");
         verify(emailSendService).sendEmail("20@ject.kr", "저장된 제목", "저장된 본문");
