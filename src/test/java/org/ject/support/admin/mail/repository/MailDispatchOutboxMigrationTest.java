@@ -44,6 +44,10 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
                         VALUES (1, 1, 2, 3, 'legacy-request', 'REQUESTED', 1,
                                 '2026-10-04 12:00:00', '기존 제목', '기존 본문')
                         """);
+                statement.execute("""
+                        INSERT INTO mail_dispatch_target (dispatch_job_id, apply_id, email, status)
+                        VALUES (1, 90, 'legacy@ject.kr', 'PENDING')
+                        """);
             }
 
             Flyway flyway = Flyway.configure()
@@ -103,7 +107,7 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
 
             try (Statement statement = connection.createStatement();
                  ResultSet resultSet = statement.executeQuery("""
-                         SELECT request_fingerprint, unknown_count, claim_started_at,
+                         SELECT request_fingerprint, unknown_count, claim_started_at, scheduled_at,
                                 idempotency_key, status, target_count, subject_template, body_template
                          FROM mail_dispatch_job WHERE id = 1
                          """)) {
@@ -111,11 +115,21 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
                 assertThat(resultSet.getString("request_fingerprint")).isNull();
                 assertThat(resultSet.getInt("unknown_count")).isZero();
                 assertThat(resultSet.getTimestamp("claim_started_at")).isNull();
+                assertThat(resultSet.getTimestamp("scheduled_at")).isNull();
                 assertThat(resultSet.getString("idempotency_key")).isEqualTo("legacy-request");
                 assertThat(resultSet.getString("status")).isEqualTo("REQUESTED");
                 assertThat(resultSet.getInt("target_count")).isEqualTo(1);
                 assertThat(resultSet.getString("subject_template")).isEqualTo("기존 제목");
                 assertThat(resultSet.getString("body_template")).isEqualTo("기존 본문");
+            }
+
+            try (Statement statement = connection.createStatement();
+                 ResultSet resultSet = statement.executeQuery("""
+                         SELECT selection_result_snapshot FROM mail_dispatch_target
+                         WHERE dispatch_job_id = 1 AND apply_id = 90
+                         """)) {
+                assertThat(resultSet.next()).isTrue();
+                assertThat(resultSet.getString("selection_result_snapshot")).isNull();
             }
 
             // when

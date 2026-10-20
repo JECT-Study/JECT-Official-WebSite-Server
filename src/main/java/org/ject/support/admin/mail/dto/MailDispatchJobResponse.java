@@ -1,5 +1,6 @@
 package org.ject.support.admin.mail.dto;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
@@ -17,7 +18,8 @@ public record MailDispatchJobResponse(
         int unknownCount,
         LocalDateTime requestedAt,
         LocalDateTime startedAt,
-        LocalDateTime finishedAt
+        LocalDateTime finishedAt,
+        Instant scheduledAt
 ) {
 
     public static MailDispatchJobResponse from(MailDispatchJob job) {
@@ -34,7 +36,8 @@ public record MailDispatchJobResponse(
                 job.getUnknownCount(),
                 job.getRequestedAt(),
                 job.getStartedAt(),
-                job.getFinishedAt()
+                job.getFinishedAt(),
+                job.getScheduledAt()
         );
     }
 }
