@@ -66,7 +66,8 @@ public class MailDispatchPreparationService {
                 subjectTemplate,
                 scenario.getBodyTemplate(),
                 inputVariables,
-                targets
+                targets,
+                scenario.getType()
         );
     }
 
