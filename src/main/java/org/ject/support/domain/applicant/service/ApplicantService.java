@@ -1,6 +1,8 @@
 package org.ject.support.domain.applicant.service;
 
 import lombok.RequiredArgsConstructor;
+import java.util.List;
+import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.applicant.dto.ApplicantDto;
 import org.ject.support.domain.applicant.dto.ApplicantDto.RegisterRequest;
@@ -20,12 +22,32 @@ import static org.ject.support.domain.applicant.exception.ApplicantErrorCode.ALR
 
 @Service
 @RequiredArgsConstructor
-public class ApplicantService {
+public class ApplicantService implements ApplicantCommandService {
 
     private final ApplicantRepository applicantRepository;
     private final SemesterInquiryUsecase semesterInquiryUsecase;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+
+    // 재지원 시 이메일 인증부터 진행하도록 지원자 소프트 삭제
+    @Override
+    @Transactional
+    public void deleteApplicant(Long applicantId) {
+        Applicant applicant = applicantRepository.findById(applicantId)
+                .orElseThrow(() -> new ApplicantException(ApplicantErrorCode.NOT_FOUND_APPLICANT));
+        applicantRepository.delete(applicant);
+    }
+
+    // 삭제 대상 지원자의 존재 여부 확인 후 일괄 소프트 삭제
+    @Override
+    @Transactional
+    public void deleteApplicants(DeleteApplicantsRequest request) {
+        List<Applicant> applicants = applicantRepository.findAllById(request.applicantIds());
+        if (applicants.size() != request.applicantIds().size()) {
+            throw new ApplicantException(ApplicantErrorCode.NOT_FOUND_APPLICANT);
+        }
+        applicantRepository.deleteAll(applicants);
+    }
 
     /**
      * 인증된 사용자의 PIN 번호를 설정하고 지원자를 생성합니다.
