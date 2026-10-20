@@ -20,7 +20,7 @@ GET /admin/mails/dispatches/123
 GET /admin/mails/dispatches/123/targets?status=PENDING&page=0&size=10
 ```
 
-재시도 대기 예시: 첫 시도에서 확실한 요청 제한 거부가 발생하면 대상은 `PENDING`, `attemptCount=1`, `lastAttemptFailureReason=TOO_MANY_EMAIL_REQUESTS`다. 이 단계의 `failureReason`과 `sentAt`은 null이며, 작업은 여전히 처리 중이다. 실제로 배달된 횟수로 해석하지 않는다.
+재시도 대기 예시: 첫 시도에서 확실한 요청 제한 거부가 발생하면 대상은 `PENDING`, `attemptCount=1`, `lastAttemptFailureReason=EMAIL-4`다. 이 단계의 `failureReason`과 `sentAt`은 null이며, 작업은 여전히 처리 중이다. 실제로 배달된 횟수로 해석하지 않는다.
 
 조회 응답에는 권한 범위 안의 주소 snapshot을 제공한다. 저장된 제목·본문·claim token·lease는 추가 노출하지 않는다. 이 검증은 이메일 주소를 일반 로그에 기록할 권한을 부여하지 않는다.
 
