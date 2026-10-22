@@ -61,13 +61,8 @@ class SemesterControllerTest {
         // given
         SemesterRegisterRequest request = new SemesterRegisterRequest("2023-2학기",
                 List.of(
-                        new RecruitRegisterRequest(JobFamily.BE,
-                                LocalDateTime.of(2025, 4, 1, 0, 0, 0),
-                                LocalDateTime.of(2025, 4, 2, 0, 0, 0)),
-                        new RecruitRegisterRequest(JobFamily.FE,
-                                LocalDateTime.of(2025, 4, 1, 0, 0, 0),
-                                LocalDateTime.of(2025, 4, 2, 0, 0, 0)
-                        )));
+                        recruitRegisterRequest("백엔드 개발자 모집", JobFamily.BE),
+                        recruitRegisterRequest("프론트엔드 개발자 모집", JobFamily.FE)));
 
         String reqJson = objectMapper.writeValueAsString(request);
         // when
@@ -91,13 +86,8 @@ class SemesterControllerTest {
         // given
         SemesterRegisterRequest request = new SemesterRegisterRequest("2023-2학기",
                 List.of(
-                        new RecruitRegisterRequest(JobFamily.BE,
-                                LocalDateTime.of(2025, 4, 1, 0, 0, 0),
-                                LocalDateTime.of(2025, 4, 2, 0, 0, 0)),
-                        new RecruitRegisterRequest(JobFamily.BE,
-                                LocalDateTime.of(2025, 4, 1, 0, 0, 0),
-                                LocalDateTime.of(2025, 4, 2, 0, 0, 0))// 중복된 jobFamily
-                ));
+                        recruitRegisterRequest("백엔드 개발자 모집", JobFamily.BE),
+                        recruitRegisterRequest("중복 백엔드 개발자 모집", JobFamily.BE)));
 
         String reqJson = objectMapper.writeValueAsString(request);
         // when
@@ -134,5 +124,17 @@ class SemesterControllerTest {
                         content().string(containsString("2025-1학기")),
                         content().string(containsString("2025-2학기"))
                 );
+    }
+
+    private RecruitRegisterRequest recruitRegisterRequest(String title, JobFamily jobFamily) {
+        return new RecruitRegisterRequest(
+                title,
+                jobFamily,
+                LocalDateTime.now().minusDays(1),
+                LocalDateTime.now().plusDays(1),
+                null,
+                null,
+                null,
+                List.of());
     }
 }

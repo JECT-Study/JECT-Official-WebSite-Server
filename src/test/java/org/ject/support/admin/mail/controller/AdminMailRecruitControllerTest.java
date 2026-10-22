@@ -52,6 +52,7 @@ class AdminMailRecruitControllerTest extends UnitTestSupport {
         LocalDateTime createdAt = LocalDateTime.of(2026, 7, 1, 10, 0);
         MailRecruitResponse response = new MailRecruitResponse(
                 1L,
+                "10기 백엔드 개발자 모집",
                 2L,
                 "10기",
                 JobFamily.BE,
@@ -69,6 +70,7 @@ class AdminMailRecruitControllerTest extends UnitTestSupport {
         mockMvc.perform(get("/admin/mails/recruits"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].recruitId").value(1))
+                .andExpect(jsonPath("$.data[0].title").value("10기 백엔드 개발자 모집"))
                 .andExpect(jsonPath("$.data[0].semesterId").value(2))
                 .andExpect(jsonPath("$.data[0].semesterName").value("10기"))
                 .andExpect(jsonPath("$.data[0].jobFamily").value("BE"))

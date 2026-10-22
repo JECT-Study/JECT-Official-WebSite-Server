@@ -65,6 +65,7 @@ class RecruitCacheTest {
                 .build());
         recruit = recruitRepository.save(Recruit.builder()
                 .semester(semester)
+                .title("캐시 테스트 모집")
                 .jobFamily(BE)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(2))
@@ -91,6 +92,7 @@ class RecruitCacheTest {
         transactionTemplate.executeWithoutResult(status -> {
             Recruit savedRecruit = recruitRepository.findById(recruit.getId()).orElseThrow();
             savedRecruit.update(
+                    savedRecruit.getTitle(),
                     savedRecruit.getJobFamily(),
                     savedRecruit.getStartDate(),
                     savedRecruit.getEndDate(),
@@ -113,6 +115,7 @@ class RecruitCacheTest {
         mockMvc.perform(get("/recruits/{recruitId}", recruit.getId()))
                 .andExpect(status().isOk());
         RecruitUpdateRequest request = new RecruitUpdateRequest(
+                "수정된 캐시 테스트 모집",
                 FE,
                 LocalDateTime.now().minusDays(1),
                 LocalDateTime.now().plusDays(3),

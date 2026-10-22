@@ -49,7 +49,7 @@ class AdminMailRecruitSecurityTest extends ApplicationPeriodTest {
     void 관리자는_메일_발송용_모집_공고를_조회할_수_있다() throws Exception {
         given(mailRecruitService.getRecruits()).willReturn(List.of(
                 new MailRecruitResponse(
-                        1L, 2L, "10기", JobFamily.BE, JobFamily.BE.getDescription(),
+                        1L, "10기 백엔드 개발자 모집", 2L, "10기", JobFamily.BE, JobFamily.BE.getDescription(),
                         RecruitType.SEMESTER, RecruitType.SEMESTER.getDescription(),
                         RecruitTypeDetail.REGULAR, RecruitTypeDetail.REGULAR.getDescription(),
                         null, null, null)));

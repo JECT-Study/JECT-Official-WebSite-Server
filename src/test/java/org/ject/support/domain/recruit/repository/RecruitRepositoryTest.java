@@ -74,6 +74,7 @@ class RecruitRepositoryTest {
         // then
         assertThat(result).singleElement().satisfies(found -> {
             assertThat(found.recruitId()).isEqualTo(recruit.getId());
+            assertThat(found.title()).isEqualTo("FE 모집");
             assertThat(found.submittedApplyCount()).isZero();
             assertThat(found.passedCount()).isZero();
             assertThat(found.failedCount()).isZero();
@@ -378,6 +379,7 @@ class RecruitRepositoryTest {
     private Recruit saveRecruit(Semester semester, JobFamily jobFamily, RecruitType recruitType) {
         return recruitRepository.save(Recruit.builder()
                 .semester(semester)
+                .title(jobFamily + " 모집")
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(jobFamily)
