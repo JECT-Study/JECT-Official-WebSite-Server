@@ -86,10 +86,11 @@ class RecruitTest {
         List<RecruitFaq> faqs = List.of(RecruitFaq.create("지원 자격이 있나요?", "<p>누구나 지원할 수 있습니다.</p>"));
 
         // when
-        recruit.update(JobFamily.FE, LocalDateTime.now(), LocalDateTime.now().plusDays(2),
+        recruit.update("프론트엔드 개발자 모집", JobFamily.FE, LocalDateTime.now(), LocalDateTime.now().plusDays(2),
                 "모집공고 요약", "<h2>모집 정보</h2>", "<h2>안내사항</h2>", faqs);
 
         // then
+        assertThat(recruit.getTitle()).isEqualTo("프론트엔드 개발자 모집");
         assertThat(recruit.getSummary()).isEqualTo("모집공고 요약");
         assertThat(recruit.getRecruitInformation()).isEqualTo("<h2>모집 정보</h2>");
         assertThat(recruit.getNotice()).isEqualTo("<h2>안내사항</h2>");
@@ -101,6 +102,7 @@ class RecruitTest {
         // given
         Recruit recruit = Recruit.builder()
                 .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .title("백엔드 개발자 모집")
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now())
                 .endDate(LocalDateTime.now().plusDays(1))
@@ -111,7 +113,8 @@ class RecruitTest {
                 .build();
 
         // when
-        recruit.update(JobFamily.FE, LocalDateTime.now(), LocalDateTime.now().plusDays(2), "", "", " ", List.of());
+        recruit.update("프론트엔드 개발자 모집", JobFamily.FE,
+                LocalDateTime.now(), LocalDateTime.now().plusDays(2), "", "", " ", List.of());
 
         // then
         assertThat(recruit.getSummary()).isEqualTo("모집공고 요약");

@@ -88,6 +88,7 @@ class AdminRecruitControllerTest {
                 .andExpect(jsonPath("$.data.recruitTypeCounts[2].count").value(0))
                 .andExpect(jsonPath("$.data.recruits.content", hasSize(1)))
                 .andExpect(jsonPath("$.data.recruits.content[0].recruitId").value(beRecruit.getId()))
+                .andExpect(jsonPath("$.data.recruits.content[0].title").value("BE 모집"))
                 .andExpect(jsonPath("$.data.recruits.content[0].semesterId").value(semester.getId()))
                 .andExpect(jsonPath("$.data.recruits.content[0].jobFamily").value("BE"))
                 .andExpect(jsonPath("$.data.recruits.content[0].submittedApplyCount").value(0))
@@ -109,14 +110,8 @@ class AdminRecruitControllerTest {
     void 모집_정보를_등록한다() throws Exception {
         // given
         List<RecruitRegisterRequest> requests = List.of(
-                new RecruitRegisterRequest(
-                        BE,
-                        LocalDateTime.now().minusDays(1),
-                        LocalDateTime.now().plusDays(1)),
-                new RecruitRegisterRequest(
-                        FE,
-                        LocalDateTime.now().minusDays(1),
-                        LocalDateTime.now().plusDays(1))
+                recruitRegisterRequest("백엔드 개발자 모집", BE),
+                recruitRegisterRequest("프론트엔드 개발자 모집", FE)
         );
 
         String reqJson = objectMapper.writeValueAsString(requests);
@@ -128,7 +123,9 @@ class AdminRecruitControllerTest {
                 .andExpect(content().string(containsString("SUCCESS")));
 
         // then
-        assertThat(recruitRepository.findActiveRecruits(LocalDateTime.now())).hasSize(2);
+        assertThat(recruitRepository.findActiveRecruits(LocalDateTime.now()))
+                .extracting(Recruit::getTitle)
+                .containsExactlyInAnyOrder("백엔드 개발자 모집", "프론트엔드 개발자 모집");
     }
 
     @Test
@@ -144,8 +141,8 @@ class AdminRecruitControllerTest {
                 .build());
 
         List<RecruitRegisterRequest> requests = List.of(
-                new RecruitRegisterRequest(BE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1)),
-                new RecruitRegisterRequest(FE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1))
+                recruitRegisterRequest("백엔드 개발자 모집", BE),
+                recruitRegisterRequest("프론트엔드 개발자 모집", FE)
         );
 
         String reqJson = objectMapper.writeValueAsString(requests);
@@ -170,7 +167,15 @@ class AdminRecruitControllerTest {
                 .build());
 
         String reqJson = objectMapper.writeValueAsString(
-                new RecruitUpdateRequest(FE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1)));
+                new RecruitUpdateRequest(
+                        "수정된 프론트엔드 개발자 모집",
+                        FE,
+                        LocalDateTime.now().minusDays(1),
+                        LocalDateTime.now().plusDays(1),
+                        null,
+                        null,
+                        null,
+                        List.of()));
 
         // when
         mockMvc.perform(put("/admin/recruits/{recruitId}", savedRecruit.getId())
@@ -180,6 +185,7 @@ class AdminRecruitControllerTest {
 
         // then
         Recruit updatedRecruit = recruitRepository.findById(savedRecruit.getId()).orElseThrow();
+        assertThat(updatedRecruit.getTitle()).isEqualTo("수정된 프론트엔드 개발자 모집");
         assertThat(updatedRecruit.getJobFamily()).isEqualTo(FE);
     }
 
@@ -207,6 +213,7 @@ class AdminRecruitControllerTest {
     private Recruit saveRecruit(Semester semester, JobFamily jobFamily, RecruitType recruitType) {
         return recruitRepository.save(Recruit.builder()
                 .semester(semester)
+                .title(jobFamily + " 모집")
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(jobFamily)
@@ -215,5 +222,17 @@ class AdminRecruitControllerTest {
                         ? RecruitTypeDetail.REGULAR
                         : RecruitTypeDetail.NEW)
                 .build());
+    }
+
+    private RecruitRegisterRequest recruitRegisterRequest(String title, JobFamily jobFamily) {
+        return new RecruitRegisterRequest(
+                title,
+                jobFamily,
+                LocalDateTime.now().minusDays(1),
+                LocalDateTime.now().plusDays(1),
+                null,
+                null,
+                null,
+                List.of());
     }
 }
