@@ -148,6 +148,7 @@ public class RecruitService implements RecruitUsecase {
         }
         JobFamily previousJobFamily = recruit.getJobFamily();
         recruit.update(
+                request.title(),
                 request.jobFamily(),
                 request.startDate(),
                 request.endDate(),

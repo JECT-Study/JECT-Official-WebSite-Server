@@ -1,5 +1,6 @@
 package org.ject.support.domain.recruit.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.domain.recruit.dto.SemesterRegisterRequest;
 import org.ject.support.domain.recruit.service.SemesterRegisterUsecase;
@@ -17,7 +18,7 @@ public class SemesterRegisterController implements SemesterRegisterApiSpec {
 
     @Override
     @PostMapping
-    public void register(@RequestBody SemesterRegisterRequest request) {
+    public void register(@RequestBody @Valid SemesterRegisterRequest request) {
         semesterRegisterUsecase.registerSemester(request);
     }
 }

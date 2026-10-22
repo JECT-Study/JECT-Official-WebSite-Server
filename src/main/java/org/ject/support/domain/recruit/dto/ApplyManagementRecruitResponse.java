@@ -6,6 +6,7 @@ import org.ject.support.domain.recruit.domain.RecruitType;
 
 public record ApplyManagementRecruitResponse(
         Long recruitId,
+        String title,
         Long semesterId,
         String semesterName,
         RecruitType recruitType,
@@ -23,6 +24,7 @@ public record ApplyManagementRecruitResponse(
         boolean isSemesterRecruit = recruitType == RecruitType.SEMESTER;
         return new ApplyManagementRecruitResponse(
                 projection.recruitId(),
+                projection.title(),
                 isSemesterRecruit ? projection.semesterId() : null,
                 isSemesterRecruit ? projection.semesterName() : null,
                 recruitType,

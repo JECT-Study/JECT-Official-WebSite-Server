@@ -40,6 +40,7 @@ public class RecruitQueryRepositoryImpl implements RecruitQueryRepository {
         return jpaQueryFactory.select(Projections.constructor(
                         ApplyManagementRecruitProjection.class,
                         recruit.id,
+                        recruit.title,
                         semester.id,
                         semester.name,
                         recruit.recruitType,
