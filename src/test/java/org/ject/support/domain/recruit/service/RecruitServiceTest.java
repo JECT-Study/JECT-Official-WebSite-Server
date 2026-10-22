@@ -128,7 +128,7 @@ class RecruitServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 기존_모집_유형은_활성_목록_응답에서_정규기수_모집으로_표준화한다() {
+    void 정규기수_충원_모집은_활성_목록에_유형과_모집_사유를_반환한다() {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
@@ -136,7 +136,7 @@ class RecruitServiceTest extends UnitTestSupport {
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
-                .recruitType(RecruitType.BACKFILL)
+                .recruitType(RecruitType.SEMESTER)
                 .recruitTypeDetail(RecruitTypeDetail.REFILL)
                 .build();
         when(recruitRepository.findActiveRecruitments(any())).thenReturn(List.of(recruit));

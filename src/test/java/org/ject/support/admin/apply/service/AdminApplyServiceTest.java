@@ -103,7 +103,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .id(1L)
                 .semester(semester)
                 .questions(List.of(question1, question2))
-                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.REGULAR)
+                .recruitType(org.ject.support.domain.recruit.domain.RecruitType.SEMESTER)
                 .build();
 
         submittedApply = Apply.builder()
@@ -583,7 +583,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         assertThat(actual.region()).isEqualTo("서울");
         assertThat(actual.experiencePeriod()).isEqualTo("경험 없음");
         assertThat(actual.interestedDomains()).containsExactly("AI", "Backend");
-        assertThat(actual.recruitType()).isEqualTo("REGULAR");
+        assertThat(actual.recruitType()).isEqualTo("SEMESTER");
         assertThat(actual.note()).isEqualTo("Test note");
     }
 
@@ -899,7 +899,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         var semester = Semester.builder().name("1").build();
         var recruit = Recruit.builder()
                 .semester(semester)
-                .recruitType(RecruitType.REGULAR)
+                .recruitType(RecruitType.SEMESTER)
                 .build();
 
         var a1 = Apply.builder()
@@ -946,7 +946,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         var semester = Semester.builder().name("1").build();
         var recruit = Recruit.builder()
                 .semester(semester)
-                .recruitType(RecruitType.REGULAR)
+                .recruitType(RecruitType.SEMESTER)
                 .build();
 
         var apply = Apply.builder()
