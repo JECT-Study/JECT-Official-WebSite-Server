@@ -36,6 +36,7 @@ class MailRecruitServiceTest extends UnitTestSupport {
         Recruit recruit = Recruit.builder()
                 .id(1L)
                 .semester(semester)
+                .title("10기 백엔드 개발자 모집")
                 .startDate(startDate)
                 .endDate(endDate)
                 .jobFamily(JobFamily.BE)
@@ -51,6 +52,7 @@ class MailRecruitServiceTest extends UnitTestSupport {
         // then
         assertThat(result).singleElement().satisfies(response -> {
             assertThat(response.recruitId()).isEqualTo(1L);
+            assertThat(response.title()).isEqualTo("10기 백엔드 개발자 모집");
             assertThat(response.semesterId()).isEqualTo(2L);
             assertThat(response.semesterName()).isEqualTo("10기");
             assertThat(response.jobFamily()).isEqualTo(JobFamily.BE);

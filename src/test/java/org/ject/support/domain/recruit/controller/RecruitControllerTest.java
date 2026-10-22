@@ -55,10 +55,10 @@ class RecruitControllerTest {
         LocalDateTime now = LocalDateTime.now();
         ActiveRecruitmentResponses responses = new ActiveRecruitmentResponses(List.of(
                 new ActiveRecruitmentResponse(
-                        1L, 3L, "3기", SEMESTER, "정규 기수 모집", REGULAR, "정규 모집",
+                        1L, "3기 백엔드 개발자 모집", 3L, "3기", SEMESTER, "정규 기수 모집", REGULAR, "정규 모집",
                         BE, "백엔드 개발자(BE)", now.minusDays(2), now.plusDays(2), "백엔드 모집 요약"),
                 new ActiveRecruitmentResponse(
-                        2L, 3L, "3기", MAKERS, "메이커스 모집", NEW, "신규 모집",
+                        2L, "메이커스 프론트엔드 개발자 모집", 3L, "3기", MAKERS, "메이커스 모집", NEW, "신규 모집",
                         FE, "프론트엔드 개발자(FE)", now.minusDays(1), now.plusDays(2), "프론트엔드 모집 요약")
         ));
         given(recruitUsecase.findActiveRecruitments()).willReturn(responses);
@@ -68,6 +68,7 @@ class RecruitControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.data.recruitments", hasSize(2)))
+                .andExpect(jsonPath("$.data.recruitments[0].title").value("3기 백엔드 개발자 모집"))
                 .andExpect(jsonPath("$.data.recruitments[0].recruitType").value("SEMESTER"))
                 .andExpect(jsonPath("$.data.recruitments[0].recruitTypeDescription").value("정규 기수 모집"))
                 .andExpect(jsonPath("$.data.recruitments[0].recruitTypeDetail").value("REGULAR"))
@@ -96,7 +97,7 @@ class RecruitControllerTest {
         // given
         LocalDateTime now = LocalDateTime.now();
         RecruitResponse response = new RecruitResponse(
-                1L, 5L, "5기", SEMESTER, "정규 기수 모집", REGULAR, "정규 모집",
+                1L, "5기 프론트엔드 개발자 모집", 5L, "5기", SEMESTER, "정규 기수 모집", REGULAR, "정규 모집",
                 FE, "프론트엔드 개발자(FE)", now.minusDays(1), now.plusDays(1),
                 "<h2>모집 정보</h2>", "<h2>안내사항</h2>",
                 List.of(new RecruitFaqResponse("지원 자격이 있나요?", "<p>누구나 지원할 수 있습니다.</p>"))
@@ -106,6 +107,7 @@ class RecruitControllerTest {
         // when, then
         mockMvc.perform(get("/recruits/{recruitId}", 1L))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.title").value("5기 프론트엔드 개발자 모집"))
                 .andExpect(jsonPath("$.data.recruitInformation").value("<h2>모집 정보</h2>"))
                 .andExpect(jsonPath("$.data.notice").value("<h2>안내사항</h2>"))
                 .andExpect(jsonPath("$.data.faqs[0].title").value("지원 자격이 있나요?"));

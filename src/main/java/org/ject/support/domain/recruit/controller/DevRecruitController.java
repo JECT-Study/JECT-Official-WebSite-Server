@@ -43,6 +43,7 @@ public class DevRecruitController {
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
         JobFamily previousJobFamily = recruit.getJobFamily();
         recruit.update(
+                request.title(),
                 request.jobFamily(),
                 request.startDate(),
                 request.endDate(),
