@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.ject.support.domain.apply.domain.Apply;
+import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
@@ -18,6 +19,8 @@ public record AdminApplyDetailResponse(
         JobFamily jobFamily,
         String careerDetails,
         String recruitType,
+        SelectionResult selectionResult,
+        Integer waitlistNumber,
         String note,
         String region,
         String experiencePeriod,
@@ -35,6 +38,8 @@ public record AdminApplyDetailResponse(
                 applicant.getJobFamily(),
                 Optional.ofNullable(applicant.getCareerDetails()).map(CareerDetails::getDescription).orElse(""),
                 apply.getRecruit().getRecruitType().name(),
+                apply.getSelectionResult(),
+                apply.getWaitlistNumber(),
                 apply.getNote(),
                 Optional.ofNullable(applicant.getRegion()).map(Region::getDescription).orElse(""),
                 Optional.ofNullable(applicant.getExperiencePeriod()).map(ExperiencePeriod::getDescription).orElse(""),

@@ -6,17 +6,22 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.service.AdminApplyService;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.member.CareerDetails;
+import org.ject.support.domain.member.JobFamily;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -101,6 +106,38 @@ class AdminApplyControllerTest extends UnitTestSupport {
     void 공고_ID가_없으면_지원서_목록_조회에_실패한다(String path) throws Exception {
         mockMvc.perform(get(path).contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("지원서 상세조회 시 선정 결과와 예비 번호를 반환한다")
+    void 지원서_상세조회_시_선정_결과와_예비_번호를_반환한다() throws Exception {
+        // given
+        var response = new AdminApplyDetailResponse(
+                1L,
+                "김젝트",
+                "01012345678",
+                "test@mail.com",
+                JobFamily.BE,
+                "대학생(재학/휴학)",
+                "SEMESTER",
+                SelectionResult.WAITLISTED,
+                2,
+                "활동 의사 확인 필요",
+                "서울",
+                "경험 없음",
+                List.of("AI", "Backend"),
+                Map.of(),
+                List.of());
+        given(adminApplyService.findApply(1L, ApplyStatus.SUBMITTED)).willReturn(response);
+
+        // when, then
+        mockMvc.perform(get("/admin/applies/{applyId}", 1L)
+                        .param("applyStatus", "SUBMITTED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.selectionResult").value("WAITLISTED"))
+                .andExpect(jsonPath("$.waitlistNumber").value(2));
+
+        verify(adminApplyService).findApply(1L, ApplyStatus.SUBMITTED);
     }
 
     @Test
