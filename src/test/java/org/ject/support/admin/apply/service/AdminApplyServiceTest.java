@@ -529,6 +529,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
     @Test
     void 제출된_지원서를_상세조회() {
         // given
+        submittedApply.decideSelectionResult(SelectionResult.WAITLISTED, 2);
         given(adminApplyRepository.findApplyByIdByStatus(
                 submittedApply.getId(),
                 ApplyStatus.SUBMITTED
@@ -549,6 +550,8 @@ class AdminApplyServiceTest extends UnitTestSupport {
         assertThat(actual.experiencePeriod()).isEqualTo("경험 없음");
         assertThat(actual.interestedDomains()).containsExactly("AI", "Backend");
         assertThat(actual.recruitType()).isEqualTo("SEMESTER");
+        assertThat(actual.selectionResult()).isEqualTo(SelectionResult.WAITLISTED);
+        assertThat(actual.waitlistNumber()).isEqualTo(2);
         assertThat(actual.note()).isEqualTo("Test note");
     }
 
