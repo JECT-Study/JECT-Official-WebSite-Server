@@ -8,6 +8,7 @@ import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import java.time.LocalDateTime;
 
 public record ActiveRecruitmentResponse(Long recruitId,
+                                        String title,
                                         Long semesterId,
                                         String semesterName,
                                         RecruitType recruitType,
@@ -25,6 +26,7 @@ public record ActiveRecruitmentResponse(Long recruitId,
         RecruitTypeDetail recruitTypeDetail = toPublicRecruitTypeDetail(recruit);
         return new ActiveRecruitmentResponse(
                 recruit.getId(),
+                recruit.getTitle(),
                 recruit.getSemester().getId(),
                 recruit.getSemester().getName(),
                 recruitType,

@@ -49,6 +49,9 @@ public class Recruit extends BaseTimeEntity {
     @JoinColumn(name = "semester_id", nullable = false)
     private Semester semester;
 
+    @Column(length = 100)
+    private String title;
+
     @Column(nullable = false)
     private LocalDateTime startDate;
 
@@ -113,8 +116,9 @@ public class Recruit extends BaseTimeEntity {
     }
 
     // 모집공고 정보 변경
-    public void update(JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate,
+    public void update(String title, JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate,
                        String summary, String recruitInformation, String notice, List<RecruitFaq> faqs) {
+        this.title = title;
         this.jobFamily = jobFamily;
         this.startDate = startDate;
         this.endDate = endDate;
