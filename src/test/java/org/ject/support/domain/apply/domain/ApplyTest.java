@@ -1,5 +1,10 @@
 package org.ject.support.domain.apply.domain;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
+
+import java.util.List;
 import org.ject.support.base.TestSupport;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
@@ -7,12 +12,9 @@ import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class ApplyTest extends TestSupport {
 
@@ -281,4 +283,59 @@ class ApplyTest extends TestSupport {
                 .extracting("errorCode")
                 .isEqualTo(ApplyErrorCode.ALREADY_SUBMITTED);
     }
+    @ParameterizedTest
+    @EnumSource(value = ApplyStatus.class, names = {"JOINED", "REJECTED"})
+    void 작성_전이거나_반려된_지원서는_수정할_수_없다(ApplyStatus status) {
+        // given
+        Apply apply = Apply.createApply(Applicant.builder().build(), Recruit.builder().jobFamily(JobFamily.BE).build());
+        if (status == ApplyStatus.REJECTED) {
+            apply.submit(ApplicationForm.builder().build());
+            apply.reject();
+        }
+
+        // when, then
+        assertThatThrownBy(apply::validateEditable).isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.APPLY_EDIT_NOT_ALLOWED);
+    }
+
+    @Test
+    void 임시저장_지원서에는_선정_결과를_지정할_수_없다() {
+        // given
+        Apply apply = Apply.createApply(Applicant.builder().build(), Recruit.builder().jobFamily(JobFamily.BE).build());
+        apply.updateApplicationForm(ApplicationForm.builder().apply(apply).build());
+        apply.saveTemporarily();
+
+        // when, then
+        assertThatThrownBy(() -> apply.editSelectionResult(SelectionResult.PASSED))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.SELECTION_RESULT_EDIT_NOT_ALLOWED);
+        assertThat(apply.getSelectionResult()).isEqualTo(SelectionResult.UNDECIDED);
+    }
+
+    @Test
+    void 제출완료_지원서는_선정_결과를_지정해야_한다() {
+        // given
+        Apply apply = submittedApply();
+
+        // when, then
+        assertThatThrownBy(() -> apply.editSelectionResult(null)).isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.SELECTION_RESULT_REQUIRED);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void 예비합격을_유지하면_번호를_보존하고_해제하면_제거한다(boolean keepWaitlisted) {
+        // given
+        Apply apply = submittedApply();
+        apply.decideSelectionResult(SelectionResult.WAITLISTED, 3);
+        SelectionResult result = keepWaitlisted ? SelectionResult.WAITLISTED : SelectionResult.FAILED;
+
+        // when
+        apply.editSelectionResult(result);
+
+        // then
+        assertThat(apply.getSelectionResult()).isEqualTo(result);
+        assertThat(apply.getWaitlistNumber()).isEqualTo(keepWaitlisted ? 3 : null);
+    }
+
 }

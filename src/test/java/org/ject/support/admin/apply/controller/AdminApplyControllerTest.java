@@ -5,19 +5,25 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
+import org.ject.support.admin.apply.dto.EditApplyRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.service.AdminApplyService;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.common.response.ObjectMapperConfig;
+import org.ject.support.common.response.ResponseWrapper;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.member.CareerDetails;
@@ -26,10 +32,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -42,11 +51,13 @@ class AdminApplyControllerTest extends UnitTestSupport {
     private AdminApplyService adminApplyService;
 
     private MockMvc mockMvc;
+    private final ObjectMapper objectMapper = new ObjectMapperConfig().objectMapper();
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(adminApplyController)
-                .setControllerAdvice(new org.ject.support.common.exception.GlobalExceptionHandler())
+                .setControllerAdvice(new org.ject.support.common.exception.GlobalExceptionHandler(), new ResponseWrapper())
+                .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
     }
 
@@ -134,8 +145,8 @@ class AdminApplyControllerTest extends UnitTestSupport {
         mockMvc.perform(get("/admin/applies/{applyId}", 1L)
                         .param("applyStatus", "SUBMITTED"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.selectionResult").value("WAITLISTED"))
-                .andExpect(jsonPath("$.waitlistNumber").value(2));
+                .andExpect(jsonPath("$.data.selectionResult").value("WAITLISTED"))
+                .andExpect(jsonPath("$.data.waitlistNumber").value(2));
 
         verify(adminApplyService).findApply(1L, ApplyStatus.SUBMITTED);
     }
@@ -157,8 +168,87 @@ class AdminApplyControllerTest extends UnitTestSupport {
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(content().string("1"));
+                .andExpect(jsonPath("$.data").value(1));
 
         verify(adminApplyService).updateSelectionResults(any());
     }
+    @Test
+    void 지원서_수정_요청을_처리한다() throws Exception {
+        // given
+        ObjectNode body = editBody();
+
+        // when, then
+        mockMvc.perform(put("/admin/applies/1").contentType(MediaType.APPLICATION_JSON)
+                        .content(body.toString()))
+                .andExpect(status().isOk());
+        verify(adminApplyService).editApply(1L, objectMapper.treeToValue(body, EditApplyRequest.class));
+    }
+
+    @ParameterizedTest(name = "{0}에 {1} 입력")
+    @MethodSource("invalidRequiredProfiles")
+    void 필수_개인정보가_누락되거나_비어있으면_수정을_거부한다(String field, String value) throws Exception {
+        // given
+        ObjectNode body = editBody();
+        if (value == null) {
+            body.remove(field);
+        } else {
+            body.put(field, value);
+        }
+
+        // when, then
+        mockMvc.perform(put("/admin/applies/1").contentType(MediaType.APPLICATION_JSON)
+                        .content(body.toString()))
+                .andExpect(status().isBadRequest());
+    }
+
+    private static Stream<Arguments> invalidRequiredProfiles() {
+        return Stream.concat(
+                Stream.of("name", "phoneNumber", "email")
+                        .flatMap(field -> Stream.of(null, "", " ").map(value -> Arguments.of(field, value))),
+                Stream.of(Arguments.of("careerDetails", (String) null)));
+    }
+
+    @ParameterizedTest(name = "{0} 허용 범위 초과")
+    @MethodSource("invalidEditLimits")
+    void 관심_도메인과_비고가_허용_범위를_벗어나면_수정을_거부한다(String field, Object value) throws Exception {
+        // given
+        ObjectNode body = editBody();
+        body.set(field, objectMapper.valueToTree(value));
+
+        // when, then
+        mockMvc.perform(put("/admin/applies/1").contentType(MediaType.APPLICATION_JSON)
+                        .content(body.toString()))
+                .andExpect(status().isBadRequest());
+    }
+
+    private static Stream<Arguments> invalidEditLimits() {
+        return Stream.of(Arguments.of("interestedDomains", List.of()),
+                Arguments.of("interestedDomains", List.of("GAME", "EDUCATION", "MOBILITY", "UTILITY")),
+                Arguments.of("note", "가".repeat(101)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"jobFamily", "recruitId", "waitlistNumber"})
+    void 수정할_수_없는_항목이_포함되면_요청을_거부한다(String field) throws Exception {
+        // given
+        ObjectNode body = editBody();
+        body.put(field, field.equals("jobFamily") ? "FE" : "2");
+
+        // when, then
+        mockMvc.perform(put("/admin/applies/1").contentType(MediaType.APPLICATION_JSON)
+                        .content(body.toString()))
+                .andExpect(status().isBadRequest());
+    }
+
+    private ObjectNode editBody() throws Exception {
+        return (ObjectNode) objectMapper.readTree("""
+                {
+                  "name": "김젝트", "phoneNumber": "01012345678", "email": "test@mail.com",
+                  "careerDetails": "STUDENT", "region": "SEOUL", "experiencePeriod": "NONE",
+                  "interestedDomains": ["GAME"], "selectionResult": "PASSED", "note": "비고",
+                  "answers": {"1": "답변"}, "deletePortfolioIds": [10]
+                }
+                """);
+    }
+
 }
