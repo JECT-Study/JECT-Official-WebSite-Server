@@ -17,9 +17,13 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.ject.support.domain.base.BaseTimeEntity;
+import org.ject.support.domain.apply.exception.ApplyErrorCode;
+import org.ject.support.domain.apply.exception.ApplyException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -49,6 +53,20 @@ public class ApplicationForm extends BaseTimeEntity {
         this.portfolios.clear();
         this.portfolios.addAll(newPortfolios);
         newPortfolios.forEach(portfolio -> portfolio.setApplicationForm(this));
+    }
+
+    // 기존 포트폴리오는 유지하고 질문별 답변만 편집
+    public void editContent(String content) {
+        this.content = content;
+    }
+
+    // 현재 지원서 소유 항목인지 검증한 뒤 요청한 포트폴리오만 삭제
+    public void deletePortfolios(Set<Long> portfolioIds) {
+        Set<Long> existingIds = portfolios.stream().map(Portfolio::getId).collect(Collectors.toSet());
+        if (!existingIds.containsAll(portfolioIds)) {
+            throw new ApplyException(ApplyErrorCode.NOT_FOUND_PORTFOLIO);
+        }
+        portfolios.removeIf(portfolio -> portfolioIds.contains(portfolio.getId()));
     }
 
     public boolean hasNoPortfolio() {
