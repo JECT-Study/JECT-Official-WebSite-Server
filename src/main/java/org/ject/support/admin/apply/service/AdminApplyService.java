@@ -8,12 +8,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
+import org.ject.support.admin.apply.dto.EditApplyRequest;
 import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyProjection;
 import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
-import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
@@ -21,15 +21,13 @@ import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
-import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
+import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.applicant.entity.ApplicantEditor;
 import org.ject.support.domain.applicant.service.ApplicantCommandService;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
-import org.ject.support.domain.apply.domain.Portfolio;
-import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
@@ -104,32 +102,36 @@ public class AdminApplyService {
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
     }
 
+    // 지원 상태와 공고 정보를 유지하며 개인정보·선정 결과·지원서 내용을 함께 편집
     @Transactional
-    public void updateSubmittedApply(final Long applyId,
-                                     final SubmittedApplyEditRequest request) {
-        Apply apply = adminApplyRepository.findByIdAndStatusWithApplicant(applyId, ApplyStatus.SUBMITTED)
+    public void editApply(Long applyId, EditApplyRequest request) {
+        Apply apply = adminApplyRepository.findByIdWithApplicant(applyId)
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
+        apply.validateEditable();
+        if (apply.isSubmitted() || request.selectionResult() != null) {
+            apply.editSelectionResult(request.selectionResult());
+        }
 
         Applicant applicant = apply.getApplicant();
         ApplicantEditor applicantEditor = applicant.toEditor()
                 .name(request.name())
                 .phoneNumber(request.phoneNumber())
                 .email(request.email())
-                .jobFamily(request.jobFamily())
+                .careerDetails(request.careerDetails())
+                .region(request.region())
+                .experiencePeriod(request.experiencePeriod())
+                .interestedDomains(request.interestedDomains())
                 .build();
         applicant.edit(applicantEditor);
+        apply.editNote(request.note());
 
-        Map<String, String> answers = request.answers();
-        validateQuestions(answers, apply.getRecruit());
-        String newContent = map2JsonSerializer.serializeAsString(answers);
-
-        List<Portfolio> newPortfolios = request.portfolios()
-                .stream()
-                .map(ApplyPortfolioDto::toEntity)
-                .toList();
-
-        apply.getApplicationForm()
-                .updateContentAndPortfolios(newContent, newPortfolios);
+        validateQuestions(request.answers(), apply.getRecruit());
+        String newContent = map2JsonSerializer.serializeAsString(request.answers());
+        ApplicationForm applicationForm = apply.getApplicationForm();
+        applicationForm.editContent(newContent);
+        if (request.deletePortfolioIds() != null && !request.deletePortfolioIds().isEmpty()) {
+            applicationForm.deletePortfolios(request.deletePortfolioIds());
+        }
     }
 
     // 지원서 삭제 후 연결된 지원자를 같은 트랜잭션에서 소프트 삭제
