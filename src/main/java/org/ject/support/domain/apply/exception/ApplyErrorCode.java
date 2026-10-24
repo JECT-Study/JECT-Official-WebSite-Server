@@ -23,7 +23,11 @@ public enum ApplyErrorCode implements ErrorCode {
     DUPLICATE_WAITLIST_NUMBER(CONFLICT, "APPLY-9", "같은 모집 공고 안에서 예비 번호는 중복될 수 없습니다."),
     DUPLICATE_APPLY_ID(BAD_REQUEST, "APPLY-10", "하나의 요청에 같은 지원을 두 번 담을 수 없습니다."),
     INVALID_WAITLIST_NUMBER(BAD_REQUEST, "APPLY-11", "예비 번호는 1 이상의 정수여야 합니다."),
-    APPLY_EXISTS_IN_OTHER_RECRUIT(CONFLICT, "APPLY-12", "다른 공고에서 작성 중인 지원서가 있습니다.")
+    APPLY_EXISTS_IN_OTHER_RECRUIT(CONFLICT, "APPLY-12", "다른 공고에서 작성 중인 지원서가 있습니다."),
+    APPLY_EDIT_NOT_ALLOWED(CONFLICT, "APPLY-13", "임시저장 또는 제출완료 지원서만 수정할 수 있습니다."),
+    SELECTION_RESULT_EDIT_NOT_ALLOWED(BAD_REQUEST, "APPLY-14", "임시저장 지원서에는 선정 결과를 지정할 수 없습니다."),
+    NOT_FOUND_PORTFOLIO(NOT_FOUND, "APPLY-15", "해당 지원서의 포트폴리오를 찾을 수 없습니다."),
+    SELECTION_RESULT_REQUIRED(BAD_REQUEST, "APPLY-16", "제출완료 지원서의 선정 결과를 지정해주세요.")
     ;
 
     private final HttpStatus httpStatus;

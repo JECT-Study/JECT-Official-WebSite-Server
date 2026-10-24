@@ -170,6 +170,29 @@ public class Apply extends BaseTimeEntity {
         }
     }
 
+    // 작성 중이거나 제출된 지원서만 관리자 편집 허용
+    public void validateEditable() {
+        if (status != ApplyStatus.TEMP_SAVED && status != ApplyStatus.SUBMITTED) {
+            throw new ApplyException(ApplyErrorCode.APPLY_EDIT_NOT_ALLOWED);
+        }
+    }
+
+    // 예비 번호 직접 입력 없이 기존 번호를 기준으로 선정 결과 편집
+    public void editSelectionResult(SelectionResult selectionResult) {
+        if (status != ApplyStatus.SUBMITTED) {
+            throw new ApplyException(ApplyErrorCode.SELECTION_RESULT_EDIT_NOT_ALLOWED);
+        }
+        if (selectionResult == null) {
+            throw new ApplyException(ApplyErrorCode.SELECTION_RESULT_REQUIRED);
+        }
+        decideSelectionResult(selectionResult, selectionResult.isWaitlisted() ? waitlistNumber : null);
+    }
+
+    // 비고 미입력은 빈 문자열로 정규화하여 저장
+    public void editNote(String note) {
+        this.note = note == null ? "" : note;
+    }
+
     public void clearWaitlistNumber() {
         this.waitlistNumber = null;
     }
