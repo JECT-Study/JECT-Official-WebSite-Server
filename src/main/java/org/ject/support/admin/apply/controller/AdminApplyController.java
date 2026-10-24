@@ -3,9 +3,9 @@ package org.ject.support.admin.apply.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
+import org.ject.support.admin.apply.dto.EditApplyRequest;
 import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
@@ -16,8 +16,8 @@ import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -56,9 +56,9 @@ public class AdminApplyController implements AdminApplyApiSpec {
 
     @Override
     @PutMapping("/{applyId}")
-    public void editSubmittedApply(@PathVariable("applyId") final Long applyId,
-                                   @RequestBody @Valid final SubmittedApplyEditRequest request) {
-        adminApplyService.updateSubmittedApply(applyId, request);
+    public void editApply(@PathVariable Long applyId,
+                          @RequestBody @Valid EditApplyRequest request) {
+        adminApplyService.editApply(applyId, request);
     }
 
     @Override
