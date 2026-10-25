@@ -38,7 +38,8 @@ public interface AdminMailDispatchApiSpec {
 
     @Operation(summary = "단체 메일 수신자별 결과 조회", description = """
             관리자 본인의 발송 작업에서 수신자별 결과와 시도 횟수·다음 재시도 시각·마지막 시도 오류를
-            상태로 필터링해 조회합니다. Outbox 없는 과거 이력의 재시도 정보는 null입니다.
+            상태로 필터링해 조회합니다. 예약에서 제외된 대상은 EXCLUDED와 exclusionReason으로 확인합니다.
+            Outbox 없는 과거 이력의 재시도 정보는 null입니다.
             """)
     Page<MailDispatchTargetResponse> searchTargets(
             @Parameter(hidden = true) @AuthPrincipal Long requestedByAdminId,
@@ -58,7 +59,8 @@ public interface AdminMailDispatchApiSpec {
     @Operation(summary = "단체 메일 예약", description = """
             예약 시점에 선택된 대상자와 렌더링된 메일 제목·본문을 snapshot으로 저장합니다.
             scheduledAt은 시간대가 포함된 ISO-8601 형식이며 UTC Instant로 저장합니다. 한국 시간 예시는 2026-10-07T10:00:00+09:00입니다.
-            현재 예약 시각 이후 자동 실행은 연결되어 있지 않으며, SCHEDULED 작업은 worker와 claim 대상이 아닙니다.
+            worker 활성화 환경에서 예약 시각 도래 후 자동 실행하며, 서버가 시각을 놓치면 복구 후 처리합니다.
+            발송 직전 자격을 다시 확인해 조건을 벗어난 대상만 제외하고 저장된 내용으로 발송합니다.
             생성 응답에 예약 시각은 포함되지 않으므로 기존 작업 상세 조회에서 확인합니다.
             """)
     MailDispatchResponse scheduleMail(

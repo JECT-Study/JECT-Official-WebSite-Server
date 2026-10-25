@@ -5,5 +5,6 @@ public enum MailDispatchTargetStatus {
     PENDING,
     SENT,
     FAILED,
-    UNKNOWN
+    UNKNOWN,
+    EXCLUDED
 }
