@@ -107,7 +107,7 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
 
             try (Statement statement = connection.createStatement();
                  ResultSet resultSet = statement.executeQuery("""
-                         SELECT request_fingerprint, unknown_count, claim_started_at, scheduled_at,
+                         SELECT request_fingerprint, unknown_count, claim_started_at, scheduled_at, scenario_type_snapshot,
                                 idempotency_key, status, target_count, subject_template, body_template
                          FROM mail_dispatch_job WHERE id = 1
                          """)) {
@@ -116,6 +116,7 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
                 assertThat(resultSet.getInt("unknown_count")).isZero();
                 assertThat(resultSet.getTimestamp("claim_started_at")).isNull();
                 assertThat(resultSet.getTimestamp("scheduled_at")).isNull();
+                assertThat(resultSet.getString("scenario_type_snapshot")).isNull();
                 assertThat(resultSet.getString("idempotency_key")).isEqualTo("legacy-request");
                 assertThat(resultSet.getString("status")).isEqualTo("REQUESTED");
                 assertThat(resultSet.getInt("target_count")).isEqualTo(1);
