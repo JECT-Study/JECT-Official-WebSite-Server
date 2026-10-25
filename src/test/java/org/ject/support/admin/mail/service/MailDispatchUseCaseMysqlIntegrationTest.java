@@ -623,7 +623,8 @@ class MailDispatchUseCaseMysqlIntegrationTest extends TestSupport {
         assertThat(scheduledActivationService.activateDueJobs(Instant.now(), 10)).isEqualTo(1);
         Long outboxId = outboxRepository.findByDispatchJobIdAndApplyId(job.getId(), applyId)
                 .orElseThrow().getId();
-        LocalDateTime claimTime = LocalDateTime.now();
+        // MySQL DATETIME(6) 반올림 경계가 재현되도록 나노초 고정
+        LocalDateTime claimTime = LocalDateTime.now().withNano(123_456_789);
         var initialEligibility = eligibility(applyId, 2L, ApplyStatus.SUBMITTED, SelectionResult.PASSED);
         var changedEligibility = eligibility(applyId, 2L, ApplyStatus.SUBMITTED, SelectionResult.FAILED);
         given(applyQueryService.findCurrentEligibilityFactsByApplyIds(anyList()))
@@ -631,14 +632,16 @@ class MailDispatchUseCaseMysqlIntegrationTest extends TestSupport {
         var firstClaim = claimService.claim(outboxId, claimTime, Duration.ofMinutes(2)).orElseThrow();
         assertThat(claimService.recordThrottling(outboxId, firstClaim.claimToken(), claimTime.plusSeconds(1)))
                 .isTrue();
-        assertThat(claimService.claim(outboxId, claimTime.plusSeconds(30), Duration.ofMinutes(2))).isEmpty();
+        // DB 저장 정밀도를 기준으로 재시도 직전·도래 시각을 검증
+        LocalDateTime retryAt = outboxRepository.findById(outboxId).orElseThrow().getNextAttemptAt();
+        assertThat(claimService.claim(outboxId, retryAt.minusNanos(1), Duration.ofMinutes(2))).isEmpty();
 
         CountDownLatch ready = new CountDownLatch(2);
         CountDownLatch start = new CountDownLatch(1);
         Callable<Boolean> retryClaim = () -> {
             ready.countDown();
             assertThat(start.await(10, TimeUnit.SECONDS)).isTrue();
-            return claimService.claim(outboxId, claimTime.plusSeconds(31), Duration.ofMinutes(2)).isPresent();
+            return claimService.claim(outboxId, retryAt, Duration.ofMinutes(2)).isPresent();
         };
 
         // when
