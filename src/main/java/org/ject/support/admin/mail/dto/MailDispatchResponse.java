@@ -10,8 +10,14 @@ public record MailDispatchResponse(
         int processingCount,
         int successCount,
         int failedCount,
-        int unknownCount
+        int unknownCount,
+        int excludedCount
 ) {
+
+    public MailDispatchResponse(Long dispatchJobId, MailDispatchJobStatus status, int targetCount,
+                                int processingCount, int successCount, int failedCount, int unknownCount) {
+        this(dispatchJobId, status, targetCount, processingCount, successCount, failedCount, unknownCount, 0);
+    }
 
     public static MailDispatchResponse from(MailDispatchJob job) {
         return new MailDispatchResponse(
@@ -21,7 +27,8 @@ public record MailDispatchResponse(
                 job.getProcessingCount(),
                 job.getSuccessCount(),
                 job.getFailedCount(),
-                job.getUnknownCount()
+                job.getUnknownCount(),
+                job.getExcludedCount()
         );
     }
 }

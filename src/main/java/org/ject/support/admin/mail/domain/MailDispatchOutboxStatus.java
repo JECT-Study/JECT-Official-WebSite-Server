@@ -6,5 +6,6 @@ public enum MailDispatchOutboxStatus {
     PROCESSING,
     SENT,
     FAILED,
-    UNKNOWN
+    UNKNOWN,
+    EXCLUDED
 }

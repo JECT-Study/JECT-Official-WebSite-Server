@@ -17,10 +17,19 @@ public record MailDispatchTargetResponse(
         @Schema(description = "예약된 다음 재시도 시각. 대기 시각이 없으면 null이며 재발송 허가를 뜻하지 않음")
         LocalDateTime nextAttemptAt,
         @Schema(description = "가장 최근 저장된 시도 오류 코드. 대기 중 오류는 최종 실패 사유와 구분")
-        String lastAttemptFailureReason
+        String lastAttemptFailureReason,
+        @Schema(description = "예약 발송에서 제외된 경우의 개인정보 없는 사유 코드")
+        String exclusionReason
 ) {
     public MailDispatchTargetResponse {
         failureReason = EmailErrorCode.normalizeCode(failureReason);
         lastAttemptFailureReason = EmailErrorCode.normalizeCode(lastAttemptFailureReason);
+    }
+
+    public MailDispatchTargetResponse(Long targetId, Long applyId, String email, MailDispatchTargetStatus status,
+                                      LocalDateTime sentAt, String failureReason, Integer attemptCount,
+                                      LocalDateTime nextAttemptAt, String lastAttemptFailureReason) {
+        this(targetId, applyId, email, status, sentAt, failureReason, attemptCount, nextAttemptAt,
+                lastAttemptFailureReason, null);
     }
 }

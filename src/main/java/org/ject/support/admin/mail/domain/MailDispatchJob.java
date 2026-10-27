@@ -12,6 +12,7 @@ import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.Version;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,6 +34,10 @@ public class MailDispatchJob extends BaseTimeEntity {
 
     @Column(name = "scenario_id", nullable = false)
     private Long scenarioId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "scenario_type_snapshot", length = 50)
+    private MailScenarioType scenarioTypeSnapshot;
 
     @Column(name = "recruit_id", nullable = false)
     private Long recruitId;
@@ -61,6 +66,9 @@ public class MailDispatchJob extends BaseTimeEntity {
 
     @Column(name = "unknown_count", nullable = false)
     private int unknownCount;
+
+    @Column(name = "excluded_count", nullable = false)
+    private int excludedCount;
 
     @Column(name = "requested_at", nullable = false)
     private LocalDateTime requestedAt;
@@ -100,8 +108,10 @@ public class MailDispatchJob extends BaseTimeEntity {
                             String bodyTemplate,
                             String inputVariablesJson,
                             String requestFingerprint,
-                            int targetCount) {
+                            int targetCount,
+                            MailScenarioType scenarioTypeSnapshot) {
         this.scenarioId = scenarioId;
+        this.scenarioTypeSnapshot = scenarioTypeSnapshot;
         this.recruitId = recruitId;
         this.requestedByAdminId = requestedByAdminId;
         this.idempotencyKey = idempotencyKey;
@@ -144,6 +154,20 @@ public class MailDispatchJob extends BaseTimeEntity {
                                          String inputVariablesJson,
                                          String requestFingerprint,
                                          int targetCount) {
+        return create(scenarioId, recruitId, requestedByAdminId, idempotencyKey, subjectTemplate, bodyTemplate,
+                inputVariablesJson, requestFingerprint, targetCount, null);
+    }
+
+    public static MailDispatchJob create(Long scenarioId,
+                                         Long recruitId,
+                                         Long requestedByAdminId,
+                                         String idempotencyKey,
+                                         String subjectTemplate,
+                                         String bodyTemplate,
+                                         String inputVariablesJson,
+                                         String requestFingerprint,
+                                         int targetCount,
+                                         MailScenarioType scenarioTypeSnapshot) {
         if (targetCount <= 0) {
             throw new MailException(MailErrorCode.INVALID_DISPATCH_TARGET_COUNT);
         }
@@ -156,7 +180,8 @@ public class MailDispatchJob extends BaseTimeEntity {
                 bodyTemplate,
                 inputVariablesJson,
                 requestFingerprint,
-                targetCount
+                targetCount,
+                scenarioTypeSnapshot
         );
     }
 
@@ -189,6 +214,18 @@ public class MailDispatchJob extends BaseTimeEntity {
         claimStartedAt = startedAt;
     }
 
+    public boolean startScheduledProcessing(Instant now) {
+        Objects.requireNonNull(now);
+        if (status != MailDispatchJobStatus.SCHEDULED || scheduledAt == null || scheduledAt.isAfter(now)) {
+            return false;
+        }
+        status = MailDispatchJobStatus.PROCESSING;
+        processingCount = targetCount;
+        startedAt = LocalDateTime.now();
+        claimStartedAt = startedAt;
+        return true;
+    }
+
     public void recordSuccess() {
         validateStatus(MailDispatchJobStatus.PROCESSING);
         processingCount--;
@@ -210,14 +247,24 @@ public class MailDispatchJob extends BaseTimeEntity {
         finishIfCompleted();
     }
 
+    public void recordExcluded() {
+        validateStatus(MailDispatchJobStatus.PROCESSING);
+        if (processingCount <= 0) {
+            throw new MailException(MailErrorCode.INVALID_DISPATCH_JOB_STATUS);
+        }
+        processingCount--;
+        excludedCount++;
+        finishIfCompleted();
+    }
+
     private void finishIfCompleted() {
         if (processingCount > 0) {
             return;
         }
-        // 모든 대상이 실패한 경우에만 작업을 실패로 마무리한다.
+        // 제외 대상을 빼고 실제 발송 시도 대상이 모두 실패한 경우에만 작업을 실패로 마무리한다.
         status = unknownCount > 0
                 ? MailDispatchJobStatus.UNKNOWN
-                : failedCount == targetCount
+                : failedCount > 0 && failedCount + excludedCount == targetCount
                 ? MailDispatchJobStatus.FAILED
                 : MailDispatchJobStatus.COMPLETED;
         finishedAt = LocalDateTime.now();

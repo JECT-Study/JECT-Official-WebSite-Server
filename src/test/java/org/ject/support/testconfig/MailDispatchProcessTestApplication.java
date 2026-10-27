@@ -9,6 +9,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import org.ject.support.admin.mail.config.MailDispatchWorkerConfig;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
@@ -17,11 +18,14 @@ import org.ject.support.admin.mail.service.MailDispatchClaimService;
 import org.ject.support.admin.mail.service.MailDispatchExecutionService;
 import org.ject.support.admin.mail.service.MailDispatchPersistenceService;
 import org.ject.support.admin.mail.service.MailDispatchPlan;
+import org.ject.support.admin.mail.service.MailDispatchScheduledActivationService;
 import org.ject.support.admin.mail.service.MailDispatchTransitionTelemetryService;
 import org.ject.support.common.config.JpaAuditConfig;
 import org.ject.support.common.data.querydsl.QueryDslConfig;
 import org.ject.support.common.response.ObjectMapperConfig;
 import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.domain.apply.dto.ApplyEligibilityFacts;
+import org.ject.support.domain.apply.service.ApplyQueryService;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.service.EmailSendService;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,7 +48,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EntityScan(basePackageClasses = MailDispatchJob.class)
 @EnableJpaRepositories(basePackageClasses = MailDispatchJobRepository.class)
 @Import({MailDispatchPersistenceService.class, MailDispatchClaimService.class,
-        MailDispatchExecutionService.class, MailDispatchWorkerConfig.class, MailDispatchTransitionTelemetryService.class,
+        MailDispatchExecutionService.class, MailDispatchScheduledActivationService.class,
+        MailDispatchWorkerConfig.class, MailDispatchTransitionTelemetryService.class,
         QueryDslConfig.class, JpaAuditConfig.class, Map2JsonSerializer.class, ObjectMapperConfig.class})
 public class MailDispatchProcessTestApplication {
 
@@ -121,6 +126,21 @@ public class MailDispatchProcessTestApplication {
             @Override
             public void sendBulkTemplatedEmail(EmailTemplate template, List<String> recipients, Map<String, String> params) {
                 throw new UnsupportedOperationException("Only saved mail snapshots are supported in this test");
+            }
+        };
+    }
+
+    @Bean
+    ApplyQueryService processTestApplyQueryService() {
+        return new ApplyQueryService() {
+            @Override
+            public Optional<Long> getRecruitIdByApplicantId(Long applicantId) {
+                return Optional.empty();
+            }
+
+            @Override
+            public List<ApplyEligibilityFacts> findCurrentEligibilityFactsByApplyIds(List<Long> applyIds) {
+                return List.of();
             }
         };
     }

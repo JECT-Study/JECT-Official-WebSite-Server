@@ -29,6 +29,7 @@ import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
 import org.ject.support.base.TestSupport;
 import org.ject.support.common.schedule.SchedulingConfig;
 import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.domain.apply.service.ApplyQueryService;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
 import org.ject.support.external.email.service.EmailSendService;
@@ -60,6 +61,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({MailDispatchPersistenceService.class, MailDispatchClaimService.class,
         MailDispatchExecutionService.class, MailDispatchQueryService.class,
+        MailDispatchScheduledActivationService.class,
         QueryDslTestConfig.class, MailDispatchRecoveryMysqlTest.TestDependencies.class})
 @Testcontainers
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -78,6 +80,9 @@ class MailDispatchRecoveryMysqlTest extends TestSupport {
     private MailDispatchExecutionService executionService;
 
     @Autowired
+    private MailDispatchScheduledActivationService scheduledActivationService;
+
+    @Autowired
     private MailDispatchQueryService queryService;
 
     @Autowired
@@ -94,6 +99,9 @@ class MailDispatchRecoveryMysqlTest extends TestSupport {
 
     @MockitoBean
     private EmailSendService emailSendService;
+
+    @MockitoBean
+    private ApplyQueryService applyQueryService;
 
     @DynamicPropertySource
     static void configureDataSource(DynamicPropertyRegistry registry) {
@@ -434,6 +442,7 @@ class MailDispatchRecoveryMysqlTest extends TestSupport {
         new ApplicationContextRunner()
                 .withUserConfiguration(MailDispatchWorkerConfig.class, SchedulingConfig.class)
                 .withBean(MailDispatchExecutionService.class, () -> executionService)
+                .withBean(MailDispatchScheduledActivationService.class, () -> scheduledActivationService)
                 .withPropertyValues("mail.dispatch.worker.enabled=true", "mail.dispatch.worker.poll-delay=50")
                 .run(context -> {
                     assertThat(context).hasNotFailed();
@@ -508,6 +517,7 @@ class MailDispatchRecoveryMysqlTest extends TestSupport {
     private ApplicationContextRunner workerContext() {
         return new ApplicationContextRunner()
                 .withUserConfiguration(MailDispatchWorkerConfig.class)
+                .withBean(MailDispatchScheduledActivationService.class, () -> scheduledActivationService)
                 .withBean(MailDispatchExecutionService.class,
                         () -> new MailDispatchExecutionService(claimService, outboxRepository, emailSendService));
     }

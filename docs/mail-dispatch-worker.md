@@ -5,7 +5,7 @@ worker는 DB에 보존된 미처리 메일을 실행하고 중단된 실행을 �
 ## 설정
 
 - `mail.dispatch.worker.enabled`: 기본 `false`. 명시적으로 `true`일 때만 worker와 전용 scheduler를 생성한다.
-- `mail.dispatch.worker.batch-size`: 기본 `10`, 허용 범위 `1`부터 `100`. 범위를 벗어나면 애플리케이션 시작을 거부한다. 조회 한도는 격리와 발송 배치에 각각 적용한다.
+- `mail.dispatch.worker.batch-size`: 기본 `10`, 허용 범위 `1`부터 `100`. 범위를 벗어나면 애플리케이션 시작을 거부한다. 조회 한도는 예약 활성화·격리·발송 배치에 각각 적용한다.
 - `mail.dispatch.worker.poll-delay`: 기본 `1000`밀리초. 이전 배치가 끝난 뒤 다음 배치까지 기다리는 간격이다. Spring이 지원하는 양의 fixed-delay 값만 사용한다.
 
 환경별 프로필 파일은 커밋하지 않는다. 운영 활성화는 별도 승인 후 해당 환경 설정에서 수행한다.
@@ -22,7 +22,8 @@ worker 활성화 시 발송 API는 발송 의도를 저장한 뒤 현재 상태�
   "processingCount": 0,
   "successCount": 0,
   "failedCount": 0,
-  "unknownCount": 0
+  "unknownCount": 0,
+  "excludedCount": 0
 }
 ```
 
@@ -30,7 +31,7 @@ worker 활성화 시 발송 API는 발송 의도를 저장한 뒤 현재 상태�
 
 ## 실행 흐름
 
-`mailDispatchScheduler`의 단일 스레드가 격리 배치 후 안전한 미처리 발송 배치를 호출한다. 새 실행은 현재 상태를 잠금 안에서 재검증하고 claim을 커밋한 뒤 저장된 수신자별 snapshot으로 SES를 호출한다. 외부 호출 중 DB 트랜잭션을 유지하지 않는다. 모집 scheduler와 실행 스레드를 공유하지 않으며 별도 비동기 발송 큐를 만들지 않는다.
+`mailDispatchScheduler`의 단일 스레드가 도래 예약 활성화·격리·안전한 미처리 발송 배치를 순서대로 호출한다. 예약 활성화는 취소와 같은 작업 잠금을 사용해 상태·시각을 재검증한다. 새 실행은 현재 상태를 잠금 안에서 재검증하고 claim을 커밋한 뒤 저장된 수신자별 snapshot으로 SES를 호출한다. 외부 호출 중 DB 트랜잭션을 유지하지 않는다. 모집 scheduler와 실행 스레드를 공유하지 않으며 별도 비동기 발송 큐를 만들지 않는다. 예약 대상 자격·제외 사유는 [예약 자동 실행](mail-scheduled-execution.md)을 따른다.
 
 발송 후보는 `REQUESTED` 작업 또는 claim 표식이 있는 `PROCESSING` 작업의 `PENDING` 대상 중 재시도 시각이 도래한 대상이다. 만료 claim과 기존 동기 실행의 미확정 대상은 `UNKNOWN / MAIL-21`로 격리한다. `SENT`, `FAILED`, `UNKNOWN`을 자동 재발송하지 않는다. 종료 신호를 받은 실행자는 새 claim을 만들지 않는다.
 
@@ -84,7 +85,8 @@ worker의 배치 처리 오류는 예외 종류만 기록하고 다음 주기에
   "failureReason": null,
   "attemptCount": 1,
   "nextAttemptAt": "2026-10-04T12:00:30",
-  "lastAttemptFailureReason": "EMAIL-4"
+  "lastAttemptFailureReason": "EMAIL-4",
+  "exclusionReason": null
 }
 ```
 

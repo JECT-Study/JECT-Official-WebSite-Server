@@ -107,15 +107,18 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
 
             try (Statement statement = connection.createStatement();
                  ResultSet resultSet = statement.executeQuery("""
-                         SELECT request_fingerprint, unknown_count, claim_started_at, scheduled_at,
+                         SELECT request_fingerprint, unknown_count, excluded_count, claim_started_at, scheduled_at,
+                                scenario_type_snapshot,
                                 idempotency_key, status, target_count, subject_template, body_template
                          FROM mail_dispatch_job WHERE id = 1
                          """)) {
                 assertThat(resultSet.next()).isTrue();
                 assertThat(resultSet.getString("request_fingerprint")).isNull();
                 assertThat(resultSet.getInt("unknown_count")).isZero();
+                assertThat(resultSet.getInt("excluded_count")).isZero();
                 assertThat(resultSet.getTimestamp("claim_started_at")).isNull();
                 assertThat(resultSet.getTimestamp("scheduled_at")).isNull();
+                assertThat(resultSet.getString("scenario_type_snapshot")).isNull();
                 assertThat(resultSet.getString("idempotency_key")).isEqualTo("legacy-request");
                 assertThat(resultSet.getString("status")).isEqualTo("REQUESTED");
                 assertThat(resultSet.getInt("target_count")).isEqualTo(1);
@@ -130,6 +133,34 @@ class MailDispatchOutboxMigrationTest extends TestSupport {
                          """)) {
                 assertThat(resultSet.next()).isTrue();
                 assertThat(resultSet.getString("selection_result_snapshot")).isNull();
+            }
+
+            try (Statement statement = connection.createStatement();
+                 ResultSet resultSet = statement.executeQuery("""
+                         SELECT exclusion_reason FROM mail_dispatch_target
+                         WHERE dispatch_job_id = 1 AND apply_id = 90
+                         """)) {
+                assertThat(resultSet.next()).isTrue();
+                assertThat(resultSet.getString("exclusion_reason")).isNull();
+            }
+
+            try (PreparedStatement statement = connection.prepareStatement("""
+                    SELECT COLUMN_NAME
+                    FROM INFORMATION_SCHEMA.STATISTICS
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND TABLE_NAME = 'mail_dispatch_job'
+                      AND INDEX_NAME = 'idx_mail_dispatch_job_due'
+                    ORDER BY SEQ_IN_INDEX
+                    """)) {
+                try (ResultSet resultSet = statement.executeQuery()) {
+                    assertThat(resultSet.next()).isTrue();
+                    assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("status");
+                    assertThat(resultSet.next()).isTrue();
+                    assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("scheduled_at");
+                    assertThat(resultSet.next()).isTrue();
+                    assertThat(resultSet.getString("COLUMN_NAME")).isEqualTo("id");
+                    assertThat(resultSet.next()).isFalse();
+                }
             }
 
             // when

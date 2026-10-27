@@ -23,6 +23,7 @@ import org.ject.support.admin.mail.repository.MailDispatchJobRepository;
 import org.ject.support.admin.mail.repository.MailDispatchOutboxRepository;
 import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
 import org.ject.support.base.TestSupport;
+import org.ject.support.domain.apply.service.ApplyQueryService;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -35,6 +36,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.MySQLContainer;
@@ -68,6 +70,9 @@ class MailDispatchClaimServiceMysqlTest extends TestSupport {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @MockitoBean
+    private ApplyQueryService applyQueryService;
 
     @DynamicPropertySource
     static void configureDataSource(DynamicPropertyRegistry registry) {
