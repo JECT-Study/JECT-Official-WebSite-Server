@@ -7,17 +7,12 @@ import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
-import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 
 public interface AdminApplyQueryRepository {
 
-    List<WaitlistOrderResponse> searchWaitlistOrders(
-            WaitlistOrderSearchCondition condition,
-            int limit);
-
-    long countWaitlistOrders(Long recruitId);
+    List<WaitlistOrderResponse> getWaitlistOrders(Long recruitId);
 
     List<SubmittedApplyProjection> searchSubmittedApplies(
             SubmittedApplySearchCondition condition,

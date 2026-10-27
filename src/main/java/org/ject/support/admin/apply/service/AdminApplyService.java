@@ -22,7 +22,7 @@ import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.dto.UpdateSelectionResultsRequest;
 import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
-import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
+import org.ject.support.admin.apply.dto.WaitlistOrdersResponse;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
@@ -170,16 +170,11 @@ public class AdminApplyService {
         return applies.size();
     }
 
-    // 예비 번호 기준으로 다음 목록과 공고 전체 예비 합격자 수 조회
+    // 공고별 예비 합격자 전체와 조회된 인원수 반환
     @Transactional(readOnly = true)
-    public CursorPageResponse<WaitlistOrderResponse> searchWaitlistOrders(WaitlistOrderSearchCondition condition) {
-        int size = condition.getSizeOrDefault();
-        List<WaitlistOrderResponse> queried = adminApplyRepository.searchWaitlistOrders(condition, size + 1);
-        boolean hasNext = queried.size() > size;
-        List<WaitlistOrderResponse> content = hasNext ? queried.subList(0, size) : queried;
-        Long nextCursor = hasNext ? content.getLast().waitlistNumber().longValue() : null;
-        return CursorPageResponse.of(content, size, hasNext, nextCursor,
-                adminApplyRepository.countWaitlistOrders(condition.recruitId()));
+    public WaitlistOrdersResponse getWaitlistOrders(Long recruitId) {
+        List<WaitlistOrderResponse> content = adminApplyRepository.getWaitlistOrders(recruitId);
+        return WaitlistOrdersResponse.from(content);
     }
 
     // 삭제되지 않은 지원서와 지원자를 함께 조회

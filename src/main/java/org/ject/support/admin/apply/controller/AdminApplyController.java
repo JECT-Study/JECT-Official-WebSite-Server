@@ -11,8 +11,7 @@ import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.dto.UpdateSelectionResultsRequest;
-import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
-import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
+import org.ject.support.admin.apply.dto.WaitlistOrdersResponse;
 import org.ject.support.admin.apply.service.AdminApplyService;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
@@ -52,9 +51,8 @@ public class AdminApplyController implements AdminApplyApiSpec {
 
     @Override
     @GetMapping("/waitlist-orders")
-    public CursorPageResponse<WaitlistOrderResponse> searchWaitlistOrders(
-            @Valid @ModelAttribute WaitlistOrderSearchCondition condition) {
-        return adminApplyService.searchWaitlistOrders(condition);
+    public WaitlistOrdersResponse getWaitlistOrders(@RequestParam Long recruitId) {
+        return adminApplyService.getWaitlistOrders(recruitId);
     }
 
     @Override

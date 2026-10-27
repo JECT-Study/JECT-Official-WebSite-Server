@@ -18,7 +18,6 @@ import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
-import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.SelectionResult;
@@ -32,10 +31,7 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<WaitlistOrderResponse> searchWaitlistOrders(
-            WaitlistOrderSearchCondition condition,
-            int limit
-    ) {
+    public List<WaitlistOrderResponse> getWaitlistOrders(Long recruitId) {
         return queryFactory
                 .select(Projections.constructor(
                         WaitlistOrderResponse.class,
@@ -47,26 +43,9 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
                 ))
                 .from(apply)
                 .join(apply.applicant, applicant)
-                .where(
-                        waitlistedInRecruit(condition.recruitId()),
-                        condition.cursor() == null
-                                ? null
-                                : apply.waitlistNumber.longValue().gt(condition.cursor())
-                )
-                .orderBy(apply.waitlistNumber.asc())
-                .limit(limit)
-                .fetch();
-    }
-
-    @Override
-    public long countWaitlistOrders(Long recruitId) {
-        Long count = queryFactory
-                .select(apply.count())
-                .from(apply)
-                .join(apply.applicant, applicant)
                 .where(waitlistedInRecruit(recruitId))
-                .fetchOne();
-        return count == null ? 0L : count;
+                .orderBy(apply.waitlistNumber.asc())
+                .fetch();
     }
 
     @Override

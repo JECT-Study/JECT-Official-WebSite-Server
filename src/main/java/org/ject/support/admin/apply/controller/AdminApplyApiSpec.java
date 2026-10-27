@@ -3,6 +3,7 @@ package org.ject.support.admin.apply.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.EditApplyRequest;
 import org.ject.support.admin.apply.dto.EditWaitlistOrderRequest;
@@ -12,8 +13,7 @@ import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.dto.UpdateSelectionResultsRequest;
-import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
-import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
+import org.ject.support.admin.apply.dto.WaitlistOrdersResponse;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -38,9 +38,8 @@ public interface AdminApplyApiSpec {
 
     @Operation(
             summary = "예비 번호 조정 목록 조회",
-            description = "공고별 예비 번호순으로 조회합니다. 전체 인원을 포함하며 커서는 마지막 예비 번호입니다.")
-    CursorPageResponse<WaitlistOrderResponse> searchWaitlistOrders(
-            @Valid @ModelAttribute WaitlistOrderSearchCondition condition);
+            description = "공고별 예비 합격자 전체를 예비 번호순으로 조회합니다.")
+    WaitlistOrdersResponse getWaitlistOrders(@RequestParam @Positive Long recruitId);
 
     @Operation(
             summary = "지원서 상세 조회",
