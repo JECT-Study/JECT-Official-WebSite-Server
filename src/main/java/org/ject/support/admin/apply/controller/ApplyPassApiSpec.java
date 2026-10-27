@@ -10,7 +10,7 @@ public interface ApplyPassApiSpec {
 
     @Operation(
             summary = "지원자 합격",
-            description = "지원자를 합격 처리하여 구성원으로 승인합니다."
+            description = "지원서의 선정 결과를 합격으로 지정합니다."
     )
-    int passApply(@RequestBody ApplyPassRequest request);
+    void passApply(@RequestBody ApplyPassRequest request);
 }
