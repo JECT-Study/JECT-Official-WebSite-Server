@@ -9,7 +9,6 @@ import org.ject.support.admin.apply.dto.EditWaitlistOrderRequest;
 import org.ject.support.admin.apply.dto.GetAppliesRequest;
 import org.ject.support.admin.apply.dto.UpdateSelectionResultsRequest;
 import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
-import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.applicant.entity.Applicant;
@@ -196,38 +195,30 @@ class AdminApplySelectionServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 예비목록의_다음_커서는_마지막_예비번호이고_전체_인원은_유지한다() {
+    void 예비합격자_전체와_목록의_인원수를_반환한다() {
         // given
-        var condition = new WaitlistOrderSearchCondition(1L, null, 2);
-        given(repository.searchWaitlistOrders(condition, 3)).willReturn(List.of(
+        given(repository.getWaitlistOrders(1L)).willReturn(List.of(
                 response(30L, 1), response(10L, 2), response(20L, 3)));
-        given(repository.countWaitlistOrders(1L)).willReturn(3L);
 
         // when
-        var result = service.searchWaitlistOrders(condition);
+        var result = service.getWaitlistOrders(1L);
 
         // then
-        assertThat(result.content()).extracting(r -> r.applyId()).containsExactly(30L, 10L);
-        assertThat(result.nextCursor()).isEqualTo(2L);
-        assertThat(result.hasNext()).isTrue();
-        assertThat(result.totalCount()).isEqualTo(3L);
+        assertThat(result.content()).extracting(r -> r.applyId()).containsExactly(30L, 10L, 20L);
+        assertThat(result.totalCount()).isEqualTo(3);
     }
 
     @Test
-    void 예비목록의_마지막_페이지는_다음_커서가_없다() {
+    void 예비합격자가_없으면_빈_목록과_영명을_반환한다() {
         // given
-        var condition = new WaitlistOrderSearchCondition(1L, 2L, 2);
-        given(repository.searchWaitlistOrders(condition, 3)).willReturn(List.of(response(20L, 3)));
-        given(repository.countWaitlistOrders(1L)).willReturn(3L);
+        given(repository.getWaitlistOrders(1L)).willReturn(List.of());
 
         // when
-        var result = service.searchWaitlistOrders(condition);
+        var result = service.getWaitlistOrders(1L);
 
         // then
-        assertThat(result.content()).extracting(r -> r.applyId()).containsExactly(20L);
-        assertThat(result.nextCursor()).isNull();
-        assertThat(result.hasNext()).isFalse();
-        assertThat(result.totalCount()).isEqualTo(3L);
+        assertThat(result.content()).isEmpty();
+        assertThat(result.totalCount()).isZero();
     }
 
     @Test

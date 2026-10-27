@@ -19,7 +19,7 @@ import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.EditApplyRequest;
 import org.ject.support.admin.apply.dto.EditWaitlistOrderRequest;
 import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
-import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
+import org.ject.support.admin.apply.dto.WaitlistOrdersResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.service.AdminApplyService;
@@ -279,21 +279,30 @@ class AdminApplyControllerTest extends UnitTestSupport {
     }
 
     @Test
-    void 예비번호_목록은_전체_인원과_다음_커서를_반환한다() throws Exception {
+    void 예비번호_목록은_전체_배열과_인원수를_반환한다() throws Exception {
         // given
-        var condition = new WaitlistOrderSearchCondition(1L, 2L, 1);
-        var response = new WaitlistOrderResponse(30L, "지원자", "01012345678", CareerDetails.STUDENT, 3);
-        given(adminApplyService.searchWaitlistOrders(condition))
-                .willReturn(CursorPageResponse.of(List.of(response), 1, true, 3L, 5));
+        var first = new WaitlistOrderResponse(30L, "지원자", "01012345678", CareerDetails.STUDENT, 1);
+        var second = new WaitlistOrderResponse(10L, "다음지원자", "01012345678", CareerDetails.STUDENT, 2);
+        given(adminApplyService.getWaitlistOrders(1L))
+                .willReturn(WaitlistOrdersResponse.from(List.of(first, second)));
 
         // when, then
-        mockMvc.perform(get("/admin/applies/waitlist-orders")
-                        .param("recruitId", "1").param("cursor", "2").param("size", "1"))
+        mockMvc.perform(get("/admin/applies/waitlist-orders").param("recruitId", "1"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content.length()").value(2))
                 .andExpect(jsonPath("$.data.content[0].applyId").value(30))
-                .andExpect(jsonPath("$.data.content[0].waitlistNumber").value(3))
-                .andExpect(jsonPath("$.data.totalCount").value(5))
-                .andExpect(jsonPath("$.data.nextCursor").value(3));
+                .andExpect(jsonPath("$.data.content[1].applyId").value(10))
+                .andExpect(jsonPath("$.data.totalCount").value(2))
+                .andExpect(jsonPath("$.data.nextCursor").doesNotExist())
+                .andExpect(jsonPath("$.data.hasNext").doesNotExist())
+                .andExpect(jsonPath("$.data.size").doesNotExist());
+    }
+
+    @Test
+    void 예비번호_목록조회에_공고가_누락되면_거부한다() throws Exception {
+        // when, then
+        mockMvc.perform(get("/admin/applies/waitlist-orders"))
+                .andExpect(status().isBadRequest());
     }
 
     private ObjectNode editBody() throws Exception {

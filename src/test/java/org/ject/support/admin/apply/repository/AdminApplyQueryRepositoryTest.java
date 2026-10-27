@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
 import org.ject.support.admin.apply.dto.SubmittedApplyProjection;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
@@ -491,7 +490,7 @@ class AdminApplyQueryRepositoryTest {
     }
 
     @Test
-    void 예비번호_순서로_다음_목록을_조회하고_전체_인원은_유지한다() {
+    void 해당_공고의_예비합격자_전체를_예비번호_순서로_조회한다() {
         // given
         Apply first = saveSubmittedApply("order1@test.com", CareerDetails.STUDENT, SelectionResult.WAITLISTED, 3);
         Apply second = saveSubmittedApply("order2@test.com", CareerDetails.STUDENT, SelectionResult.WAITLISTED, 1);
@@ -503,18 +502,13 @@ class AdminApplyQueryRepositoryTest {
         applyRepository.saveAndFlush(other);
 
         // when
-        var firstPage = adminApplyRepository.searchWaitlistOrders(
-                new WaitlistOrderSearchCondition(beRecruit.getId(), null, 2), 2);
-        var nextPage = adminApplyRepository.searchWaitlistOrders(
-                new WaitlistOrderSearchCondition(beRecruit.getId(), 2L, 2), 2);
+        var content = adminApplyRepository.getWaitlistOrders(beRecruit.getId());
 
         // then
-        assertThat(firstPage).extracting(r -> r.applyId()).containsExactly(second.getId(), third.getId());
-        assertThat(nextPage).extracting(r -> r.applyId()).containsExactly(first.getId());
-        assertThat(firstPage.getFirst().name()).isEqualTo(second.getApplicant().getName());
-        assertThat(firstPage.getFirst().phoneNumber()).isEqualTo(second.getApplicant().getPhoneNumber());
-        assertThat(firstPage.getFirst().careerDetails()).isEqualTo(CareerDetails.STUDENT);
-        assertThat(adminApplyRepository.countWaitlistOrders(beRecruit.getId())).isEqualTo(3);
+        assertThat(content).extracting(r -> r.applyId()).containsExactly(second.getId(), third.getId(), first.getId());
+        assertThat(content.getFirst().name()).isEqualTo(second.getApplicant().getName());
+        assertThat(content.getFirst().phoneNumber()).isEqualTo(second.getApplicant().getPhoneNumber());
+        assertThat(content.getFirst().careerDetails()).isEqualTo(CareerDetails.STUDENT);
     }
 
     @Test
@@ -534,12 +528,10 @@ class AdminApplyQueryRepositoryTest {
         entityManager.clear();
 
         // when
-        var content = adminApplyRepository.searchWaitlistOrders(
-                new WaitlistOrderSearchCondition(beRecruit.getId(), null, 20), 20);
+        var content = adminApplyRepository.getWaitlistOrders(beRecruit.getId());
 
         // then
         assertThat(content).extracting(r -> r.applyId()).containsExactly(visible.getId());
-        assertThat(adminApplyRepository.countWaitlistOrders(beRecruit.getId())).isEqualTo(1);
         assertThat(adminApplyRepository.findWaitlistedApplies(beRecruit.getId()))
                 .extracting(Apply::getId).containsExactly(visible.getId());
         assertThat(adminApplyRepository.findAppliesInRecruitWithApplicant(
