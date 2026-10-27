@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import org.ject.support.admin.apply.dto.EditApplyRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
@@ -79,7 +78,7 @@ class AdminApplyEditServiceTest extends UnitTestSupport {
         Recruit recruit = apply.getRecruit();
         EditApplyRequest request = request(Map.of("1", "새 답변"),
                 status == ApplyStatus.SUBMITTED ? SelectionResult.PASSED : null, "새 비고", Set.of(10L));
-        given(repository.findByIdWithApplicant(1L)).willReturn(Optional.of(apply));
+        given(repository.findAppliesWithApplicant(List.of(1L))).willReturn(List.of(apply));
 
         // when
         service.editApply(1L, request);
@@ -111,7 +110,7 @@ class AdminApplyEditServiceTest extends UnitTestSupport {
         EditApplyRequest request = new EditApplyRequest("이수정", "01098765432", "after@test.com",
                 CareerDetails.EMPLOYEE, null, null, List.of("GAME"), SelectionResult.PASSED,
                 null, Map.of(), null);
-        given(repository.findByIdWithApplicant(1L)).willReturn(Optional.of(apply));
+        given(repository.findAppliesWithApplicant(List.of(1L))).willReturn(List.of(apply));
 
         // when
         service.editApply(1L, request);
@@ -128,7 +127,7 @@ class AdminApplyEditServiceTest extends UnitTestSupport {
     void 답변을_교체하면_전달하지_않은_기존_답변은_제거한다(boolean empty) throws Exception {
         // given
         Map<String, String> answers = empty ? Map.of() : Map.of("1", "새 답변");
-        given(repository.findByIdWithApplicant(1L)).willReturn(Optional.of(apply));
+        given(repository.findAppliesWithApplicant(List.of(1L))).willReturn(List.of(apply));
 
         // when
         service.editApply(1L, request(answers, SelectionResult.PASSED, "", Set.of()));
@@ -141,7 +140,7 @@ class AdminApplyEditServiceTest extends UnitTestSupport {
     @Test
     void 다른_공고의_질문이_포함되면_수정을_거부한다() {
         // given
-        given(repository.findByIdWithApplicant(1L)).willReturn(Optional.of(apply));
+        given(repository.findAppliesWithApplicant(List.of(1L))).willReturn(List.of(apply));
 
         // when, then
         assertThatThrownBy(() -> service.editApply(1L,
@@ -153,7 +152,7 @@ class AdminApplyEditServiceTest extends UnitTestSupport {
     @Test
     void 존재하지_않는_지원서는_수정할_수_없다() {
         // given
-        given(repository.findByIdWithApplicant(1L)).willReturn(Optional.empty());
+        given(repository.findAppliesWithApplicant(List.of(1L))).willReturn(List.of());
 
         // when, then
         assertThatThrownBy(() -> service.editApply(1L, request(Map.of(), SelectionResult.PASSED, "", null)))

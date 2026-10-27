@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
 import org.ject.support.admin.apply.dto.SubmittedApplyProjection;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
@@ -487,6 +488,64 @@ class AdminApplyQueryRepositoryTest {
         assertThat(state[0]).isEqualTo("UNDECIDED");
         assertThat(state[1]).isNull();
         assertThat(adminApplyRepository.findById(savedApply.getId())).isEmpty();
+    }
+
+    @Test
+    void 예비번호_순서로_다음_목록을_조회하고_전체_인원은_유지한다() {
+        // given
+        Apply first = saveSubmittedApply("order1@test.com", CareerDetails.STUDENT, SelectionResult.WAITLISTED, 3);
+        Apply second = saveSubmittedApply("order2@test.com", CareerDetails.STUDENT, SelectionResult.WAITLISTED, 1);
+        Apply third = saveSubmittedApply("order3@test.com", CareerDetails.STUDENT, SelectionResult.WAITLISTED, 2);
+        saveSubmittedApply("passed@test.com", CareerDetails.STUDENT, SelectionResult.PASSED, null);
+        saveTempSavedApply("draft@test.com", CareerDetails.STUDENT);
+        Apply other = getApply(saveApplicant("foreign@test.com", FE, CareerDetails.STUDENT), feRecruit, SUBMITTED);
+        other.decideSelectionResult(SelectionResult.WAITLISTED, 1);
+        applyRepository.saveAndFlush(other);
+
+        // when
+        var firstPage = adminApplyRepository.searchWaitlistOrders(
+                new WaitlistOrderSearchCondition(beRecruit.getId(), null, 2), 2);
+        var nextPage = adminApplyRepository.searchWaitlistOrders(
+                new WaitlistOrderSearchCondition(beRecruit.getId(), 2L, 2), 2);
+
+        // then
+        assertThat(firstPage).extracting(r -> r.applyId()).containsExactly(second.getId(), third.getId());
+        assertThat(nextPage).extracting(r -> r.applyId()).containsExactly(first.getId());
+        assertThat(firstPage.getFirst().name()).isEqualTo(second.getApplicant().getName());
+        assertThat(firstPage.getFirst().phoneNumber()).isEqualTo(second.getApplicant().getPhoneNumber());
+        assertThat(firstPage.getFirst().careerDetails()).isEqualTo(CareerDetails.STUDENT);
+        assertThat(adminApplyRepository.countWaitlistOrders(beRecruit.getId())).isEqualTo(3);
+    }
+
+    @Test
+    void 삭제된_지원서와_지원자는_예비목록과_전체_인원에서_제외한다() {
+        // given
+        Apply visible = saveSubmittedApply("visible@test.com", CareerDetails.STUDENT, SelectionResult.WAITLISTED, 1);
+        Apply deleted = saveSubmittedApply("deleted@test.com", CareerDetails.STUDENT, SelectionResult.WAITLISTED, 2);
+        Apply deletedApplicant = saveSubmittedApply("deletedperson@test.com", CareerDetails.STUDENT, SelectionResult.WAITLISTED, 3);
+        Long deletedId = deleted.getId();
+        Long deletedApplicantId = deletedApplicant.getId();
+        Long applicantId = deletedApplicant.getApplicant().getId();
+        applyRepository.delete(deleted);
+        entityManager.flush();
+        entityManager.clear();
+        applicantRepository.deleteById(applicantId);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        var content = adminApplyRepository.searchWaitlistOrders(
+                new WaitlistOrderSearchCondition(beRecruit.getId(), null, 20), 20);
+
+        // then
+        assertThat(content).extracting(r -> r.applyId()).containsExactly(visible.getId());
+        assertThat(adminApplyRepository.countWaitlistOrders(beRecruit.getId())).isEqualTo(1);
+        assertThat(adminApplyRepository.findWaitlistedApplies(beRecruit.getId()))
+                .extracting(Apply::getId).containsExactly(visible.getId());
+        assertThat(adminApplyRepository.findAppliesInRecruitWithApplicant(
+                beRecruit.getId(), List.of(visible.getId(), deletedId, deletedApplicantId)))
+                .extracting(Apply::getId).containsExactly(visible.getId());
+        assertThat(adminApplyRepository.findAppliesWithApplicant(List.of(deletedId, deletedApplicantId))).isEmpty();
     }
 
     private Recruit getRecruit(JobFamily jobFamily) {

@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 
@@ -13,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
-import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyProjection;
 import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
@@ -37,7 +35,6 @@ import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
-import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Question;
@@ -54,9 +51,6 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
     @InjectMocks
     private AdminApplyService adminApplyService;
-
-    @Mock
-    private ApplyRepository applyRepository;
 
     @Mock
     private AdminApplyRepository adminApplyRepository;
@@ -115,162 +109,18 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 제출된_지원들의_선정_결과를_일괄_변경한다() {
-        // given
-        var secondApply = Apply.builder()
-                .id(2L)
-                .applicant(Applicant.builder().name("김젝트2").build())
-                .recruit(submittedApply.getRecruit())
-                .status(ApplyStatus.SUBMITTED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-        var request = new SelectionResultUpdateRequest(
-                1L,
-                List.of(
-                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.WAITLISTED, 1),
-                        new SelectionResultUpdateRequest.SelectionResultItem(2L, SelectionResult.PASSED, null)
-                )
-        );
-        given(adminApplyRepository.findAllByRecruitIdAndIdInWithApplicant(1L, List.of(1L, 2L)))
-                .willReturn(List.of(submittedApply, secondApply));
-
-        // when
-        int updatedCount = adminApplyService.updateSelectionResults(request);
-
-        // then
-        assertThat(updatedCount).isEqualTo(2);
-        assertThat(submittedApply.getSelectionResult()).isEqualTo(SelectionResult.WAITLISTED);
-        assertThat(submittedApply.getWaitlistNumber()).isEqualTo(1);
-        assertThat(secondApply.getSelectionResult()).isEqualTo(SelectionResult.PASSED);
-        assertThat(secondApply.getWaitlistNumber()).isNull();
-        verify(adminApplyRepository, times(2)).flush();
-    }
-
-    @Test
-    void 기존_예비_번호를_서로_교체할_수_있다() {
-        // given
-        var secondApply = Apply.builder()
-                .id(2L)
-                .applicant(Applicant.builder().name("김젝트2").build())
-                .recruit(submittedApply.getRecruit())
-                .status(ApplyStatus.SUBMITTED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-        submittedApply.decideSelectionResult(SelectionResult.WAITLISTED, 1);
-        secondApply.decideSelectionResult(SelectionResult.WAITLISTED, 2);
-        var request = new SelectionResultUpdateRequest(
-                1L,
-                List.of(
-                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.WAITLISTED, 2),
-                        new SelectionResultUpdateRequest.SelectionResultItem(2L, SelectionResult.WAITLISTED, 1)
-                )
-        );
-        given(adminApplyRepository.findAllByRecruitIdAndIdInWithApplicant(1L, List.of(1L, 2L)))
-                .willReturn(List.of(submittedApply, secondApply));
-
-        // when
-        adminApplyService.updateSelectionResults(request);
-
-        // then
-        assertThat(submittedApply.getWaitlistNumber()).isEqualTo(2);
-        assertThat(secondApply.getWaitlistNumber()).isEqualTo(1);
-        verify(adminApplyRepository, times(2)).flush();
-    }
-
-    @Test
-    void 모집_공고가_다르거나_존재하지_않는_지원이_포함되면_일괄_변경하지_않는다() {
-        // given
-        var request = new SelectionResultUpdateRequest(
-                1L,
-                List.of(new SelectionResultUpdateRequest.SelectionResultItem(999L, SelectionResult.PASSED, null))
-        );
-        given(adminApplyRepository.findAllByRecruitIdAndIdInWithApplicant(1L, List.of(999L)))
-                .willReturn(List.of());
-
-        // when & then
-        assertThatThrownBy(() -> adminApplyService.updateSelectionResults(request))
-                .isInstanceOf(ApplyException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
-        assertThat(submittedApply.getSelectionResult()).isEqualTo(SelectionResult.UNDECIDED);
-    }
-
-    @Test
-    void 요청에_같은_지원이_중복되면_일괄_변경하지_않는다() {
-        // given
-        var request = new SelectionResultUpdateRequest(
-                1L,
-                List.of(
-                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.PASSED, null),
-                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.FAILED, null)
-                )
-        );
-
-        // when & then
-        assertThatThrownBy(() -> adminApplyService.updateSelectionResults(request))
-                .isInstanceOf(ApplyException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.DUPLICATE_APPLY_ID);
-        verifyNoInteractions(adminApplyRepository);
-    }
-
-    @Test
-    void 같은_모집_공고에서_예비_번호가_중복되면_일괄_변경하지_않는다() {
-        // given
-        var request = new SelectionResultUpdateRequest(
-                1L,
-                List.of(
-                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.WAITLISTED, 1),
-                        new SelectionResultUpdateRequest.SelectionResultItem(2L, SelectionResult.WAITLISTED, 1)
-                )
-        );
-
-        // when & then
-        assertThatThrownBy(() -> adminApplyService.updateSelectionResults(request))
-                .isInstanceOf(ApplyException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.DUPLICATE_WAITLIST_NUMBER);
-        verifyNoInteractions(adminApplyRepository);
-    }
-
-    @Test
-    void 제출되지_않은_지원이_하나라도_있으면_일괄_변경하지_않는다() {
-        // given
-        var tempApply = Apply.builder()
-                .id(2L)
-                .applicant(Applicant.builder().name("김젝트2").build())
-                .recruit(submittedApply.getRecruit())
-                .status(ApplyStatus.TEMP_SAVED)
-                .applicationForm(ApplicationForm.builder().build())
-                .build();
-        var request = new SelectionResultUpdateRequest(
-                1L,
-                List.of(
-                        new SelectionResultUpdateRequest.SelectionResultItem(1L, SelectionResult.PASSED, null),
-                        new SelectionResultUpdateRequest.SelectionResultItem(2L, SelectionResult.PASSED, null)
-                )
-        );
-        given(adminApplyRepository.findAllByRecruitIdAndIdInWithApplicant(1L, List.of(1L, 2L)))
-                .willReturn(List.of(submittedApply, tempApply));
-
-        // when & then
-        assertThatThrownBy(() -> adminApplyService.updateSelectionResults(request))
-                .isInstanceOf(ApplyException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_SUBMITTED);
-        assertThat(submittedApply.getSelectionResult()).isEqualTo(SelectionResult.UNDECIDED);
-        verify(adminApplyRepository, never()).flush();
-    }
-
-    @Test
     @DisplayName("지원서를 삭제하면 연결된 지원자도 삭제한다")
     void 지원서를_삭제하면_연결된_지원자도_삭제한다() {
         // given
         var applyId = submittedApply.getId();
-        given(adminApplyRepository.findByIdWithApplicant(applyId))
-                .willReturn(Optional.of(submittedApply));
+        given(adminApplyRepository.findAppliesWithApplicant(List.of(applyId)))
+                .willReturn(List.of(submittedApply));
 
         // when
         adminApplyService.deleteApply(applyId);
 
         // then
-        verify(adminApplyRepository).findByIdWithApplicant(applyId);
+        verify(adminApplyRepository).findAppliesWithApplicant(List.of(applyId));
         verify(adminApplyRepository).delete(submittedApply);
         verify(applicantCommandService).deleteApplicant(submittedApply.getApplicant().getId());
     }
@@ -279,8 +129,8 @@ class AdminApplyServiceTest extends UnitTestSupport {
     void 단건_삭제시_존재하지_않으면_예외_발생() {
         // given
         var applyId = 999L;
-        given(adminApplyRepository.findByIdWithApplicant(applyId))
-                .willReturn(Optional.empty());
+        given(adminApplyRepository.findAppliesWithApplicant(List.of(applyId)))
+                .willReturn(List.of());
 
         // expected
         assertThatThrownBy(() -> adminApplyService.deleteApply(applyId))
@@ -302,7 +152,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                         .status(ApplyStatus.SUBMITTED)
                         .build())
                 .toList();
-        given(adminApplyRepository.findAllByIdWithApplicant(applyIds)).willReturn(applies);
+        given(adminApplyRepository.findAppliesWithApplicant(applyIds)).willReturn(applies);
 
         // when
         int deletedCount = adminApplyService.deleteApplies(request);
@@ -320,9 +170,9 @@ class AdminApplyServiceTest extends UnitTestSupport {
         List<Long> applyIds = List.of(1L, 2L);
         Applicant applicant = Applicant.builder().id(1L).build();
         List<Apply> applies = applyIds.stream()
-                .map(id -> Apply.builder().id(id).applicant(applicant).build())
+                .map(id -> Apply.builder().id(id).applicant(applicant).recruit(submittedApply.getRecruit()).build())
                 .toList();
-        given(adminApplyRepository.findAllByIdWithApplicant(applyIds)).willReturn(applies);
+        given(adminApplyRepository.findAppliesWithApplicant(applyIds)).willReturn(applies);
 
         // when
         adminApplyService.deleteApplies(new SubmittedApplyBulkDeleteRequest(applyIds));
@@ -336,7 +186,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
     void 다건_삭제_대상이_없으면_지원자를_삭제하지_않는다() {
         // given
         List<Long> applyIds = List.of(999L);
-        given(adminApplyRepository.findAllByIdWithApplicant(applyIds)).willReturn(List.of());
+        given(adminApplyRepository.findAppliesWithApplicant(applyIds)).willReturn(List.of());
 
         // when
         adminApplyService.deleteApplies(new SubmittedApplyBulkDeleteRequest(applyIds));
@@ -365,7 +215,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
         // given
         List<Long> applyIds = List.of(1L, 999L);
         List<Apply> applies = List.of(submittedApply);
-        given(adminApplyRepository.findAllByIdWithApplicant(applyIds)).willReturn(applies);
+        given(adminApplyRepository.findAppliesWithApplicant(applyIds)).willReturn(applies);
 
         // when
         int deletedCount = adminApplyService.deleteApplies(new SubmittedApplyBulkDeleteRequest(applyIds));
