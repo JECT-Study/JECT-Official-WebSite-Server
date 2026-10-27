@@ -11,6 +11,8 @@ import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.service.AdminApplyService;
+import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
+import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -45,6 +47,13 @@ public class AdminApplyController implements AdminApplyApiSpec {
             @Valid @ModelAttribute TempSavedApplySearchCondition condition
     ) {
         return adminApplyService.searchTempSavedApplies(condition);
+    }
+
+    @Override
+    @GetMapping("/waitlist-orders")
+    public CursorPageResponse<WaitlistOrderResponse> searchWaitlistOrders(
+            @Valid @ModelAttribute WaitlistOrderSearchCondition condition) {
+        return adminApplyService.searchWaitlistOrders(condition);
     }
 
     @Override

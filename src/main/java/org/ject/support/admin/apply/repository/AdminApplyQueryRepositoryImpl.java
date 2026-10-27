@@ -1,9 +1,9 @@
 package org.ject.support.admin.apply.repository;
 
+import static org.ject.support.domain.applicant.entity.QApplicant.applicant;
 import static org.ject.support.domain.apply.domain.QApplicationForm.applicationForm;
 import static org.ject.support.domain.apply.domain.QApply.apply;
 import static org.ject.support.domain.apply.domain.QPortfolio.portfolio;
-import static org.ject.support.domain.applicant.entity.QApplicant.applicant;
 import static org.ject.support.domain.recruit.domain.QRecruit.recruit;
 
 import com.querydsl.core.types.Projections;
@@ -17,6 +17,8 @@ import org.ject.support.admin.apply.dto.SubmittedApplyProjection;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
+import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
+import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.SelectionResult;
@@ -28,6 +30,44 @@ import org.springframework.stereotype.Repository;
 public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository {
 
     private final JPAQueryFactory queryFactory;
+
+    @Override
+    public List<WaitlistOrderResponse> searchWaitlistOrders(
+            WaitlistOrderSearchCondition condition,
+            int limit
+    ) {
+        return queryFactory
+                .select(Projections.constructor(
+                        WaitlistOrderResponse.class,
+                        apply.id,
+                        applicant.name,
+                        applicant.phoneNumber,
+                        applicant.careerDetails,
+                        apply.waitlistNumber
+                ))
+                .from(apply)
+                .join(apply.applicant, applicant)
+                .where(
+                        waitlistedInRecruit(condition.recruitId()),
+                        condition.cursor() == null
+                                ? null
+                                : apply.waitlistNumber.longValue().gt(condition.cursor())
+                )
+                .orderBy(apply.waitlistNumber.asc())
+                .limit(limit)
+                .fetch();
+    }
+
+    @Override
+    public long countWaitlistOrders(Long recruitId) {
+        Long count = queryFactory
+                .select(apply.count())
+                .from(apply)
+                .join(apply.applicant, applicant)
+                .where(waitlistedInRecruit(recruitId))
+                .fetchOne();
+        return count == null ? 0L : count;
+    }
 
     @Override
     public List<SubmittedApplyProjection> searchSubmittedApplies(
@@ -140,6 +180,14 @@ public class AdminApplyQueryRepositoryImpl implements AdminApplyQueryRepository 
                 .fetchOne();
 
         return Optional.ofNullable(result);
+    }
+
+    private BooleanExpression waitlistedInRecruit(Long recruitId) {
+        return apply.recruit.id.eq(recruitId)
+                .and(apply.isDeleted.isFalse())
+                .and(applicant.isDeleted.isFalse())
+                .and(apply.status.eq(ApplyStatus.SUBMITTED))
+                .and(apply.selectionResult.eq(SelectionResult.WAITLISTED));
     }
 
     private BooleanExpression eqApplyStatus(final ApplyStatus status) {

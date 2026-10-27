@@ -18,6 +18,8 @@ import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
+import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
+import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
@@ -92,6 +94,18 @@ public class AdminApplyService {
         long totalCount = adminApplyRepository.countTempSavedApplies(condition);
 
         return CursorPageResponse.of(content, size, hasNext, nextCursor, totalCount);
+    }
+
+    // 예비 번호 기준으로 다음 목록과 공고 전체 예비 합격자 수 조회
+    @Transactional(readOnly = true)
+    public CursorPageResponse<WaitlistOrderResponse> searchWaitlistOrders(WaitlistOrderSearchCondition condition) {
+        int size = condition.getSizeOrDefault();
+        List<WaitlistOrderResponse> queried = adminApplyRepository.searchWaitlistOrders(condition, size + 1);
+        boolean hasNext = queried.size() > size;
+        List<WaitlistOrderResponse> content = hasNext ? queried.subList(0, size) : queried;
+        Long nextCursor = hasNext ? content.getLast().waitlistNumber().longValue() : null;
+        return CursorPageResponse.of(content, size, hasNext, nextCursor,
+                adminApplyRepository.countWaitlistOrders(condition.recruitId()));
     }
 
     @Transactional(readOnly = true)

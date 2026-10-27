@@ -11,6 +11,8 @@ import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
+import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
+import org.ject.support.admin.apply.dto.WaitlistOrderSearchCondition;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -32,6 +34,12 @@ public interface AdminApplyApiSpec {
             description = "모집 공고별 임시저장 지원서를 조회합니다. 지원자 신분을 다중 필터링할 수 있습니다.")
     CursorPageResponse<TempSavedApplyResponse> searchTempSavedApplies(
             @Valid @ModelAttribute TempSavedApplySearchCondition condition);
+
+    @Operation(
+            summary = "예비 번호 조정 목록 조회",
+            description = "공고별 예비 번호순으로 조회합니다. 전체 인원을 포함하며 커서는 마지막 예비 번호입니다.")
+    CursorPageResponse<WaitlistOrderResponse> searchWaitlistOrders(
+            @Valid @ModelAttribute WaitlistOrderSearchCondition condition);
 
     @Operation(
             summary = "지원서 상세 조회",
