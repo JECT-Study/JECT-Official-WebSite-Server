@@ -85,7 +85,7 @@ worker의 배치 처리 오류는 예외 종류만 기록하고 다음 주기에
   "failureReason": null,
   "attemptCount": 1,
   "nextAttemptAt": "2026-10-04T12:00:30",
-  "lastAttemptFailureReason": "TOO_MANY_EMAIL_REQUESTS",
+  "lastAttemptFailureReason": "EMAIL-4",
   "exclusionReason": null
 }
 ```

@@ -3,6 +3,7 @@ package org.ject.support.admin.mail.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import org.ject.support.admin.mail.domain.MailDispatchTargetStatus;
+import org.ject.support.external.email.exception.EmailErrorCode;
 
 public record MailDispatchTargetResponse(
         Long targetId,
@@ -20,6 +21,10 @@ public record MailDispatchTargetResponse(
         @Schema(description = "예약 발송에서 제외된 경우의 개인정보 없는 사유 코드")
         String exclusionReason
 ) {
+    public MailDispatchTargetResponse {
+        failureReason = EmailErrorCode.normalizeCode(failureReason);
+        lastAttemptFailureReason = EmailErrorCode.normalizeCode(lastAttemptFailureReason);
+    }
 
     public MailDispatchTargetResponse(Long targetId, Long applyId, String email, MailDispatchTargetStatus status,
                                       LocalDateTime sentAt, String failureReason, Integer attemptCount,

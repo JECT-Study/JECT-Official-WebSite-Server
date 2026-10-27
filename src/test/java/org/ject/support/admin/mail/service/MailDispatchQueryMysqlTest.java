@@ -412,6 +412,15 @@ class MailDispatchQueryMysqlTest extends TestSupport {
             var unknown = claimService.claim(outboxId(job.getId(), applyId), now, Duration.ofMinutes(2)).orElseThrow();
             claimService.recordUnknown(outboxId(job.getId(), applyId), unknown.claimToken());
         }
+        if (status == MailDispatchTargetStatus.FAILED) {
+            assertThat(outboxRepository.findById(outboxId(job.getId(), 30L)).orElseThrow().getFailureReason())
+                    .isEqualTo("EMAIL-2");
+            // 과거 문자열로 저장된 이력도 새 코드로 조회하되 DB 원본은 유지한다.
+            jdbcTemplate.update("UPDATE mail_dispatch_target SET failure_reason = ? "
+                    + "WHERE dispatch_job_id = ? AND apply_id = ?", "EMAIL_SEND_FAILURE", job.getId(), 30L);
+            jdbcTemplate.update("UPDATE mail_dispatch_outbox SET failure_reason = ? WHERE id = ?",
+                    "EMAIL_SEND_FAILURE", outboxId(job.getId(), 30L));
+        }
 
         // when
         var page0 = queryService.searchTargets(3L, job.getId(), status, PageRequest.of(0, 1));
@@ -426,8 +435,8 @@ class MailDispatchQueryMysqlTest extends TestSupport {
             assertThat(target.status()).isEqualTo(status);
             assertThat(target.attemptCount()).isEqualTo(status == MailDispatchTargetStatus.PENDING ? 0 : 1);
             if (status == MailDispatchTargetStatus.FAILED) {
-                assertThat(target.failureReason()).isEqualTo("EMAIL_SEND_FAILURE");
-                assertThat(target.lastAttemptFailureReason()).isEqualTo("EMAIL_SEND_FAILURE");
+                assertThat(target.failureReason()).isEqualTo("EMAIL-2");
+                assertThat(target.lastAttemptFailureReason()).isEqualTo("EMAIL-2");
                 assertThat(target.sentAt()).isNull();
             } else if (status == MailDispatchTargetStatus.UNKNOWN) {
                 assertThat(target.failureReason()).isEqualTo("MAIL-21");
@@ -439,6 +448,12 @@ class MailDispatchQueryMysqlTest extends TestSupport {
             }
         });
         assertThat(page0.getTotalElements()).isEqualTo(status == MailDispatchTargetStatus.UNKNOWN ? 2 : 1);
+        if (status == MailDispatchTargetStatus.FAILED) {
+            assertThat(targetRepository.findByDispatchJobIdAndApplyId(job.getId(), 30L).orElseThrow()
+                    .getFailureReason()).isEqualTo("EMAIL_SEND_FAILURE");
+            assertThat(outboxRepository.findById(outboxId(job.getId(), 30L)).orElseThrow().getFailureReason())
+                    .isEqualTo("EMAIL_SEND_FAILURE");
+        }
         if (status == MailDispatchTargetStatus.UNKNOWN) {
             assertThat(page0.hasNext()).isTrue();
             assertThat(page1.getContent()).extracting(MailDispatchTargetResponse::applyId).containsExactly(40L);
@@ -474,7 +489,7 @@ class MailDispatchQueryMysqlTest extends TestSupport {
             assertThat(target.attemptCount()).isEqualTo(1);
             assertThat(target.nextAttemptAt()).isEqualTo(LocalDateTime.of(2026, 10, 5, 12, 0, 31));
             assertThat(target.failureReason()).isNull();
-            assertThat(target.lastAttemptFailureReason()).isEqualTo("TOO_MANY_EMAIL_REQUESTS");
+            assertThat(target.lastAttemptFailureReason()).isEqualTo("EMAIL-4");
             assertThat(target.sentAt()).isNull();
         });
         assertThat(failures.getContent()).isEmpty();

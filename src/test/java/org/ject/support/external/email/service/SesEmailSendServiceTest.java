@@ -132,7 +132,7 @@ class SesEmailSendServiceTest extends UnitTestSupport {
         assertThatThrownBy(() -> sesEmailSendService.sendEmail("user@recipient.com", "JECT 안내", "<h1>본문</h1>"))
                 .isInstanceOf(EmailException.class)
                 .extracting(e -> ((EmailException) e).getErrorCode().getCode())
-                .isEqualTo("EMAIL_SEND_RESULT_UNKNOWN");
+                .isEqualTo("EMAIL-3");
     }
 
     @ParameterizedTest
