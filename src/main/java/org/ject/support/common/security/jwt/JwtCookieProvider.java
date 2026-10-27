@@ -18,9 +18,6 @@ public class JwtCookieProvider {
     @Value("${spring.jwt.token.refresh-expiration-time}")
     private long refreshExpirationTime;
 
-    @Value("${security.cors.cookie.domain}")
-    private String domain;
-
     public ResponseCookie createRefreshCookie(String refreshToken) { // TODO: 토큰 생성 로직 통합 및 토큰 정보 enum에서 관리하도록 리팩토링
         String cookieName = "refreshToken";
         return createCookie(cookieName, refreshToken);
@@ -38,7 +35,6 @@ public class JwtCookieProvider {
 
     private ResponseCookie createCookie(String cookieName, String token) {
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(cookieName, token)
-                .domain(domain)
                 .path("/")
                 .maxAge(refreshExpirationTime / 1000)
                 .httpOnly(true)
@@ -70,7 +66,6 @@ public class JwtCookieProvider {
 
     private ResponseCookie deleteCookie(String cookieName) {
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(cookieName, "")
-                .domain(domain)
                 .path("/")
                 .maxAge(0) // 만료 시간을 0으로 설정하여 삭제
                 .httpOnly(true)

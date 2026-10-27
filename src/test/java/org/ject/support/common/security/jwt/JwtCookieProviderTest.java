@@ -7,6 +7,8 @@ import org.ject.support.base.UnitTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -20,7 +22,6 @@ class JwtCookieProviderTest extends UnitTestSupport {
         MockEnvironment environment = new MockEnvironment();
         environment.setActiveProfiles("local");
         jwtCookieProvider = new JwtCookieProvider(environment);
-        ReflectionTestUtils.setField(jwtCookieProvider, "domain", "localhost");
         ReflectionTestUtils.setField(jwtCookieProvider, "refreshExpirationTime", 259200000L);
     }
 
@@ -53,4 +54,41 @@ class JwtCookieProviderTest extends UnitTestSupport {
         assertThat(response.getHeaders("Set-Cookie"))
                 .noneMatch(cookie -> cookie.startsWith("verificationToken="));
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"local", "dev", "prod"})
+    void 인증_쿠키는_발급한_호스트에서만_사용한다(String profile) {
+        // given
+        MockEnvironment environment = new MockEnvironment();
+        environment.setActiveProfiles(profile);
+        JwtCookieProvider provider = new JwtCookieProvider(environment);
+        ReflectionTestUtils.setField(provider, "refreshExpirationTime", 259200000L);
+
+        // when
+        var cookies = List.of(provider.createAccessCookie("access"), provider.createRefreshCookie("refresh"),
+                provider.createVerificationCookie("verification"));
+
+        // then
+        assertThat(cookies).allSatisfy(cookie -> {
+            assertThat(cookie.getDomain()).isNull();
+            assertThat(cookie.toString()).doesNotContain("Domain=");
+            assertThat(cookie.getPath()).isEqualTo("/");
+            assertThat(cookie.isHttpOnly()).isTrue();
+            assertThat(cookie.isSecure()).isTrue();
+        });
+    }
+
+    @Test
+    void 인증_쿠키_삭제도_Domain_없이_같은_호스트에서_만료한다() {
+        // given
+        var response = new MockHttpServletResponse();
+
+        // when
+        jwtCookieProvider.deleteAuthCookies(response);
+
+        // then
+        assertThat(response.getHeaders("Set-Cookie")).hasSize(3)
+                .allSatisfy(cookie -> assertThat(cookie).contains("Max-Age=0", "Path=/").doesNotContain("Domain="));
+    }
+
 }
