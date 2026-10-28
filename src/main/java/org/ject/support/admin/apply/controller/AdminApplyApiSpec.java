@@ -4,9 +4,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
+import org.ject.support.admin.apply.dto.EditApplyRequest;
 import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
@@ -40,10 +40,10 @@ public interface AdminApplyApiSpec {
                                        @RequestParam(required = false) ApplyStatus applyStatus);
 
     @Operation(
-            summary = "제출된 지원서 수정",
-            description = "전달한 ID에 해당하는 제출된 지원서의 정보를 수정합니다.")
-    void editSubmittedApply(@PathVariable Long applyId,
-                            @RequestBody @Valid SubmittedApplyEditRequest request);
+            summary = "지원서 수정",
+            description = "수정 가능한 값을 요청 내용으로 교체합니다. 선정 결과는 제출완료만 지정하며, 포트폴리오는 전달한 ID만 삭제합니다.")
+    void editApply(@PathVariable Long applyId,
+                   @RequestBody @Valid EditApplyRequest request);
 
     @Operation(
             summary = "지원자 선정 결과 일괄 변경",

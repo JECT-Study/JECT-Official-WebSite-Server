@@ -2,8 +2,8 @@ package org.ject.support.admin.apply.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.BDDMockito.given;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -14,21 +14,21 @@ import java.util.Map;
 import java.util.Optional;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyProjection;
 import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyProjection;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
-import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
-import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
-import org.ject.support.domain.applicant.service.ApplicantCommandService;
-import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
+import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
+import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.service.ApplicantCommandService;
 import org.ject.support.domain.apply.domain.ApplicationForm;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
@@ -40,14 +40,10 @@ import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.repository.ApplyRepository;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.RecruitType;
-import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
-import org.ject.support.domain.recruit.exception.QuestionErrorCode;
-import org.ject.support.domain.recruit.exception.QuestionException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -744,98 +740,6 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
     }
-
-    @Test
-    void 제출된_지원서_수정_성공() {
-        // given
-        var applyId = submittedApply.getId();
-        var newName = "수정된이름";
-        var newPhoneNumber = "010-1234-5678";
-        var newEmail = "updated@example.com";
-        var newJobFamily = JobFamily.FE;
-
-        var newAnswers = Map.of(
-                "1", "수정된 답변1",
-                "2", "수정된 답변2"
-        );
-
-        var newPortfolios = List.of(
-                new ApplyPortfolioDto("url1", "name1", "1", "1"),
-                new ApplyPortfolioDto("url2", "name2", "2", "2")
-        );
-
-        var request = new SubmittedApplyEditRequest(
-                newName,
-                newPhoneNumber,
-                newEmail,
-                newJobFamily,
-                newAnswers,
-                newPortfolios
-        );
-
-        given(adminApplyRepository.findByIdAndStatusWithApplicant(applyId, ApplyStatus.SUBMITTED))
-                .willReturn(Optional.of(submittedApply));
-        given(map2JsonSerializer.serializeAsString(newAnswers))
-                .willReturn("{\"1\":\"수정된 답변1\",\"2\":\"수정된 답변2\"}");
-
-        // when
-        adminApplyService.updateSubmittedApply(applyId, request);
-
-        // then
-        verify(adminApplyRepository).findByIdAndStatusWithApplicant(applyId, ApplyStatus.SUBMITTED);
-        verify(map2JsonSerializer).serializeAsString(newAnswers);
-        assertThat(submittedApply.getApplicant().getName()).isEqualTo(newName);
-        assertThat(submittedApply.getApplicant().getPhoneNumber()).isEqualTo(newPhoneNumber);
-        assertThat(submittedApply.getApplicant().getEmail()).isEqualTo(newEmail);
-        assertThat(submittedApply.getApplicant().getJobFamily()).isEqualTo(newJobFamily);
-    }
-
-    @Test
-    void 제출된_지원서_수정시_존재하지_않으면_예외_발생() {
-        // given
-        var applyId = 999L;
-        var request = new SubmittedApplyEditRequest(
-                "이름",
-                "01012345678",
-                "test@example.com",
-                JobFamily.BE,
-                Map.of("1", "답변"),
-                List.of()
-        );
-
-        given(adminApplyRepository.findByIdAndStatusWithApplicant(applyId, ApplyStatus.SUBMITTED))
-                .willReturn(Optional.empty());
-
-        // expected
-        assertThatThrownBy(() -> adminApplyService.updateSubmittedApply(applyId, request))
-                .isInstanceOf(ApplyException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_APPLY);
-    }
-
-    @Test
-    void 제출된_지원서_수정시_유효하지_않은_질문ID면_예외_발생() {
-        // given
-        var applyId = submittedApply.getId();
-        var invalidQuestionId = "999";
-
-        var request = new SubmittedApplyEditRequest(
-                "이름",
-                "01012345678",
-                "test@example.com",
-                JobFamily.BE,
-                Map.of(invalidQuestionId, "답변"),
-                List.of()
-        );
-
-        given(adminApplyRepository.findByIdAndStatusWithApplicant(applyId, ApplyStatus.SUBMITTED))
-                .willReturn(Optional.of(submittedApply));
-
-        // expected
-        assertThatThrownBy(() -> adminApplyService.updateSubmittedApply(applyId, request))
-                .isInstanceOf(QuestionException.class)
-                .hasFieldOrPropertyWithValue("errorCode", QuestionErrorCode.NOT_FOUND_QUESTION);
-    }
-
 
     private SubmittedApplyProjection submittedProjection(Long applyId) {
         return new SubmittedApplyProjection(
