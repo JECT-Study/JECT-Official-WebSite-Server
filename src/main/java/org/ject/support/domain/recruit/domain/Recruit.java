@@ -62,7 +62,7 @@ public class Recruit extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "recruit_type", columnDefinition = "varchar(45)", nullable = false)
     @Builder.Default
-    private RecruitType recruitType = RecruitType.REGULAR;
+    private RecruitType recruitType = RecruitType.SEMESTER;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "recruit_type_detail", columnDefinition = "varchar(45)", nullable = false)

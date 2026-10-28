@@ -322,40 +322,42 @@ class AdminApplyQueryRepositoryTest {
     @Test
     void recruitType으로_제출된_지원서_필터링_조회() {
         // given
-        Recruit regularRecruit = recruitRepository.save(Recruit.builder()
+        Recruit semesterRecruit = recruitRepository.save(Recruit.builder()
                 .semester(semester)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(7))
                 .jobFamily(BE)
-                .recruitType(RecruitType.REGULAR)
+                .recruitType(RecruitType.SEMESTER)
                 .build());
 
-        Recruit backfillRecruit = recruitRepository.save(Recruit.builder()
+        Recruit makersRecruit = recruitRepository.save(Recruit.builder()
                 .semester(semester)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(7))
                 .jobFamily(BE)
-                .recruitType(RecruitType.BACKFILL)
+                .recruitType(RecruitType.MAKERS)
+                .recruitTypeDetail(RecruitTypeDetail.NEW)
                 .build());
 
-        Applicant applicant1 = createApplicant("regular@test.com", BE);
-        Applicant applicant2 = createApplicant("backfill@test.com", BE);
+        Applicant applicant1 = createApplicant("semester@test.com", BE);
+        Applicant applicant2 = createApplicant("makers@test.com", BE);
         applicantRepository.saveAll(List.of(applicant1, applicant2));
 
-        Apply apply1 = getApply(applicant1, regularRecruit, SUBMITTED);
-        Apply apply2 = getApply(applicant2, backfillRecruit, SUBMITTED);
+        Apply apply1 = getApply(applicant1, semesterRecruit, SUBMITTED);
+        Apply apply2 = getApply(applicant2, makersRecruit, SUBMITTED);
         applyRepository.saveAll(List.of(apply1, apply2));
 
         Pageable pageable = PageRequest.of(0, 15);
         ApplyStatus status = SUBMITTED;
 
         // when
-        Page<Apply> result = adminApplyRepository.findApplies(condition(status, null, null, RecruitType.BACKFILL), pageable);
+        Page<Apply> result = adminApplyRepository.findApplies(
+                condition(status, null, null, RecruitType.MAKERS), pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
-        assertThat(result.getContent().getFirst().getRecruit().getRecruitType()).isEqualTo(RecruitType.BACKFILL);
+        assertThat(result.getContent().getFirst().getRecruit().getRecruitType()).isEqualTo(RecruitType.MAKERS);
     }
 
     @Test
