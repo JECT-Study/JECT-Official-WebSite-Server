@@ -3,14 +3,17 @@ package org.ject.support.admin.apply.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Positive;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.EditApplyRequest;
-import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
+import org.ject.support.admin.apply.dto.EditWaitlistOrderRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
+import org.ject.support.admin.apply.dto.UpdateSelectionResultsRequest;
+import org.ject.support.admin.apply.dto.WaitlistOrdersResponse;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -34,6 +37,11 @@ public interface AdminApplyApiSpec {
             @Valid @ModelAttribute TempSavedApplySearchCondition condition);
 
     @Operation(
+            summary = "예비 번호 조정 목록 조회",
+            description = "공고별 예비 합격자 전체를 예비 번호순으로 조회합니다.")
+    WaitlistOrdersResponse getWaitlistOrders(@RequestParam @Positive Long recruitId);
+
+    @Operation(
             summary = "지원서 상세 조회",
             description = "전달한 ID에 해당하는 지원서의 상세 정보를 조회합니다.")
     AdminApplyDetailResponse findApply(@PathVariable Long applyId,
@@ -47,8 +55,11 @@ public interface AdminApplyApiSpec {
 
     @Operation(
             summary = "지원자 선정 결과 일괄 변경",
-            description = "제출 완료된 지원자들의 선정 결과와 예비 번호를 일괄 변경합니다.")
-    int updateSelectionResults(@RequestBody @Valid SelectionResultUpdateRequest request);
+            description = "같은 공고의 제출완료 지원자에게 하나의 선정 결과를 적용합니다.")
+    void updateSelectionResults(@RequestBody @Valid UpdateSelectionResultsRequest request);
+
+    @Operation(summary = "예비 번호 조정", description = "현재 예비 합격자 전체 ID를 원하는 순서로 변경합니다.")
+    int editWaitlistOrder(@RequestBody @Valid EditWaitlistOrderRequest request);
 
     @Operation(
             summary = "지원서 삭제",

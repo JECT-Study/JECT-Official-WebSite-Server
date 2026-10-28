@@ -4,12 +4,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.EditApplyRequest;
-import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
+import org.ject.support.admin.apply.dto.EditWaitlistOrderRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
+import org.ject.support.admin.apply.dto.UpdateSelectionResultsRequest;
+import org.ject.support.admin.apply.dto.WaitlistOrdersResponse;
 import org.ject.support.admin.apply.service.AdminApplyService;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
@@ -48,6 +50,12 @@ public class AdminApplyController implements AdminApplyApiSpec {
     }
 
     @Override
+    @GetMapping("/waitlist-orders")
+    public WaitlistOrdersResponse getWaitlistOrders(@RequestParam Long recruitId) {
+        return adminApplyService.getWaitlistOrders(recruitId);
+    }
+
+    @Override
     @GetMapping("/{applyId}")
     public AdminApplyDetailResponse findApply(@PathVariable final Long applyId,
                                               @RequestParam(required = false) final ApplyStatus applyStatus) {
@@ -63,8 +71,14 @@ public class AdminApplyController implements AdminApplyApiSpec {
 
     @Override
     @PatchMapping("/selection-results")
-    public int updateSelectionResults(@RequestBody @Valid final SelectionResultUpdateRequest request) {
-        return adminApplyService.updateSelectionResults(request);
+    public void updateSelectionResults(@RequestBody @Valid final UpdateSelectionResultsRequest request) {
+        adminApplyService.updateSelectionResults(request);
+    }
+
+    @Override
+    @PatchMapping("/waitlist-orders")
+    public int editWaitlistOrder(@RequestBody @Valid EditWaitlistOrderRequest request) {
+        return adminApplyService.editWaitlistOrder(request);
     }
 
     @Override

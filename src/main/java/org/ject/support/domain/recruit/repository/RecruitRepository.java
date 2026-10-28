@@ -1,16 +1,16 @@
 package org.ject.support.domain.recruit.repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
 public interface RecruitRepository extends JpaRepository<Recruit, Long>, RecruitQueryRepository {
+
     @Query("SELECT r FROM Recruit r JOIN FETCH r.semester WHERE r.id = :recruitId")
     Optional<Recruit> findByIdWithSemester(@Param("recruitId") Long recruitId);
 

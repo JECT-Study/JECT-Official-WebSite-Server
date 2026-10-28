@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.ject.support.admin.apply.dto.EditApplyRequest;
+import org.ject.support.admin.apply.dto.EditWaitlistOrderRequest;
+import org.ject.support.admin.apply.dto.UpdateSelectionResultsRequest;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.base.TestSupport;
 import org.ject.support.common.response.ObjectMapperConfig;
@@ -142,6 +144,79 @@ class AdminApplyEditIntegrationTest extends TestSupport {
         assertThatThrownBy(() -> service.editApply(applyId, request)).isInstanceOf(ApplyException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_PORTFOLIO);
         assertThat(snapshot()).isEqualTo(before);
+    }
+
+    @Test
+    void 기존_예비번호를_교환하고_선정결과를_바꾸면_빈_번호_없이_저장한다() {
+        // given
+        Long secondId = createSecondWaitlistedApply();
+        Long recruitId = transactions.execute(status -> repository.findById(applyId).orElseThrow().getRecruit().getId());
+
+        // when
+        service.editWaitlistOrder(new EditWaitlistOrderRequest(recruitId, List.of(secondId, applyId)));
+
+        // then
+        transactions.executeWithoutResult(status -> {
+            assertThat(repository.findById(secondId).orElseThrow().getWaitlistNumber()).isEqualTo(1);
+            assertThat(repository.findById(applyId).orElseThrow().getWaitlistNumber()).isEqualTo(2);
+        });
+
+        // when
+        service.updateSelectionResults(new UpdateSelectionResultsRequest(recruitId, List.of(secondId), SelectionResult.PASSED));
+
+        // then
+        transactions.executeWithoutResult(status -> {
+            Apply passed = repository.findById(secondId).orElseThrow();
+            assertThat(passed.getSelectionResult()).isEqualTo(SelectionResult.PASSED);
+            assertThat(passed.getWaitlistNumber()).isNull();
+            assertThat(repository.findById(applyId).orElseThrow().getWaitlistNumber()).isEqualTo(1);
+        });
+    }
+
+    @Test
+    void 상세_수정이_실패하면_다른_예비합격자의_번호_당김도_롤백한다() {
+        // given
+        Long secondId = createSecondWaitlistedApply();
+        Snapshot before = snapshot();
+
+        // when, then
+        assertThatThrownBy(() -> service.editApply(applyId, request(Set.of(Long.MAX_VALUE))))
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_PORTFOLIO);
+        assertThat(snapshot()).isEqualTo(before);
+        transactions.executeWithoutResult(status ->
+                assertThat(repository.findById(secondId).orElseThrow().getWaitlistNumber()).isEqualTo(2));
+    }
+
+    @Test
+    void 예비합격_지원서를_삭제하면_남은_지원자의_번호를_당겨_저장한다() {
+        // given
+        Long secondId = createSecondWaitlistedApply();
+
+        // when
+        service.deleteApply(applyId);
+
+        // then
+        transactions.executeWithoutResult(status -> {
+            assertThat(repository.findById(applyId)).isEmpty();
+            assertThat(repository.findById(secondId).orElseThrow().getWaitlistNumber()).isEqualTo(1);
+        });
+    }
+
+    private Long createSecondWaitlistedApply() {
+        return transactions.execute(status -> {
+            Recruit recruit = repository.findById(applyId).orElseThrow().getRecruit();
+            Applicant applicant = Applicant.builder().name("다음지원자").phoneNumber("01012345678")
+                    .email("next@test.com").semesterId(recruit.getSemester().getId()).role(Role.APPLY)
+                    .jobFamily(JobFamily.BE).careerDetails(CareerDetails.STUDENT).build();
+            entityManager.persist(applicant);
+            Apply second = Apply.createApply(applicant, recruit);
+            second.submit(ApplicationForm.builder().apply(second).content("{}").build());
+            second.decideSelectionResult(SelectionResult.WAITLISTED, 2);
+            entityManager.persist(second);
+            entityManager.flush();
+            return second.getId();
+        });
     }
 
     private EditApplyRequest request(Set<Long> ids) {

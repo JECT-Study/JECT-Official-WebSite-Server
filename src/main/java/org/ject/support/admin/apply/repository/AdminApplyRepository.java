@@ -10,6 +10,42 @@ import org.springframework.data.repository.query.Param;
 
 public interface AdminApplyRepository extends JpaRepository<Apply, Long>, AdminApplyQueryRepository {
 
+    @Query("""
+            select distinct a.recruit.id from Apply a
+            join a.applicant p
+            where a.id in :ids and p.isDeleted = false
+            order by a.recruit.id
+            """)
+    List<Long> findRecruitIdsByApplyIds(@Param("ids") List<Long> ids);
+
+    @Query("""
+            select a from Apply a
+            join fetch a.applicant p
+            where a.id in :ids and a.isDeleted = false and p.isDeleted = false
+            order by a.id
+            """)
+    List<Apply> findAppliesWithApplicant(@Param("ids") List<Long> ids);
+
+    @Query("""
+            select a from Apply a
+            join fetch a.applicant p
+            where a.recruit.id = :recruitId and a.id in :ids and a.isDeleted = false and p.isDeleted = false
+            order by a.id
+            """)
+    List<Apply> findAppliesInRecruitWithApplicant(
+            @Param("recruitId") Long recruitId,
+            @Param("ids") List<Long> ids);
+
+    @Query("""
+            select a from Apply a
+            join fetch a.applicant p
+            where a.recruit.id = :recruitId and a.status = org.ject.support.domain.apply.domain.ApplyStatus.SUBMITTED
+              and a.selectionResult = org.ject.support.domain.apply.domain.SelectionResult.WAITLISTED
+              and a.isDeleted = false and p.isDeleted = false
+            order by a.waitlistNumber asc, a.id asc
+            """)
+    List<Apply> findWaitlistedApplies(@Param("recruitId") Long recruitId);
+
     @Query("SELECT a FROM Apply a JOIN FETCH a.applicant LEFT JOIN FETCH a.applicationForm WHERE a.id = :id")
     Optional<Apply> findByIdWithApplicant(@Param("id") Long id);
 

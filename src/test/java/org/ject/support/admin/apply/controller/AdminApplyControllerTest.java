@@ -17,6 +17,9 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
 import org.ject.support.admin.apply.dto.EditApplyRequest;
+import org.ject.support.admin.apply.dto.EditWaitlistOrderRequest;
+import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
+import org.ject.support.admin.apply.dto.WaitlistOrdersResponse;
 import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.service.AdminApplyService;
@@ -154,7 +157,6 @@ class AdminApplyControllerTest extends UnitTestSupport {
     @Test
     void 선정_결과_일괄_변경_요청을_처리한다() throws Exception {
         // given
-        given(adminApplyService.updateSelectionResults(any())).willReturn(1);
 
         // when, then
         mockMvc.perform(patch("/admin/applies/selection-results")
@@ -162,13 +164,12 @@ class AdminApplyControllerTest extends UnitTestSupport {
                         .content("""
                                 {
                                   "recruitId": 1,
-                                  "selectionResults": [
-                                    {"applyId": 1, "selectionResult": "PASSED", "waitlistNumber": null}
-                                  ]
+                                  "applyIds": [1],
+                                  "selectionResult": "PASSED"
                                 }
                                 """))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value(1));
+                .andExpect(jsonPath("$.data").doesNotExist());
 
         verify(adminApplyService).updateSelectionResults(any());
     }
@@ -237,6 +238,70 @@ class AdminApplyControllerTest extends UnitTestSupport {
         // when, then
         mockMvc.perform(put("/admin/applies/1").contentType(MediaType.APPLICATION_JSON)
                         .content(body.toString()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void 예비번호_조정은_공고와_지원서_순서를_받는다() throws Exception {
+        // given
+        var request = new EditWaitlistOrderRequest(1L, List.of(3L, 1L, 2L));
+        given(adminApplyService.editWaitlistOrder(request)).willReturn(3);
+
+        // when, then
+        mockMvc.perform(patch("/admin/applies/waitlist-orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(3));
+        verify(adminApplyService).editWaitlistOrder(request);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\"recruitId\":1,\"applyIds\":[],\"selectionResult\":\"PASSED\"}",
+            "{\"applyIds\":[1],\"selectionResult\":\"PASSED\"}",
+            "{\"recruitId\":1,\"applyIds\":[null],\"selectionResult\":\"PASSED\"}"
+    })
+    void 선정결과_지정에_공고나_지원서가_없으면_거부한다(String body) throws Exception {
+        // when, then
+        mockMvc.perform(patch("/admin/applies/selection-results")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void 예비번호_조정은_빈_목록을_받을_수_없다() throws Exception {
+        // when, then
+        mockMvc.perform(patch("/admin/applies/waitlist-orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"recruitId\":1,\"applyIds\":[]}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void 예비번호_목록은_전체_배열과_인원수를_반환한다() throws Exception {
+        // given
+        var first = new WaitlistOrderResponse(30L, "지원자", "01012345678", CareerDetails.STUDENT, 1);
+        var second = new WaitlistOrderResponse(10L, "다음지원자", "01012345678", CareerDetails.STUDENT, 2);
+        given(adminApplyService.getWaitlistOrders(1L))
+                .willReturn(WaitlistOrdersResponse.from(List.of(first, second)));
+
+        // when, then
+        mockMvc.perform(get("/admin/applies/waitlist-orders").param("recruitId", "1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content.length()").value(2))
+                .andExpect(jsonPath("$.data.content[0].applyId").value(30))
+                .andExpect(jsonPath("$.data.content[1].applyId").value(10))
+                .andExpect(jsonPath("$.data.totalCount").value(2))
+                .andExpect(jsonPath("$.data.nextCursor").doesNotExist())
+                .andExpect(jsonPath("$.data.hasNext").doesNotExist())
+                .andExpect(jsonPath("$.data.size").doesNotExist());
+    }
+
+    @Test
+    void 예비번호_목록조회에_공고가_누락되면_거부한다() throws Exception {
+        // when, then
+        mockMvc.perform(get("/admin/applies/waitlist-orders"))
                 .andExpect(status().isBadRequest());
     }
 

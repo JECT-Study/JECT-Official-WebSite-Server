@@ -17,7 +17,7 @@ public class ApplyPassController implements ApplyPassApiSpec {
 
     @Override
     @PostMapping
-    public int passApply(@RequestBody ApplyPassRequest request) {
-        return applyPassService.passApply(request.applyIds());
+    public void passApply(@RequestBody ApplyPassRequest request) {
+        applyPassService.passApply(request);
     }
 }
