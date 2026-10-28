@@ -1,6 +1,7 @@
 package org.ject.support.domain.recruit.service;
 
 import org.ject.support.base.UnitTestSupport;
+import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.RecruitFaq;
@@ -8,14 +9,21 @@ import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
+import org.ject.support.domain.recruit.dto.ApplyManagementRecruitProjection;
+import org.ject.support.domain.recruit.dto.ApplyManagementRecruitSearchCondition;
+import org.ject.support.domain.recruit.dto.ApplyManagementRecruitsResponse;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitResponse;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
+import org.ject.support.domain.recruit.dto.RecruitTypeCountResponse;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -24,6 +32,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -48,6 +57,117 @@ class RecruitServiceTest extends UnitTestSupport {
 
     @Mock
     ApplicationEventPublisher eventPublisher;
+
+    @Test
+    @DisplayName("임시저장 지원서 화면에서도 공고와 제출 통계를 조회한다")
+    void 임시저장_지원서_화면에서도_공고와_제출_통계를_조회한다() {
+        // given
+        ApplyManagementRecruitSearchCondition condition = searchCondition(
+                ApplyStatus.TEMP_SAVED, RecruitType.MAKERS, Set.of(FE), null, 20);
+        ApplyManagementRecruitProjection projection = recruitProjection(
+                1L, RecruitType.MAKERS, FE, 10L, 2L, 6L, 1L);
+        when(recruitRepository.searchApplyManagementRecruits(condition, 21)).thenReturn(List.of(projection));
+        when(recruitRepository.countApplyManagementRecruits(condition)).thenReturn(1L);
+        when(recruitRepository.countRecruitsByRecruitType()).thenReturn(List.of(
+                new RecruitTypeCountResponse(RecruitType.MAKERS, 1L)));
+
+        // when
+        ApplyManagementRecruitsResponse response = recruitService.searchApplyManagementRecruits(condition);
+
+        // then
+        assertThat(response.recruits().content()).singleElement().satisfies(recruit -> {
+            assertThat(recruit.semesterId()).isNull();
+            assertThat(recruit.semesterName()).isNull();
+            assertThat(recruit.submittedApplyCount()).isEqualTo(10L);
+            assertThat(recruit.passedCount()).isEqualTo(2L);
+            assertThat(recruit.failedCount()).isEqualTo(6L);
+            assertThat(recruit.waitlistedCount()).isEqualTo(1L);
+        });
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ApplyStatus.class, names = {"JOINED", "REJECTED"})
+    @DisplayName("지원서 관리에서 허용되지 않은 지원 상태로 공고를 조회하면 실패한다")
+    void 지원서_관리에서_허용되지_않은_지원_상태로_공고를_조회하면_실패한다(ApplyStatus status) {
+        ApplyManagementRecruitSearchCondition condition = searchCondition(
+                status, RecruitType.SEMESTER, Set.of(FE), null, 20);
+
+        assertThatThrownBy(() -> recruitService.searchApplyManagementRecruits(condition))
+                .isInstanceOf(RecruitException.class);
+    }
+
+    @Test
+    @DisplayName("모집 유형에서 지원하지 않는 직군으로 공고를 조회하면 실패한다")
+    void 모집_유형에서_지원하지_않는_직군으로_공고를_조회하면_실패한다() {
+        ApplyManagementRecruitSearchCondition condition = searchCondition(
+                ApplyStatus.SUBMITTED, RecruitType.MAKERS, Set.of(JobFamily.APP), null, 20);
+
+        assertThatThrownBy(() -> recruitService.searchApplyManagementRecruits(condition))
+                .isInstanceOf(RecruitException.class);
+    }
+
+    @Test
+    @DisplayName("조회 결과가 요청 크기보다 많으면 다음 공고 커서를 반환한다")
+    void 조회_결과가_요청_크기보다_많으면_다음_공고_커서를_반환한다() {
+        // given
+        ApplyManagementRecruitSearchCondition condition = searchCondition(
+                ApplyStatus.SUBMITTED, RecruitType.SEMESTER, Set.of(FE), null, 2);
+        when(recruitRepository.searchApplyManagementRecruits(condition, 3)).thenReturn(List.of(
+                recruitProjection(3L, RecruitType.SEMESTER, FE, 0L, 0L, 0L, 0L),
+                recruitProjection(2L, RecruitType.SEMESTER, FE, 0L, 0L, 0L, 0L),
+                recruitProjection(1L, RecruitType.SEMESTER, FE, 0L, 0L, 0L, 0L)));
+        when(recruitRepository.countApplyManagementRecruits(condition)).thenReturn(3L);
+
+        // when
+        ApplyManagementRecruitsResponse response = recruitService.searchApplyManagementRecruits(condition);
+
+        // then
+        assertThat(response.recruits().content()).hasSize(2);
+        assertThat(response.recruits().hasNext()).isTrue();
+        assertThat(response.recruits().nextCursor()).isEqualTo(2L);
+        assertThat(response.recruits().totalCount()).isEqualTo(3L);
+    }
+
+    @Test
+    @DisplayName("조회 결과가 요청 크기 이하면 다음 공고 커서를 반환하지 않는다")
+    void 조회_결과가_요청_크기_이하면_다음_공고_커서를_반환하지_않는다() {
+        // given
+        ApplyManagementRecruitSearchCondition condition = searchCondition(
+                ApplyStatus.SUBMITTED, RecruitType.SEMESTER, Set.of(FE), null, 3);
+        when(recruitRepository.searchApplyManagementRecruits(condition, 4)).thenReturn(List.of(
+                recruitProjection(2L, RecruitType.SEMESTER, FE, 0L, 0L, 0L, 0L),
+                recruitProjection(1L, RecruitType.SEMESTER, FE, 0L, 0L, 0L, 0L)));
+        when(recruitRepository.countApplyManagementRecruits(condition)).thenReturn(2L);
+
+        // when
+        ApplyManagementRecruitsResponse response = recruitService.searchApplyManagementRecruits(condition);
+
+        // then
+        assertThat(response.recruits().content()).hasSize(2);
+        assertThat(response.recruits().hasNext()).isFalse();
+        assertThat(response.recruits().nextCursor()).isNull();
+        assertThat(response.recruits().totalCount()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("공고가 없는 모집 유형도 0건으로 반환한다")
+    void 공고가_없는_모집_유형도_0건으로_반환한다() {
+        // given
+        ApplyManagementRecruitSearchCondition condition = searchCondition(
+                ApplyStatus.SUBMITTED, RecruitType.SEMESTER, null, null, 20);
+        when(recruitRepository.countRecruitsByRecruitType()).thenReturn(List.of(
+                new RecruitTypeCountResponse(RecruitType.SEMESTER, 4L)));
+
+        // when
+        ApplyManagementRecruitsResponse response = recruitService.searchApplyManagementRecruits(condition);
+
+        // then
+        assertThat(response.recruitTypeCounts())
+                .containsExactly(
+                        new RecruitTypeCountResponse(RecruitType.SEMESTER, 4L),
+                        new RecruitTypeCountResponse(RecruitType.MAKERS, 0L),
+                        new RecruitTypeCountResponse(RecruitType.SUPPORTERS, 0L));
+    }
 
     @Test
     void 모집_등록_성공() {
@@ -279,6 +399,39 @@ class RecruitServiceTest extends UnitTestSupport {
 
     private Semester getSemester(boolean isRecruiting) {
         return Semester.builder().id(1L).name("1기").isRecruiting(isRecruiting).build();
+    }
+
+    private ApplyManagementRecruitSearchCondition searchCondition(
+            ApplyStatus status,
+            RecruitType recruitType,
+            Set<JobFamily> jobFamilies,
+            Long cursor,
+            Integer size
+    ) {
+        return new ApplyManagementRecruitSearchCondition(status, recruitType, jobFamilies, cursor, size);
+    }
+
+    private ApplyManagementRecruitProjection recruitProjection(
+            Long recruitId,
+            RecruitType recruitType,
+            JobFamily jobFamily,
+            long submittedApplyCount,
+            long passedCount,
+            long failedCount,
+            long waitlistedCount
+    ) {
+        return new ApplyManagementRecruitProjection(
+                recruitId,
+                1L,
+                "5기",
+                recruitType,
+                jobFamily,
+                LocalDateTime.now().minusDays(1),
+                LocalDateTime.now().plusDays(1),
+                submittedApplyCount,
+                passedCount,
+                failedCount,
+                waitlistedCount);
     }
 
     @Test

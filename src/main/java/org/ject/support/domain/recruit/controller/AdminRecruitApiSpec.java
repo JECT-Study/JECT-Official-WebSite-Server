@@ -3,8 +3,11 @@ package org.ject.support.domain.recruit.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.ject.support.domain.recruit.dto.ApplyManagementRecruitSearchCondition;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
+import org.ject.support.domain.recruit.dto.ApplyManagementRecruitsResponse;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -17,6 +20,12 @@ public interface AdminRecruitApiSpec {
             summary = "모집 등록",
             description = "모집 정보를 등록합니다.")
     void registerRecruit(@RequestBody @Valid List<RecruitRegisterRequest> requests);
+
+    @Operation(
+            summary = "지원서 관리용 모집공고 목록 조회",
+            description = "모집 유형과 직군으로 공고를 검색하고 제출 지원서의 선정 결과 통계를 함께 조회합니다.")
+    ApplyManagementRecruitsResponse searchApplyManagementRecruits(
+            @ModelAttribute @Valid ApplyManagementRecruitSearchCondition condition);
 
     @Operation(
             summary = "모집 수정",
