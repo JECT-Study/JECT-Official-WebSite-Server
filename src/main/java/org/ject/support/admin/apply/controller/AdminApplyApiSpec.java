@@ -4,18 +4,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
-import org.ject.support.admin.apply.dto.AdminApplyResponse;
 import org.ject.support.admin.apply.dto.SelectionResultUpdateRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyBulkDeleteRequest;
 import org.ject.support.admin.apply.dto.SubmittedApplyEditRequest;
+import org.ject.support.admin.apply.dto.SubmittedApplyResponse;
+import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
+import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
+import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
+import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
-import org.ject.support.domain.member.JobFamily;
-import org.ject.support.domain.recruit.domain.RecruitType;
-import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort.Direction;
-import org.springframework.data.web.PageableDefault;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -24,15 +22,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface AdminApplyApiSpec {
 
     @Operation(
-            summary = "지원서 목록 조회",
-            description = "지원서들의 목록을 조회합니다. 모집 공고, 모집 유형, 모집 사유, 기수, 직군, 지원 상태로 필터링할 수 있습니다.")
-    Page<AdminApplyResponse> findApplies(@RequestParam(required = false) ApplyStatus applyStatus,
-                                         @RequestParam(required = false) Long semesterId,
-                                         @RequestParam(required = false) JobFamily jobFamily,
-                                         @RequestParam(required = false) RecruitType recruitType,
-                                         @RequestParam(required = false) RecruitTypeDetail recruitTypeDetail,
-                                         @RequestParam(required = false) Long recruitId,
-                                         @PageableDefault(sort = "createdAt", direction = Direction.DESC) Pageable pageable);
+            summary = "제출완료 지원서 목록 조회",
+            description = "모집 공고별 제출완료 지원서를 조회합니다. 지원자 신분과 선정 결과를 다중 필터링할 수 있습니다.")
+    CursorPageResponse<SubmittedApplyResponse> searchSubmittedApplies(
+            @Valid @ModelAttribute SubmittedApplySearchCondition condition);
+
+    @Operation(
+            summary = "임시저장 지원서 목록 조회",
+            description = "모집 공고별 임시저장 지원서를 조회합니다. 지원자 신분을 다중 필터링할 수 있습니다.")
+    CursorPageResponse<TempSavedApplyResponse> searchTempSavedApplies(
+            @Valid @ModelAttribute TempSavedApplySearchCondition condition);
 
     @Operation(
             summary = "지원서 상세 조회",

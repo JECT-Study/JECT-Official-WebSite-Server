@@ -1,0 +1,21 @@
+package org.ject.support.admin.apply.dto;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import java.util.Set;
+import org.ject.support.domain.member.CareerDetails;
+
+public record TempSavedApplySearchCondition(
+        @NotNull @Positive Long recruitId,
+        Set<@NotNull CareerDetails> careerDetails,
+        @Positive Long cursor,
+        @Min(value = 1, message = "조회 개수는 1개 이상이어야 합니다.")
+        @Max(value = 100, message = "조회 개수는 100개 이하여야 합니다.")
+        Integer size
+) {
+    public int getSizeOrDefault() {
+        return size == null ? 20 : size;
+    }
+}
