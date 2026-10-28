@@ -9,6 +9,7 @@ import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
 public record RecruitResponse(
         Long recruitId,
+        String title,
         Long semesterId,
         String semesterName,
         RecruitType recruitType,
@@ -30,6 +31,7 @@ public record RecruitResponse(
         RecruitTypeDetail recruitTypeDetail = recruit.getRecruitTypeDetail();
         return new RecruitResponse(
                 recruit.getId(),
+                recruit.getTitle(),
                 recruit.getSemester().getId(),
                 recruit.getSemester().getName(),
                 recruitType,

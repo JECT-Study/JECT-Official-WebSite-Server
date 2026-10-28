@@ -76,6 +76,7 @@ class RecruitServiceTest extends UnitTestSupport {
 
         // then
         assertThat(response.recruits().content()).singleElement().satisfies(recruit -> {
+            assertThat(recruit.title()).isEqualTo("공고 1");
             assertThat(recruit.semesterId()).isNull();
             assertThat(recruit.semesterName()).isNull();
             assertThat(recruit.submittedApplyCount()).isEqualTo(10L);
@@ -177,9 +178,12 @@ class RecruitServiceTest extends UnitTestSupport {
         when(recruitRepository.existsByJobFamilyAndIsNotClosed(eq(semester.getId()), any())).thenReturn(false);
 
         List<RecruitRegisterRequest> requests = List.of(
-                new RecruitRegisterRequest(BE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1),
+                new RecruitRegisterRequest("백엔드 개발자 모집", BE,
+                        LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1),
                         "백엔드 모집 요약", null, null, List.of()),
-                new RecruitRegisterRequest(FE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1))
+                new RecruitRegisterRequest("프론트엔드 개발자 모집", FE,
+                        LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1),
+                        null, null, null, List.of())
         );
 
         // when
@@ -193,6 +197,7 @@ class RecruitServiceTest extends UnitTestSupport {
         ArgumentCaptor<List<Recruit>> recruitsCaptor = ArgumentCaptor.forClass(List.class);
         verify(recruitRepository).saveAll(recruitsCaptor.capture());
         assertThat(recruitsCaptor.getValue()).hasSize(2);
+        assertThat(recruitsCaptor.getValue().get(0).getTitle()).isEqualTo("백엔드 개발자 모집");
         assertThat(recruitsCaptor.getValue().get(0).getSummary()).isEqualTo("백엔드 모집 요약");
     }
 
@@ -202,6 +207,7 @@ class RecruitServiceTest extends UnitTestSupport {
         Recruit recruit = Recruit.builder()
                 .id(1L)
                 .semester(getSemester(true))
+                .title("운영 서포터즈 모집")
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(SUPPORTER)
@@ -217,6 +223,7 @@ class RecruitServiceTest extends UnitTestSupport {
         // then
         assertThat(result.recruitments()).hasSize(1);
         assertThat(result.recruitments().get(0).recruitId()).isEqualTo(1L);
+        assertThat(result.recruitments().get(0).title()).isEqualTo("운영 서포터즈 모집");
         assertThat(result.recruitments().get(0).recruitType()).isEqualTo(RecruitType.SUPPORTERS);
         assertThat(result.recruitments().get(0).recruitTypeDetail()).isEqualTo(RecruitTypeDetail.REFILL);
         assertThat(result.recruitments().get(0).jobFamily()).isEqualTo(SUPPORTER);
@@ -229,6 +236,7 @@ class RecruitServiceTest extends UnitTestSupport {
         Recruit recruit = Recruit.builder()
                 .id(1L)
                 .semester(getSemester(true))
+                .title("백엔드 개발자 모집")
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
@@ -242,6 +250,7 @@ class RecruitServiceTest extends UnitTestSupport {
         RecruitResponse result = recruitService.getRecruit(1L);
 
         // then
+        assertThat(result.title()).isEqualTo("백엔드 개발자 모집");
         assertThat(result.recruitInformation()).isEqualTo("<h2>모집 정보</h2>");
         assertThat(result.notice()).isEqualTo("<h2>안내사항</h2>");
         assertThat(result.faqs()).hasSize(1);
@@ -307,12 +316,14 @@ class RecruitServiceTest extends UnitTestSupport {
         // 직군은 FE로, 마감일은 3일 후로 수정
         LocalDateTime newEndDate = LocalDateTime.now().plusDays(3);
         RecruitUpdateRequest request = new RecruitUpdateRequest(
-                FE, LocalDateTime.now().minusDays(1), newEndDate, "수정된 모집 요약", null, null, List.of());
+                "수정된 프론트엔드 개발자 모집", FE,
+                LocalDateTime.now().minusDays(1), newEndDate, "수정된 모집 요약", null, null, List.of());
 
         // when
         recruitService.updateRecruit(recruit.getId(), request);
 
         // then
+        assertThat(recruit.getTitle()).isEqualTo("수정된 프론트엔드 개발자 모집");
         assertThat(recruit.getJobFamily()).isEqualTo(FE);
         assertThat(recruit.getEndDate()).isEqualTo(newEndDate);
         assertThat(recruit.getSummary()).isEqualTo("수정된 모집 요약");
@@ -422,6 +433,7 @@ class RecruitServiceTest extends UnitTestSupport {
     ) {
         return new ApplyManagementRecruitProjection(
                 recruitId,
+                "공고 " + recruitId,
                 1L,
                 "5기",
                 recruitType,

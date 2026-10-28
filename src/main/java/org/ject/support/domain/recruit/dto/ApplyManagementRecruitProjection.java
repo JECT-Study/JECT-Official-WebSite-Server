@@ -6,6 +6,7 @@ import org.ject.support.domain.recruit.domain.RecruitType;
 
 public record ApplyManagementRecruitProjection(
         Long recruitId,
+        String title,
         Long semesterId,
         String semesterName,
         RecruitType recruitType,

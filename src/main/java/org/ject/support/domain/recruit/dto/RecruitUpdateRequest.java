@@ -1,6 +1,7 @@
 package org.ject.support.domain.recruit.dto;
 
 import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
@@ -11,6 +12,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public record RecruitUpdateRequest(
+        @NotBlank(message = "모집공고 제목은 필수입니다.")
+        @Size(max = 100, message = "모집공고 제목은 100자 이하로 입력해주세요.")
+        String title,
+
         @NotNull(message = "직군은 필수입니다.")
         JobFamily jobFamily,
 
@@ -33,7 +38,7 @@ public record RecruitUpdateRequest(
         List<@Valid RecruitFaqRequest> faqs
 ) {
     public RecruitUpdateRequest(JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate) {
-        this(jobFamily, startDate, endDate, null, null, null, List.of());
+        this(null, jobFamily, startDate, endDate, null, null, null, List.of());
     }
 
     // FAQ 요청 목록을 도메인 값으로 변환

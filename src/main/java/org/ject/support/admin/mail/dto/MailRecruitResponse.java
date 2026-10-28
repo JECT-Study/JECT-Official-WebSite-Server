@@ -10,6 +10,8 @@ import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 public record MailRecruitResponse(
         @Schema(description = "모집 공고 ID", example = "1")
         Long recruitId,
+        @Schema(description = "모집 공고 제목", example = "젝트 6기 백엔드 개발자 모집")
+        String title,
         @Schema(description = "기수 ID", example = "2")
         Long semesterId,
         @Schema(description = "기수명", example = "10기")
@@ -37,6 +39,7 @@ public record MailRecruitResponse(
     public static MailRecruitResponse from(Recruit recruit) {
         return new MailRecruitResponse(
                 recruit.getId(),
+                recruit.getTitle(),
                 recruit.getSemester().getId(),
                 recruit.getSemester().getName(),
                 recruit.getJobFamily(),
