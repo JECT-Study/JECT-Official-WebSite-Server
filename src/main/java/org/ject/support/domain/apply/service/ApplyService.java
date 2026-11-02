@@ -6,6 +6,7 @@ import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.PeriodAccessible;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
 import org.ject.support.domain.applicant.exception.ApplicantErrorCode;
 import org.ject.support.domain.applicant.exception.ApplicantException;
 import org.ject.support.domain.applicant.repository.ApplicantRepository;
@@ -55,6 +56,14 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
     private final ApplicantRepository applicantRepository;
     private final Map2JsonSerializer map2JsonSerializer;
     private final String2MapSerializer string2MapSerializer;
+
+    // 활성 지원 이력은 소프트 삭제하고 본문과 포트폴리오는 연관관계에 따라 물리 삭제
+    @Transactional
+    public void deleteAppliesByApplicants(DeleteApplicantsRequest request) {
+        List<Apply> applies = applyRepository.findAllByApplicantIdsWithApplicationForm(request.applicantIds());
+        applyRepository.deleteAll(applies);
+        applyRepository.flush();
+    }
 
     @Override
     @Transactional(readOnly = true)

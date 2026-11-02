@@ -1,5 +1,6 @@
 package org.ject.support.domain.applicant.service;
 
+import java.util.Set;
 import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
 
 // 외부 도메인에 제공하는 지원자 변경 기능
@@ -10,4 +11,7 @@ public interface ApplicantCommandService {
 
     // 요청한 지원자를 소프트 삭제하며 누락된 지원자가 있으면 예외 발생
     void deleteApplicants(DeleteApplicantsRequest request);
+
+    // 이메일에 해당하는 활성 지원자 식별자 조회
+    Set<Long> getApplicantIdsByEmail(String email);
 }
