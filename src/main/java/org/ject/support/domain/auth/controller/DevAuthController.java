@@ -9,9 +9,11 @@ import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.applicant.repository.ApplicantRepository;
+import org.ject.support.domain.apply.service.DevDeleteTestbotUseCase;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,6 +24,7 @@ public class DevAuthController {
 
     private final ApplicantRepository applicantRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final DevDeleteTestbotUseCase deleteTestbotUseCase;
 
     @Operation(
             summary = "access token 발급",
@@ -34,6 +37,12 @@ public class DevAuthController {
         Authentication authentication = jwtTokenProvider.createAuthenticationByApplicant(applicant);
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
         return jwtTokenProvider.createAccessToken(authentication, customUserDetails.getApplicantId());
+    }
+
+    @Operation(summary = "테스트봇 지원정보 삭제", description = "testbot@ject.kr의 지원정보를 삭제합니다.")
+    @DeleteMapping("/dev/testbot")
+    public void deleteTestbot() {
+        deleteTestbotUseCase.deleteTestbot();
     }
 
     public record EmailRequest(
