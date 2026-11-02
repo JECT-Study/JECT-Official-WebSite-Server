@@ -6,7 +6,6 @@ import static org.mockito.BDDMockito.given;
 
 import java.util.List;
 import org.ject.support.admin.apply.dto.EditWaitlistOrderRequest;
-import org.ject.support.admin.apply.dto.GetAppliesRequest;
 import org.ject.support.admin.apply.dto.UpdateSelectionResultsRequest;
 import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
@@ -219,17 +218,6 @@ class AdminApplySelectionServiceTest extends UnitTestSupport {
         // then
         assertThat(result.content()).isEmpty();
         assertThat(result.totalCount()).isZero();
-    }
-
-    @Test
-    void 기존_합격_요청에서도_다른_공고를_함께_선택할_수_없다() {
-        // given
-        given(repository.findRecruitIdsByApplyIds(List.of(1L, 2L))).willReturn(List.of(1L, 2L));
-
-        // when, then
-        assertThatThrownBy(() -> service.getAppliesForPass(new GetAppliesRequest(List.of(1L, 2L))))
-                .isInstanceOf(ApplyException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.DIFFERENT_RECRUIT_NOT_ALLOWED);
     }
 
     private Apply apply(Long id) {

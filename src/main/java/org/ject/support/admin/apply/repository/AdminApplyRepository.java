@@ -11,14 +11,6 @@ import org.springframework.data.repository.query.Param;
 public interface AdminApplyRepository extends JpaRepository<Apply, Long>, AdminApplyQueryRepository {
 
     @Query("""
-            select distinct a.recruit.id from Apply a
-            join a.applicant p
-            where a.id in :ids and p.isDeleted = false
-            order by a.recruit.id
-            """)
-    List<Long> findRecruitIdsByApplyIds(@Param("ids") List<Long> ids);
-
-    @Query("""
             select a from Apply a
             join fetch a.applicant p
             where a.id in :ids and a.isDeleted = false and p.isDeleted = false

@@ -188,27 +188,6 @@ public class AdminApplyService {
         return adminApplyRepository.findAppliesWithApplicant(request.applyIds());
     }
 
-    // 기존 합격 처리 요청의 지원서가 같은 공고에 속하는지 검증
-    @Transactional
-    public List<Apply> getAppliesForPass(GetAppliesRequest request) {
-        if (new HashSet<>(request.applyIds()).size() != request.applyIds().size()) {
-            throw new ApplyException(ApplyErrorCode.DUPLICATE_APPLY_ID);
-        }
-        List<Long> recruitIds = adminApplyRepository.findRecruitIdsByApplyIds(request.applyIds());
-        if (recruitIds.isEmpty()) {
-            throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);
-        }
-        if (recruitIds.size() != 1) {
-            throw new ApplyException(ApplyErrorCode.DIFFERENT_RECRUIT_NOT_ALLOWED);
-        }
-        Long recruitId = recruitIds.getFirst();
-        List<Apply> applies = adminApplyRepository.findAppliesInRecruitWithApplicant(recruitId, request.applyIds());
-        if (applies.size() != request.applyIds().size()) {
-            throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);
-        }
-        return applies;
-    }
-
     // 선택한 제출완료 지원자의 결과를 공통 적용하고 예비 합격 순서를 연속 번호로 유지
     @Transactional
     public void updateSelectionResults(UpdateSelectionResultsRequest request) {
