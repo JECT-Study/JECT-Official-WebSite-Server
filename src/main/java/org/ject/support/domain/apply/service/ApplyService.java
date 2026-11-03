@@ -6,6 +6,7 @@ import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.PeriodAccessible;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.service.ApplicantCommandService;
 import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
 import org.ject.support.domain.applicant.exception.ApplicantErrorCode;
 import org.ject.support.domain.applicant.exception.ApplicantException;
@@ -54,6 +55,7 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
     private final ApplyRepository applyRepository;
     private final ApplicationFormRepository applicationFormRepository;
     private final ApplicantRepository applicantRepository;
+    private final ApplicantCommandService applicantCommandService;
     private final Map2JsonSerializer map2JsonSerializer;
     private final String2MapSerializer string2MapSerializer;
 
@@ -161,13 +163,9 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM);
         }
 
-        // 임시 저장한 지원서 제거 및 상태 변경
-        apply.deleteApplicationForm();
-        apply.resetToJoined();
-
-        // 프로필 제거
-        Applicant applicant = apply.getApplicant();
-        applicant.deleteProfile();
+        // 본문과 포트폴리오는 물리 삭제하고 지원 이력은 소프트 삭제
+        applyRepository.delete(apply);
+        applicantCommandService.deleteApplicant(applicantId);
     }
 
     @Override
