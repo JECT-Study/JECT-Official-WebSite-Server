@@ -25,6 +25,7 @@ import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.applicant.repository.ApplicantRepository;
+import org.ject.support.domain.applicant.service.ApplicantCommandService;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
@@ -76,6 +77,9 @@ class ApplyServiceTest extends UnitTestSupport {
 
     @Mock
     ApplicantRepository applicantRepository;
+
+    @Mock
+    ApplicantCommandService applicantCommandService;
 
     @Mock
     String2MapSerializer string2MapSerializer;
@@ -477,7 +481,7 @@ class ApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 프로필과_임시저장한_지원서_제거_성공() {
+    void 임시저장_지원서를_삭제하면_지원자도_함께_삭제한다() {
         // given
         List<Question> questions = List.of(
                 getQuestion(1L, 1, "문항 1", "설명 1"),
@@ -501,20 +505,12 @@ class ApplyServiceTest extends UnitTestSupport {
         applyService.deleteProfileAndTempApplicationForm(1L, recruit.getId());
 
         // then
-        assertThat(apply.getApplicationForm()).isNull();
-        assertThat(apply.getStatus()).isEqualTo(JOINED);
-
-        Applicant applicant = apply.getApplicant();
-        assertThat(applicant.getName()).isNull();
-        assertThat(applicant.getPhoneNumber()).isNull();
-        assertThat(applicant.getJobFamily()).isNull();
-        assertThat(applicant.getCareerDetails()).isNull();
-        assertThat(applicant.getExperiencePeriod()).isNull();
-        assertThat(applicant.getInterestedDomains()).isEmpty();
+        verify(applyRepository).delete(apply);
+        verify(applicantCommandService).deleteApplicant(1L);
     }
 
     @Test
-    void 임시저장한_지원서가_없거나_이미_제출한_상태에서_프로필과_임시저장한_지원서_제거_시_실패() {
+    void 임시저장_상태가_아니면_지원서와_지원자_삭제를_거부한다() {
         // given
         List<Question> questions = List.of(
                 getQuestion(1L, 1, "문항 1", "설명 1"),
@@ -537,9 +533,13 @@ class ApplyServiceTest extends UnitTestSupport {
 
         // when, then
         assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(1L, recruit.getId()))
-                .isInstanceOf(ApplyException.class);
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM);
         assertThatThrownBy(() -> applyService.deleteProfileAndTempApplicationForm(2L, recruit.getId()))
-                .isInstanceOf(ApplyException.class);
+                .isInstanceOf(ApplyException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM);
+        verify(applyRepository, never()).delete(any(Apply.class));
+        verify(applicantCommandService, never()).deleteApplicant(any());
     }
 
     @Test
