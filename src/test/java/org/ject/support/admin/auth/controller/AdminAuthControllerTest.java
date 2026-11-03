@@ -7,6 +7,8 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import org.ject.support.common.security.CustomSuccessHandler;
 import org.ject.support.admin.auth.dto.AdminLoginRequest;
+import org.ject.support.admin.auth.dto.AdminLoginResponse;
+import org.ject.support.admin.auth.dto.AdminLoginResult;
 import org.ject.support.admin.auth.service.AdminAuthService;
 import org.junit.jupiter.api.DisplayNameGeneration;
 import org.junit.jupiter.api.DisplayNameGenerator;
@@ -21,7 +23,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,18 +49,20 @@ class AdminAuthControllerTest {
     private HttpServletResponse httpServletResponse;
 
     @Test
-    void 관리자_로그인에_성공하면_true를_반환한다() {
+    void 관리자_로그인에_성공하면_이름과_어드민_여부를_반환한다() {
         // given
         String email = "admin@ject.org";
         String password = "Password123";
         AdminLoginRequest request = new AdminLoginRequest(email, password);
-        when(adminAuthService.authenticateAdmin(email, password)).thenReturn(authentication);
+        AdminLoginResult loginResult = new AdminLoginResult(authentication, "관리자", true);
+        when(adminAuthService.authenticateAdmin(email, password)).thenReturn(loginResult);
 
         // when
-        boolean result = adminAuthController.loginAdmin(request, httpServletRequest, httpServletResponse);
+        AdminLoginResponse result = adminAuthController.loginAdmin(request, httpServletRequest, httpServletResponse);
 
         // then
-        assertTrue(result);
+        assertThat(result.name()).isEqualTo("관리자");
+        assertThat(result.isAdmin()).isTrue();
         verify(adminAuthService).authenticateAdmin(email, password);
         verify(customSuccessHandler).onAuthenticationSuccess(httpServletRequest, httpServletResponse, authentication);
     }
