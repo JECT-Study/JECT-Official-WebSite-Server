@@ -5,11 +5,14 @@ import org.ject.support.domain.member.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface ApplicantRepository extends JpaRepository<Applicant, Long>, ApplicantQueryRepository {
 
     Optional<Applicant> findByEmail(String email);
+
+    List<Applicant> findAllByEmail(String email);
 
     Optional<Applicant> findByEmailAndSemesterId(String email, Long semesterId);
 

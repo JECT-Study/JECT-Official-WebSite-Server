@@ -2,6 +2,8 @@ package org.ject.support.domain.applicant.service;
 
 import lombok.RequiredArgsConstructor;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.applicant.dto.ApplicantDto;
@@ -28,6 +30,15 @@ public class ApplicantService implements ApplicantCommandService {
     private final SemesterInquiryUsecase semesterInquiryUsecase;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
+
+    // 소프트 삭제된 지원자를 제외하고 이메일에 해당하는 식별자 조회
+    @Override
+    @Transactional(readOnly = true)
+    public Set<Long> getApplicantIdsByEmail(String email) {
+        return applicantRepository.findAllByEmail(email).stream()
+                .map(Applicant::getId)
+                .collect(Collectors.toSet());
+    }
 
     // 재지원 시 이메일 인증부터 진행하도록 지원자 소프트 삭제
     @Override

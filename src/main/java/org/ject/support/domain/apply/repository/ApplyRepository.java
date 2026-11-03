@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.Optional;
 
 public interface ApplyRepository extends JpaRepository<Apply, Long> {
@@ -54,4 +55,12 @@ public interface ApplyRepository extends JpaRepository<Apply, Long> {
 
     @Query("SELECT a FROM Apply a JOIN FETCH a.applicant JOIN FETCH a.recruit WHERE a.id IN :ids")
     List<Apply> findAllByIdWithApplicant(@Param("ids") List<Long> ids);
+
+    @Query("""
+            select distinct a from Apply a
+            left join fetch a.applicationForm f
+            left join fetch f.portfolios
+            where a.applicant.id in :applicantIds
+            """)
+    List<Apply> findAllByApplicantIdsWithApplicationForm(@Param("applicantIds") Set<Long> applicantIds);
 }
