@@ -5,9 +5,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.ject.support.admin.auth.dto.AdminLoginRequest;
+import org.ject.support.admin.auth.dto.AdminLoginResponse;
+import org.ject.support.admin.auth.dto.AdminLoginResult;
 import org.ject.support.admin.auth.service.AdminAuthService;
 import org.ject.support.common.security.CustomSuccessHandler;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,11 +24,11 @@ public class AdminAuthController implements AdminAuthApiSpec {
 
     @Override
     @PostMapping("/login")
-    public boolean loginAdmin(@RequestBody @Valid AdminLoginRequest request,
+    public AdminLoginResponse loginAdmin(@RequestBody @Valid AdminLoginRequest request,
                                 HttpServletRequest httpRequest, HttpServletResponse response) {
-        Authentication authentication = adminAuthService.authenticateAdmin(request.email(), request.password());
-        customSuccessHandler.onAuthenticationSuccess(httpRequest, response, authentication);
-        return true;
+        AdminLoginResult result = adminAuthService.authenticateAdmin(request.email(), request.password());
+        customSuccessHandler.onAuthenticationSuccess(httpRequest, response, result.authentication());
+        return new AdminLoginResponse(result.name(), result.isAdmin());
     }
 
     @PostMapping("/logout")

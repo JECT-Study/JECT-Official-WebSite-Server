@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.ject.support.admin.auth.dto.AdminLoginRequest;
+import org.ject.support.admin.auth.dto.AdminLoginResponse;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @Tag(name = "Admin", description = "관리자 API")
@@ -15,7 +16,7 @@ public interface AdminAuthApiSpec {
             summary = "관리자 로그인",
             description = "관리자 로그인을 시도합니다."
     )
-    boolean loginAdmin(
+    AdminLoginResponse loginAdmin(
             @RequestBody @Valid AdminLoginRequest request,
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse
