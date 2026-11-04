@@ -17,6 +17,7 @@ import org.ject.support.domain.recruit.dto.RecruitResponse;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
 import org.ject.support.domain.recruit.dto.RecruitTypeCountResponse;
+import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
@@ -335,7 +336,7 @@ class RecruitServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 마감된_모집_정보는_수정_불가() {
+    void 접수기간이_종료된_공고는_수정할_수_없다() {
         // given
         Recruit recruit = Recruit.builder()
                 .semester(getSemester(false))
@@ -351,7 +352,8 @@ class RecruitServiceTest extends UnitTestSupport {
 
         // when, then
         assertThatThrownBy(() -> recruitService.updateRecruit(1L, request))
-                .isInstanceOf(RecruitException.class);
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.UPDATE_NOT_ALLOW_FOR_CLOSED);
     }
 
     @Test
