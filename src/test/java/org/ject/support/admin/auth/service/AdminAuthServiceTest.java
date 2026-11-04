@@ -1,6 +1,7 @@
 package org.ject.support.admin.auth.service;
 
 import org.ject.support.base.UnitTestSupport;
+import org.ject.support.admin.auth.dto.AdminLoginResult;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
 import org.ject.support.admin.component.AdminMemberComponent;
@@ -21,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.Duration;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -59,6 +61,7 @@ class AdminAuthServiceTest extends UnitTestSupport {
         Applicant adminApplicant = Applicant.builder()
                 .id(1L)
                 .email(email)
+                .name("관리자")
                 .pin("$2a$10$encodedPin")
                 .status(MemberStatus.ACTIVE)
                 .role(Role.ADMIN)
@@ -70,9 +73,12 @@ class AdminAuthServiceTest extends UnitTestSupport {
         given(jwtTokenProvider.createAuthenticationByApplicant(adminApplicant)).willReturn(authentication);
 
         // when
-        adminAuthService.authenticateAdmin(email, password);
+        AdminLoginResult result = adminAuthService.authenticateAdmin(email, password);
 
         // then
+        assertThat(result.authentication()).isEqualTo(authentication);
+        assertThat(result.name()).isEqualTo("관리자");
+        assertThat(result.isAdmin()).isTrue();
         verify(redisTemplate).delete(failCountKey);
         verify(redisTemplate).delete(blockKey);
         verify(jwtTokenProvider).createAuthenticationByApplicant(adminApplicant);
@@ -99,9 +105,10 @@ class AdminAuthServiceTest extends UnitTestSupport {
         given(jwtTokenProvider.createAuthenticationByApplicant(operationsApplicant)).willReturn(authentication);
 
         // when
-        adminAuthService.authenticateAdmin(email, password);
+        AdminLoginResult result = adminAuthService.authenticateAdmin(email, password);
 
         // then
+        assertThat(result.isAdmin()).isFalse();
         verify(redisTemplate).delete(failCountKey);
         verify(redisTemplate).delete(blockKey);
         verify(jwtTokenProvider).createAuthenticationByApplicant(operationsApplicant);

@@ -3,11 +3,13 @@ package org.ject.support.admin.auth.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
+import org.ject.support.admin.auth.dto.AdminLoginResult;
 import org.ject.support.admin.component.AdminMemberComponent;
 import org.ject.support.admin.exception.AdminErrorCode;
 import org.ject.support.admin.exception.AdminException;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.MemberStatus;
+import org.ject.support.domain.member.Role;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -33,7 +35,7 @@ public class AdminAuthService {
     private static final long ADMIN_LOGIN_PASSWORD_BLOCK_TIME = 60 * 60;
 
     @Transactional
-    public Authentication authenticateAdmin(String email, String password) {
+    public AdminLoginResult authenticateAdmin(String email, String password) {
         validateLoginAttemptLimit(email);
 
         Applicant applicant = adminMemberComponent.findBackofficeMemberByEmail(email)
@@ -46,7 +48,8 @@ public class AdminAuthService {
         checkMemberStatus(applicant);
         clearLoginFailState(email);
 
-        return jwtTokenProvider.createAuthenticationByApplicant(applicant);
+        Authentication authentication = jwtTokenProvider.createAuthenticationByApplicant(applicant);
+        return new AdminLoginResult(authentication, applicant.getName(), applicant.getRole() == Role.ADMIN);
     }
 
     private AdminException handleInvalidAdminCredentials(String email) {
