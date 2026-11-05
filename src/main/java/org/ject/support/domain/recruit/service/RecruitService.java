@@ -1,6 +1,8 @@
 package org.ject.support.domain.recruit.service;
 
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.exception.GlobalErrorCode;
+import org.ject.support.common.exception.GlobalException;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
@@ -113,6 +115,9 @@ public class RecruitService implements RecruitUsecase {
     public RecruitResponse getRecruit(Long recruitId) {
         Recruit recruit = recruitRepository.findByIdWithSemester(recruitId)
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
+        if (!recruit.isRecruitingPeriod()) {
+            throw new GlobalException(GlobalErrorCode.OVER_PERIOD);
+        }
         return RecruitResponse.from(recruit);
     }
 
