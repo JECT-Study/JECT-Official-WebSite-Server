@@ -83,8 +83,9 @@ public class Applicant extends BaseTimeEntity {
     @Builder.Default
     private List<String> interestedDomains = new ArrayList<>();
 
-    @Column(nullable = false)
     private Long semesterId;
+
+    private Long recruitId;
 
     @Enumerated(EnumType.STRING)
     @Column(columnDefinition = "varchar(10)", nullable = false)
