@@ -31,6 +31,7 @@ import org.ject.support.domain.recruit.exception.RecruitException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Getter
 @Entity
@@ -95,6 +96,40 @@ public class Recruit extends BaseTimeEntity {
     @Builder.Default
     private List<RecruitFaq> faqs = new ArrayList<>();
 
+    // 모집 유형과 기수 조합을 검증하여 공고 생성
+    public static Recruit create(Semester semester, String title, RecruitType recruitType,
+                                 RecruitTypeDetail recruitTypeDetail, JobFamily jobFamily,
+                                 LocalDateTime startDate, LocalDateTime endDate, String summary,
+                                 String recruitInformation, String notice, List<RecruitFaq> faqs) {
+        validateRecruitment(recruitType, recruitTypeDetail, jobFamily, semester);
+        return Recruit.builder()
+                .semester(semester)
+                .title(title)
+                .recruitType(recruitType)
+                .recruitTypeDetail(recruitTypeDetail)
+                .jobFamily(jobFamily)
+                .startDate(startDate)
+                .endDate(endDate)
+                .summary(summary)
+                .recruitInformation(recruitInformation)
+                .notice(notice)
+                .faqs(faqs)
+                .build();
+    }
+
+    private static void validateRecruitment(RecruitType recruitType, RecruitTypeDetail recruitTypeDetail,
+                                            JobFamily jobFamily, Semester semester) {
+        if (recruitType == null || !recruitType.supports(recruitTypeDetail)) {
+            throw new RecruitException(RecruitErrorCode.INVALID_RECRUIT_TYPE_DETAIL);
+        }
+        if (!recruitType.supports(jobFamily)) {
+            throw new RecruitException(RecruitErrorCode.INVALID_JOB_FAMILY);
+        }
+        if ((recruitType == RecruitType.SEMESTER) != (semester != null)) {
+            throw new RecruitException(RecruitErrorCode.INVALID_RECRUIT_SEMESTER);
+        }
+    }
+
     public void addQuestion(Question question) {
         this.questions.add(question);
         question.setRecruit(this);
@@ -122,7 +157,11 @@ public class Recruit extends BaseTimeEntity {
 
     // 모집공고 정보 변경
     public void update(String title, JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate,
-                       String summary, String recruitInformation, String notice, List<RecruitFaq> faqs) {
+                     String summary, String recruitInformation, String notice, List<RecruitFaq> faqs,
+                     RecruitType recruitType, RecruitTypeDetail recruitTypeDetail, Long semesterId) {
+        validateRecruitTypeAndSemester(recruitType, semesterId);
+        validateRecruitment(recruitType, recruitTypeDetail, jobFamily, semester);
+        this.recruitTypeDetail = recruitTypeDetail;
         this.title = title;
         this.jobFamily = jobFamily;
         this.startDate = startDate;
@@ -138,6 +177,14 @@ public class Recruit extends BaseTimeEntity {
         }
         if (faqs != null && !faqs.isEmpty()) {
             this.faqs = new ArrayList<>(faqs);
+        }
+    }
+
+    // 공고 편집 시 모집 유형과 소속 기수 유지 검증
+    public void validateRecruitTypeAndSemester(RecruitType recruitType, Long semesterId) {
+        if (this.recruitType != recruitType
+                || !Objects.equals(this.semester == null ? null : this.semester.getId(), semesterId)) {
+            throw new RecruitException(RecruitErrorCode.RECRUIT_TYPE_EDIT_NOT_ALLOWED);
         }
     }
 

@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.SemesterRegisterRequest;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
@@ -135,6 +137,7 @@ class SemesterControllerTest {
                 null,
                 null,
                 null,
-                List.of());
+                List.of(),
+                RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, null);
     }
 }

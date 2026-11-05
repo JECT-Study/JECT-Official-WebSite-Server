@@ -175,7 +175,8 @@ class AdminRecruitControllerTest {
                         null,
                         null,
                         null,
-                        List.of()));
+                        List.of(),
+                        RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, semesterRepository.findRecruitingSemester().orElseThrow().getId()));
 
         // when
         mockMvc.perform(put("/admin/recruits/{recruitId}", savedRecruit.getId())
@@ -233,6 +234,7 @@ class AdminRecruitControllerTest {
                 null,
                 null,
                 null,
-                List.of());
+                List.of(),
+                        RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, semesterRepository.findRecruitingSemester().orElseThrow().getId());
     }
 }

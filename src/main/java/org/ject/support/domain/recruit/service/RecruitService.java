@@ -6,7 +6,6 @@ import org.ject.support.common.response.CursorPageResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.RecruitType;
-import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponse;
 import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
 import org.ject.support.domain.recruit.dto.ApplyManagementRecruitProjection;
@@ -21,10 +20,7 @@ import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
 import org.ject.support.domain.recruit.dto.RecruitTypeCountResponse;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
-import org.ject.support.domain.recruit.exception.SemesterErrorCode;
-import org.ject.support.domain.recruit.exception.SemesterException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
-import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -48,23 +44,12 @@ public class RecruitService implements RecruitUsecase {
     );
 
     private final RecruitRepository recruitRepository;
-    private final SemesterRepository semesterRepository;
+    private final RecruitRegisterService recruitRegisterService;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
     public void registerRecruits(List<RecruitRegisterRequest> requests) {
-        // 1. 모집중인 기수 ID 조회
-        Semester recruitingSemester = semesterRepository.findRecruitingSemester()
-                .orElseThrow(() -> new SemesterException(SemesterErrorCode.NOT_FOUND_RECRUITING_SEMESTER));
-
-        // 2. 이미 모집중인 직군인지 검증
-        validateDuplicatedJobFamily(requests, recruitingSemester);
-
-        // 3. recruit 엔티티 저장
-        List<Recruit> recruits = requests.stream()
-                .map(request -> request.toEntity(recruitingSemester))
-                .toList();
-        recruitRepository.saveAll(recruits);
+        recruitRegisterService.registerRecruits(requests);
     }
 
     // 지원서 관리용 모집공고와 제출 지원서 통계 조회
@@ -146,7 +131,12 @@ public class RecruitService implements RecruitUsecase {
         if (recruit.isApplicationPeriodEnded()) {
             throw new RecruitException(RecruitErrorCode.UPDATE_NOT_ALLOW_FOR_CLOSED);
         }
+        recruit.validateRecruitTypeAndSemester(request.recruitType(), request.semesterId());
         JobFamily previousJobFamily = recruit.getJobFamily();
+        if (recruitRepository.existsDuplicateRecruit(request.recruitType(), request.jobFamily(),
+                request.semesterId(), recruitId)) {
+            throw new RecruitException(RecruitErrorCode.DUPLICATED_JOB_FAMILY);
+        }
         recruit.update(
                 request.title(),
                 request.jobFamily(),
@@ -155,7 +145,8 @@ public class RecruitService implements RecruitUsecase {
                 request.summary(),
                 request.recruitInformation(),
                 request.notice(),
-                request.getFaqsOrNull()
+                request.getFaqsOrNull(),
+                request.recruitType(), request.recruitTypeDetail(), request.semesterId()
         );
         eventPublisher.publishEvent(new RecruitUpdatedEvent(
                 recruit.getId(),
@@ -170,15 +161,6 @@ public class RecruitService implements RecruitUsecase {
         Recruit recruit = getRecruitEntity(recruitId);
         recruitRepository.delete(recruit);
         eventPublisher.publishEvent(new RecruitCanceledEvent(recruit.getId(), recruit.getJobFamily()));
-    }
-
-    private void validateDuplicatedJobFamily(List<RecruitRegisterRequest> requests, Semester recruitingSemester) {
-        List<JobFamily> jobFamilies = requests.stream()
-                .map(RecruitRegisterRequest::jobFamily)
-                .toList();
-        if (recruitRepository.existsByJobFamilyAndIsNotClosed(recruitingSemester.getId(), jobFamilies)) {
-            throw new RecruitException(RecruitErrorCode.DUPLICATED_JOB_FAMILY);
-        }
     }
 
     private Recruit getRecruitEntity(Long recruitId) {

@@ -262,7 +262,7 @@ class RecruitRepositoryTest {
         );
 
         // when
-        boolean result = recruitRepository.existsByJobFamilyAndIsNotClosed(savedSemester.getId(), List.of(FE, BE));
+        boolean result = recruitRepository.existsDuplicateRecruit(RecruitType.SEMESTER, BE, savedSemester.getId(), null);
 
         // then
         assertThat(result).isTrue();
