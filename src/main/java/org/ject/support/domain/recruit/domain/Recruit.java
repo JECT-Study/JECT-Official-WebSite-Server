@@ -46,7 +46,7 @@ public class Recruit extends BaseTimeEntity {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "semester_id", nullable = false)
+    @JoinColumn(name = "semester_id")
     private Semester semester;
 
     @Column(length = 100)
