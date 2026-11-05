@@ -16,6 +16,7 @@ import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitStatus;
 import org.ject.support.domain.recruit.dto.ApplyManagementRecruitProjection;
 import org.ject.support.domain.recruit.dto.ApplyManagementRecruitSearchCondition;
 import org.ject.support.domain.recruit.dto.RecruitTypeCountResponse;
@@ -56,6 +57,7 @@ public class RecruitQueryRepositoryImpl implements RecruitQueryRepository {
                 .leftJoin(recruit.semester, semester)
                 .where(
                         cursorLt(condition.cursor()),
+                        recruit.status.eq(RecruitStatus.OPEN),
                         recruit.recruitType.eq(condition.recruitType()),
                         jobFamilyIn(condition.jobFamilies())
                 )
@@ -69,6 +71,7 @@ public class RecruitQueryRepositoryImpl implements RecruitQueryRepository {
         Long count = jpaQueryFactory.select(recruit.id.count())
                 .from(recruit)
                 .where(
+                        recruit.status.eq(RecruitStatus.OPEN),
                         recruit.recruitType.eq(condition.recruitType()),
                         jobFamilyIn(condition.jobFamilies())
                 )
@@ -81,7 +84,8 @@ public class RecruitQueryRepositoryImpl implements RecruitQueryRepository {
         List<Tuple> counts = jpaQueryFactory
                 .select(recruit.recruitType, recruit.id.count())
                 .from(recruit)
-                .where(recruit.recruitType.in(APPLY_MANAGEMENT_RECRUIT_TYPES))
+                .where(recruit.status.eq(RecruitStatus.OPEN),
+                        recruit.recruitType.in(APPLY_MANAGEMENT_RECRUIT_TYPES))
                 .groupBy(recruit.recruitType)
                 .fetch();
 
