@@ -53,7 +53,7 @@ public class RecruitQueryRepositoryImpl implements RecruitQueryRepository {
                         countSelectionResult(SelectionResult.WAITLISTED)
                 ))
                 .from(recruit)
-                .join(recruit.semester, semester)
+                .leftJoin(recruit.semester, semester)
                 .where(
                         cursorLt(condition.cursor()),
                         recruit.recruitType.eq(condition.recruitType()),

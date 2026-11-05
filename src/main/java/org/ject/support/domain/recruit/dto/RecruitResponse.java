@@ -32,8 +32,8 @@ public record RecruitResponse(
         return new RecruitResponse(
                 recruit.getId(),
                 recruit.getTitle(),
-                recruit.getSemester().getId(),
-                recruit.getSemester().getName(),
+                recruit.getSemester() == null ? null : recruit.getSemester().getId(),
+                recruit.getSemester() == null ? null : recruit.getSemester().getName(),
                 recruitType,
                 recruitType.getDescription(),
                 recruitTypeDetail,
