@@ -1,6 +1,7 @@
 package org.ject.support.domain.recruit.service;
 
 import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
+import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.dto.ApplyManagementRecruitSearchCondition;
 import org.ject.support.domain.recruit.dto.ApplyManagementRecruitsResponse;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
@@ -10,6 +11,9 @@ import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import java.util.List;
 
 public interface RecruitUsecase {
+
+    // 다른 도메인에서 사용하는 공고 정보 조회
+    Recruit getRecruitEntity(Long recruitId);
 
     /**
      * 모집 정보를 등록합니다.

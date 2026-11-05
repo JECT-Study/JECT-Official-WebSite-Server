@@ -32,7 +32,6 @@ import java.util.Optional;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.applicant.exception.ApplicantException;
 import org.ject.support.domain.applicant.repository.ApplicantRepository;
-import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
 import org.ject.support.domain.member.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -73,9 +72,6 @@ class AuthServiceTest {
     private org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @Mock
-    private SemesterInquiryUsecase semesterInquiryUsecase;
-
-    @Mock
     private ApplyQueryService applyQueryService;
 
     private final String TEST_EMAIL = "test@example.com";
@@ -92,8 +88,6 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        lenient().when(semesterInquiryUsecase.getSemesterIdByRecruitId(TEST_RECRUIT_ID))
-                .thenReturn(TEST_SEMESTER_ID);
     }
 
     @Test
@@ -109,7 +103,7 @@ class AuthServiceTest {
                 .build();
         
         given(valueOperations.get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
-        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+        given(applicantRepository.findByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID))
                 .willReturn(Optional.of(applicant));
         given(jwtTokenProvider.createAuthenticationByApplicant(applicant)).willReturn(authentication);
         given(jwtTokenProvider.createAccessToken(authentication, TEST_APPLICANT_ID)).willReturn(TEST_ACCESS_TOKEN);
@@ -206,7 +200,7 @@ class AuthServiceTest {
                 .status(MemberStatus.ACTIVE)
                 .build();
         
-        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+        given(applicantRepository.findByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID))
                 .willReturn(Optional.of(applicant));
         given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(true);
         given(applyQueryService.getRecruitIdByApplicantId(TEST_APPLICANT_ID)).willReturn(Optional.empty());
@@ -233,7 +227,7 @@ class AuthServiceTest {
                 .status(MemberStatus.ACTIVE)
                 .build();
 
-        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+        given(applicantRepository.findByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID))
                 .willReturn(Optional.of(applicant));
         given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(true);
         given(applyQueryService.getRecruitIdByApplicantId(TEST_APPLICANT_ID))
@@ -260,7 +254,7 @@ class AuthServiceTest {
                 .status(MemberStatus.ACTIVE)
                 .build();
 
-        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+        given(applicantRepository.findByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID))
                 .willReturn(Optional.of(applicant));
         given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(true);
         given(applyQueryService.getRecruitIdByApplicantId(TEST_APPLICANT_ID))
@@ -277,7 +271,7 @@ class AuthServiceTest {
     @DisplayName("PIN 로그인 실패 - 회원 없음")
     void loginWithPin_MemberNotFound_ThrowsException() {
         // given
-        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+        given(applicantRepository.findByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID))
                 .willReturn(Optional.empty());
         
         // when & then
@@ -299,7 +293,7 @@ class AuthServiceTest {
                 .status(MemberStatus.ACTIVE)
                 .build();
         
-        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+        given(applicantRepository.findByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID))
                 .willReturn(Optional.of(applicant));
         given(passwordEncoder.matches(TEST_PIN, TEST_ENCODED_PIN)).willReturn(false);
         
@@ -315,7 +309,7 @@ class AuthServiceTest {
     @DisplayName("회원 존재 여부 확인 - 회원 존재")
     void isExistMember_MemberExists_ReturnsTrue() {
         // given
-        given(applicantRepository.existsByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID)).willReturn(true);
+        given(applicantRepository.existsByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID)).willReturn(true);
         
         // when
         boolean result = authService.isExistMember(TEST_EMAIL, TEST_RECRUIT_ID);
@@ -328,7 +322,7 @@ class AuthServiceTest {
     @DisplayName("회원 존재 여부 확인 - 회원 없음")
     void isExistMember_MemberNotExists_ReturnsFalse() {
         // given
-        given(applicantRepository.existsByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID)).willReturn(false);
+        given(applicantRepository.existsByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID)).willReturn(false);
         
         // when
         boolean result = authService.isExistMember(TEST_EMAIL, TEST_RECRUIT_ID);
@@ -368,7 +362,7 @@ class AuthServiceTest {
                 .build();
         Authentication mockAuthentication = mock(Authentication.class);
         
-        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+        given(applicantRepository.findByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID))
                 .willReturn(Optional.of(applicant));
         given(redisTemplate.opsForValue().get(TEST_EMAIL)).willReturn(TEST_AUTH_CODE);
         given(jwtTokenProvider.createAuthenticationByApplicant(any(Applicant.class))).willReturn(mockAuthentication);
