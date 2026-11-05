@@ -87,7 +87,7 @@ class RecruitTest {
 
         // when
         recruit.update("프론트엔드 개발자 모집", JobFamily.FE, LocalDateTime.now(), LocalDateTime.now().plusDays(2),
-                "모집공고 요약", "<h2>모집 정보</h2>", "<h2>안내사항</h2>", faqs);
+                "모집공고 요약", "<h2>모집 정보</h2>", "<h2>안내사항</h2>", faqs, recruit.getRecruitType(), recruit.getRecruitTypeDetail(), recruit.getSemester().getId());
 
         // then
         assertThat(recruit.getTitle()).isEqualTo("프론트엔드 개발자 모집");
@@ -114,7 +114,7 @@ class RecruitTest {
 
         // when
         recruit.update("프론트엔드 개발자 모집", JobFamily.FE,
-                LocalDateTime.now(), LocalDateTime.now().plusDays(2), "", "", " ", List.of());
+                LocalDateTime.now(), LocalDateTime.now().plusDays(2), "", "", " ", List.of(), recruit.getRecruitType(), recruit.getRecruitTypeDetail(), recruit.getSemester().getId());
 
         // then
         assertThat(recruit.getSummary()).isEqualTo("모집공고 요약");
@@ -150,6 +150,55 @@ class RecruitTest {
 
         // then
         assertThat(isInvalidQuestionId).isTrue();
+    }
+
+    @Test
+    void 일반_구성원_공고는_기수_없이_생성할_수_없다() {
+        assertThatThrownBy(() -> Recruit.create(null, "모집공고", RecruitType.SEMESTER,
+                RecruitTypeDetail.REGULAR, JobFamily.BE, LocalDateTime.now(), LocalDateTime.now().plusDays(1),
+                null, null, null, List.of()))
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.INVALID_RECRUIT_SEMESTER);
+    }
+
+    @Test
+    void 메이커스_공고에_기수를_지정할_수_없다() {
+        Semester semester = Semester.builder().id(1L).build();
+        assertThatThrownBy(() -> Recruit.create(semester, "모집공고", RecruitType.MAKERS,
+                RecruitTypeDetail.NEW, JobFamily.BE, LocalDateTime.now(), LocalDateTime.now().plusDays(1),
+                null, null, null, List.of()))
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.INVALID_RECRUIT_SEMESTER);
+    }
+
+    @Test
+    void 모집_유형에서_허용하지_않는_직군으로_공고를_생성할_수_없다() {
+        assertThatThrownBy(() -> Recruit.create(null, "모집공고", RecruitType.MAKERS,
+                RecruitTypeDetail.NEW, JobFamily.APP, LocalDateTime.now(), LocalDateTime.now().plusDays(1),
+                null, null, null, List.of()))
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.INVALID_JOB_FAMILY);
+    }
+
+    @Test
+    void 공고의_모집_유형과_기수는_변경할_수_없다() {
+        Recruit recruit = recruit(RecruitType.SEMESTER, RecruitTypeDetail.REGULAR);
+        assertThatThrownBy(() -> recruit.update("모집공고", JobFamily.BE, recruit.getStartDate(), recruit.getEndDate(),
+                null, null, null, List.of(), RecruitType.MAKERS, RecruitTypeDetail.NEW, null))
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.RECRUIT_TYPE_EDIT_NOT_ALLOWED);
+        assertThatThrownBy(() -> recruit.update("모집공고", JobFamily.BE, recruit.getStartDate(), recruit.getEndDate(),
+                null, null, null, List.of(), RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, 2L))
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.RECRUIT_TYPE_EDIT_NOT_ALLOWED);
+    }
+
+    @Test
+    void 같은_모집_유형의_상세_유형은_변경할_수_있다() {
+        Recruit recruit = recruit(RecruitType.SEMESTER, RecruitTypeDetail.REGULAR);
+        recruit.update("모집공고", JobFamily.BE, recruit.getStartDate(), recruit.getEndDate(),
+                null, null, null, List.of(), RecruitType.SEMESTER, RecruitTypeDetail.REFILL, 1L);
+        assertThat(recruit.getRecruitTypeDetail()).isEqualTo(RecruitTypeDetail.REFILL);
     }
 
     private Recruit recruit(RecruitType recruitType, RecruitTypeDetail recruitTypeDetail) {

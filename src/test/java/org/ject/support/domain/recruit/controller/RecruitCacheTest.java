@@ -3,6 +3,8 @@ package org.ject.support.domain.recruit.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
@@ -100,7 +102,7 @@ class RecruitCacheTest {
                     "<h2>변경된 모집 정보</h2>",
                     null,
                     null
-            );
+            , savedRecruit.getRecruitType(), savedRecruit.getRecruitTypeDetail(), savedRecruit.getSemester().getId());
         });
 
         // when, then
@@ -122,8 +124,8 @@ class RecruitCacheTest {
                 "수정된 모집 요약",
                 "<h2>변경된 모집 정보</h2>",
                 null,
-                List.of()
-        );
+                List.of(),
+                RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, recruit.getSemester().getId());
 
         // when
         mockMvc.perform(put("/admin/recruits/{recruitId}", recruit.getId())

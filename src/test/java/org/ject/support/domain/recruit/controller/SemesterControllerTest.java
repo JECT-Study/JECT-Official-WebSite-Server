@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.SemesterRegisterRequest;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
@@ -106,6 +108,25 @@ class SemesterControllerTest {
     }
 
     @Test
+    @AuthenticatedUser(isAdmin = true)
+    void 기수_생성에_메이커스_공고가_포함되면_잘못된_요청으로_응답한다() throws Exception {
+        // given
+        RecruitRegisterRequest recruit = new RecruitRegisterRequest("메이커스 모집", JobFamily.BE,
+                LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1), null, null, null, List.of(),
+                RecruitType.MAKERS, RecruitTypeDetail.NEW, null);
+        SemesterRegisterRequest request = new SemesterRegisterRequest("검증용 기수", List.of(recruit));
+
+        // when & then
+        mockMvc.perform(post("/admin/semesters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("RECRUIT-8")));
+        assertThat(semesterRepository.findAll()).isEmpty();
+        assertThat(recruitRepository.findAll()).isEmpty();
+    }
+
+    @Test
     @DisplayName("모든 기수 목록을 조회한다")
     void getAllSemesters() throws Exception {
         //given
@@ -135,6 +156,7 @@ class SemesterControllerTest {
                 null,
                 null,
                 null,
-                List.of());
+                List.of(),
+                RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, null);
     }
 }

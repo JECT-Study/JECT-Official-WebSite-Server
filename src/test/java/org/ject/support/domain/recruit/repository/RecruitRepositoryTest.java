@@ -262,7 +262,7 @@ class RecruitRepositoryTest {
         );
 
         // when
-        boolean result = recruitRepository.existsByJobFamilyAndIsNotClosed(savedSemester.getId(), List.of(FE, BE));
+        boolean result = recruitRepository.existsDuplicateRecruit(RecruitType.SEMESTER, BE, savedSemester.getId(), null);
 
         // then
         assertThat(result).isTrue();
@@ -423,6 +423,38 @@ class RecruitRepositoryTest {
                 jobFamilies,
                 cursor,
                 20);
+    }
+
+    @Test
+    void 기수_없는_공고도_상세와_기간내_목록_및_메일_목록에서_조회한다() {
+        // given
+        Recruit recruit = recruitRepository.saveAndFlush(Recruit.builder()
+                .title("메이커스 모집").recruitType(RecruitType.MAKERS).recruitTypeDetail(RecruitTypeDetail.NEW)
+                .jobFamily(BE).startDate(LocalDateTime.now().minusDays(1))
+                .endDate(LocalDateTime.now().plusDays(1)).build());
+
+        // when & then
+        assertThat(recruitRepository.findByIdWithSemester(recruit.getId())).isPresent();
+        assertThat(recruitRepository.findActiveRecruitments(LocalDateTime.now()))
+                .extracting(Recruit::getId).contains(recruit.getId());
+        assertThat(recruitRepository.findAllForMailDispatch())
+                .extracting(Recruit::getId).contains(recruit.getId());
+    }
+
+    @Test
+    void 접수기간이_지나도_미종료_공고는_중복이며_자기자신과_종료공고는_제외한다() {
+        // given
+        Recruit recruit = recruitRepository.saveAndFlush(Recruit.builder()
+                .recruitType(RecruitType.MAKERS).recruitTypeDetail(RecruitTypeDetail.NEW).jobFamily(BE)
+                .startDate(LocalDateTime.now().minusDays(3)).endDate(LocalDateTime.now().minusDays(1)).build());
+
+        // when & then
+        assertThat(recruitRepository.existsDuplicateRecruit(RecruitType.MAKERS, BE, null, null)).isTrue();
+        assertThat(recruitRepository.existsDuplicateRecruit(RecruitType.MAKERS, BE, null, recruit.getId())).isFalse();
+        assertThat(recruitRepository.existsDuplicateRecruit(RecruitType.SEMESTER, BE, 1L, null)).isFalse();
+        recruit.close();
+        recruitRepository.flush();
+        assertThat(recruitRepository.existsDuplicateRecruit(RecruitType.MAKERS, BE, null, null)).isFalse();
     }
 
     private void setCreatedAt(Recruit recruit, LocalDateTime createdAt) {

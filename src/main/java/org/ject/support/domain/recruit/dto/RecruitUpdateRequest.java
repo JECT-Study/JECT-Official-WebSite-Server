@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.RecruitFaq;
+import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,12 +37,12 @@ public record RecruitUpdateRequest(
         @Size(max = 100000, message = "안내사항은 100,000자 이하여야 합니다.")
         String notice,
 
-        List<@Valid RecruitFaqRequest> faqs
-) {
-    public RecruitUpdateRequest(JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate) {
-        this(null, jobFamily, startDate, endDate, null, null, null, List.of());
-    }
+        List<@Valid RecruitFaqRequest> faqs,
 
+        @NotNull RecruitType recruitType,
+        @NotNull RecruitTypeDetail recruitTypeDetail,
+        Long semesterId
+) {
     // FAQ 요청 목록을 도메인 값으로 변환
     public List<RecruitFaq> getFaqsOrNull() {
         return faqs == null ? null : RecruitFaqRequest.toDomains(faqs);
