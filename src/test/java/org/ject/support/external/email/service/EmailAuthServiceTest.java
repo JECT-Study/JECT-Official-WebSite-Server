@@ -5,6 +5,8 @@ import org.ject.support.external.email.config.EmailAuthBypassProperties;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.RateLimitException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -56,8 +58,9 @@ class EmailAuthServiceTest extends UnitTestSupport {
         verify(emailSendService).sendTemplatedEmail(eq(EmailTemplate.AUTH_CODE), eq(email), any());
     }
 
-    @Test
-    void 개발용_인증_이메일은_메일을_발송하지_않고_고정_인증번호를_저장한다() {
+    @ParameterizedTest
+    @EnumSource(value = EmailTemplate.class, names = {"AUTH_CODE", "PIN_RESET"})
+    void 개발용_인증_이메일은_메일을_발송하지_않고_고정_인증번호를_저장한다(EmailTemplate template) {
         // given
         String email = "testbot@ject.kr";
         given(emailAuthBypassProperties.isEnabledFor(email)).willReturn(true);
@@ -65,7 +68,7 @@ class EmailAuthServiceTest extends UnitTestSupport {
         given(redisTemplate.opsForValue()).willReturn(valueOperations);
 
         // when
-        emailAuthService.sendAuthCode(EmailTemplate.AUTH_CODE, email);
+        emailAuthService.sendAuthCode(template, email);
 
         // then
         verify(valueOperations).set(email, "000000", Duration.ofMinutes(5));
@@ -92,15 +95,16 @@ class EmailAuthServiceTest extends UnitTestSupport {
     }
 
 
-    @Test
-    void _3분_내에_재요청_시_RateLimitException이_발생한다() {
+    @ParameterizedTest
+    @EnumSource(value = EmailTemplate.class, names = {"AUTH_CODE", "PIN_RESET"})
+    void _3분_내에_재요청_시_RateLimitException이_발생한다(EmailTemplate template) {
         // given
         String email = "test@example.com";
         given(redisTemplate.hasKey(anyString())).willReturn(true); // 이미 키가 존재함
         given(redisTemplate.getExpire(anyString())).willReturn(120L); // 120초 남음
 
         // when, then
-        assertThatThrownBy(() -> emailAuthService.sendAuthCode(EmailTemplate.AUTH_CODE, email))
+        assertThatThrownBy(() -> emailAuthService.sendAuthCode(template, email))
                 .isInstanceOf(RateLimitException.class)
                 .extracting("retryAfter")
                 .isEqualTo(120L);

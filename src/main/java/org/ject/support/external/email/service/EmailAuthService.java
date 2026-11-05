@@ -26,7 +26,8 @@ public class EmailAuthService {
     private final EmailAuthBypassProperties emailAuthBypassProperties;
 
     public void sendAuthCode(EmailTemplate sendGroupCode, String toEmail) {
-        if (sendGroupCode == EmailTemplate.AUTH_CODE && emailAuthBypassProperties.isEnabledFor(toEmail)) {
+        if ((sendGroupCode == EmailTemplate.AUTH_CODE || sendGroupCode == EmailTemplate.PIN_RESET)
+                && emailAuthBypassProperties.isEnabledFor(toEmail)) {
             // 개발 자동화 계정 인증번호 저장
             storeAuthCode(toEmail, emailAuthBypassProperties.code());
             return;
