@@ -108,6 +108,25 @@ class SemesterControllerTest {
     }
 
     @Test
+    @AuthenticatedUser(isAdmin = true)
+    void 기수_생성에_메이커스_공고가_포함되면_잘못된_요청으로_응답한다() throws Exception {
+        // given
+        RecruitRegisterRequest recruit = new RecruitRegisterRequest("메이커스 모집", JobFamily.BE,
+                LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1), null, null, null, List.of(),
+                RecruitType.MAKERS, RecruitTypeDetail.NEW, null);
+        SemesterRegisterRequest request = new SemesterRegisterRequest("검증용 기수", List.of(recruit));
+
+        // when & then
+        mockMvc.perform(post("/admin/semesters")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("RECRUIT-8")));
+        assertThat(semesterRepository.findAll()).isEmpty();
+        assertThat(recruitRepository.findAll()).isEmpty();
+    }
+
+    @Test
     @DisplayName("모든 기수 목록을 조회한다")
     void getAllSemesters() throws Exception {
         //given
