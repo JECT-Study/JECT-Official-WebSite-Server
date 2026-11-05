@@ -187,6 +187,27 @@ class ApplicantServiceTest extends UnitTestSupport {
                 .isEqualTo(ApplicantErrorCode.ALREADY_EXIST_APPLICANT);
     }
 
+    @ParameterizedTest
+    @EnumSource(value = RecruitType.class, names = {"MAKERS", "SUPPORTERS"})
+    void 기수_없는_공고의_유형으로_지원자를_등록한다(RecruitType type) {
+        // given
+        RegisterRequest request = new RegisterRequest(TEST_PIN, TEST_RECRUIT_ID);
+        given(recruitUsecase.getRecruitEntity(TEST_RECRUIT_ID))
+                .willReturn(Recruit.builder().id(TEST_RECRUIT_ID).recruitType(type).build());
+        given(applicantRepository.findByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID)).willReturn(Optional.empty());
+        given(passwordEncoder.encode(TEST_PIN)).willReturn(TEST_ENCODED_PIN);
+
+        // when
+        applicantService.registerTempApplicant(request, TEST_EMAIL);
+
+        // then
+        ArgumentCaptor<Applicant> captor = ArgumentCaptor.forClass(Applicant.class);
+        verify(applicantRepository).save(captor.capture());
+        assertThat(captor.getValue().getRecruitId()).isEqualTo(TEST_RECRUIT_ID);
+        assertThat(captor.getValue().getSemesterId()).isNull();
+        assertThat(captor.getValue().getMemberType()).isEqualTo(type.toMemberType());
+    }
+
     @Test
     void 지원자_정보_업데이트_성공() {
         // given

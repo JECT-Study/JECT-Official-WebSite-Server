@@ -723,6 +723,21 @@ class ApplyServiceTest extends UnitTestSupport {
         verify(applyRepository, never()).save(any(Apply.class));
     }
 
+    @Test
+    void 다른_공고의_지원자는_프로필을_저장할_수_없다() {
+        // given
+        Applicant applicant = Applicant.builder().id(1L).recruitId(2L).name("기존이름").build();
+        given(applicantRepository.findById(1L)).willReturn(Optional.of(applicant));
+        ApplyProfileRequest request = new ApplyProfileRequest("새이름", "01012345678", BE,
+                Region.SEOUL, CareerDetails.STUDENT, ExperiencePeriod.NONE, List.of());
+
+        // when & then
+        assertThatThrownBy(() -> applyService.saveProfile(1L, 1L, request))
+                .isInstanceOf(ApplicantException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ApplicantErrorCode.RECRUIT_MISMATCH);
+        assertThat(applicant.getName()).isEqualTo("기존이름");
+    }
+
     private Recruit getActiveRecruit(JobFamily jobFamily, List<Question> questions) {
         return Recruit.builder()
                 .id(1L)
