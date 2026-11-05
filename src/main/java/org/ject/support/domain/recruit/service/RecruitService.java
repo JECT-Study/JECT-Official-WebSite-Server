@@ -168,7 +168,9 @@ public class RecruitService implements RecruitUsecase {
         eventPublisher.publishEvent(new RecruitCanceledEvent(recruit.getId(), recruit.getJobFamily()));
     }
 
-    private Recruit getRecruitEntity(Long recruitId) {
+    @Override
+    @Transactional(readOnly = true)
+    public Recruit getRecruitEntity(Long recruitId) {
         return recruitRepository.findById(recruitId)
                 .orElseThrow(() -> new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
     }
