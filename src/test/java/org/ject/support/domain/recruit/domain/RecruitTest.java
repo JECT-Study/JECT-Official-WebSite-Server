@@ -87,7 +87,7 @@ class RecruitTest {
 
         // when
         recruit.update("프론트엔드 개발자 모집", JobFamily.FE, LocalDateTime.now(), LocalDateTime.now().plusDays(2),
-                "모집공고 요약", "<h2>모집 정보</h2>", "<h2>안내사항</h2>", faqs);
+                "모집공고 요약", "<h2>모집 정보</h2>", "<h2>안내사항</h2>", faqs, recruit.getRecruitType(), recruit.getRecruitTypeDetail(), recruit.getSemester().getId());
 
         // then
         assertThat(recruit.getTitle()).isEqualTo("프론트엔드 개발자 모집");
@@ -114,7 +114,7 @@ class RecruitTest {
 
         // when
         recruit.update("프론트엔드 개발자 모집", JobFamily.FE,
-                LocalDateTime.now(), LocalDateTime.now().plusDays(2), "", "", " ", List.of());
+                LocalDateTime.now(), LocalDateTime.now().plusDays(2), "", "", " ", List.of(), recruit.getRecruitType(), recruit.getRecruitTypeDetail(), recruit.getSemester().getId());
 
         // then
         assertThat(recruit.getSummary()).isEqualTo("모집공고 요약");

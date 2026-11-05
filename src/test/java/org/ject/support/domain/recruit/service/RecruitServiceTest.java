@@ -12,7 +12,6 @@ import org.ject.support.domain.recruit.dto.ActiveRecruitmentResponses;
 import org.ject.support.domain.recruit.dto.ApplyManagementRecruitProjection;
 import org.ject.support.domain.recruit.dto.ApplyManagementRecruitSearchCondition;
 import org.ject.support.domain.recruit.dto.ApplyManagementRecruitsResponse;
-import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
 import org.ject.support.domain.recruit.dto.RecruitResponse;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import org.ject.support.domain.recruit.dto.RecruitUpdatedEvent;
@@ -20,7 +19,6 @@ import org.ject.support.domain.recruit.dto.RecruitTypeCountResponse;
 import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
-import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,7 +52,7 @@ class RecruitServiceTest extends UnitTestSupport {
     RecruitRepository recruitRepository;
 
     @Mock
-    SemesterRepository semesterRepository;
+    RecruitRegisterService recruitRegisterService;
 
     @Mock
     ApplicationEventPublisher eventPublisher;
@@ -172,37 +170,6 @@ class RecruitServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 모집_등록_성공() {
-        // given
-        Semester semester = getSemester(false);
-        when(semesterRepository.findRecruitingSemester()).thenReturn(Optional.ofNullable(semester));
-        when(recruitRepository.existsByJobFamilyAndIsNotClosed(eq(semester.getId()), any())).thenReturn(false);
-
-        List<RecruitRegisterRequest> requests = List.of(
-                new RecruitRegisterRequest("백엔드 개발자 모집", BE,
-                        LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1),
-                        "백엔드 모집 요약", null, null, List.of()),
-                new RecruitRegisterRequest("프론트엔드 개발자 모집", FE,
-                        LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1),
-                        null, null, null, List.of())
-        );
-
-        // when
-        recruitService.registerRecruits(requests);
-
-        // then
-        ArgumentCaptor<List<JobFamily>> jobFamiliesCaptor = ArgumentCaptor.forClass(List.class);
-        verify(recruitRepository).existsByJobFamilyAndIsNotClosed(eq(semester.getId()), jobFamiliesCaptor.capture());
-        assertThat(jobFamiliesCaptor.getValue()).containsExactly(BE, FE);
-
-        ArgumentCaptor<List<Recruit>> recruitsCaptor = ArgumentCaptor.forClass(List.class);
-        verify(recruitRepository).saveAll(recruitsCaptor.capture());
-        assertThat(recruitsCaptor.getValue()).hasSize(2);
-        assertThat(recruitsCaptor.getValue().get(0).getTitle()).isEqualTo("백엔드 개발자 모집");
-        assertThat(recruitsCaptor.getValue().get(0).getSummary()).isEqualTo("백엔드 모집 요약");
-    }
-
-    @Test
     void 활성_모집_공고_목록을_응답으로_변환한다() {
         // given
         Recruit recruit = Recruit.builder()
@@ -289,20 +256,6 @@ class RecruitServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 모집_등록_시_이미_모집중인_직군이면_실패() {
-        // given
-        Semester semester = getSemester();
-        RecruitRegisterRequest request =
-                new RecruitRegisterRequest(BE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
-        when(semesterRepository.findRecruitingSemester()).thenReturn(Optional.ofNullable(semester));
-        when(recruitRepository.existsByJobFamilyAndIsNotClosed(any(), any())).thenReturn(true);
-
-        // when, then
-        assertThatThrownBy(() -> recruitService.registerRecruits(List.of(request)))
-                .isInstanceOf(RecruitException.class);
-    }
-
-    @Test
     void 모집_정보_수정_성공() {
         // given
         Recruit recruit = Recruit.builder()
@@ -318,7 +271,8 @@ class RecruitServiceTest extends UnitTestSupport {
         LocalDateTime newEndDate = LocalDateTime.now().plusDays(3);
         RecruitUpdateRequest request = new RecruitUpdateRequest(
                 "수정된 프론트엔드 개발자 모집", FE,
-                LocalDateTime.now().minusDays(1), newEndDate, "수정된 모집 요약", null, null, List.of());
+                LocalDateTime.now().minusDays(1), newEndDate, "수정된 모집 요약", null, null, List.of(),
+                RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, 1L);
 
         // when
         recruitService.updateRecruit(recruit.getId(), request);
@@ -348,7 +302,8 @@ class RecruitServiceTest extends UnitTestSupport {
         when(recruitRepository.findById(1L)).thenReturn(Optional.ofNullable(recruit));
 
         RecruitUpdateRequest request
-                = new RecruitUpdateRequest(FE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
+                = new RecruitUpdateRequest(null, FE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1), null, null, null, List.of(),
+                RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, 1L);
 
         // when, then
         assertThatThrownBy(() -> recruitService.updateRecruit(1L, request))
@@ -360,7 +315,8 @@ class RecruitServiceTest extends UnitTestSupport {
     void 수정하려는_recruit이_존재하지_않으면_실패() {
         // given
         RecruitUpdateRequest request =
-                new RecruitUpdateRequest(BE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
+                new RecruitUpdateRequest(null, BE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1), null, null, null, List.of(),
+                RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, 1L);
 
         // when, then
         assertThatThrownBy(() -> recruitService.updateRecruit(100L, request))
@@ -381,7 +337,8 @@ class RecruitServiceTest extends UnitTestSupport {
         when(recruitRepository.findById(1L)).thenReturn(Optional.ofNullable(recruit));
 
         RecruitUpdateRequest request
-                = new RecruitUpdateRequest(FE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1));
+                = new RecruitUpdateRequest(null, FE, LocalDateTime.now().minusDays(1), LocalDateTime.now().plusDays(1), null, null, null, List.of(),
+                RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, 1L);
 
         // when, then
         assertThatThrownBy(() -> recruitService.updateRecruit(1L, request))
