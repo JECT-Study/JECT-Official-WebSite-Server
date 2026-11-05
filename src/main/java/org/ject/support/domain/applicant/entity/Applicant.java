@@ -19,6 +19,8 @@ import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.ject.support.common.util.StringListConverter;
+import org.ject.support.domain.applicant.exception.ApplicantException;
+import org.ject.support.domain.applicant.exception.ApplicantErrorCode;
 import org.ject.support.domain.base.BaseTimeEntity;
 import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
@@ -102,6 +104,13 @@ public class Applicant extends BaseTimeEntity {
     @Column(columnDefinition = "varchar(45)", nullable = false)
     @Builder.Default
     private MemberStatus status = MemberStatus.ACTIVE;
+
+    // 인증된 지원자의 공고와 요청 공고의 일치 여부 검증
+    public void validateRecruit(Long recruitId) {
+        if (this.recruitId == null || !this.recruitId.equals(recruitId)) {
+            throw new ApplicantException(ApplicantErrorCode.RECRUIT_MISMATCH);
+        }
+    }
 
     public void updateNameAndPhoneNumber(String name, String phoneNumber) {
         this.name = name;

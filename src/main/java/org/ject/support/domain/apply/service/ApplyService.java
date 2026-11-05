@@ -226,6 +226,7 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
     public void saveProfile(Long applicantId, Long recruitId, ApplyProfileRequest request) {
         var applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new ApplicantException(ApplicantErrorCode.NOT_FOUND_APPLICANT));
+        applicant.validateRecruit(recruitId);
         Recruit recruit = getActiveRecruit(recruitId);
 
         createApplyIfNotExists(applicant, recruit);

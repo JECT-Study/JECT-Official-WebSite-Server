@@ -24,6 +24,8 @@ import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Region;
 import org.ject.support.domain.member.Role;
 import org.ject.support.domain.applicant.entity.Applicant;
+import org.ject.support.domain.applicant.exception.ApplicantException;
+import org.ject.support.domain.applicant.exception.ApplicantErrorCode;
 import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.applicant.service.ApplicantCommandService;
 import org.ject.support.domain.recruit.domain.Question;
@@ -698,7 +700,7 @@ class ApplyServiceTest extends UnitTestSupport {
         // given
         long applicantId = 1L;
         long invalidRecruitId = 999L;
-        Applicant applicant = getApplicant(applicantId, "test@example.com");
+        Applicant applicant = Applicant.builder().id(applicantId).recruitId(invalidRecruitId).build();
         ApplyProfileRequest request = new ApplyProfileRequest(
                 "New Name",
                 "010-1234-5678",
@@ -744,7 +746,7 @@ class ApplyServiceTest extends UnitTestSupport {
     }
 
     private Applicant getApplicant(Long id, String email) {
-        return Applicant.builder()
+        return Applicant.builder().recruitId(1L)
                 .id(id)
                 .email(email)
                 .pin("111111")

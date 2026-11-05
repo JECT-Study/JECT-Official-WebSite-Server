@@ -15,7 +15,13 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.member.MemberStatus;
 import org.ject.support.domain.member.Region;
-import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
+import org.ject.support.domain.recruit.service.RecruitUsecase;
+import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.domain.RecruitType;
+import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,7 +59,7 @@ class ApplicantServiceTest extends UnitTestSupport {
     private Authentication authentication;
 
     @Mock
-    private SemesterInquiryUsecase semesterInquiryUsecase;
+    private RecruitUsecase recruitUsecase;
 
     private final String TEST_NAME = "홍길동";
     private final String TEST_EMAIL = "test@example.com";
@@ -141,9 +147,9 @@ class ApplicantServiceTest extends UnitTestSupport {
                 .pin(TEST_ENCODED_PIN)
                 .status(MemberStatus.ACTIVE)
                 .build();
-        given(semesterInquiryUsecase.getSemesterIdByRecruitId(TEST_RECRUIT_ID))
-                .willReturn(TEST_SEMESTER_ID);
-        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+        given(recruitUsecase.getRecruitEntity(TEST_RECRUIT_ID)).willReturn(Recruit.builder()
+                .id(TEST_RECRUIT_ID).semester(Semester.builder().id(TEST_SEMESTER_ID).build()).build());
+        given(applicantRepository.findByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID))
                 .willReturn(Optional.empty());
         given(passwordEncoder.encode(TEST_PIN)).willReturn(TEST_ENCODED_PIN);
         given(applicantRepository.save(any(Applicant.class))).willReturn(applicant);
@@ -169,9 +175,9 @@ class ApplicantServiceTest extends UnitTestSupport {
                 .status(MemberStatus.ACTIVE)
                 .build();
 
-        given(semesterInquiryUsecase.getSemesterIdByRecruitId(TEST_RECRUIT_ID))
-                .willReturn(TEST_SEMESTER_ID);
-        given(applicantRepository.findByEmailAndSemesterId(TEST_EMAIL, TEST_SEMESTER_ID))
+        given(recruitUsecase.getRecruitEntity(TEST_RECRUIT_ID)).willReturn(Recruit.builder()
+                .id(TEST_RECRUIT_ID).semester(Semester.builder().id(TEST_SEMESTER_ID).build()).build());
+        given(applicantRepository.findByEmailAndRecruitId(TEST_EMAIL, TEST_RECRUIT_ID))
                 .willReturn(Optional.of(existingApplicant));
 
         // when & then

@@ -12,7 +12,6 @@ import org.ject.support.domain.auth.dto.AuthVerificationResult;
 import org.ject.support.domain.auth.exception.AuthException;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.apply.service.ApplyQueryService;
-import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
@@ -38,7 +37,6 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final ApplicantRepository applicantRepository;
     private final PasswordEncoder passwordEncoder;
-    private final SemesterInquiryUsecase semesterInquiryUsecase;
     private final ApplyQueryService applyQueryService;
 
     /**
@@ -112,8 +110,7 @@ public class AuthService {
     }
 
     private Applicant findApplicant(String email, Long recruitId) {
-        Long semesterId = semesterInquiryUsecase.getSemesterIdByRecruitId(recruitId);
-        return applicantRepository.findByEmailAndSemesterId(email, semesterId)
+        return applicantRepository.findByEmailAndRecruitId(email, recruitId)
                 .orElseThrow(() -> new ApplicantException(NOT_FOUND_APPLICANT));
     }
 
@@ -165,7 +162,6 @@ public class AuthService {
     }
 
     public boolean isExistMember(String email, Long recruitId) {
-        Long semesterId = semesterInquiryUsecase.getSemesterIdByRecruitId(recruitId);
-        return applicantRepository.existsByEmailAndSemesterId(email, semesterId);
+        return applicantRepository.existsByEmailAndRecruitId(email, recruitId);
     }
 }
