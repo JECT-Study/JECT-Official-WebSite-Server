@@ -12,19 +12,19 @@ import org.springframework.data.repository.query.Param;
 
 public interface RecruitRepository extends JpaRepository<Recruit, Long>, RecruitQueryRepository {
 
-    @Query("SELECT r FROM Recruit r JOIN FETCH r.semester WHERE r.id = :recruitId")
+    @Query("SELECT r FROM Recruit r LEFT JOIN FETCH r.semester WHERE r.id = :recruitId")
     Optional<Recruit> findByIdWithSemester(@Param("recruitId") Long recruitId);
 
     @Query("SELECT r FROM Recruit r LEFT JOIN FETCH r.questions "
             + "WHERE r.startDate <= :now AND r.endDate >= :now")
     List<Recruit> findActiveRecruits(@Param("now") LocalDateTime now);
 
-    @Query("SELECT r FROM Recruit r JOIN FETCH r.semester "
+    @Query("SELECT r FROM Recruit r LEFT JOIN FETCH r.semester "
             + "WHERE r.startDate <= :now AND r.endDate >= :now "
             + "ORDER BY r.startDate ASC, r.id ASC")
     List<Recruit> findActiveRecruitments(@Param("now") LocalDateTime now);
 
-    @Query("SELECT r FROM Recruit r JOIN FETCH r.semester "
+    @Query("SELECT r FROM Recruit r LEFT JOIN FETCH r.semester "
             + "ORDER BY r.createdAt DESC, r.id DESC")
     List<Recruit> findAllForMailDispatch();
 

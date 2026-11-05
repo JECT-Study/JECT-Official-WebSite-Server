@@ -40,8 +40,8 @@ public record MailRecruitResponse(
         return new MailRecruitResponse(
                 recruit.getId(),
                 recruit.getTitle(),
-                recruit.getSemester().getId(),
-                recruit.getSemester().getName(),
+                recruit.getSemester() == null ? null : recruit.getSemester().getId(),
+                recruit.getSemester() == null ? null : recruit.getSemester().getName(),
                 recruit.getJobFamily(),
                 recruit.getJobFamily().getDescription(),
                 recruit.getRecruitType(),
