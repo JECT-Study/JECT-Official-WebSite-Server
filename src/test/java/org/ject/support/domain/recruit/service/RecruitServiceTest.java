@@ -290,6 +290,23 @@ class RecruitServiceTest extends UnitTestSupport {
     }
 
     @Test
+    void 다른_모집_유형으로_변경하면_유형_변경_제한_오류를_반환한다() {
+        // given
+        Recruit recruit = Recruit.builder().id(1L).jobFamily(BE)
+                .recruitType(RecruitType.MAKERS).recruitTypeDetail(RecruitTypeDetail.NEW)
+                .startDate(LocalDateTime.now().minusDays(1)).endDate(LocalDateTime.now().plusDays(1)).build();
+        when(recruitRepository.findById(1L)).thenReturn(Optional.of(recruit));
+        RecruitUpdateRequest request = new RecruitUpdateRequest("모집공고", JobFamily.OPS,
+                recruit.getStartDate(), recruit.getEndDate(), null, null, null, List.of(),
+                RecruitType.SUPPORTERS, RecruitTypeDetail.NEW, null);
+
+        // when & then
+        assertThatThrownBy(() -> recruitService.updateRecruit(1L, request))
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.RECRUIT_TYPE_EDIT_NOT_ALLOWED);
+    }
+
+    @Test
     void 접수기간이_종료된_공고는_수정할_수_없다() {
         // given
         Recruit recruit = Recruit.builder()
