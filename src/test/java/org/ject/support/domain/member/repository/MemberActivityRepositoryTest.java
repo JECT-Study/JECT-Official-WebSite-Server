@@ -62,6 +62,41 @@ class MemberActivityRepositoryTest {
 	@Autowired
 	EntityManager entityManager;
 
+    @Test
+    void 활동_중인_구성원만_지원_제한_대상으로_조회한다() {
+        // given
+        Member active = memberRepository.save(member().email("active@test.com").build());
+        Member ended = memberRepository.save(member().email("ended@test.com").build());
+        memberActivityRepository.save(semesterActivity().memberId(active.getId())
+                .activityStatus(ActivityStatus.ACTIVE).build());
+        memberActivityRepository.save(semesterActivity().memberId(ended.getId())
+                .activityStatus(ActivityStatus.COMPLETED).build());
+        entityManager.flush();
+        entityManager.clear();
+
+        // when, then
+        assertThat(memberActivityRepository.findActiveActivitiesByEmail(active.getEmail())).hasSize(1);
+        assertThat(memberActivityRepository.findActiveActivitiesByEmail(ended.getEmail())).isEmpty();
+    }
+
+    @Test
+    void 삭제된_구성원이나_활동은_지원_제한_대상에서_제외한다() {
+        // given
+        Member deleted = memberRepository.save(member().email("deleted@test.com").build());
+        Member removedActivityOwner = memberRepository.save(member().email("removed@test.com").build());
+        memberActivityRepository.save(semesterActivity().memberId(deleted.getId()).build());
+        MemberActivity activity = memberActivityRepository.save(semesterActivity()
+                .memberId(removedActivityOwner.getId()).build());
+        memberRepository.delete(deleted);
+        memberActivityRepository.delete(activity);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when, then
+        assertThat(memberActivityRepository.findActiveActivitiesByEmail(deleted.getEmail())).isEmpty();
+        assertThat(memberActivityRepository.findActiveActivitiesByEmail(removedActivityOwner.getEmail())).isEmpty();
+    }
+
     private MemberSemesterSearchCondition searchCondition(
         Long cursor,
         Integer size,

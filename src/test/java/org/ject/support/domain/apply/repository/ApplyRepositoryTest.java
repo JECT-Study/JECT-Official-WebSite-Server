@@ -16,6 +16,8 @@ import org.ject.support.domain.recruit.repository.SemesterRepository;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
@@ -68,6 +70,55 @@ class ApplyRepositoryTest {
         feRecruit = getRecruit(FE);
         beRecruit = getRecruit(BE);
         recruitRepository.saveAll(List.of(pmRecruit, pdRecruit, feRecruit, beRecruit));
+    }
+
+    @Test
+    void 지원서가_없는_계정과_삭제된_지원_이력은_중복_지원_검사에서_제외한다() {
+        // given
+        Applicant pinOnly = applicantRepository.save(createApplicant("pin@test.com", Role.APPLY));
+        Applicant deletedApplyOwner = applicantRepository.save(createApplicant("deleted@test.com", Role.APPLY));
+        Applicant deletedApplicant = applicantRepository.save(createApplicant("removed@test.com", Role.APPLY));
+        Apply deletedApply = applyRepository.save(getApply(deletedApplyOwner, beRecruit, TEMP_SAVED));
+        applyRepository.save(getApply(deletedApplicant, feRecruit, SUBMITTED));
+        applyRepository.delete(deletedApply);
+        entityManager.flush();
+        entityManager.clear();
+        applicantRepository.delete(deletedApplicant);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when, then
+        assertThat(applyRepository.existsActiveApplicationInOtherRecruit(pinOnly.getEmail(), pmRecruit.getId())).isFalse();
+        assertThat(applyRepository.existsActiveApplicationInOtherRecruit(deletedApplyOwner.getEmail(), pmRecruit.getId())).isFalse();
+        assertThat(applyRepository.existsActiveApplicationInOtherRecruit(deletedApplicant.getEmail(), pmRecruit.getId())).isFalse();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ApplyStatus.class, names = {"TEMP_SAVED", "SUBMITTED"})
+    void 임시저장과_제출완료_지원은_다른_공고_지원을_제한한다(ApplyStatus status) {
+        // given
+        Applicant applicant = applicantRepository.save(createApplicant("history@test.com", Role.APPLY));
+        Apply apply = applyRepository.save(getApply(applicant, beRecruit, status));
+        entityManager.flush();
+        entityManager.clear();
+
+        // when, then
+        assertThat(applyRepository.existsActiveApplicationInOtherRecruit(applicant.getEmail(), pmRecruit.getId())).isTrue();
+        assertThat(applyRepository.existsActiveApplicationInOtherRecruit(applicant.getEmail(), beRecruit.getId())).isFalse();
+    }
+
+    @Test
+    void 프로필만_저장했거나_공고가_종료된_지원은_다른_공고를_제한하지_않는다() {
+        // given
+        Applicant applicant = applicantRepository.save(createApplicant("joined@test.com", Role.APPLY));
+        applyRepository.save(getApply(applicant, beRecruit, JOINED));
+        feRecruit.close();
+        applyRepository.save(getApply(applicant, feRecruit, TEMP_SAVED));
+        entityManager.flush();
+        entityManager.clear();
+
+        // when, then
+        assertThat(applyRepository.existsActiveApplicationInOtherRecruit(applicant.getEmail(), pmRecruit.getId())).isFalse();
     }
 
     @Test
