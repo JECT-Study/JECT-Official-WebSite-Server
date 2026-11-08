@@ -28,7 +28,7 @@ public enum ApplyErrorCode implements ErrorCode {
     SELECTION_RESULT_EDIT_NOT_ALLOWED(BAD_REQUEST, "APPLY-14", "임시저장 지원서에는 선정 결과를 지정할 수 없습니다."),
     NOT_FOUND_PORTFOLIO(NOT_FOUND, "APPLY-15", "해당 지원서의 포트폴리오를 찾을 수 없습니다."),
     SELECTION_RESULT_REQUIRED(BAD_REQUEST, "APPLY-16", "제출완료 지원서의 선정 결과를 지정해주세요."),
-    INVALID_WAITLIST_ORDER(BAD_REQUEST, "APPLY-17", "현재 예비 합격자 전체를 빠짐없이 한 번씩 지정해주세요."),
+    INVALID_WAITLIST_ORDER(BAD_REQUEST, "APPLY-17", "예비 합격자 목록에 누락, 중복 또는 대상이 아닌 지원자가 포함되어 있습니다."),
     ACTIVE_MEMBER_APPLICATION_NOT_ALLOWED(CONFLICT, "APPLY-18", "활동 중인 구성원은 지원할 수 없습니다.")
     ;
 
