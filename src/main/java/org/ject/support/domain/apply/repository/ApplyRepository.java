@@ -3,6 +3,7 @@ package org.ject.support.domain.apply.repository;
 import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.domain.RecruitStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +14,24 @@ import java.util.Set;
 import java.util.Optional;
 
 public interface ApplyRepository extends JpaRepository<Apply, Long> {
+
+    @Query("""
+            select count(a) > 0 from Apply a
+            join a.applicant p
+            join a.recruit r
+            where p.email = :email and p.isDeleted = false and a.isDeleted = false
+              and r.id <> :recruitId
+              and r.status = :recruitStatus
+              and a.status in :applyStatuses
+            """)
+    boolean existsApplicationInOtherRecruit(@Param("email") String email, @Param("recruitId") Long recruitId,
+                                            @Param("recruitStatus") RecruitStatus recruitStatus,
+                                            @Param("applyStatuses") List<ApplyStatus> applyStatuses);
+
+    default boolean existsActiveApplicationInOtherRecruit(String email, Long recruitId) {
+        return existsApplicationInOtherRecruit(email, recruitId, RecruitStatus.OPEN,
+                List.of(ApplyStatus.TEMP_SAVED, ApplyStatus.SUBMITTED));
+    }
 
     @Query("select a from Apply a join a.recruit r where a.applicant.id = :applicantId and r.id = :recruitId and r.startDate <= :now and r.endDate >= :now")
     Optional<Apply> findByApplicantIdAndRecruitIdInActiveRecruit(@Param("applicantId") Long applicantId,
