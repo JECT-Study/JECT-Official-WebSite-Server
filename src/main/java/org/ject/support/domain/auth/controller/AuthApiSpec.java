@@ -63,7 +63,9 @@ public interface AuthApiSpec {
     })
     boolean refreshToken(HttpServletRequest request, HttpServletResponse response);
 
-    @Operation(hidden = true)
+    @Operation(
+            summary = "PIN 로그인",
+            description = "이메일, PIN 번호, 모집 ID로 로그인하고 성공 시 쿠키로 액세스 토큰과 리프레시 토큰을 발급합니다.")
     boolean loginWithPin(@RequestBody @Valid AuthDto.PinLoginRequest request,
                          HttpServletRequest httpRequest, HttpServletResponse response);
 
