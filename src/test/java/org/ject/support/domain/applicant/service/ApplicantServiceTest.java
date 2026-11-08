@@ -1,6 +1,7 @@
 package org.ject.support.domain.applicant.service;
 
 import org.ject.support.base.UnitTestSupport;
+import org.ject.support.domain.apply.service.ApplyEligibilityService;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.applicant.dto.ApplicantDto.InitialProfileRequest;
 import org.ject.support.domain.applicant.dto.ApplicantDto.RegisterRequest;
@@ -45,6 +46,9 @@ class ApplicantServiceTest extends UnitTestSupport {
 
     @InjectMocks
     private ApplicantService applicantService;
+
+    @Mock
+    private ApplyEligibilityService applyEligibilityService;
 
     @Mock
     private ApplicantRepository applicantRepository;

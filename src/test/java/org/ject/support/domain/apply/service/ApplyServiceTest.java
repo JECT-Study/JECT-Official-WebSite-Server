@@ -66,6 +66,9 @@ class ApplyServiceTest extends UnitTestSupport {
     ApplyService applyService;
 
     @Mock
+    ApplyEligibilityService applyEligibilityService;
+
+    @Mock
     RecruitRepository recruitRepository;
 
     @Mock
