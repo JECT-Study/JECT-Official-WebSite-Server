@@ -35,4 +35,13 @@ public class AuthenticatedApplicantIdResolver implements HandlerMethodArgumentRe
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         return userDetails.getApplicantId();
     }
+
+    public Long resolveCurrentApplicantId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()
+            || !(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
+            return null;
+        }
+        return userDetails.getApplicantId();
+    }
 }
