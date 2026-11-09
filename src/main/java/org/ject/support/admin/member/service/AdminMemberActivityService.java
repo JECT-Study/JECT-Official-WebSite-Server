@@ -16,6 +16,7 @@ import org.ject.support.admin.member.dto.projection.SearchMemberSemesterProjecti
 import org.ject.support.admin.member.dto.request.CreateMemberMakersRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSemesterRequest;
 import org.ject.support.admin.member.dto.request.CreateMemberSupportersRequest;
+import org.ject.support.admin.member.dto.request.CreateRecruitMemberRequest;
 import org.ject.support.admin.member.dto.request.MemberMakersListRequest;
 import org.ject.support.admin.member.dto.request.MemberSemesterSearchCondition;
 import org.ject.support.admin.member.dto.request.MemberSupportersListRequest;
@@ -43,6 +44,31 @@ import lombok.extern.slf4j.Slf4j;
 public class AdminMemberActivityService {
 
 	private final MemberActivityRepository memberActivityRepository;
+
+	// 모집확정 대상의 유형별 기존 활동 중복 검증
+	public void validateRecruitMemberActivity(CreateRecruitMemberRequest request, Long memberId) {
+		switch (request.recruitType()) {
+			case SEMESTER -> validateDuplicateSemesterActivity(memberId, request.semesterId());
+			case MAKERS -> validateDuplicateActiveMakersActivity(memberId);
+			case SUPPORTERS -> validateDuplicateActiveSupportersActivity(memberId);
+		}
+	}
+
+	// 합격자의 공고 유형에 맞는 활동과 관리 정보를 생성하고 DB 제약 검증
+	public void createRecruitMemberActivity(CreateRecruitMemberRequest request, Long memberId) {
+		validateRecruitMemberActivity(request, memberId);
+		MemberActivity activity = switch (request.recruitType()) {
+			case SEMESTER -> MemberActivity.createSemesterActivity(memberId, request.jobFamily(),
+					request.recruitTypeDetail(), ActivityStatus.ACTIVE, request.careerDetails(),
+					request.experiencePeriod(), request.memo(), request.semesterId(), null);
+			case MAKERS -> MemberActivity.createMakersActivity(memberId, request.jobFamily(),
+					request.recruitTypeDetail(), ActivityStatus.ACTIVE, request.careerDetails(),
+					request.experiencePeriod(), request.memo(), null, null, null, null, null, null, null, null, null);
+			case SUPPORTERS -> MemberActivity.createSupportersActivity(memberId, request.jobFamily(),
+					request.recruitTypeDetail(), ActivityStatus.ACTIVE, null, null, null, request.memo());
+		};
+		memberActivityRepository.saveAndFlush(activity);
+	}
 
 	public void createMemberSemesterActivity(CreateMemberSemesterRequest request, Long memberId) {
 		// 추가하려는 대상이 같은 기수에 이미 등록되어있는지 중복 검증

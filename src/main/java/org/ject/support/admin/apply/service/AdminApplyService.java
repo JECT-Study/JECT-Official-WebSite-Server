@@ -52,6 +52,20 @@ public class AdminApplyService {
     private final Map2JsonSerializer map2JsonSerializer;
     private final String2MapSerializer string2MapSerializer;
 
+    // 모집확정에서 사용할 제출완료 지원서와 지원자 조회
+    @Transactional(readOnly = true)
+    public List<Apply> getSubmittedApplies(Long recruitId) {
+        return adminApplyRepository.findAppliesInRecruitByStatusWithApplicant(recruitId, ApplyStatus.SUBMITTED);
+    }
+
+    // 모집확정 후 예비합격자를 불합격으로 전환하고 예비번호 제거
+    @Transactional
+    public void rejectWaitlistedApplies(Long recruitId) {
+        getSubmittedApplies(recruitId).stream()
+                .filter(apply -> apply.getSelectionResult() == SelectionResult.WAITLISTED)
+                .forEach(apply -> apply.decideSelectionResult(SelectionResult.FAILED, null));
+    }
+
     // 공고별 제출완료 지원서를 선정 결과와 지원자 신분으로 조회
     @Transactional(readOnly = true)
     public CursorPageResponse<SubmittedApplyResponse> searchSubmittedApplies(

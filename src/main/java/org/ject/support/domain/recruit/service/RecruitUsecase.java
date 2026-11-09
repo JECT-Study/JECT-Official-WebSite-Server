@@ -12,6 +12,9 @@ import java.util.List;
 
 public interface RecruitUsecase {
 
+    // 모집확정 처리 후 공고 운영 종료
+    void completeRecruit(Long recruitId);
+
     // 다른 도메인에서 사용하는 공고 정보 조회
     Recruit getRecruitEntity(Long recruitId);
 
