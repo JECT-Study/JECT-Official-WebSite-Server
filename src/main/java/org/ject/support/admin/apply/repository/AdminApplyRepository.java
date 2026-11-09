@@ -13,6 +13,18 @@ public interface AdminApplyRepository extends JpaRepository<Apply, Long>, AdminA
     @Query("""
             select a from Apply a
             join fetch a.applicant p
+            join fetch a.recruit r
+            left join fetch r.semester
+            where r.id = :recruitId and a.status = :status
+              and a.isDeleted = false and p.isDeleted = false
+            order by a.id
+            """)
+    List<Apply> findAppliesInRecruitByStatusWithApplicant(@Param("recruitId") Long recruitId,
+                                                        @Param("status") ApplyStatus status);
+
+    @Query("""
+            select a from Apply a
+            join fetch a.applicant p
             where a.id in :ids and a.isDeleted = false and p.isDeleted = false
             order by a.id
             """)
