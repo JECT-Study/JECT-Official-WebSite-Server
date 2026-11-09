@@ -36,4 +36,9 @@ public interface AdminRecruitApiSpec {
             summary = "모집 취소",
             description = "모집 정보를 제거합니다.")
     void cancelRecruit(@PathVariable Long recruitId);
+
+    @Operation(summary = "모집확정",
+            description = "제출완료 지원서의 선정 결과를 검증하고 합격자를 구성원으로 등록한 뒤 모집을 종료합니다. "
+                    + "예비합격자는 불합격 처리하며, 실패 시 전체 작업을 롤백합니다.")
+    void completeRecruit(@PathVariable Long recruitId);
 }
