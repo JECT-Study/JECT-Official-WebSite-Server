@@ -72,6 +72,11 @@ public class Recruit extends BaseTimeEntity {
     @Builder.Default
     private RecruitTypeDetail recruitTypeDetail = RecruitTypeDetail.REGULAR;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, nullable = false)
+    @Builder.Default
+    private RecruitStatus status = RecruitStatus.OPEN;
+
     @OneToMany(mappedBy = "recruit", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<Question> questions = new ArrayList<>();
@@ -136,7 +141,19 @@ public class Recruit extends BaseTimeEntity {
         }
     }
 
-    public boolean isClosed() {
+    public boolean isApplicationPeriodEnded() {
         return endDate.isBefore(LocalDateTime.now());
+    }
+
+    public boolean isClosed() {
+        return status == RecruitStatus.CLOSED;
+    }
+
+    // 모집확정 시 공고 운영 종료
+    public void close() {
+        if (isClosed()) {
+            throw new RecruitException(RecruitErrorCode.ALREADY_CLOSED);
+        }
+        this.status = RecruitStatus.CLOSED;
     }
 }
