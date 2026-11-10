@@ -1,7 +1,6 @@
 package org.ject.support.admin.account.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
@@ -69,7 +68,7 @@ public class AdminAccountController {
     @Operation(
             summary = "관리자 계정 정보 수정",
             description = "관리자 계정의 이메일, 이름, 권한, 활성화 상태를 수정합니다.")
-    public void updateAccount(@Parameter(hidden = true) @AuthPrincipal final Long requesterId,
+    public void updateAccount(@AuthPrincipal final Long requesterId,
                               @PathVariable final Long memberId,
                               @RequestBody @Valid final AdminAccountUpdateRequest request) {
         adminAccountService.updateAccount(requesterId, memberId, request);
@@ -90,7 +89,7 @@ public class AdminAccountController {
     @Operation(
             summary = "관리자 계정 일괄 비활성화",
             description = "요청한 관리자 계정을 일괄 비활성화합니다. 활성화는 단건 API를 사용합니다.")
-    public void deactivateAccounts(@Parameter(hidden = true) @AuthPrincipal final Long requesterId,
+    public void deactivateAccounts(@AuthPrincipal final Long requesterId,
                                    @RequestBody @Valid @NotEmpty final List<@NotNull @Valid AdminAccountBulkDeactivateRequest> requests) {
         adminAccountService.deactivateAccounts(requesterId, requests);
     }
@@ -100,7 +99,7 @@ public class AdminAccountController {
     @Operation(
             summary = "관리자 계정 활성화 상태 수정",
             description = "관리자 계정을 활성화하거나 비활성화합니다.")
-    public void updateActive(@Parameter(hidden = true) @AuthPrincipal final Long requesterId,
+    public void updateActive(@AuthPrincipal final Long requesterId,
                              @PathVariable final Long memberId,
                              @RequestBody @Valid final AdminAccountActiveUpdateRequest request) {
         adminAccountService.updateActive(requesterId, memberId, request);

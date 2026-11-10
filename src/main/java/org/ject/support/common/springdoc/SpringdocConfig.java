@@ -7,7 +7,9 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
 import lombok.RequiredArgsConstructor;
+import org.ject.support.common.security.AuthPrincipal;
 import org.springdoc.core.models.GroupedOpenApi;
+import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import io.swagger.v3.core.jackson.ModelResolver;
@@ -19,6 +21,9 @@ public class SpringdocConfig {
     static {
         // 모든 enum을 공통 Schema로 등록
         ModelResolver.enumsAsRef = true;
+
+        // 인증 정보에서 주입하는 파라미터를 API 명세에서 제외
+        SpringDocUtils.getConfig().addAnnotationsToIgnore(AuthPrincipal.class);
     }
 
     private final SuccessResponseCustomizer successResponseCustomizer;
