@@ -14,7 +14,8 @@ import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.applicant.exception.ApplicantErrorCode;
 import org.ject.support.domain.applicant.exception.ApplicantException;
 import org.ject.support.domain.applicant.repository.ApplicantRepository;
-import org.ject.support.domain.recruit.service.SemesterInquiryUsecase;
+import org.ject.support.domain.recruit.service.RecruitUsecase;
+import org.ject.support.domain.recruit.domain.Recruit;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -27,7 +28,7 @@ import static org.ject.support.domain.applicant.exception.ApplicantErrorCode.ALR
 public class ApplicantService implements ApplicantCommandService {
 
     private final ApplicantRepository applicantRepository;
-    private final SemesterInquiryUsecase semesterInquiryUsecase;
+    private final RecruitUsecase recruitUsecase;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
 
@@ -67,13 +68,13 @@ public class ApplicantService implements ApplicantCommandService {
      */
     @Transactional
     public Authentication registerTempApplicant(RegisterRequest registerRequest, String email) {
-        Long semesterId = semesterInquiryUsecase.getSemesterIdByRecruitId(registerRequest.recruitId());
-        Applicant applicant = applicantRepository.findByEmailAndSemesterId(email, semesterId)
+        Recruit recruit = recruitUsecase.getRecruitEntity(registerRequest.recruitId());
+        Applicant applicant = applicantRepository.findByEmailAndRecruitId(email, registerRequest.recruitId())
                 .orElse(null);
 
         if (applicant == null) {
             // 새로운 지원자 생성
-            applicant = createTempApplicantWithPin(registerRequest, email, semesterId);
+            applicant = createTempApplicantWithPin(registerRequest, email, recruit);
         } else {
             // 기존 지원자가 있는 경우 PIN 번호만 업데이트
             throw new ApplicantException(ALREADY_EXIST_APPLICANT);
@@ -87,10 +88,11 @@ public class ApplicantService implements ApplicantCommandService {
      * PIN 번호가 설정된 지원자를 생성합니다.
      * PIN 번호는 암호화하여 저장합니다.
      */
-    private Applicant createTempApplicantWithPin(RegisterRequest registerRequest, String email, Long semesterId) {
+    private Applicant createTempApplicantWithPin(RegisterRequest registerRequest, String email, Recruit recruit) {
         String encodedPin = passwordEncoder.encode(registerRequest.pin());
 
-        Applicant applicant = registerRequest.toEntity(semesterId, email, encodedPin);
+        Long semesterId = recruit.getSemester() == null ? null : recruit.getSemester().getId();
+        Applicant applicant = registerRequest.toEntity(semesterId, recruit.getRecruitType().toMemberType(), email, encodedPin);
 
         return applicantRepository.save(applicant);
     }
