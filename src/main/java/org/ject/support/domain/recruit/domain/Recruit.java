@@ -196,6 +196,13 @@ public class Recruit extends BaseTimeEntity {
         return status == RecruitStatus.CLOSED;
     }
 
+    // 모집완료 공고의 지원서 및 지원자 정보 변경 차단
+    public void validateApplicationChangeable() {
+        if (isClosed()) {
+            throw new RecruitException(RecruitErrorCode.CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED);
+        }
+    }
+
     // 모집확정 시 공고 운영 종료
     public void close() {
         if (isClosed()) {

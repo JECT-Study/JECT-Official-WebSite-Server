@@ -22,7 +22,8 @@ public enum RecruitErrorCode implements ErrorCode {
     INVALID_RECRUIT_SEMESTER(BAD_REQUEST, "RECRUIT-8", "모집 유형에 맞는 기수를 지정해주세요."),
     RECRUIT_TYPE_EDIT_NOT_ALLOWED(CONFLICT, "RECRUIT-9", "모집 유형과 기수는 변경할 수 없습니다."),
     UNDECIDED_SELECTION_RESULT(CONFLICT, "RECRUIT-10", "선정 결과가 지정되지 않은 제출완료 지원서가 있습니다."),
-    RECRUIT_COMPLETION_FAILED(CONFLICT, "RECRUIT-11", "구성원 등록에 실패하여 모집확정이 취소되었습니다.");
+    RECRUIT_COMPLETION_FAILED(CONFLICT, "RECRUIT-11", "구성원 등록에 실패하여 모집확정이 취소되었습니다."),
+    CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED(CONFLICT, "RECRUIT-12", "모집완료 공고의 지원서와 지원자 정보는 변경할 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
