@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Size;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,23 +38,14 @@ public record RecruitRegisterRequest(
         @Size(max = 100000, message = "안내사항은 100,000자 이하여야 합니다.")
         String notice,
 
-        List<@Valid RecruitFaqRequest> faqs
-) {
-    public RecruitRegisterRequest(JobFamily jobFamily, LocalDateTime startDate, LocalDateTime endDate) {
-        this(null, jobFamily, startDate, endDate, null, null, null, List.of());
-    }
+        List<@Valid RecruitFaqRequest> faqs,
 
+        @NotNull RecruitType recruitType,
+        @NotNull RecruitTypeDetail recruitTypeDetail,
+        Long semesterId
+) {
     public Recruit toEntity(Semester semester) {
-        return Recruit.builder()
-                .semester(semester)
-                .title(this.title)
-                .jobFamily(this.jobFamily)
-                .startDate(this.startDate)
-                .endDate(this.endDate)
-                .summary(this.summary)
-                .recruitInformation(this.recruitInformation)
-                .notice(this.notice)
-                .faqs(RecruitFaqRequest.toDomains(this.faqs))
-                .build();
+        return Recruit.create(semester, title, recruitType, recruitTypeDetail, jobFamily,
+                startDate, endDate, summary, recruitInformation, notice, RecruitFaqRequest.toDomains(faqs));
     }
 }

@@ -19,7 +19,6 @@ public class SemesterRegistrationService implements SemesterRegisterUsecase {
     @Override
     @Transactional
     public void registerSemester(final SemesterRegisterRequest request) {
-        request.validate();
 
         // semester 등록
         Semester semester = Semester.builder()

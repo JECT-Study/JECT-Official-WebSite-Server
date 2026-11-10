@@ -50,7 +50,8 @@ public class DevRecruitController {
                 request.summary(),
                 request.recruitInformation(),
                 request.notice(),
-                request.getFaqsOrNull()
+                request.getFaqsOrNull(),
+                request.recruitType(), request.recruitTypeDetail(), request.semesterId()
         );
 
         eventPublisher.publishEvent(new RecruitUpdatedEvent(
