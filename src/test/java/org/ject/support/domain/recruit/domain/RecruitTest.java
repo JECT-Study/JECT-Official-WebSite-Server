@@ -20,7 +20,7 @@ class RecruitTest {
     void is_recruiting_period() {
         // given
         Recruit recruit = Recruit.builder()
-                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .semester(Semester.builder().id(1L).name("1기").build())
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now())
                 .endDate(LocalDateTime.now().plusDays(1))
@@ -37,7 +37,7 @@ class RecruitTest {
     void 모집_사유는_기본값으로_정규_모집을_사용한다() {
         // given
         Recruit recruit = Recruit.builder()
-                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .semester(Semester.builder().id(1L).name("1기").build())
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now())
                 .endDate(LocalDateTime.now().plusDays(1))
@@ -101,7 +101,7 @@ class RecruitTest {
     void 비어_있는_모집공고_내용은_기존값을_유지한다() {
         // given
         Recruit recruit = Recruit.builder()
-                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .semester(Semester.builder().id(1L).name("1기").build())
                 .title("백엔드 개발자 모집")
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now())
@@ -128,7 +128,7 @@ class RecruitTest {
     void is_invalid_question_id() {
         // given
         Recruit recruit = Recruit.builder()
-                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .semester(Semester.builder().id(1L).name("1기").build())
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now())
                 .endDate(LocalDateTime.now().plusDays(1))
@@ -203,7 +203,7 @@ class RecruitTest {
 
     private Recruit recruit(RecruitType recruitType, RecruitTypeDetail recruitTypeDetail) {
         return Recruit.builder()
-                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .semester(Semester.builder().id(1L).name("1기").build())
                 .jobFamily(JobFamily.BE)
                 .recruitType(recruitType)
                 .recruitTypeDetail(recruitTypeDetail)

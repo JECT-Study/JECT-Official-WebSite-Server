@@ -68,7 +68,7 @@ class FileControllerTest extends ApplicationPeriodTest {
     @AuthenticatedUser
     @Transactional
     void test_access_period() throws Exception {
-        Semester savedSemester = semesterRepository.save(getSemester(true));
+        Semester savedSemester = semesterRepository.save(getSemester());
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
                 .semester(savedSemester)
@@ -90,7 +90,7 @@ class FileControllerTest extends ApplicationPeriodTest {
     @Transactional
     void not_in_period() throws Exception {
         // given
-        Semester savedSemester = semesterRepository.save(getSemester(true));
+        Semester savedSemester = semesterRepository.save(getSemester());
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
                 .semester(savedSemester)
@@ -156,7 +156,7 @@ class FileControllerTest extends ApplicationPeriodTest {
     @Transactional
     void exceeded_portfolio_max_size() throws Exception {
         // given
-        Semester savedSemester = semesterRepository.save(getSemester(true));
+        Semester savedSemester = semesterRepository.save(getSemester());
         recruitRepository.save(Recruit.builder()
                 .jobFamily(JobFamily.BE)
                 .semester(savedSemester)
@@ -189,10 +189,9 @@ class FileControllerTest extends ApplicationPeriodTest {
                 .andReturn();
     }
 
-    private Semester getSemester(boolean isRecruiting) {
+    private Semester getSemester() {
         return Semester.builder()
                 .name("1기")
-                .isRecruiting(isRecruiting)
                 .build();
     }
 

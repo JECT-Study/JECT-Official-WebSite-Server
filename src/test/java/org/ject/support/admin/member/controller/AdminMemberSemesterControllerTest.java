@@ -573,7 +573,6 @@ class AdminMemberSemesterControllerTest {
 	private Semester saveSemester() {
 		return semesterRepository.save(Semester.builder()
 			.name("테스트기수" + uniqueSuffix())
-			.isRecruiting(true)
 			.build());
 	}
 

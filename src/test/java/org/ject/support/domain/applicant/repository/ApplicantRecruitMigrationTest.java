@@ -57,6 +57,17 @@ class ApplicantRecruitMigrationTest extends TestSupport {
                     .load().migrate();
 
             // then
+            // 기수 데이터는 유지하고 모집 플래그 컬럼만 제거됐는지 확인
+            try (ResultSet columns = connection.getMetaData().getColumns(
+                    connection.getCatalog(), null, "semester", "is_recruiting")) {
+                assertThat(columns.next()).isFalse();
+            }
+            try (ResultSet rows = statement.executeQuery("SELECT semester_name FROM semester WHERE id = 1")) {
+                assertThat(rows.next()).isTrue();
+                assertThat(rows.getString("semester_name")).isEqualTo("검증기수");
+            }
+            assertThat(statement.executeUpdate(
+                    "INSERT INTO semester (semester_name) VALUES ('신규기수')")).isEqualTo(1);
             try (ResultSet rows = statement.executeQuery(
                     "SELECT id, recruit_id, semester_id, member_type FROM applicant ORDER BY id")) {
                 assertThat(rows.next()).isTrue();

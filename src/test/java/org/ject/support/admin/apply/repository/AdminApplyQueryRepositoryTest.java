@@ -86,7 +86,6 @@ class AdminApplyQueryRepositoryTest {
     void setUp() {
         semester = semesterRepository.save(Semester.builder()
                 .name("1기")
-                .isRecruiting(true)
                 .build());
 
         beRecruit = getRecruit(BE);

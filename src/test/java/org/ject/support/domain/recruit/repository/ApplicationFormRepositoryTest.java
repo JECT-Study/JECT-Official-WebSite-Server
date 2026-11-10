@@ -48,7 +48,6 @@ class ApplicationFormRepositoryTest {
         // given
         Semester savedSemester = semesterRepository.save(Semester.builder()
                 .name("1기")
-                .isRecruiting(true)
                 .build());
 
         Recruit recruit = recruitRepository.save(Recruit.builder()

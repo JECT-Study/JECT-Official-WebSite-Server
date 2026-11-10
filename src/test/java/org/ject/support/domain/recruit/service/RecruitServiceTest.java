@@ -177,7 +177,7 @@ class RecruitServiceTest extends UnitTestSupport {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semester(getSemester(true))
+                .semester(getSemester())
                 .title("운영 서포터즈 모집")
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
@@ -206,7 +206,7 @@ class RecruitServiceTest extends UnitTestSupport {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semester(getSemester(true))
+                .semester(getSemester())
                 .title("백엔드 개발자 모집")
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
@@ -232,7 +232,7 @@ class RecruitServiceTest extends UnitTestSupport {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semester(getSemester(true))
+                .semester(getSemester())
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
@@ -264,21 +264,12 @@ class RecruitServiceTest extends UnitTestSupport {
                 .hasFieldOrPropertyWithValue("errorCode", GlobalErrorCode.OVER_PERIOD);
     }
 
-    private Semester getSemester() {
-        Semester semester = Semester.builder()
-                .id(1L)
-                .name("1기")
-                .isRecruiting(false)
-                .build();
-        return semester;
-    }
-
     @Test
     void 모집_정보_수정_성공() {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semester(getSemester(true))
+                .semester(getSemester())
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
@@ -328,7 +319,7 @@ class RecruitServiceTest extends UnitTestSupport {
     void 접수기간이_종료된_공고는_수정할_수_없다() {
         // given
         Recruit recruit = Recruit.builder()
-                .semester(getSemester(false))
+                .semester(getSemester())
                 .startDate(LocalDateTime.now().minusDays(3))
                 .endDate(LocalDateTime.now().minusDays(1))
                 .jobFamily(BE)
@@ -363,7 +354,7 @@ class RecruitServiceTest extends UnitTestSupport {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semester(getSemester(false))
+                .semester(getSemester())
                 .startDate(LocalDateTime.now().minusDays(3))
                 .endDate(LocalDateTime.now().minusDays(1))
                 .jobFamily(BE)
@@ -385,7 +376,7 @@ class RecruitServiceTest extends UnitTestSupport {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semester(getSemester(true))
+                .semester(getSemester())
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
@@ -402,8 +393,8 @@ class RecruitServiceTest extends UnitTestSupport {
         assertThat(recruitCaptor.getValue()).isSameAs(recruit);
     }
 
-    private Semester getSemester(boolean isRecruiting) {
-        return Semester.builder().id(1L).name("1기").isRecruiting(isRecruiting).build();
+    private Semester getSemester() {
+        return Semester.builder().id(1L).name("1기").build();
     }
 
     private ApplyManagementRecruitSearchCondition searchCondition(

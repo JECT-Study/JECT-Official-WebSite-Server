@@ -39,7 +39,7 @@ class RecruitSavedEventHandlerTest extends UnitTestSupport {
     void setUp() {
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .semester(Semester.builder().id(1L).name("1기").build())
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))

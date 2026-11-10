@@ -32,7 +32,7 @@ class MailRecruitServiceTest extends UnitTestSupport {
         LocalDateTime startDate = LocalDateTime.of(2026, 8, 1, 0, 0);
         LocalDateTime endDate = LocalDateTime.of(2026, 8, 31, 23, 59);
         LocalDateTime createdAt = LocalDateTime.of(2026, 7, 1, 10, 0);
-        Semester semester = Semester.builder().id(2L).name("10기").isRecruiting(true).build();
+        Semester semester = Semester.builder().id(2L).name("10기").build();
         Recruit recruit = Recruit.builder()
                 .id(1L)
                 .semester(semester)
