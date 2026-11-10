@@ -71,6 +71,7 @@ public class ApplicantService implements ApplicantCommandService {
     @Transactional
     public Authentication registerTempApplicant(RegisterRequest registerRequest, String email) {
         Recruit recruit = recruitUsecase.getRecruitEntity(registerRequest.recruitId());
+        recruit.validateApplicationChangeable();
         Applicant applicant = applicantRepository.findByEmailAndRecruitId(email, registerRequest.recruitId())
                 .orElse(null);
 
@@ -109,6 +110,7 @@ public class ApplicantService implements ApplicantCommandService {
         Applicant applicant = applicantRepository.findById(applicantId)
                 .orElseThrow(() -> new ApplicantException(ApplicantErrorCode.NOT_FOUND_APPLICANT));
 
+        recruitUsecase.getRecruitEntity(applicant.getRecruitId()).validateApplicationChangeable();
         applicant.updateNameAndPhoneNumber(request.name(), request.phoneNumber());
     }
 

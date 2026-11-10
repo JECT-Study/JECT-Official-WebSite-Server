@@ -122,6 +122,7 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
         Apply apply = applyRepository.findByApplicantIdAndRecruitIdInActiveRecruit(applicantId, recruitId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
+        apply.getRecruit().validateApplicationChangeable();
         ApplyStatus applyStatus = apply.getStatus();
 
         // 2. 지원서 제출 여부 검증
@@ -161,6 +162,8 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
         Apply apply = applyRepository.findByApplicantIdAndRecruitIdInActiveRecruit(applicantId, recruitId, LocalDateTime.now())
                 .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
+        apply.getRecruit().validateApplicationChangeable();
+
         // 지원서를 임시 저장하지 않은 경우 실패
         if (apply.isNotTempSaved()) {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_TEMP_APPLICATION_FORM);
@@ -184,6 +187,7 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
                             applicantId, recruitId, LocalDateTime.now())
                     .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
 
+            apply.getRecruit().validateApplicationChangeable();
             if (apply.isSubmitted()) {
                 throw new ApplyException(ALREADY_SUBMITTED);
             }
@@ -236,6 +240,7 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
                 .orElseThrow(() -> new ApplicantException(ApplicantErrorCode.NOT_FOUND_APPLICANT));
         applicant.validateRecruit(recruitId);
         Recruit recruit = getActiveRecruit(recruitId);
+        recruit.validateApplicationChangeable();
 
         createApplyIfNotExists(applicant, recruit);
 
