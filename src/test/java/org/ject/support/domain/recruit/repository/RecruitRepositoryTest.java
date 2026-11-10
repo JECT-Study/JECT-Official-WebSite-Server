@@ -13,6 +13,7 @@ import org.ject.support.domain.member.Role;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.RecruitFaq;
 import org.ject.support.domain.recruit.domain.RecruitType;
+import org.ject.support.domain.recruit.domain.RecruitStatus;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.ApplyManagementRecruitProjection;
@@ -22,6 +23,8 @@ import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.api.DisplayName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
@@ -455,6 +458,48 @@ class RecruitRepositoryTest {
         recruit.close();
         recruitRepository.flush();
         assertThat(recruitRepository.existsDuplicateRecruit(RecruitType.MAKERS, BE, null, null)).isFalse();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = ApplyStatus.class, names = {"TEMP_SAVED", "SUBMITTED"})
+    void 관리자_공고_목록과_집계는_기간과_관계없이_미종료_공고만_포함한다(ApplyStatus status) {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        Recruit past = Recruit.builder().jobFamily(BE).recruitType(RecruitType.MAKERS)
+                .recruitTypeDetail(RecruitTypeDetail.NEW).startDate(now.minusDays(3)).endDate(now.minusDays(1)).build();
+        Recruit future = Recruit.builder().jobFamily(FE).recruitType(RecruitType.MAKERS)
+                .recruitTypeDetail(RecruitTypeDetail.NEW).startDate(now.plusDays(1)).endDate(now.plusDays(3)).build();
+        Recruit closed = Recruit.builder().jobFamily(PM).recruitType(RecruitType.MAKERS)
+                .recruitTypeDetail(RecruitTypeDetail.NEW).status(RecruitStatus.CLOSED)
+                .startDate(now.minusDays(1)).endDate(now.plusDays(1)).build();
+        recruitRepository.saveAllAndFlush(List.of(past, future, closed));
+        ApplyManagementRecruitSearchCondition condition = new ApplyManagementRecruitSearchCondition(
+                status, RecruitType.MAKERS, null, null, 20);
+
+        // when & then
+        assertThat(recruitRepository.searchApplyManagementRecruits(condition, 20))
+                .extracting(ApplyManagementRecruitProjection::recruitId).containsExactly(future.getId(), past.getId());
+        assertThat(recruitRepository.countApplyManagementRecruits(condition)).isEqualTo(2);
+        assertThat(recruitRepository.countRecruitsByRecruitType())
+                .containsExactly(new RecruitTypeCountResponse(RecruitType.MAKERS, 2L));
+    }
+
+    @Test
+    void 공홈_목록은_공고_상태와_관계없이_접수기간을_기준으로_조회한다() {
+        // given
+        LocalDateTime now = LocalDateTime.now();
+        Recruit active = Recruit.builder().jobFamily(BE).recruitType(RecruitType.MAKERS)
+                .recruitTypeDetail(RecruitTypeDetail.NEW).status(RecruitStatus.CLOSED)
+                .startDate(now.minusDays(1)).endDate(now.plusDays(1)).build();
+        Recruit future = Recruit.builder().jobFamily(FE).recruitType(RecruitType.MAKERS)
+                .recruitTypeDetail(RecruitTypeDetail.NEW).startDate(now.plusDays(1)).endDate(now.plusDays(3)).build();
+        Recruit past = Recruit.builder().jobFamily(PM).recruitType(RecruitType.MAKERS)
+                .recruitTypeDetail(RecruitTypeDetail.NEW).startDate(now.minusDays(3)).endDate(now.minusDays(1)).build();
+        recruitRepository.saveAllAndFlush(List.of(active, future, past));
+
+        // when & then
+        assertThat(recruitRepository.findActiveRecruitments(now)).extracting(Recruit::getId)
+                .containsExactly(active.getId());
     }
 
     private void setCreatedAt(Recruit recruit, LocalDateTime createdAt) {

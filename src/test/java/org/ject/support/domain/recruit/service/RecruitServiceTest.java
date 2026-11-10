@@ -23,6 +23,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.ject.support.common.exception.GlobalException;
+import org.ject.support.common.exception.GlobalErrorCode;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -244,6 +247,21 @@ class RecruitServiceTest extends UnitTestSupport {
         // then
         assertThat(result.recruitments().get(0).recruitType()).isEqualTo(RecruitType.SEMESTER);
         assertThat(result.recruitments().get(0).recruitTypeDetail()).isEqualTo(RecruitTypeDetail.REFILL);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void 접수기간_밖의_공고는_상세조회할_수_없다(boolean beforeStart) {
+        // given
+        LocalDateTime start = beforeStart ? LocalDateTime.now().plusDays(1) : LocalDateTime.now().minusDays(3);
+        LocalDateTime end = beforeStart ? LocalDateTime.now().plusDays(3) : LocalDateTime.now().minusDays(1);
+        Recruit recruit = Recruit.builder().id(1L).jobFamily(BE).startDate(start).endDate(end).build();
+        when(recruitRepository.findByIdWithSemester(1L)).thenReturn(Optional.of(recruit));
+
+        // when & then
+        assertThatThrownBy(() -> recruitService.getRecruit(1L))
+                .isInstanceOf(GlobalException.class)
+                .hasFieldOrPropertyWithValue("errorCode", GlobalErrorCode.OVER_PERIOD);
     }
 
     private Semester getSemester() {
