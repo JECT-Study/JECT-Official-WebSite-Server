@@ -6,10 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
-public interface SemesterRepository extends JpaRepository<Semester, Long>, SemesterQueryRepository {
-
-    @Query("select s from Semester s where s.isRecruiting = true")
-    Optional<Semester> findRecruitingSemester();
+public interface SemesterRepository extends JpaRepository<Semester, Long> {
 
     Optional<Semester> findByName(String name);
 
