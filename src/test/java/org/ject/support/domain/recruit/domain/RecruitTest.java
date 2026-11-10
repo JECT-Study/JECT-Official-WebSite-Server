@@ -211,4 +211,19 @@ class RecruitTest {
                 .endDate(LocalDateTime.now().plusDays(1))
                 .build();
     }
+
+    @Test
+    void 모집완료_공고는_지원정보를_변경할_수_없다() {
+        Recruit recruit = Recruit.builder().build();
+        recruit.close();
+        assertThatThrownBy(recruit::validateApplicationChangeable)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED);
+    }
+
+    @Test
+    void 모집기간이_끝나도_확정_전에는_지원정보_변경을_허용한다() {
+        Recruit recruit = Recruit.builder().endDate(LocalDateTime.now().minusDays(1)).build();
+        assertThatCode(recruit::validateApplicationChangeable).doesNotThrowAnyException();
+    }
+
 }

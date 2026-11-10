@@ -859,4 +859,46 @@ class ApplyServiceTest extends UnitTestSupport {
                 .content(content)
                 .build();
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"임시저장", "제출", "초기화"})
+    void 모집완료_공고의_지원서_내용과_상태를_유지한다(String action) {
+        // given
+        Recruit recruit = Recruit.builder().build();
+        recruit.close();
+        ApplicationForm form = ApplicationForm.builder().content("기존내용").build();
+        Apply apply = Apply.builder().recruit(recruit).status(TEMP_SAVED).applicationForm(form).build();
+        given(applyRepository.findByApplicantIdAndRecruitIdInActiveRecruit(eq(1L), eq(2L), any()))
+                .willReturn(Optional.of(apply));
+
+        // when, then
+        assertThatThrownBy(() -> {
+            switch (action) {
+                case "임시저장" -> applyService.saveApplicationTemporarily(1L, 2L, Map.of(), List.of());
+                case "제출" -> applyService.submitApplication(1L, 2L, Map.of(), List.of());
+                case "초기화" -> applyService.deleteProfileAndTempApplicationForm(1L, 2L);
+                default -> throw new IllegalArgumentException(action);
+            }
+        }).hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED);
+        assertThat(apply.getStatus()).isEqualTo(TEMP_SAVED);
+        assertThat(form.getContent()).isEqualTo("기존내용");
+        verify(applyRepository, never()).delete(any());
+        verify(applicantCommandService, never()).deleteApplicant(any());
+    }
+
+    @Test
+    void 모집완료_공고의_개인정보를_유지한다() {
+        // given
+        Recruit recruit = Recruit.builder().build();
+        recruit.close();
+        Applicant applicant = Applicant.builder().recruitId(2L).name("기존이름").build();
+        given(applicantRepository.findById(1L)).willReturn(Optional.of(applicant));
+        given(recruitRepository.findActiveRecruitById(eq(2L), any())).willReturn(recruit);
+
+        // when, then
+        assertThatThrownBy(() -> applyService.saveProfile(1L, 2L, null))
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED);
+        assertThat(applicant.getName()).isEqualTo("기존이름");
+    }
+
 }

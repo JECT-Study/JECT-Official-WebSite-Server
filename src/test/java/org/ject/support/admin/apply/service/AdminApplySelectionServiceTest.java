@@ -1,4 +1,6 @@
 package org.ject.support.admin.apply.service;
+import org.ject.support.domain.recruit.exception.RecruitErrorCode;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -229,4 +231,27 @@ class AdminApplySelectionServiceTest extends UnitTestSupport {
     private WaitlistOrderResponse response(Long id, int number) {
         return new WaitlistOrderResponse(id, "지원자", "01012345678", CareerDetails.STUDENT, number);
     }
+
+    @Test
+    void 모집완료_공고의_선정결과는_유지한다() {
+        Apply target = apply(1L);
+        target.getRecruit().close();
+        given(repository.findAppliesInRecruitWithApplicant(1L, List.of(1L))).willReturn(List.of(target));
+        assertThatThrownBy(() -> service.updateSelectionResults(
+                new UpdateSelectionResultsRequest(1L, List.of(1L), SelectionResult.PASSED)))
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED);
+        assertThat(target.getSelectionResult()).isEqualTo(SelectionResult.UNDECIDED);
+    }
+
+    @Test
+    void 모집완료_공고의_예비번호는_유지한다() {
+        Apply target = apply(1L);
+        target.decideSelectionResult(SelectionResult.WAITLISTED, 1);
+        target.getRecruit().close();
+        given(repository.findWaitlistedApplies(1L)).willReturn(List.of(target));
+        assertThatThrownBy(() -> service.editWaitlistOrder(new EditWaitlistOrderRequest(1L, List.of(1L))))
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED);
+        assertThat(target.getWaitlistNumber()).isEqualTo(1);
+    }
+
 }

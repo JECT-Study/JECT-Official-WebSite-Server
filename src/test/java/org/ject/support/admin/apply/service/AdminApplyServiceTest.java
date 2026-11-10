@@ -1,4 +1,6 @@
 package org.ject.support.admin.apply.service;
+import org.ject.support.domain.recruit.exception.RecruitErrorCode;
+
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -609,4 +611,33 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 "01012345678",
                 CareerDetails.STUDENT);
     }
+
+    @Test
+    void 모집완료_공고가_섞이면_지원서를_모두_유지한다() {
+        Recruit open = Recruit.builder().id(1L).build();
+        Recruit closed = Recruit.builder().id(2L).build();
+        closed.close();
+        Apply first = Apply.builder().id(1L).recruit(open).build();
+        Apply second = Apply.builder().id(2L).recruit(closed).build();
+        given(adminApplyRepository.findAppliesWithApplicant(List.of(1L, 2L))).willReturn(List.of(first, second));
+        assertThatThrownBy(() -> adminApplyService.deleteApplies(
+                new SubmittedApplyBulkDeleteRequest(List.of(1L, 2L))))
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED);
+        verify(adminApplyRepository, never()).deleteAll(any());
+        verifyNoInteractions(applicantCommandService);
+    }
+
+    @Test
+    void 모집완료_공고의_지원서는_편집과_삭제를_차단한다() {
+        Recruit recruit = Recruit.builder().build();
+        recruit.close();
+        Apply apply = Apply.builder().recruit(recruit).build();
+        given(adminApplyRepository.findAppliesWithApplicant(List.of(1L))).willReturn(List.of(apply));
+        assertThatThrownBy(() -> adminApplyService.editApply(1L, null))
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED);
+        assertThatThrownBy(() -> adminApplyService.deleteApply(1L))
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED);
+        verify(adminApplyRepository, never()).delete(any());
+    }
+
 }
