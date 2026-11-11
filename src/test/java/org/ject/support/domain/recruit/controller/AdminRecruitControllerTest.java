@@ -7,6 +7,9 @@ import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.ject.support.domain.recruit.dto.RecruitRegisterRequest;
+import org.ject.support.domain.recruit.exception.RecruitErrorCode;
+import org.ject.support.domain.recruit.exception.RecruitException;
+import org.ject.support.domain.recruit.service.RecruitCompleteUseCase;
 import org.ject.support.domain.recruit.dto.RecruitUpdateRequest;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.ject.support.domain.recruit.repository.SemesterRepository;
@@ -20,12 +23,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.Mockito.doThrow;
 import static org.hamcrest.Matchers.containsString;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
@@ -56,11 +62,48 @@ class AdminRecruitControllerTest {
     @Autowired
     SemesterRepository semesterRepository;
 
+    @MockitoBean
+    RecruitCompleteUseCase completeUseCase;
+
     @BeforeEach
     void setUp() {
         semesterRepository.deleteAll();
         recruitRepository.deleteAll();
         semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+    }
+
+    @Test
+    void 모집확정에_성공하면_별도_응답값이_없다() throws Exception {
+        mockMvc.perform(post("/admin/recruits/1/complete"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SUCCESS"))
+                .andExpect(jsonPath("$.data").value(nullValue()));
+    }
+
+    @Test
+    void 모집확정이_실패하면_공통_오류를_응답한다() throws Exception {
+        // given
+        doThrow(new RecruitException(RecruitErrorCode.RECRUIT_COMPLETION_FAILED))
+                .when(completeUseCase).completeRecruit(1L);
+
+        // when, then
+        mockMvc.perform(post("/admin/recruits/1/complete"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(RecruitErrorCode.RECRUIT_COMPLETION_FAILED.getCode()))
+                .andExpect(jsonPath("$.data[0]").value(RecruitErrorCode.RECRUIT_COMPLETION_FAILED.getMessage()));
+    }
+
+    @Test
+    void 선정_미완료는_공통_오류_응답을_유지한다() throws Exception {
+        // given
+        doThrow(new RecruitException(RecruitErrorCode.UNDECIDED_SELECTION_RESULT))
+                .when(completeUseCase).completeRecruit(1L);
+
+        // when, then
+        mockMvc.perform(post("/admin/recruits/1/complete"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(RecruitErrorCode.UNDECIDED_SELECTION_RESULT.getCode()))
+                .andExpect(jsonPath("$.data[0]").value(RecruitErrorCode.UNDECIDED_SELECTION_RESULT.getMessage()));
     }
 
     @Test

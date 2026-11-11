@@ -168,6 +168,13 @@ public class RecruitService implements RecruitUsecase {
         eventPublisher.publishEvent(new RecruitCanceledEvent(recruit.getId(), recruit.getJobFamily()));
     }
 
+    // 모집확정 작업이 완료된 공고 종료 및 DB 반영
+    @Override
+    public void completeRecruit(Long recruitId) {
+        getRecruitEntity(recruitId).close();
+        recruitRepository.flush();
+    }
+
     @Override
     @Transactional(readOnly = true)
     public Recruit getRecruitEntity(Long recruitId) {
