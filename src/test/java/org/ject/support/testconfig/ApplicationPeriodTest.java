@@ -35,8 +35,6 @@ public abstract class ApplicationPeriodTest {
                 .thenReturn(Boolean.toString(true));
         when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.APP.name())))
                 .thenReturn(Boolean.toString(true));
-        when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.SUPPORTER.name())))
-                .thenReturn(Boolean.toString(true));
         when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.OPS.name())))
                 .thenReturn(Boolean.toString(true));
         when(valueOperations.get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.INFRA.name())))

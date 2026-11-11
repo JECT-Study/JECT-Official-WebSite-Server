@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PM;
-import static org.ject.support.domain.member.JobFamily.SUPPORTER;
+import static org.ject.support.domain.member.JobFamily.OPS;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
@@ -288,7 +288,7 @@ class RecruitRepositoryTest {
                 .semester(savedSemester)
                 .startDate(now.minusDays(1))
                 .endDate(now.plusDays(2))
-                .jobFamily(SUPPORTER)
+                .jobFamily(OPS)
                 .recruitType(RecruitType.SUPPORTERS)
                 .recruitTypeDetail(RecruitTypeDetail.REFILL)
                 .build());
@@ -326,7 +326,7 @@ class RecruitRepositoryTest {
         Recruit oldestRecruit = saveRecruit(savedSemester, PM);
         Recruit firstTieRecruit = saveRecruit(savedSemester, BE);
         Recruit secondTieRecruit = saveRecruit(savedSemester, FE);
-        Recruit latestRecruit = saveRecruit(savedSemester, SUPPORTER);
+        Recruit latestRecruit = saveRecruit(savedSemester, OPS);
         entityManager.flush();
         setCreatedAt(oldestRecruit, LocalDateTime.of(2026, 8, 1, 10, 0));
         setCreatedAt(firstTieRecruit, LocalDateTime.of(2026, 8, 2, 10, 0));

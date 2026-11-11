@@ -44,13 +44,6 @@ class JobFamilyTest {
     }
 
     @Test
-    @DisplayName("운영 서포터즈 직군을 제공한다")
-    void 운영_서포터즈_직군을_제공한다() {
-        assertThat(JobFamily.SUPPORTER.getDescription()).isEqualTo("운영 서포터즈");
-        assertThat(JobFamily.SUPPORTER.isPortfolioRequired()).isFalse();
-    }
-
-    @Test
     @DisplayName("운영팀 직군을 제공한다")
     void 운영팀_직군을_제공한다() {
         assertThat(JobFamily.OPS.getDescription()).isEqualTo("운영팀(OPS)");

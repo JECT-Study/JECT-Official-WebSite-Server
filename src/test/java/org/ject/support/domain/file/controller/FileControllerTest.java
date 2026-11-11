@@ -108,8 +108,6 @@ class FileControllerTest extends ApplicationPeriodTest {
                 .thenReturn(Boolean.toString(false));
         when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.APP.name())))
                 .thenReturn(Boolean.toString(false));
-        when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.SUPPORTER.name())))
-                .thenReturn(Boolean.toString(false));
         when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.OPS.name())))
                 .thenReturn(Boolean.toString(false));
         when(redisTemplate.opsForValue().get(String.format("%s%s", Constants.RECRUIT_FLAG_PREFIX, JobFamily.INFRA.name())))

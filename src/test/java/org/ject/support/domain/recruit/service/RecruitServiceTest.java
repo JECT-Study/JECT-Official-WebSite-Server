@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
-import static org.ject.support.domain.member.JobFamily.SUPPORTER;
+import static org.ject.support.domain.member.JobFamily.OPS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -181,7 +181,7 @@ class RecruitServiceTest extends UnitTestSupport {
                 .title("운영 서포터즈 모집")
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
-                .jobFamily(SUPPORTER)
+                .jobFamily(OPS)
                 .recruitType(RecruitType.SUPPORTERS)
                 .recruitTypeDetail(RecruitTypeDetail.REFILL)
                 .summary("운영 서포터즈 모집 요약")
@@ -197,7 +197,7 @@ class RecruitServiceTest extends UnitTestSupport {
         assertThat(result.recruitments().get(0).title()).isEqualTo("운영 서포터즈 모집");
         assertThat(result.recruitments().get(0).recruitType()).isEqualTo(RecruitType.SUPPORTERS);
         assertThat(result.recruitments().get(0).recruitTypeDetail()).isEqualTo(RecruitTypeDetail.REFILL);
-        assertThat(result.recruitments().get(0).jobFamily()).isEqualTo(SUPPORTER);
+        assertThat(result.recruitments().get(0).jobFamily()).isEqualTo(OPS);
         assertThat(result.recruitments().get(0).summary()).isEqualTo("운영 서포터즈 모집 요약");
     }
 
