@@ -56,7 +56,6 @@ class MailTargetQueryRepositoryTest {
     void setUp() {
         Semester semester = semesterRepository.save(Semester.builder()
                 .name("1기")
-                .isRecruiting(true)
                 .build());
         recruit = recruitRepository.save(Recruit.builder()
                 .semester(semester)

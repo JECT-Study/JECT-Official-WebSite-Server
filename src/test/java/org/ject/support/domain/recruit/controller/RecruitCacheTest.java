@@ -63,7 +63,6 @@ class RecruitCacheTest {
     void setUp() {
         Semester semester = semesterRepository.save(Semester.builder()
                 .name("캐시" + UUID.randomUUID().toString().substring(0, 8))
-                .isRecruiting(true)
                 .build());
         recruit = recruitRepository.save(Recruit.builder()
                 .semester(semester)

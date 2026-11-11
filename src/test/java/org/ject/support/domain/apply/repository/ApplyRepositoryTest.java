@@ -63,7 +63,6 @@ class ApplyRepositoryTest {
     void setUp() {
         semester = semesterRepository.save(Semester.builder()
                 .name("1기")
-                .isRecruiting(true)
                 .build());
         pmRecruit = getRecruit(PM);
         pdRecruit = getRecruit(PD);

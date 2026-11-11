@@ -38,7 +38,6 @@ class QuestionQueryRepositoryTest {
         // given
         Semester savedSemester = semesterRepository.save(Semester.builder()
                 .name("1기")
-                .isRecruiting(true)
                 .build());
 
         LocalDateTime now = LocalDateTime.now();
@@ -67,7 +66,6 @@ class QuestionQueryRepositoryTest {
 
         Semester savedSemester = semesterRepository.save(Semester.builder()
                 .name("1기")
-                .isRecruiting(true)
                 .build());
 
         LocalDateTime now = LocalDateTime.now();

@@ -38,7 +38,7 @@ class RecruitUpdatedEventHandlerTest extends UnitTestSupport {
     void setUp() {
         futureRecruit = Recruit.builder()
                 .id(1L)
-                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .semester(Semester.builder().id(1L).name("1기").build())
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now().plusDays(1))
                 .endDate(LocalDateTime.now().plusDays(2))
@@ -67,7 +67,7 @@ class RecruitUpdatedEventHandlerTest extends UnitTestSupport {
         // given
         Recruit activeRecruit = Recruit.builder()
                 .id(1L)
-                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .semester(Semester.builder().id(1L).name("1기").build())
                 .jobFamily(JobFamily.FE)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))

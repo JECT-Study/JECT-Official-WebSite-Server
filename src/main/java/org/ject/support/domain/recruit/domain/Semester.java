@@ -27,8 +27,4 @@ public class Semester extends BaseTimeEntity {
     @Column(name = "semester_name", length = 20, nullable = false, unique = true)
     private String name;
 
-    @Column(name = "is_recruiting", nullable = false)
-    @Builder.Default
-    private Boolean isRecruiting = true;
-
 }

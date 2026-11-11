@@ -169,7 +169,6 @@ class ApplicantRepositoryTest {
 
         Semester savedSemester = semesterRepository.save(Semester.builder()
                 .name("1기")
-                .isRecruiting(true)
                 .build());
         Recruit pmRecruit = createRecruit(savedSemester, PM);
         Recruit pdRecruit = createRecruit(savedSemester, PD);

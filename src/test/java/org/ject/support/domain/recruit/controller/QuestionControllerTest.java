@@ -68,7 +68,6 @@ class QuestionControllerTest {
 
         Semester savedSemester = semesterRepository.save(Semester.builder()
                 .name("1기" + uniqueSuffix)
-                .isRecruiting(true)
                 .build());
 
         recruit = Recruit.builder()

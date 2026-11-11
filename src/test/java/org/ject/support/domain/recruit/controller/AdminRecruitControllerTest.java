@@ -65,11 +65,13 @@ class AdminRecruitControllerTest {
     @MockitoBean
     RecruitCompleteUseCase completeUseCase;
 
+    private Semester semester;
+
     @BeforeEach
     void setUp() {
         semesterRepository.deleteAll();
         recruitRepository.deleteAll();
-        semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+        semester = semesterRepository.save(Semester.builder().name("3기").build());
     }
 
     @Test
@@ -110,7 +112,6 @@ class AdminRecruitControllerTest {
     @DisplayName("지원서 관리용 모집공고 목록과 유형별 공고 수를 조회한다")
     void 지원서_관리용_모집공고_목록과_유형별_공고_수를_조회한다() throws Exception {
         // given
-        Semester semester = semesterRepository.findRecruitingSemester().orElseThrow();
         saveRecruit(semester, FE, RecruitType.SEMESTER);
         Recruit beRecruit = saveRecruit(semester, BE, RecruitType.SEMESTER);
         saveRecruit(semester, FE, RecruitType.MAKERS);
@@ -174,10 +175,8 @@ class AdminRecruitControllerTest {
     @Test
     void 이미_모집중인_직군에_대한_모집_등록은_실패한다() throws Exception {
         // given
-        Semester recruitingSemester = semesterRepository.findRecruitingSemester()
-                .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
         recruitRepository.save(Recruit.builder()
-                .semester(recruitingSemester)
+                .semester(semester)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
@@ -200,10 +199,8 @@ class AdminRecruitControllerTest {
     @Test
     void 모집_정보를_수정한다() throws Exception {
         // given
-        Semester recruitingSemester = semesterRepository.findRecruitingSemester()
-                .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
         Recruit savedRecruit = recruitRepository.save(Recruit.builder()
-                .semester(recruitingSemester)
+                .semester(semester)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
@@ -219,7 +216,7 @@ class AdminRecruitControllerTest {
                         null,
                         null,
                         List.of(),
-                        RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, semesterRepository.findRecruitingSemester().orElseThrow().getId()));
+                        RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, semester.getId()));
 
         // when
         mockMvc.perform(put("/admin/recruits/{recruitId}", savedRecruit.getId())
@@ -236,10 +233,8 @@ class AdminRecruitControllerTest {
     @Test
     void 모집을_취소한다() throws Exception {
         // given
-        Semester recruitingSemester = semesterRepository.findRecruitingSemester()
-                .orElse(Semester.builder().id(1L).name("1기").isRecruiting(true).build());
         Recruit savedRecruit = recruitRepository.save(Recruit.builder()
-                .semester(recruitingSemester)
+                .semester(semester)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
                 .jobFamily(BE)
@@ -278,6 +273,6 @@ class AdminRecruitControllerTest {
                 null,
                 null,
                 List.of(),
-                        RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, semesterRepository.findRecruitingSemester().orElseThrow().getId());
+                        RecruitType.SEMESTER, RecruitTypeDetail.REGULAR, semester.getId());
     }
 }

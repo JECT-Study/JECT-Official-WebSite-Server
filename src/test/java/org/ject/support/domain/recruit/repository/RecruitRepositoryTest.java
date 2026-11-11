@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.ject.support.domain.member.JobFamily.BE;
 import static org.ject.support.domain.member.JobFamily.FE;
 import static org.ject.support.domain.member.JobFamily.PM;
-import static org.ject.support.domain.member.JobFamily.SUPPORTER;
+import static org.ject.support.domain.member.JobFamily.OPS;
 
 @Import(QueryDslTestConfig.class)
 @DataJpaTest
@@ -202,7 +202,7 @@ class RecruitRepositoryTest {
     void 모집_공고에_연결된_기수를_조회한다() {
         // given
         Semester savedSemester = semesterRepository.save(
-                Semester.builder().name("5기").isRecruiting(true).build());
+                Semester.builder().name("5기").build());
         Recruit savedRecruit = recruitRepository.save(Recruit.builder()
                 .semester(savedSemester)
                 .startDate(LocalDateTime.now().minusDays(1))
@@ -221,7 +221,7 @@ class RecruitRepositoryTest {
     @Test
     void 모집공고의_상세정보와_안내사항_및_FAQ를_저장하고_조회한다() {
         // given
-        Semester semester = semesterRepository.save(Semester.builder().name("5기").isRecruiting(true).build());
+        Semester semester = semesterRepository.save(Semester.builder().name("5기").build());
         Recruit savedRecruit = recruitRepository.saveAndFlush(Recruit.builder()
                 .semester(semester)
                 .startDate(LocalDateTime.now().minusDays(1))
@@ -245,7 +245,7 @@ class RecruitRepositoryTest {
     @Test
     void 특정_직군의_마감되지_않은_모집_정보가_존재하면_true를_반환한다() {
         // given
-        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").build());
 
         recruitRepository.saveAll(
                 List.of(
@@ -275,7 +275,7 @@ class RecruitRepositoryTest {
     void 활성_모집_공고만_시작일_순서로_조회한다() {
         // given
         LocalDateTime now = LocalDateTime.now();
-        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").build());
         Recruit earlierActiveRecruit = recruitRepository.save(Recruit.builder()
                 .semester(savedSemester)
                 .startDate(now.minusDays(2))
@@ -288,7 +288,7 @@ class RecruitRepositoryTest {
                 .semester(savedSemester)
                 .startDate(now.minusDays(1))
                 .endDate(now.plusDays(2))
-                .jobFamily(SUPPORTER)
+                .jobFamily(OPS)
                 .recruitType(RecruitType.SUPPORTERS)
                 .recruitTypeDetail(RecruitTypeDetail.REFILL)
                 .build());
@@ -322,11 +322,11 @@ class RecruitRepositoryTest {
     @Test
     void 메일_발송용_모집_공고를_등록일_내림차순으로_조회하고_동일하면_ID_내림차순으로_조회한다() {
         // given
-        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").build());
         Recruit oldestRecruit = saveRecruit(savedSemester, PM);
         Recruit firstTieRecruit = saveRecruit(savedSemester, BE);
         Recruit secondTieRecruit = saveRecruit(savedSemester, FE);
-        Recruit latestRecruit = saveRecruit(savedSemester, SUPPORTER);
+        Recruit latestRecruit = saveRecruit(savedSemester, OPS);
         entityManager.flush();
         setCreatedAt(oldestRecruit, LocalDateTime.of(2026, 8, 1, 10, 0));
         setCreatedAt(firstTieRecruit, LocalDateTime.of(2026, 8, 2, 10, 0));
@@ -347,7 +347,7 @@ class RecruitRepositoryTest {
     @Test
     void 허용되지_않은_모집_유형과_모집_사유_조합은_저장할_수_없다() {
         // given
-        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").isRecruiting(true).build());
+        Semester savedSemester = semesterRepository.save(Semester.builder().name("3기").build());
         Recruit recruit = Recruit.builder()
                 .semester(savedSemester)
                 .startDate(LocalDateTime.now().minusDays(1))
@@ -375,7 +375,6 @@ class RecruitRepositoryTest {
     private Semester saveSemester(String name) {
         return semesterRepository.save(Semester.builder()
                 .name(name)
-                .isRecruiting(true)
                 .build());
     }
 

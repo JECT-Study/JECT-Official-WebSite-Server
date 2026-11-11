@@ -45,7 +45,7 @@ class RecruitFlagServiceTest extends UnitTestSupport {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .semester(Semester.builder().id(1L).name("1기").build())
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now().minusDays(1))
                 .endDate(LocalDateTime.now().plusDays(1))
@@ -66,7 +66,7 @@ class RecruitFlagServiceTest extends UnitTestSupport {
         // given
         Recruit recruit = Recruit.builder()
                 .id(1L)
-                .semester(Semester.builder().id(1L).name("1기").isRecruiting(true).build())
+                .semester(Semester.builder().id(1L).name("1기").build())
                 .jobFamily(JobFamily.BE)
                 .startDate(LocalDateTime.now().minusDays(2))
                 .endDate(LocalDateTime.now().minusDays(1))
