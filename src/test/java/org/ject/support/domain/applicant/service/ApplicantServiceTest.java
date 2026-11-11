@@ -1,4 +1,6 @@
 package org.ject.support.domain.applicant.service;
+import org.ject.support.domain.recruit.exception.RecruitErrorCode;
+
 
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.domain.apply.service.ApplyEligibilityService;
@@ -244,6 +246,8 @@ class ApplicantServiceTest extends UnitTestSupport {
 
         given(applicantRepository.findById(applicantId)).willReturn(Optional.of(applicant));
 
+        given(recruitUsecase.getRecruitEntity(applicant.getRecruitId())).willReturn(Recruit.builder().build());
+
         // when
         applicantService.registerInitialProfile(request, applicantId);
 
@@ -360,4 +364,21 @@ class ApplicantServiceTest extends UnitTestSupport {
         assertThat(result.experiencePeriod()).isEqualTo(experiencePeriod);
         assertThat(result.interestedDomains()).isEqualTo(interestedDomains);
     }
+
+    @Test
+    void 모집완료_공고는_지원자_등록과_최초_프로필_변경을_차단한다() {
+        Recruit recruit = Recruit.builder().build();
+        recruit.close();
+        given(recruitUsecase.getRecruitEntity(TEST_RECRUIT_ID)).willReturn(recruit);
+        Applicant applicant = Applicant.builder().recruitId(TEST_RECRUIT_ID).name("기존이름").build();
+        given(applicantRepository.findById(1L)).willReturn(Optional.of(applicant));
+        assertThatThrownBy(() -> applicantService.registerTempApplicant(
+                new RegisterRequest(TEST_PIN, TEST_RECRUIT_ID), TEST_EMAIL))
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED);
+        assertThatThrownBy(() -> applicantService.registerInitialProfile(
+                new InitialProfileRequest(TEST_NAME, TEST_PHONE_NUMBER), 1L))
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.CLOSED_RECRUIT_APPLICATION_CHANGE_NOT_ALLOWED);
+        assertThat(applicant.getName()).isEqualTo("기존이름");
+    }
+
 }

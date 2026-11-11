@@ -124,6 +124,7 @@ public class AdminApplyService {
     @Transactional
     public void editApply(Long applyId, EditApplyRequest request) {
         Apply apply = getApplyForEdit(applyId);
+        apply.getRecruit().validateApplicationChangeable();
         apply.validateEditable();
         if (apply.isSubmitted() || request.selectionResult() != null) {
             editSelectionResult(apply, request.selectionResult());
@@ -155,6 +156,7 @@ public class AdminApplyService {
     @Transactional
     public void deleteApply(final Long applyId) {
         Apply apply = getApplyForEdit(applyId);
+        apply.getRecruit().validateApplicationChangeable();
         Long recruitId = apply.getRecruit().getId();
         adminApplyRepository.delete(apply);
         applicantCommandService.deleteApplicant(apply.getApplicant().getId());
@@ -173,6 +175,7 @@ public class AdminApplyService {
         if (applies.isEmpty()) {
             return 0;
         }
+        applies.forEach(apply -> apply.getRecruit().validateApplicationChangeable());
         Set<Long> applicantIds = applies.stream()
                 .map(apply -> apply.getApplicant().getId())
                 .collect(Collectors.toSet());
@@ -213,6 +216,7 @@ public class AdminApplyService {
         if (targets.size() != request.applyIds().size()) {
             throw new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY);
         }
+        targets.forEach(apply -> apply.getRecruit().validateApplicationChangeable());
         replaceSelectionResults(targets, request);
     }
 
@@ -230,6 +234,7 @@ public class AdminApplyService {
     @Transactional
     public int editWaitlistOrder(EditWaitlistOrderRequest request) {
         List<Apply> waitlisted = adminApplyRepository.findWaitlistedApplies(request.recruitId());
+        waitlisted.forEach(apply -> apply.getRecruit().validateApplicationChangeable());
         Set<Long> requestedIds = new HashSet<>(request.applyIds());
         Set<Long> existingIds = waitlisted.stream().map(Apply::getId).collect(Collectors.toSet());
         if (requestedIds.size() != request.applyIds().size()) {
