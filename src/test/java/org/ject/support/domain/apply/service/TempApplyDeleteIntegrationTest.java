@@ -56,6 +56,8 @@ class TempApplyDeleteIntegrationTest extends TestSupport {
     @Autowired
     private PlatformTransactionManager transactionManager;
     @MockitoBean
+    private ApplyEligibilityService applyEligibilityService;
+    @MockitoBean
     private ApplicantCommandService applicantCommandService;
     @MockitoBean
     private Map2JsonSerializer map2JsonSerializer;

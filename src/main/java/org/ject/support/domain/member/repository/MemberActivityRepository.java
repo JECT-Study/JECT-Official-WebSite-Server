@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import org.ject.support.domain.member.MemberType;
+import org.ject.support.domain.member.ActivityStatus;
 import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.entity.EventParticipation;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +16,20 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface MemberActivityRepository extends JpaRepository<MemberActivity, Long>, MemberActivityQueryRepository {
+
+	@Query("""
+		select ma from MemberActivity ma
+		left join fetch ma.memberSemester
+		where ma.memberId in (select m.id from Member m where m.email = :email and m.isDeleted = false)
+		  and ma.isDeleted = false
+		  and ma.activityStatus = :activityStatus
+		""")
+	List<MemberActivity> findActivitiesByEmailAndStatus(@Param("email") String email,
+		@Param("activityStatus") ActivityStatus activityStatus);
+
+	default List<MemberActivity> findActiveActivitiesByEmail(String email) {
+		return findActivitiesByEmailAndStatus(email, ActivityStatus.ACTIVE);
+	}
 
 	Optional<MemberActivity> findByIdAndMemberType(Long id, MemberType memberType);
 

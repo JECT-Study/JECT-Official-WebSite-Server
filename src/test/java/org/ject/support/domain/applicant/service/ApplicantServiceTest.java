@@ -1,6 +1,9 @@
 package org.ject.support.domain.applicant.service;
 
 import org.ject.support.base.UnitTestSupport;
+import org.ject.support.domain.apply.service.ApplyEligibilityService;
+import org.ject.support.domain.apply.exception.ApplyErrorCode;
+import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.common.security.jwt.JwtTokenProvider;
 import org.ject.support.domain.applicant.dto.ApplicantDto.InitialProfileRequest;
 import org.ject.support.domain.applicant.dto.ApplicantDto.RegisterRequest;
@@ -39,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 
 class ApplicantServiceTest extends UnitTestSupport {
@@ -57,6 +61,9 @@ class ApplicantServiceTest extends UnitTestSupport {
 
     @Mock
     private Authentication authentication;
+
+    @Mock
+    private ApplyEligibilityService applyEligibilityService;
 
     @Mock
     private RecruitUsecase recruitUsecase;
@@ -163,6 +170,21 @@ class ApplicantServiceTest extends UnitTestSupport {
         verify(applicantRepository).save(any(Applicant.class));
         verify(passwordEncoder).encode(TEST_PIN);
         verify(jwtTokenProvider).createAuthenticationByApplicant(any(Applicant.class));
+    }
+
+    @Test
+    void 중복_지원_이력이_있으면_PIN_계정을_새로_등록할_수_없다() {
+        // given
+        RegisterRequest request = new RegisterRequest(TEST_PIN, TEST_RECRUIT_ID);
+        Recruit recruit = Recruit.builder().id(TEST_RECRUIT_ID).build();
+        given(recruitUsecase.getRecruitEntity(TEST_RECRUIT_ID)).willReturn(recruit);
+        doThrow(new ApplyException(ApplyErrorCode.APPLY_EXISTS_IN_OTHER_RECRUIT))
+                .when(applyEligibilityService).validateApplication(TEST_EMAIL, recruit);
+
+        // when, then
+        assertThatThrownBy(() -> applicantService.registerTempApplicant(request, TEST_EMAIL))
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.APPLY_EXISTS_IN_OTHER_RECRUIT);
+        verify(applicantRepository, never()).save(any());
     }
 
     @Test

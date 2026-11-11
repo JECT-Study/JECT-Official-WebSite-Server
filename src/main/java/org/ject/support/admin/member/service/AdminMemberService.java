@@ -8,20 +8,30 @@ import java.util.Set;
 import org.ject.support.admin.member.dto.request.CreateMemberRequest;
 import org.ject.support.admin.member.dto.command.EditMemberCommand;
 import org.ject.support.domain.member.entity.Member;
+import org.ject.support.domain.member.entity.MemberActivity;
 import org.ject.support.domain.member.exception.MemberErrorCode;
 import org.ject.support.domain.member.exception.MemberException;
 import org.ject.support.domain.member.repository.MemberActivityRepository;
 import org.ject.support.domain.member.repository.MemberRepository;
+import org.ject.support.domain.member.service.MemberQueryService;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class AdminMemberService {
+public class AdminMemberService implements MemberQueryService {
 
 	private final MemberRepository memberRepository;
 	private final MemberActivityRepository memberActivityRepository;
+
+	// 지원 가능 여부 확인을 위한 활성 활동과 소속 기수 조회
+	@Override
+	@Transactional(readOnly = true)
+	public List<MemberActivity> searchActiveActivities(String email) {
+		return memberActivityRepository.findActiveActivitiesByEmail(email);
+	}
 
 	/*
 	(2026.06.23)

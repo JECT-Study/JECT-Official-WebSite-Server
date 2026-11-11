@@ -15,6 +15,7 @@ import org.ject.support.domain.applicant.exception.ApplicantErrorCode;
 import org.ject.support.domain.applicant.exception.ApplicantException;
 import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.recruit.service.RecruitUsecase;
+import org.ject.support.domain.apply.service.ApplyEligibilityService;
 import org.ject.support.domain.recruit.domain.Recruit;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,6 +30,7 @@ public class ApplicantService implements ApplicantCommandService {
 
     private final ApplicantRepository applicantRepository;
     private final RecruitUsecase recruitUsecase;
+    private final ApplyEligibilityService applyEligibilityService;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
 
@@ -74,6 +76,7 @@ public class ApplicantService implements ApplicantCommandService {
 
         if (applicant == null) {
             // 새로운 지원자 생성
+            applyEligibilityService.validateApplication(email, recruit);
             applicant = createTempApplicantWithPin(registerRequest, email, recruit);
         } else {
             // 기존 지원자가 있는 경우 PIN 번호만 업데이트

@@ -36,6 +36,8 @@ import org.ject.support.domain.recruit.exception.RecruitErrorCode;
 import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.repository.RecruitRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -57,6 +59,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -64,6 +67,9 @@ class ApplyServiceTest extends UnitTestSupport {
 
     @InjectMocks
     ApplyService applyService;
+
+    @Mock
+    ApplyEligibilityService applyEligibilityService;
 
     @Mock
     RecruitRepository recruitRepository;
@@ -166,6 +172,7 @@ class ApplyServiceTest extends UnitTestSupport {
         applyService.submitApplication(1L, recruit.getId(), answers, List.of());
 
         // then
+        verify(applyEligibilityService).validateApplication(applicant.getEmail(), recruit);
         // 1. TEMP_SAVED 상태에서는 update가 발생하므로 save가 호출되지 않아야 함
         verify(applicationFormRepository, never()).save(any(ApplicationForm.class));
 
@@ -175,6 +182,26 @@ class ApplyServiceTest extends UnitTestSupport {
 
         // 3. apply의 상태가 SUBMITTED로 변경되었는지 확인
         assertThat(apply.getStatus()).isEqualTo(SUBMITTED);
+    }
+
+    @Test
+    void 임시저장_후_지원_대상에서_활동을_시작하면_제출을_거부한다() {
+        // given
+        Applicant applicant = getApplicant(1L, "email@test.com");
+        Recruit recruit = getActiveRecruit(BE, List.of());
+        ApplicationForm form = getApplicationForm("기존 답변");
+        Apply apply = getApply(1L, recruit, applicant, form, TEMP_SAVED);
+        given(applyRepository.findByApplicantIdAndRecruitIdInActiveRecruit(eq(1L), eq(recruit.getId()), any()))
+                .willReturn(Optional.of(apply));
+        doThrow(new ApplyException(ApplyErrorCode.ACTIVE_MEMBER_APPLICATION_NOT_ALLOWED))
+                .when(applyEligibilityService).validateApplication(applicant.getEmail(), recruit);
+
+        // when, then
+        assertThatThrownBy(() -> applyService.submitApplication(1L, recruit.getId(), Map.of(), List.of()))
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.ACTIVE_MEMBER_APPLICATION_NOT_ALLOWED);
+        assertThat(apply.getStatus()).isEqualTo(TEMP_SAVED);
+        assertThat(apply.getSubmittedAt()).isNull();
+        assertThat(form.getContent()).isEqualTo("기존 답변");
     }
 
     @Test
@@ -477,6 +504,8 @@ class ApplyServiceTest extends UnitTestSupport {
         applyService.saveApplicationTemporarily(1L, recruit.getId(), answers, List.of());
 
         // then
+        verify(applyEligibilityService, never()).validateApplication(any(), any());
+        verify(applyEligibilityService).validateDuplicateApplication(applicant.getEmail(), recruit.getId());
         ApplicationForm newApplicationForm = apply.getApplicationForm();
         assertThat(newApplicationForm.getContent()).isEqualTo(newContent);
         assertThat(apply.getStatus()).isEqualTo(TEMP_SAVED);
@@ -592,6 +621,30 @@ class ApplyServiceTest extends UnitTestSupport {
                 .isInstanceOf(ApplyException.class);
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void 다른_공고에_먼저_지원하면_프로필만_저장한_지원서의_작성_시작을_거부한다(boolean submit) {
+        // given
+        Applicant applicant = getApplicant(1L, "email@test.com");
+        Recruit recruit = getActiveRecruit(BE, List.of());
+        Apply apply = getApply(1L, recruit, applicant, null, JOINED);
+        given(applyRepository.findByApplicantIdAndRecruitIdInActiveRecruit(eq(1L), eq(recruit.getId()), any()))
+                .willReturn(Optional.of(apply));
+        doThrow(new ApplyException(ApplyErrorCode.APPLY_EXISTS_IN_OTHER_RECRUIT))
+                .when(applyEligibilityService).validateApplication(applicant.getEmail(), recruit);
+
+        // when, then
+        assertThatThrownBy(() -> {
+            if (submit) {
+                applyService.submitApplication(1L, recruit.getId(), Map.of(), List.of());
+            } else {
+                applyService.saveApplicationTemporarily(1L, recruit.getId(), Map.of(), List.of());
+            }
+        }).hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.APPLY_EXISTS_IN_OTHER_RECRUIT);
+        assertThat(apply.getStatus()).isEqualTo(JOINED);
+        assertThat(apply.getApplicationForm()).isNull();
+    }
+
     @Test
     void 프로필_저장_성공() {
         // given
@@ -658,12 +711,32 @@ class ApplyServiceTest extends UnitTestSupport {
 
         // then
         verify(applyRepository, never()).save(any(Apply.class));
+        verify(applyEligibilityService, never()).validateApplication(any(), any());
 
         assertThat(applicant.getName()).isEqualTo(request.name());
         assertThat(applicant.getPhoneNumber()).isEqualTo(request.phoneNumber());
         assertThat(applicant.getJobFamily()).isEqualTo(recruit.getJobFamily());
         assertThat(applicant.getCareerDetails()).isEqualTo(request.careerDetails());
         assertThat(applicant.getExperiencePeriod()).isEqualTo(request.experiencePeriod());
+    }
+
+    @Test
+    void PIN_등록_이후_다른_공고에_지원했으면_새_지원서_생성을_거부한다() {
+        // given
+        Applicant applicant = getApplicant(1L, "test@example.com");
+        Recruit recruit = getActiveRecruit(BE, List.of());
+        ApplyProfileRequest request = new ApplyProfileRequest("김젝트", "01012345678", BE,
+                Region.SEOUL, CareerDetails.STUDENT, ExperiencePeriod.NONE, List.of());
+        given(applicantRepository.findById(1L)).willReturn(Optional.of(applicant));
+        given(recruitRepository.findActiveRecruitById(eq(1L), any())).willReturn(recruit);
+        doThrow(new ApplyException(ApplyErrorCode.APPLY_EXISTS_IN_OTHER_RECRUIT))
+                .when(applyEligibilityService).validateApplication(applicant.getEmail(), recruit);
+
+        // when, then
+        assertThatThrownBy(() -> applyService.saveProfile(1L, 1L, request))
+                .hasFieldOrPropertyWithValue("errorCode", ApplyErrorCode.APPLY_EXISTS_IN_OTHER_RECRUIT);
+        verify(applyRepository, never()).save(any());
+        assertThat(applicant.getName()).isNotEqualTo(request.name());
     }
 
     @Test

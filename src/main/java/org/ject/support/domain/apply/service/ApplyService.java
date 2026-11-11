@@ -56,6 +56,7 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
     private final ApplicationFormRepository applicationFormRepository;
     private final ApplicantRepository applicantRepository;
     private final ApplicantCommandService applicantCommandService;
+    private final ApplyEligibilityService applyEligibilityService;
     private final Map2JsonSerializer map2JsonSerializer;
     private final String2MapSerializer string2MapSerializer;
 
@@ -128,6 +129,8 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
             throw new ApplyException(ALREADY_SUBMITTED);
         }
 
+        validateApplication(apply);
+
         // 3. 해당 모집건의 question id와 answers의 key를 비교해 올바른 질문 양식인지 점검
         validateQuestions(answers, apply.getRecruit());
 
@@ -180,6 +183,11 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
             Apply apply = applyRepository.findByApplicantIdAndRecruitIdInActiveRecruit(
                             applicantId, recruitId, LocalDateTime.now())
                     .orElseThrow(() -> new ApplyException(NOT_FOUND_APPLY));
+
+            if (apply.isSubmitted()) {
+                throw new ApplyException(ALREADY_SUBMITTED);
+            }
+            applyEligibilityService.validateApplication(apply.getApplicant().getEmail(), apply.getRecruit());
 
             // 2. 지원양식과 answers의 key를 비교해 올바른 질문 양식인지 점검
             validateQuestions(answers, apply.getRecruit());
@@ -249,6 +257,7 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
         boolean exists = applyRepository.existsByApplicantIdAndRecruitIdInActiveRecruit(
                 applicant.getId(), recruit.getId(), LocalDateTime.now());
         if (!exists) {
+            applyEligibilityService.validateApplication(applicant.getEmail(), recruit);
             try {
                 var newApply = Apply.createApply(applicant, recruit);
                 applyRepository.save(newApply);
@@ -256,6 +265,15 @@ public class ApplyService implements ApplyUsecase, ApplyQueryService {
                 log.warn("지원서 생성 중 중복 생성 충돌 발생. applicantId: {}, recruitId: {}. 이미 지원서가 존재합니다.",
                         applicant.getId(), recruit.getId());
             }
+        }
+    }
+
+    // 최초 지원서 작성은 활동 제한까지 검사하고 기존 지원서는 중복 여부만 검증
+    private void validateApplication(Apply apply) {
+        if (apply.getStatus() == JOINED) {
+            applyEligibilityService.validateApplication(apply.getApplicant().getEmail(), apply.getRecruit());
+        } else {
+            applyEligibilityService.validateDuplicateApplication(apply.getApplicant().getEmail(), apply.getRecruit().getId());
         }
     }
 
