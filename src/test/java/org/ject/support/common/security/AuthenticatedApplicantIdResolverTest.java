@@ -123,4 +123,46 @@ class AuthenticatedApplicantIdResolverTest {
             resolver.resolveArgument(methodParameter, mavContainer, webRequest, binderFactory)
         ).isInstanceOf(ClassCastException.class);
     }
+
+    @Test
+    @DisplayName("resolveCurrentApplicantId는 인증된 사용자의 applicantId를 반환한다")
+    void resolveCurrentApplicantIdWithAuthenticatedUser() {
+        // given
+        CustomUserDetails userDetails = new CustomUserDetails(EMAIL, APPLICANT_ID, Role.SEMESTER);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        // when
+        Long result = resolver.resolveCurrentApplicantId();
+
+        // then
+        assertThat(result).isEqualTo(APPLICANT_ID);
+    }
+
+    @Test
+    @DisplayName("resolveCurrentApplicantId는 인증 정보가 없으면 null을 반환한다")
+    void resolveCurrentApplicantIdWithoutAuthentication() {
+        // given
+        when(securityContext.getAuthentication()).thenReturn(null);
+
+        // when
+        Long result = resolver.resolveCurrentApplicantId();
+
+        // then
+        assertThat(result).isNull();
+    }
+
+    @Test
+    @DisplayName("resolveCurrentApplicantId는 지원하지 않는 principal이면 null을 반환한다")
+    void resolveCurrentApplicantIdWithUnsupportedPrincipal() {
+        // given
+        Authentication authentication = new UsernamePasswordAuthenticationToken("anonymous", "", null);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        // when
+        Long result = resolver.resolveCurrentApplicantId();
+
+        // then
+        assertThat(result).isNull();
+    }
 }
