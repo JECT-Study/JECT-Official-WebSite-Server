@@ -10,8 +10,9 @@ import org.ject.support.domain.applicant.exception.ApplicantException;
 import org.ject.support.domain.applicant.repository.ApplicantRepository;
 import org.ject.support.domain.auth.dto.AuthVerificationResult;
 import org.ject.support.domain.auth.exception.AuthException;
-import org.ject.support.domain.apply.exception.ApplyException;
-import org.ject.support.domain.apply.service.ApplyQueryService;
+import org.ject.support.domain.apply.service.ApplyEligibilityService;
+import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.service.RecruitUsecase;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
@@ -27,7 +28,6 @@ import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_CREDE
 import static org.ject.support.domain.auth.exception.AuthErrorCode.INVALID_REFRESH_TOKEN;
 import static org.ject.support.domain.auth.exception.AuthErrorCode.NOT_FOUND_AUTH_CODE;
 import static org.ject.support.domain.applicant.exception.ApplicantErrorCode.NOT_FOUND_APPLICANT;
-import static org.ject.support.domain.apply.exception.ApplyErrorCode.APPLY_EXISTS_IN_OTHER_RECRUIT;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +37,8 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final ApplicantRepository applicantRepository;
     private final PasswordEncoder passwordEncoder;
-    private final ApplyQueryService applyQueryService;
+    private final ApplyEligibilityService applyEligibilityService;
+    private final RecruitUsecase recruitUsecase;
 
     /**
      * 이메일 템플릿 타입에 따라 인증번호를 검증하고 적절한 결과를 반환합니다.
@@ -99,11 +100,9 @@ public class AuthService {
             throw new AuthException(INVALID_CREDENTIALS);
         }
 
-        applyQueryService.getRecruitIdByApplicantId(applicant.getId())
-                .filter(existingRecruitId -> !existingRecruitId.equals(recruitId))
-                .ifPresent(existingRecruitId -> {
-                    throw new ApplyException(APPLY_EXISTS_IN_OTHER_RECRUIT);
-                });
+        // 지원서 제출과 동일한 활동 구성원 및 중복 지원 자격 검증
+        Recruit recruit = recruitUsecase.getRecruitEntity(recruitId);
+        applyEligibilityService.validateApplication(applicant.getEmail(), recruit);
         
         // 인증 및 토큰 발급
         return jwtTokenProvider.createAuthenticationByApplicant(applicant);
