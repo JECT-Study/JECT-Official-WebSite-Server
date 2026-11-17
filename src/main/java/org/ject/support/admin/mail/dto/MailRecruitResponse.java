@@ -8,31 +8,31 @@ import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 
 public record MailRecruitResponse(
-        @Schema(description = "모집 공고 ID", example = "1")
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED, description = "모집 공고 ID", example = "1")
         Long recruitId,
-        @Schema(description = "모집 공고 제목", example = "젝트 6기 백엔드 개발자 모집")
+        @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED, description = "모집 공고 제목", example = "젝트 6기 백엔드 개발자 모집")
         String title,
-        @Schema(description = "기수 ID", example = "2")
+        @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED, description = "기수 ID", example = "2")
         Long semesterId,
-        @Schema(description = "기수명", example = "10기")
+        @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED, description = "기수명", example = "10기")
         String semesterName,
-        @Schema(description = "직군", example = "BE")
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED, description = "직군", example = "BE")
         JobFamily jobFamily,
-        @Schema(description = "직군 표시명", example = "백엔드 개발자(BE)")
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED, description = "직군 표시명", example = "백엔드 개발자(BE)")
         String jobFamilyDescription,
-        @Schema(description = "모집 유형", example = "SEMESTER")
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED, description = "모집 유형", example = "SEMESTER")
         RecruitType recruitType,
-        @Schema(description = "모집 유형 표시명", example = "정규 기수 모집")
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED, description = "모집 유형 표시명", example = "정규 기수 모집")
         String recruitTypeDescription,
-        @Schema(description = "모집 세부 유형", example = "REGULAR")
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED, description = "모집 세부 유형", example = "REGULAR")
         RecruitTypeDetail recruitTypeDetail,
-        @Schema(description = "모집 세부 유형 표시명", example = "정규 모집")
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED, description = "모집 세부 유형 표시명", example = "정규 모집")
         String recruitTypeDetailDescription,
-        @Schema(description = "모집 시작일", example = "2026-08-01T00:00:00")
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED, description = "모집 시작일", example = "2026-08-01T00:00:00")
         LocalDateTime startDate,
-        @Schema(description = "모집 종료일", example = "2026-08-31T23:59:00")
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED, description = "모집 종료일", example = "2026-08-31T23:59:00")
         LocalDateTime endDate,
-        @Schema(description = "등록일", example = "2026-07-01T10:00:00")
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED, description = "등록일", example = "2026-07-01T10:00:00")
         LocalDateTime createdAt
 ) {
 

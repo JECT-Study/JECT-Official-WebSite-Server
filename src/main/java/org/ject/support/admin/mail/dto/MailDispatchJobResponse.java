@@ -1,25 +1,41 @@
 package org.ject.support.admin.mail.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 
 public record MailDispatchJobResponse(
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         Long dispatchJobId,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         Long scenarioId,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         Long recruitId,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         Long requestedByAdminId,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         MailDispatchJobStatus status,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int targetCount,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int processingCount,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int successCount,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int failedCount,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int unknownCount,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         LocalDateTime requestedAt,
+        @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
         LocalDateTime startedAt,
+        @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
         LocalDateTime finishedAt,
+        @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
         Instant scheduledAt,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int excludedCount
 ) {
 

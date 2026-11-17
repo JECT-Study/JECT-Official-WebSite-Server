@@ -1,11 +1,18 @@
 package org.ject.support.domain.apply.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.ject.support.domain.apply.domain.Portfolio;
 
-public record ApplyPortfolioDto(String fileUrl,
-                                String fileName,
-                                String fileSize,
-                                String sequence) {
+public record ApplyPortfolioDto(
+        @Schema(nullable = false)
+        String fileUrl,
+        @Schema(nullable = false)
+        String fileName,
+        @Schema(nullable = false)
+        String fileSize,
+        @Schema(nullable = false)
+        String sequence
+) {
 
     public Portfolio toEntity() {
         return Portfolio.builder()

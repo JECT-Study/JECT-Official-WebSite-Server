@@ -1,16 +1,25 @@
 package org.ject.support.admin.mail.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.ject.support.admin.mail.domain.MailDispatchJob;
 import org.ject.support.admin.mail.domain.MailDispatchJobStatus;
 
 public record MailDispatchResponse(
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         Long dispatchJobId,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         MailDispatchJobStatus status,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int targetCount,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int processingCount,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int successCount,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int failedCount,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int unknownCount,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         int excludedCount
 ) {
 
