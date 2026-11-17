@@ -4,6 +4,8 @@ import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.examples.Example;
 import io.swagger.v3.oas.models.media.Content;
 import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.ArraySchema;
+import io.swagger.v3.oas.models.media.StringSchema;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
 import lombok.Builder;
@@ -66,7 +68,7 @@ public class ErrorResponseCustomizer implements OperationCustomizer {
                     .name(apiErrorResponse.name())
                     .build();
         }
-        example.value(new org.ject.support.common.response.ApiResponse<>(errorCode.getCode(), errorCode.getMessage()));
+        example.value(new org.ject.support.common.response.ApiResponse<>(errorCode.getCode(), List.of(errorCode.getMessage())));
         example.description(apiErrorResponse.description());
         return ExampleHolder.builder()
                 .example(example)
@@ -79,6 +81,8 @@ public class ErrorResponseCustomizer implements OperationCustomizer {
         exampleHolders.forEach((code, v) -> {
                     Content content = new Content();
                     MediaType mediaType = new MediaType();
+                    mediaType.setSchema(SuccessResponseCustomizer.createResponseSchema(
+                            new ArraySchema().items(new StringSchema().nullable(false)).nullable(false)));
                     ApiResponse apiResponse = new ApiResponse();
 
                     v.forEach(exampleHolder ->
