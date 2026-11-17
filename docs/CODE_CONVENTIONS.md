@@ -46,6 +46,7 @@
 - 단순 DTO는 record를 사용합니다.
 - Request DTO는 `{Action}{Domain}Request` 형식을 사용합니다.
 - Response DTO는 `{Domain}Response` 형식을 사용하고, 목적 구분이 필요하면 `{Purpose}{Domain}Response`를 사용합니다.
+- 응답 DTO의 각 필드는 Swagger `@Schema`에 필수 여부(`requiredMode`)와 null 허용 여부(`nullable`)를 명시합니다. 필수 여부는 응답 키의 포함 여부를, null 허용 여부는 해당 값이 null일 수 있는지를 기준으로 구분합니다.
 - Request Body는 단순 ID 목록이라도 wrapper DTO로 받습니다.
 - 값 하나는 메서드 매개변수로 전달할 수 있고, 값이 둘 이상이거나 컬렉션이면 DTO로 묶습니다.
 - Service와 UseCase는 API Request DTO를 직접 받을 수 있습니다.
