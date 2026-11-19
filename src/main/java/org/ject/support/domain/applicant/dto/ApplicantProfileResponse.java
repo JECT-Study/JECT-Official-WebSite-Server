@@ -1,5 +1,6 @@
 package org.ject.support.domain.applicant.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import org.ject.support.domain.applicant.entity.Applicant;
 import org.ject.support.domain.member.CareerDetails;
@@ -10,12 +11,19 @@ import java.util.List;
 
 @Builder
 public record ApplicantProfileResponse(
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         Long id,
+        @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
         String name,
+        @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
         String phoneNumber,
+        @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED, schemaResolution = Schema.SchemaResolution.ALL_OF_REF)
         CareerDetails careerDetails,
+        @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED, schemaResolution = Schema.SchemaResolution.ALL_OF_REF)
         Region region,
+        @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED, schemaResolution = Schema.SchemaResolution.ALL_OF_REF)
         ExperiencePeriod experiencePeriod,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         List<String> interestedDomains
 ) {
     public static ApplicantProfileResponse of(Applicant applicant) {

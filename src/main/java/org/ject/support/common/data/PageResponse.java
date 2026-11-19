@@ -3,6 +3,7 @@ package org.ject.support.common.data;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +25,7 @@ public class PageResponse<E> extends PageImpl<E> {
         return new PageResponse<>(content, pageable.getPageNumber(), pageable.getPageSize(), total);
     }
 
+    @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
     @JsonProperty("hasNext")
     public boolean hasNext() {
         return super.hasNext();

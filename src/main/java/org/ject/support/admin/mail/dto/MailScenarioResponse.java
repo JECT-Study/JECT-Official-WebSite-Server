@@ -1,5 +1,6 @@
 package org.ject.support.admin.mail.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.ject.support.admin.mail.domain.MailScenario;
@@ -10,25 +11,40 @@ import org.ject.support.admin.mail.domain.MailScenarioType;
  * 메일 시나리오 조회 응답 DTO입니다.
  */
 public record MailScenarioResponse(
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         Long id,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         String name,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         MailScenarioCategory category,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         MailScenarioType type,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         String scenarioCode,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         String subjectTemplate,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         String bodyTemplate,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         boolean active,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         LocalDateTime createdAt,
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         List<CustomVariableResponse> customVariables
 ) {
     /**
      * 커스텀 변수 표현 DTO입니다.
      */
     public record CustomVariableResponse(
-            String key, 
-            String label, 
-            String inputType, 
-            boolean required, 
+            @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
+            String key,
+            @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
+            String label,
+            @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
+            String inputType,
+            @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
+            boolean required,
+            @Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
             String description
     ) {}
 

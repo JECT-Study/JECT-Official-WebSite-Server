@@ -1,5 +1,6 @@
 package org.ject.support.domain.project.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.ject.support.domain.project.entity.Project;
 
 import java.util.ArrayList;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 public record ProjectSummaryResponse(
+        @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
         List<CategorySummary> categorySummaries
 ) {
 
@@ -45,7 +47,9 @@ public record ProjectSummaryResponse(
     }
 
     public record CategorySummary(
+            @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
             String categoryName,
+            @Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
             Long count
     ) {
     }

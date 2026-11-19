@@ -1,5 +1,6 @@
 package org.ject.support.admin.member.dto.response;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import static java.util.stream.Collectors.*;
 
 import java.util.List;
@@ -18,24 +19,43 @@ import org.ject.support.domain.recruit.domain.SemesterEvent;
 import org.ject.support.domain.recruit.domain.SemesterEventType;
 
 public record MemberSemesterResponse(
+	@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
 	Long memberActivityId,
+	@Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
 	String name,
+	@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
 	String email,
+	@Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
 	String phoneNumber,
+	@Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED, schemaResolution = Schema.SchemaResolution.ALL_OF_REF)
 	Region region,
+	@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
 	List<String> interestedDomains,
+	@Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED, schemaResolution = Schema.SchemaResolution.ALL_OF_REF)
 	JobFamily jobFamily,
+	@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
 	RecruitTypeDetail recruitTypeDetail,
+	@Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED, schemaResolution = Schema.SchemaResolution.ALL_OF_REF)
 	CareerDetails careerDetails,
+	@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
 	ActivityStatus activityStatus,
+	@Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED, schemaResolution = Schema.SchemaResolution.ALL_OF_REF)
 	ExperiencePeriod experiencePeriod,
+	@Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
 	String memo,
+	@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
 	Semester semester,
+	@Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED, schemaResolution = Schema.SchemaResolution.ALL_OF_REF)
 	Team team,
+	@Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
 	String certNumber,
+	@Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
 	String firstReview,
+	@Schema(nullable = true, requiredMode = Schema.RequiredMode.REQUIRED)
 	String secondReview,
+	@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
 	List<EventParticipationResponse> events,
+	@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
 	List<EventParticipationResponse> surveys
 ) {
 	public static MemberSemesterResponse of(MemberSemesterProjection projection, List<SemesterEvent> semesterEvents,
@@ -81,9 +101,19 @@ public record MemberSemesterResponse(
 			.toList();
 	}
 
-	public record Semester(Long semesterId, String semesterName) {
+	public record Semester(
+		@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
+		Long semesterId,
+		@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
+		String semesterName
+	) {
 	}
 
-	public record Team(Long teamId, String teamName) {
+	public record Team(
+		@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
+		Long teamId,
+		@Schema(nullable = false, requiredMode = Schema.RequiredMode.REQUIRED)
+		String teamName
+	) {
 	}
 }
