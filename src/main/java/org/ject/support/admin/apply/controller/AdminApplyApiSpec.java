@@ -14,7 +14,7 @@ import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.dto.UpdateSelectionResultsRequest;
 import org.ject.support.admin.apply.dto.WaitlistOrdersResponse;
-import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.admin.apply.dto.ApplyListResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -26,14 +26,14 @@ public interface AdminApplyApiSpec {
 
     @Operation(
             summary = "제출완료 지원서 목록 조회",
-            description = "모집 공고별 제출완료 지원서를 조회합니다. 지원자 신분과 선정 결과를 다중 필터링할 수 있습니다.")
-    CursorPageResponse<SubmittedApplyResponse> searchSubmittedApplies(
+            description = "모집 공고 제목과 제출완료 지원서 목록을 커서 기반으로 조회합니다. 지원자 신분과 선정 결과를 다중 필터링할 수 있습니다.")
+    ApplyListResponse<SubmittedApplyResponse> searchSubmittedApplies(
             @Valid @ModelAttribute SubmittedApplySearchCondition condition);
 
     @Operation(
             summary = "임시저장 지원서 목록 조회",
-            description = "모집 공고별 임시저장 지원서를 조회합니다. 지원자 신분을 다중 필터링할 수 있습니다.")
-    CursorPageResponse<TempSavedApplyResponse> searchTempSavedApplies(
+            description = "모집 공고 제목과 임시저장 지원서 목록을 커서 기반으로 조회합니다. 지원자 신분을 다중 필터링할 수 있습니다.")
+    ApplyListResponse<TempSavedApplyResponse> searchTempSavedApplies(
             @Valid @ModelAttribute TempSavedApplySearchCondition condition);
 
     @Operation(
