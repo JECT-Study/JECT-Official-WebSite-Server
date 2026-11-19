@@ -15,6 +15,7 @@ import org.ject.support.common.springdoc.ApiErrorResponse;
 import org.ject.support.common.springdoc.ApiErrorResponses;
 import org.ject.support.domain.auth.dto.AuthDto;
 import org.ject.support.domain.auth.exception.AuthErrorCode;
+import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.external.email.domain.EmailTemplate;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -65,7 +66,13 @@ public interface AuthApiSpec {
 
     @Operation(
             summary = "PIN 로그인",
-            description = "이메일, PIN 번호, 모집 ID로 로그인하고 성공 시 쿠키로 액세스 토큰과 리프레시 토큰을 발급합니다.")
+            description = "이메일, PIN 번호, 모집 ID로 인증하고 지원서 제출과 동일한 지원 자격을 검증합니다. "
+                    + "모집 대상 유형·기수 기준 활동 중인 구성원이거나 다른 OPEN 공고에 임시저장·제출한 지원서가 있으면 로그인을 제한하며, "
+                    + "성공 시 쿠키로 액세스 토큰과 리프레시 토큰을 발급합니다.")
+    @ApiErrorResponses(responses = {
+            @ApiErrorResponse(value = ApplyErrorCode.class, name = "APPLY_EXISTS_IN_OTHER_RECRUIT"),
+            @ApiErrorResponse(value = ApplyErrorCode.class, name = "ACTIVE_MEMBER_APPLICATION_NOT_ALLOWED")
+    })
     boolean loginWithPin(@RequestBody @Valid AuthDto.PinLoginRequest request,
                          HttpServletRequest httpRequest, HttpServletResponse response);
 
