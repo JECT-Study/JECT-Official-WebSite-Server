@@ -34,7 +34,10 @@ import org.ject.support.domain.apply.domain.Apply;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.ject.support.domain.apply.domain.Portfolio;
 import org.ject.support.domain.apply.domain.SelectionResult;
-import org.ject.support.domain.apply.dto.ApplyPortfolioDto;
+import org.ject.support.admin.apply.dto.AdminApplyPortfolioResponse;
+import org.ject.support.admin.apply.dto.ApplyAnswerResponse;
+import org.ject.support.domain.member.Region;
+import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.member.CareerDetails;
@@ -92,16 +95,18 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .build();
 
         var question1 = Question.builder()
+                .sequence(1).title("첫 번째 질문")
                 .id(1L)
                 .build();
         var question2 = Question.builder()
+                .sequence(2).title("두 번째 질문")
                 .id(2L)
                 .build();
 
         var recruit = Recruit.builder()
                 .id(1L)
                 .semester(semester)
-                .questions(List.of(question1, question2))
+                .questions(List.of(question2, question1))
                 .recruitType(org.ject.support.domain.recruit.domain.RecruitType.SEMESTER)
                 .build();
 
@@ -407,7 +412,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
     }
 
     @Test
-    void 상세조회하려는_제출된_지원서의_ApplicationForm이_null이면_빈_응답을_반환() {
+    void 미작성_지원서도_전체_질문과_미답변을_반환한다() {
         // given
         var applyId = submittedApply.getId() + 1L;
         var member2 = Applicant.builder()
@@ -415,21 +420,26 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .build();
         var apply2 = Apply.builder()
                 .id(applyId)
-                .status(ApplyStatus.SUBMITTED)
+                .status(ApplyStatus.JOINED)
                 .applicationForm(null)
                 .applicant(member2)
                 .recruit(submittedApply.getRecruit())
                 .build();
 
-        given(adminApplyRepository.findApplyByIdByStatus(applyId, ApplyStatus.SUBMITTED))
+        given(adminApplyRepository.findApplyByIdByStatus(applyId, null))
                 .willReturn(Optional.of(apply2));
 
         // when
-        AdminApplyDetailResponse actual = adminApplyService.findApply(applyId, ApplyStatus.SUBMITTED);
+        AdminApplyDetailResponse actual = adminApplyService.findApply(applyId, null);
 
         // then
         assertThat(actual.applyId()).isEqualTo(applyId);
-        assertThat(actual.answers()).isEmpty();
+        assertThat(actual.answers()).containsExactly(
+                new ApplyAnswerResponse(1L, "첫 번째 질문", null),
+                new ApplyAnswerResponse(2L, "두 번째 질문", null));
+        assertThat(actual.careerDetails()).isNull();
+        assertThat(actual.region()).isNull();
+        assertThat(actual.experiencePeriod()).isNull();
         assertThat(actual.portfolios()).isEmpty();
     }
 
@@ -452,9 +462,9 @@ class AdminApplyServiceTest extends UnitTestSupport {
         assertThat(actual.phoneNumber()).isEqualTo("010-1234-5678");
         assertThat(actual.email()).isEqualTo("test@mail.com");
         assertThat(actual.jobFamily()).isEqualTo(JobFamily.BE);
-        assertThat(actual.careerDetails()).isEqualTo("대학생(재학/휴학)");
-        assertThat(actual.region()).isEqualTo("서울");
-        assertThat(actual.experiencePeriod()).isEqualTo("경험 없음");
+        assertThat(actual.careerDetails()).isEqualTo(CareerDetails.STUDENT);
+        assertThat(actual.region()).isEqualTo(Region.SEOUL);
+        assertThat(actual.experiencePeriod()).isEqualTo(ExperiencePeriod.NONE);
         assertThat(actual.interestedDomains()).containsExactly("AI", "Backend");
         assertThat(actual.recruitType()).isEqualTo("SEMESTER");
         assertThat(actual.selectionResult()).isEqualTo(SelectionResult.WAITLISTED);
@@ -467,12 +477,14 @@ class AdminApplyServiceTest extends UnitTestSupport {
         // given
         submittedApply.getApplicationForm().getPortfolios().addAll(List.of(
                 Portfolio.builder()
+                        .id(10L)
                         .fileUrl("url1")
                         .fileName("name1")
                         .fileSize(100L)
                         .sequence(1)
                         .build(),
                 Portfolio.builder()
+                        .id(20L)
                         .fileUrl("url2")
                         .fileName("name2")
                         .fileSize(200L)
@@ -490,15 +502,15 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
         // then
         assertThat(actual.portfolios()).containsExactly(
-                new ApplyPortfolioDto("url1", "name1", "100", "1"),
-                new ApplyPortfolioDto("url2", "name2", "200", "2")
+                new AdminApplyPortfolioResponse(10L, "url1", "name1", "100", "1"),
+                new AdminApplyPortfolioResponse(20L, "url2", "name2", "200", "2")
         );
     }
 
     @Test
-    void 지원서_상세조회_시_문항_답변을_반환한다() {
+    void 전체_질문을_순서대로_반환하고_작성한_답변만_연결한다() {
         // given
-        var content = "{\"1\":\"첫 번째 답변\",\"2\":\"두 번째 답변\"}";
+        var content = "{\"1\":\"첫 번째 답변\"}";
         var applicationForm = ApplicationForm.builder()
                 .content(content)
                 .build();
@@ -511,8 +523,7 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 .applicationForm(applicationForm)
                 .build();
         var answers = Map.of(
-                "1", "첫 번째 답변",
-                "2", "두 번째 답변"
+                "1", "첫 번째 답변"
         );
         given(adminApplyRepository.findApplyByIdByStatus(
                 apply.getId(),
@@ -525,7 +536,9 @@ class AdminApplyServiceTest extends UnitTestSupport {
                 apply.getId(), ApplyStatus.SUBMITTED);
 
         // then
-        assertThat(actual.answers()).containsExactlyInAnyOrderEntriesOf(answers);
+        assertThat(actual.answers()).containsExactly(
+                new ApplyAnswerResponse(1L, "첫 번째 질문", "첫 번째 답변"),
+                new ApplyAnswerResponse(2L, "두 번째 질문", null));
     }
 
     @Test
