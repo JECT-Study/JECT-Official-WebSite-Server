@@ -120,7 +120,7 @@ public class AdminApplyService {
     public AdminApplyDetailResponse findApply(final Long applyId,
                                               final ApplyStatus applyStatus) {
         return adminApplyRepository.findApplyByIdByStatus(applyId, applyStatus)
-                .map(apply -> AdminApplyDetailResponse.from(apply, getAnswers(apply)))
+                .map(apply -> AdminApplyDetailResponse.of(apply, getAnswers(apply)))
                 .orElseThrow(() -> new ApplyException(ApplyErrorCode.NOT_FOUND_APPLY));
     }
 
