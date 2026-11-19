@@ -3,6 +3,7 @@ package org.ject.support.common.security;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import org.ject.support.common.exception.GlobalErrorCode;
 import org.ject.support.common.exception.GlobalException;
 import org.junit.jupiter.api.AfterEach;
 import org.ject.support.domain.member.Role;
@@ -140,29 +141,27 @@ class AuthenticatedApplicantIdResolverTest {
     }
 
     @Test
-    @DisplayName("resolveCurrentApplicantId는 인증 정보가 없으면 null을 반환한다")
+    @DisplayName("resolveCurrentApplicantId는 인증 정보가 없으면 예외가 발생한다")
     void resolveCurrentApplicantIdWithoutAuthentication() {
         // given
         when(securityContext.getAuthentication()).thenReturn(null);
 
-        // when
-        Long result = resolver.resolveCurrentApplicantId();
-
-        // then
-        assertThat(result).isNull();
+        // when & then
+        assertThatThrownBy(() -> resolver.resolveCurrentApplicantId())
+            .isInstanceOf(GlobalException.class)
+            .extracting("errorCode").isEqualTo(GlobalErrorCode.AUTHENTICATION_REQUIRED);
     }
 
     @Test
-    @DisplayName("resolveCurrentApplicantId는 지원하지 않는 principal이면 null을 반환한다")
+    @DisplayName("resolveCurrentApplicantId는 지원하지 않는 principal이면 예외가 발생한다")
     void resolveCurrentApplicantIdWithUnsupportedPrincipal() {
         // given
         Authentication authentication = new UsernamePasswordAuthenticationToken("anonymous", "", null);
         when(securityContext.getAuthentication()).thenReturn(authentication);
 
-        // when
-        Long result = resolver.resolveCurrentApplicantId();
-
-        // then
-        assertThat(result).isNull();
+        // when & then
+        assertThatThrownBy(() -> resolver.resolveCurrentApplicantId())
+            .isInstanceOf(GlobalException.class)
+            .extracting("errorCode").isEqualTo(GlobalErrorCode.AUTHENTICATION_REQUIRED);
     }
 }

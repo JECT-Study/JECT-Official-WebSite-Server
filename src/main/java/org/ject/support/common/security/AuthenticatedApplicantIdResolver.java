@@ -40,7 +40,7 @@ public class AuthenticatedApplicantIdResolver implements HandlerMethodArgumentRe
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()
             || !(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
-            return null;
+            throw new GlobalException(AUTHENTICATION_REQUIRED);
         }
         return userDetails.getApplicantId();
     }
