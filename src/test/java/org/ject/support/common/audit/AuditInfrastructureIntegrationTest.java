@@ -7,12 +7,17 @@ import static org.mockito.Mockito.doThrow;
 
 import java.util.List;
 import org.ject.support.base.TestSupport;
+import org.ject.support.common.exception.GlobalException;
 import org.ject.support.common.security.AuthenticatedApplicantIdResolver;
+import org.ject.support.common.security.CustomUserDetails;
 import org.ject.support.domain.changehistory.domain.ChangeActionType;
 import org.ject.support.domain.changehistory.domain.ChangeDetail;
 import org.ject.support.domain.changehistory.domain.ChangeHistory;
 import org.ject.support.domain.changehistory.repository.ChangeHistoryRepository;
+import org.ject.support.domain.member.Role;
 import org.ject.support.testconfig.QueryDslTestConfig;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +25,9 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Propagation;
@@ -49,6 +57,22 @@ class AuditInfrastructureIntegrationTest extends TestSupport {
     @MockitoSpyBean
     private ChangeHistoryRepository changeHistoryRepository;
 
+    private static final Long ACTOR_ID = 42L;
+
+    // 변경이력 수집은 작업자 식별이 필수라 테스트 전에 인증 컨텍스트를 세팅한다
+    @BeforeEach
+    void setUpAuthentication() {
+        CustomUserDetails userDetails = new CustomUserDetails("audit@test.com", ACTOR_ID, Role.SEMESTER);
+        Authentication authentication =
+            new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+    }
+
+    @AfterEach
+    void tearDownAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
+
     @Test
     @DisplayName("엔티티 생성 시 CREATE 변경이력이 수집된다")
     void 엔티티_생성_시_CREATE_변경이력이_수집된다() {
@@ -62,6 +86,7 @@ class AuditInfrastructureIntegrationTest extends TestSupport {
 
         ChangeHistory history = histories.get(0);
         assertThat(history.getActionType()).isEqualTo(ChangeActionType.CREATE);
+        assertThat(history.getActorId()).isEqualTo(ACTOR_ID);
         assertThat(history.getChangeDetails()).hasSize(1);
 
         ChangeDetail detail = history.getChangeDetails().get(0);
@@ -170,5 +195,23 @@ class AuditInfrastructureIntegrationTest extends TestSupport {
         assertThat(dummyEntityRepository.findAll())
             .extracting(AuditDummyEntity::getName)
             .doesNotContain("저장실패대상");
+    }
+
+    @Test
+    @DisplayName("작업자를 식별할 수 없으면 작업이 중단되고 이력도 남지 않는다")
+    void 작업자를_식별할_수_없으면_작업이_중단된다() {
+        // given
+        SecurityContextHolder.clearContext();
+
+        // when & then
+        assertThatThrownBy(() -> auditDummyService.create("인증없음"))
+            .isInstanceOf(GlobalException.class);
+
+        assertThat(dummyEntityRepository.findAll())
+            .extracting(AuditDummyEntity::getName)
+            .doesNotContain("인증없음");
+        assertThat(changeHistoryRepository
+            .findAllByDomainAndTargetIdOrderByIdDesc("AUDIT_DUMMY", "인증없음"))
+            .isEmpty();
     }
 }
