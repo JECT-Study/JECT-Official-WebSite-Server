@@ -164,4 +164,18 @@ class AuthenticatedApplicantIdResolverTest {
             .isInstanceOf(GlobalException.class)
             .extracting("errorCode").isEqualTo(GlobalErrorCode.AUTHENTICATION_REQUIRED);
     }
+
+    @Test
+    @DisplayName("resolveCurrentApplicantId는 applicantId가 null인 인증 사용자면 예외가 발생한다")
+    void resolveCurrentApplicantIdWithNullApplicantId() {
+        // given
+        CustomUserDetails userDetails = new CustomUserDetails(EMAIL, null, Role.SEMESTER);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+
+        // when & then
+        assertThatThrownBy(() -> resolver.resolveCurrentApplicantId())
+            .isInstanceOf(GlobalException.class)
+            .extracting("errorCode").isEqualTo(GlobalErrorCode.AUTHENTICATION_REQUIRED);
+    }
 }
