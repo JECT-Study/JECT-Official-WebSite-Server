@@ -24,7 +24,7 @@ import org.ject.support.admin.apply.dto.SubmittedApplySearchCondition;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.service.AdminApplyService;
 import org.ject.support.base.UnitTestSupport;
-import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.admin.apply.dto.ApplyListResponse;
 import org.ject.support.common.response.ObjectMapperConfig;
 import org.ject.support.common.response.ResponseWrapper;
 import org.ject.support.domain.apply.domain.ApplyStatus;
@@ -75,7 +75,7 @@ class AdminApplyControllerTest extends UnitTestSupport {
                 100L,
                 20);
         given(adminApplyService.searchSubmittedApplies(condition))
-                .willReturn(CursorPageResponse.of(List.of(), 20, false, null, 0L));
+                .willReturn(ApplyListResponse.of("백엔드 모집", List.of(), 20, false, null, 0L));
 
         // when, then
         mockMvc.perform(get("/admin/applies/submitted")
@@ -85,7 +85,12 @@ class AdminApplyControllerTest extends UnitTestSupport {
                         .param("cursor", "100")
                         .param("size", "20")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recruitTitle").value("백엔드 모집"))
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.size").value(20))
+                .andExpect(jsonPath("$.data.hasNext").value(false))
+                .andExpect(jsonPath("$.data.totalCount").value(0));
 
         verify(adminApplyService).searchSubmittedApplies(condition);
     }
@@ -100,7 +105,7 @@ class AdminApplyControllerTest extends UnitTestSupport {
                 100L,
                 20);
         given(adminApplyService.searchTempSavedApplies(condition))
-                .willReturn(CursorPageResponse.of(List.of(), 20, false, null, 0L));
+                .willReturn(ApplyListResponse.of("백엔드 모집", List.of(), 20, false, null, 0L));
 
         // when, then
         mockMvc.perform(get("/admin/applies/temp-saved")
@@ -109,7 +114,12 @@ class AdminApplyControllerTest extends UnitTestSupport {
                         .param("cursor", "100")
                         .param("size", "20")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.recruitTitle").value("백엔드 모집"))
+                .andExpect(jsonPath("$.data.content").isArray())
+                .andExpect(jsonPath("$.data.size").value(20))
+                .andExpect(jsonPath("$.data.hasNext").value(false))
+                .andExpect(jsonPath("$.data.totalCount").value(0));
 
         verify(adminApplyService).searchTempSavedApplies(condition);
     }

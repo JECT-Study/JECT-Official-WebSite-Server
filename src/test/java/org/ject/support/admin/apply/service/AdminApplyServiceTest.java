@@ -23,7 +23,7 @@ import org.ject.support.admin.apply.dto.TempSavedApplyResponse;
 import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
 import org.ject.support.base.UnitTestSupport;
-import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.admin.apply.dto.ApplyListResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
@@ -41,6 +41,8 @@ import org.ject.support.domain.member.CareerDetails;
 import org.ject.support.domain.member.JobFamily;
 import org.ject.support.domain.recruit.domain.Question;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.service.RecruitUsecase;
+import org.ject.support.domain.recruit.exception.RecruitException;
 import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.domain.Semester;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +58,9 @@ class AdminApplyServiceTest extends UnitTestSupport {
 
     @Mock
     private AdminApplyRepository adminApplyRepository;
+
+    @Mock
+    private RecruitUsecase recruitUsecase;
 
     @Mock
     private ApplicantCommandService applicantCommandService;
@@ -233,6 +238,8 @@ class AdminApplyServiceTest extends UnitTestSupport {
     void 제출완료_지원서_목록에_지원자_정보와_선정_정보를_반환한다() {
         // given
         var condition = new SubmittedApplySearchCondition(1L, null, null, null, 20);
+        given(recruitUsecase.getRecruitEntity(1L))
+                .willReturn(Recruit.builder().id(1L).title("백엔드 모집").build());
         var projection = new SubmittedApplyProjection(
                 1L,
                 "김젝트",
@@ -246,10 +253,11 @@ class AdminApplyServiceTest extends UnitTestSupport {
         given(adminApplyRepository.countSubmittedApplies(condition)).willReturn(1L);
 
         // when
-        CursorPageResponse<SubmittedApplyResponse> result =
+        ApplyListResponse<SubmittedApplyResponse> result =
                 adminApplyService.searchSubmittedApplies(condition);
 
         // then
+        assertThat(result.recruitTitle()).isEqualTo("백엔드 모집");
         assertThat(result.content()).singleElement().satisfies(apply -> {
             assertThat(apply.applyId()).isEqualTo(1L);
             assertThat(apply.name()).isEqualTo("김젝트");
@@ -269,6 +277,8 @@ class AdminApplyServiceTest extends UnitTestSupport {
     void 제출완료_지원서_조회결과가_요청_크기보다_많으면_다음_지원서_커서를_반환한다() {
         // given
         var condition = new SubmittedApplySearchCondition(1L, null, null, null, 2);
+        given(recruitUsecase.getRecruitEntity(1L))
+                .willReturn(Recruit.builder().id(1L).title("백엔드 모집").build());
         given(adminApplyRepository.searchSubmittedApplies(condition, 3)).willReturn(List.of(
                 submittedProjection(3L),
                 submittedProjection(2L),
@@ -276,10 +286,11 @@ class AdminApplyServiceTest extends UnitTestSupport {
         given(adminApplyRepository.countSubmittedApplies(condition)).willReturn(3L);
 
         // when
-        CursorPageResponse<SubmittedApplyResponse> result =
+        ApplyListResponse<SubmittedApplyResponse> result =
                 adminApplyService.searchSubmittedApplies(condition);
 
         // then
+        assertThat(result.recruitTitle()).isEqualTo("백엔드 모집");
         assertThat(result.content()).hasSize(2);
         assertThat(result.hasNext()).isTrue();
         assertThat(result.nextCursor()).isEqualTo(2L);
@@ -291,6 +302,8 @@ class AdminApplyServiceTest extends UnitTestSupport {
     void 임시저장_지원서_목록에_지원자_정보만_반환한다() {
         // given
         var condition = new TempSavedApplySearchCondition(1L, null, null, 20);
+        given(recruitUsecase.getRecruitEntity(1L))
+                .willReturn(Recruit.builder().id(1L).title("백엔드 모집").build());
         var projection = new TempSavedApplyProjection(
                 1L,
                 "김젝트",
@@ -301,10 +314,11 @@ class AdminApplyServiceTest extends UnitTestSupport {
         given(adminApplyRepository.countTempSavedApplies(condition)).willReturn(1L);
 
         // when
-        CursorPageResponse<TempSavedApplyResponse> result =
+        ApplyListResponse<TempSavedApplyResponse> result =
                 adminApplyService.searchTempSavedApplies(condition);
 
         // then
+        assertThat(result.recruitTitle()).isEqualTo("백엔드 모집");
         assertThat(result.content()).containsExactly(
                 new TempSavedApplyResponse(1L, "김젝트", "01012345678", CareerDetails.EMPLOYEE));
         assertThat(result.hasNext()).isFalse();
@@ -317,6 +331,8 @@ class AdminApplyServiceTest extends UnitTestSupport {
     void 임시저장_지원서_조회결과가_요청_크기보다_많으면_다음_지원서_커서를_반환한다() {
         // given
         var condition = new TempSavedApplySearchCondition(1L, null, null, 2);
+        given(recruitUsecase.getRecruitEntity(1L))
+                .willReturn(Recruit.builder().id(1L).title("백엔드 모집").build());
         given(adminApplyRepository.searchTempSavedApplies(condition, 3)).willReturn(List.of(
                 tempSavedProjection(3L),
                 tempSavedProjection(2L),
@@ -324,14 +340,57 @@ class AdminApplyServiceTest extends UnitTestSupport {
         given(adminApplyRepository.countTempSavedApplies(condition)).willReturn(3L);
 
         // when
-        CursorPageResponse<TempSavedApplyResponse> result =
+        ApplyListResponse<TempSavedApplyResponse> result =
                 adminApplyService.searchTempSavedApplies(condition);
 
         // then
+        assertThat(result.recruitTitle()).isEqualTo("백엔드 모집");
         assertThat(result.content()).hasSize(2);
         assertThat(result.hasNext()).isTrue();
         assertThat(result.nextCursor()).isEqualTo(2L);
         assertThat(result.totalCount()).isEqualTo(3L);
+    }
+
+    @Test
+    void 지원서가_없어도_공고_제목과_빈_목록을_반환한다() {
+        // given
+        var submitted = new SubmittedApplySearchCondition(1L, null, null, null, 20);
+        var tempSaved = new TempSavedApplySearchCondition(1L, null, null, 20);
+        given(recruitUsecase.getRecruitEntity(1L))
+                .willReturn(Recruit.builder().id(1L).title("백엔드 모집").build());
+        given(adminApplyRepository.searchSubmittedApplies(submitted, 21)).willReturn(List.of());
+        given(adminApplyRepository.searchTempSavedApplies(tempSaved, 21)).willReturn(List.of());
+
+        // when
+        var submittedResult = adminApplyService.searchSubmittedApplies(submitted);
+        var tempSavedResult = adminApplyService.searchTempSavedApplies(tempSaved);
+
+        // then
+        assertThat(submittedResult.recruitTitle()).isEqualTo("백엔드 모집");
+        assertThat(submittedResult.content()).isEmpty();
+        assertThat(submittedResult.totalCount()).isZero();
+        assertThat(submittedResult.nextCursor()).isNull();
+        assertThat(tempSavedResult.recruitTitle()).isEqualTo("백엔드 모집");
+        assertThat(tempSavedResult.content()).isEmpty();
+        assertThat(tempSavedResult.totalCount()).isZero();
+        assertThat(tempSavedResult.nextCursor()).isNull();
+    }
+
+    @Test
+    void 존재하지_않는_공고의_지원서_목록은_조회할_수_없다() {
+        // given
+        given(recruitUsecase.getRecruitEntity(1L))
+                .willThrow(new RecruitException(RecruitErrorCode.NOT_FOUND_RECRUIT));
+
+        // when, then
+        assertThatThrownBy(() -> adminApplyService.searchSubmittedApplies(
+                new SubmittedApplySearchCondition(1L, null, null, null, 20)))
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.NOT_FOUND_RECRUIT);
+        assertThatThrownBy(() -> adminApplyService.searchTempSavedApplies(
+                new TempSavedApplySearchCondition(1L, null, null, 20)))
+                .isInstanceOf(RecruitException.class)
+                .hasFieldOrPropertyWithValue("errorCode", RecruitErrorCode.NOT_FOUND_RECRUIT);
     }
 
     @Test
