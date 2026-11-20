@@ -24,7 +24,7 @@ import org.ject.support.admin.apply.dto.UpdateSelectionResultsRequest;
 import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
 import org.ject.support.admin.apply.dto.WaitlistOrdersResponse;
 import org.ject.support.admin.apply.repository.AdminApplyRepository;
-import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.admin.apply.dto.ApplyListResponse;
 import org.ject.support.common.util.Map2JsonSerializer;
 import org.ject.support.common.util.String2MapSerializer;
 import org.ject.support.domain.applicant.dto.DeleteApplicantsRequest;
@@ -38,6 +38,7 @@ import org.ject.support.domain.apply.domain.SelectionResult;
 import org.ject.support.domain.apply.exception.ApplyErrorCode;
 import org.ject.support.domain.apply.exception.ApplyException;
 import org.ject.support.domain.recruit.domain.Recruit;
+import org.ject.support.domain.recruit.service.RecruitUsecase;
 import org.ject.support.domain.recruit.exception.QuestionErrorCode;
 import org.ject.support.domain.recruit.exception.QuestionException;
 import org.springframework.stereotype.Service;
@@ -48,6 +49,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AdminApplyService {
 
     private final AdminApplyRepository adminApplyRepository;
+    private final RecruitUsecase recruitUsecase;
     private final ApplicantCommandService applicantCommandService;
     private final Map2JsonSerializer map2JsonSerializer;
     private final String2MapSerializer string2MapSerializer;
@@ -68,9 +70,10 @@ public class AdminApplyService {
 
     // 공고별 제출완료 지원서를 선정 결과와 지원자 신분으로 조회
     @Transactional(readOnly = true)
-    public CursorPageResponse<SubmittedApplyResponse> searchSubmittedApplies(
+    public ApplyListResponse<SubmittedApplyResponse> searchSubmittedApplies(
             SubmittedApplySearchCondition condition
     ) {
+        Recruit recruit = recruitUsecase.getRecruitEntity(condition.recruitId());
         int size = condition.getSizeOrDefault();
         List<SubmittedApplyProjection> queriedApplies =
                 adminApplyRepository.searchSubmittedApplies(condition, size + 1);
@@ -86,14 +89,15 @@ public class AdminApplyService {
                 .toList();
         long totalCount = adminApplyRepository.countSubmittedApplies(condition);
 
-        return CursorPageResponse.of(content, size, hasNext, nextCursor, totalCount);
+        return ApplyListResponse.of(recruit.getTitle(), content, size, hasNext, nextCursor, totalCount);
     }
 
     // 공고별 임시저장 지원서를 지원자 신분으로 조회
     @Transactional(readOnly = true)
-    public CursorPageResponse<TempSavedApplyResponse> searchTempSavedApplies(
+    public ApplyListResponse<TempSavedApplyResponse> searchTempSavedApplies(
             TempSavedApplySearchCondition condition
     ) {
+        Recruit recruit = recruitUsecase.getRecruitEntity(condition.recruitId());
         int size = condition.getSizeOrDefault();
         List<TempSavedApplyProjection> queriedApplies =
                 adminApplyRepository.searchTempSavedApplies(condition, size + 1);
@@ -109,7 +113,7 @@ public class AdminApplyService {
                 .toList();
         long totalCount = adminApplyRepository.countTempSavedApplies(condition);
 
-        return CursorPageResponse.of(content, size, hasNext, nextCursor, totalCount);
+        return ApplyListResponse.of(recruit.getTitle(), content, size, hasNext, nextCursor, totalCount);
     }
 
     @Transactional(readOnly = true)

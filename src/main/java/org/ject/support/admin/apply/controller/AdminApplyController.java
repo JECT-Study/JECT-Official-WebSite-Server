@@ -13,7 +13,7 @@ import org.ject.support.admin.apply.dto.TempSavedApplySearchCondition;
 import org.ject.support.admin.apply.dto.UpdateSelectionResultsRequest;
 import org.ject.support.admin.apply.dto.WaitlistOrdersResponse;
 import org.ject.support.admin.apply.service.AdminApplyService;
-import org.ject.support.common.response.CursorPageResponse;
+import org.ject.support.admin.apply.dto.ApplyListResponse;
 import org.ject.support.domain.apply.domain.ApplyStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,7 +35,7 @@ public class AdminApplyController implements AdminApplyApiSpec {
 
     @Override
     @GetMapping("/submitted")
-    public CursorPageResponse<SubmittedApplyResponse> searchSubmittedApplies(
+    public ApplyListResponse<SubmittedApplyResponse> searchSubmittedApplies(
             @Valid @ModelAttribute SubmittedApplySearchCondition condition
     ) {
         return adminApplyService.searchSubmittedApplies(condition);
@@ -43,7 +43,7 @@ public class AdminApplyController implements AdminApplyApiSpec {
 
     @Override
     @GetMapping("/temp-saved")
-    public CursorPageResponse<TempSavedApplyResponse> searchTempSavedApplies(
+    public ApplyListResponse<TempSavedApplyResponse> searchTempSavedApplies(
             @Valid @ModelAttribute TempSavedApplySearchCondition condition
     ) {
         return adminApplyService.searchTempSavedApplies(condition);
