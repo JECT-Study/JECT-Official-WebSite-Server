@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.ject.support.common.security.AuthPrincipal;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springdoc.core.customizers.GlobalOpenApiCustomizer;
+import org.springdoc.core.customizers.OperationIdCustomizer;
 import org.springdoc.core.utils.SpringDocUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,6 +33,12 @@ public class SpringdocConfig {
 
     private final SuccessResponseCustomizer successResponseCustomizer;
     private final ErrorResponseCustomizer errorResponseCustomizer;
+
+    @Bean
+    public OperationIdCustomizer operationIdCustomizer() {
+        // 페이지 커스터마이저 등록으로 생략되는 기본 operationId 중복 제거 기능 복구
+        return new OperationIdCustomizer();
+    }
 
     @Bean
     public GlobalOpenApiCustomizer pageResponseSchemaCustomizer() {
