@@ -35,6 +35,7 @@ import org.ject.support.domain.recruit.domain.Recruit;
 import org.ject.support.domain.recruit.domain.RecruitType;
 import org.ject.support.domain.recruit.domain.RecruitTypeDetail;
 import org.ject.support.domain.recruit.domain.Semester;
+import org.ject.support.domain.recruit.service.RecruitUsecase;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,6 +66,8 @@ class AdminApplyEditIntegrationTest extends TestSupport {
     private PlatformTransactionManager transactionManager;
     @MockitoBean
     private ApplicantCommandService applicantCommandService;
+    @MockitoBean
+    private RecruitUsecase recruitUsecase;
 
     private TransactionTemplate transactions;
     private Long applyId;
