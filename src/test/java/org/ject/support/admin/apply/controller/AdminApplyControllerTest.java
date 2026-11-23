@@ -1,6 +1,7 @@
 package org.ject.support.admin.apply.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -16,6 +17,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.ject.support.admin.apply.dto.AdminApplyDetailResponse;
+import org.ject.support.admin.apply.dto.ApplyAnswerResponse;
+import org.ject.support.admin.apply.dto.AdminApplyPortfolioResponse;
+import org.ject.support.domain.member.Region;
+import org.ject.support.domain.member.ExperiencePeriod;
 import org.ject.support.admin.apply.dto.EditApplyRequest;
 import org.ject.support.admin.apply.dto.EditWaitlistOrderRequest;
 import org.ject.support.admin.apply.dto.WaitlistOrderResponse;
@@ -142,16 +147,17 @@ class AdminApplyControllerTest extends UnitTestSupport {
                 "01012345678",
                 "test@mail.com",
                 JobFamily.BE,
-                "대학생(재학/휴학)",
+                CareerDetails.STUDENT,
                 "SEMESTER",
                 SelectionResult.WAITLISTED,
                 2,
                 "활동 의사 확인 필요",
-                "서울",
-                "경험 없음",
+                Region.SEOUL,
+                ExperiencePeriod.NONE,
                 List.of("AI", "Backend"),
-                Map.of(),
-                List.of());
+                List.of(new ApplyAnswerResponse(1L, "지원 동기", "답변"),
+                        new ApplyAnswerResponse(2L, "경험 소개", null)),
+                List.of(new AdminApplyPortfolioResponse(10L, "url", "name", "100", "1")));
         given(adminApplyService.findApply(1L, ApplyStatus.SUBMITTED)).willReturn(response);
 
         // when, then
@@ -159,7 +165,15 @@ class AdminApplyControllerTest extends UnitTestSupport {
                         .param("applyStatus", "SUBMITTED"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.selectionResult").value("WAITLISTED"))
-                .andExpect(jsonPath("$.data.waitlistNumber").value(2));
+                .andExpect(jsonPath("$.data.waitlistNumber").value(2))
+                .andExpect(jsonPath("$.data.careerDetails").value("STUDENT"))
+                .andExpect(jsonPath("$.data.region").value("SEOUL"))
+                .andExpect(jsonPath("$.data.experiencePeriod").value("NONE"))
+                .andExpect(jsonPath("$.data.answers[0].questionId").value(1))
+                .andExpect(jsonPath("$.data.answers[0].questionTitle").value("지원 동기"))
+                .andExpect(jsonPath("$.data.answers[0].answer").value("답변"))
+                .andExpect(jsonPath("$.data.answers[1].answer").value(nullValue()))
+                .andExpect(jsonPath("$.data.portfolios[0].portfolioId").value(10));
 
         verify(adminApplyService).findApply(1L, ApplyStatus.SUBMITTED);
     }

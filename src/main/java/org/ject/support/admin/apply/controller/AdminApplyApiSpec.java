@@ -43,7 +43,8 @@ public interface AdminApplyApiSpec {
 
     @Operation(
             summary = "지원서 상세 조회",
-            description = "전달한 ID에 해당하는 지원서의 상세 정보를 조회합니다.")
+            description = "지원서 상세 정보를 조회합니다. 공고의 전체 질문을 문항 순서대로 반환하며 미답변은 null로 표시합니다. "
+                    + "지원자 신분·거주지역·경험기간은 enum 코드로, 포트폴리오는 ID를 포함해 반환합니다.")
     AdminApplyDetailResponse findApply(@PathVariable Long applyId,
                                        @RequestParam(required = false) ApplyStatus applyStatus);
 
