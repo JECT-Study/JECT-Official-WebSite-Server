@@ -34,7 +34,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @DataJpaTest
-@Import({AuditDummyService.class, AuditAspect.class, ChangeHistoryRecorder.class,
+@Import({AuditDummyService.class, AuditDummyInnerService.class, AuditAspect.class, ChangeHistoryRecorder.class,
     AuthenticatedApplicantIdResolver.class, AuditTransactionConfig.class, QueryDslTestConfig.class})
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -195,6 +195,54 @@ class AuditInfrastructureIntegrationTest extends TestSupport {
         assertThat(dummyEntityRepository.findAll())
             .extracting(AuditDummyEntity::getName)
             .doesNotContain("저장실패대상");
+    }
+
+    @Test
+    @DisplayName("중첩 @Audit 호출 시 내부 변경도 바깥 이력으로 수집되고 이력은 한 건만 저장된다")
+    void 중첩_Audit_호출의_변경이_바깥_이력으로_수집된다() {
+        // given
+        Long id = auditDummyService.create("부모");
+        Long childId = dummyChildEntityRepository.save(AuditDummyChildEntity.create("자식")).getId();
+
+        // when
+        auditDummyService.renameWithNestedAudit(id, "바깥수정", childId, "안쪽수정");
+
+        // then
+        List<ChangeHistory> outerHistories =
+            changeHistoryRepository.findAllByDomainAndTargetIdOrderByIdDesc("AUDIT_DUMMY", String.valueOf(id));
+        assertThat(outerHistories).hasSize(1);
+        assertThat(outerHistories.get(0).getChangeDetails())
+            .extracting(ChangeDetail::getEntityName)
+            .containsExactlyInAnyOrder(
+                AuditDummyEntity.class.getSimpleName(),
+                AuditDummyChildEntity.class.getSimpleName());
+
+        List<ChangeHistory> innerHistories =
+            changeHistoryRepository.findAllByDomainAndTargetIdOrderByIdDesc("AUDIT_DUMMY_CHILD", String.valueOf(childId));
+        assertThat(innerHistories).isEmpty();
+    }
+
+    @Test
+    @DisplayName("연관 엔티티 속성은 직렬화 실패 없이 식별자로 기록된다")
+    void 연관_엔티티_속성은_식별자로_기록된다() {
+        // given
+        Long parentId = auditDummyService.create("부모");
+        Long childId = dummyChildEntityRepository.save(AuditDummyChildEntity.create("자식")).getId();
+
+        // when
+        auditDummyService.assignChildParent(childId, parentId);
+
+        // then
+        List<ChangeHistory> histories =
+            changeHistoryRepository.findAllByDomainAndTargetIdOrderByIdDesc("AUDIT_DUMMY", String.valueOf(childId));
+
+        ChangeDetail detail = histories.stream()
+            .flatMap(h -> h.getChangeDetails().stream())
+            .filter(d -> d.getEntityName().equals(AuditDummyChildEntity.class.getSimpleName()))
+            .findFirst()
+            .orElseThrow();
+        assertThat(detail.getBeforeData()).contains("\"parent\":null");
+        assertThat(detail.getAfterData()).contains("\"parent\":" + parentId);
     }
 
     @Test

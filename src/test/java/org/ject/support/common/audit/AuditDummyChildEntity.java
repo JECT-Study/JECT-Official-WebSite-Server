@@ -2,9 +2,12 @@ package org.ject.support.common.audit;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,6 +25,10 @@ class AuditDummyChildEntity implements Auditable {
     @Column(nullable = false)
     private String label;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id")
+    private AuditDummyEntity parent;
+
     private AuditDummyChildEntity(String label) {
         this.label = label;
     }
@@ -32,5 +39,9 @@ class AuditDummyChildEntity implements Auditable {
 
     void relabel(String label) {
         this.label = label;
+    }
+
+    void assignParent(AuditDummyEntity parent) {
+        this.parent = parent;
     }
 }

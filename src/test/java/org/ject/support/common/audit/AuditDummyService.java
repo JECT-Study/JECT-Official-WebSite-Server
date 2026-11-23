@@ -12,6 +12,7 @@ class AuditDummyService {
 
     private final AuditDummyEntityRepository repository;
     private final AuditDummyChildEntityRepository childRepository;
+    private final AuditDummyInnerService innerService;
 
     @Audit(domain = "AUDIT_DUMMY", action = ChangeActionType.CREATE, targetId = "#name")
     public Long create(String name) {
@@ -52,5 +53,33 @@ class AuditDummyService {
         AuditDummyEntity entity = repository.findById(id).orElseThrow();
         entity.rename(newName);
         throw new IllegalStateException("강제 실패");
+    }
+
+    @Audit(domain = "AUDIT_DUMMY", action = ChangeActionType.UPDATE, targetId = "#id")
+    public void renameWithNestedAudit(Long id, String outerName, Long childId, String childLabel) {
+        AuditDummyEntity entity = repository.findById(id).orElseThrow();
+        entity.rename(outerName);
+        innerService.relabel(childId, childLabel);
+    }
+
+    @Audit(domain = "AUDIT_DUMMY", action = ChangeActionType.UPDATE, targetId = "#childId")
+    public void assignChildParent(Long childId, Long parentId) {
+        AuditDummyEntity parent = repository.findById(parentId).orElseThrow();
+        AuditDummyChildEntity child = childRepository.findById(childId).orElseThrow();
+        child.assignParent(parent);
+    }
+}
+
+@Service
+@Transactional
+@RequiredArgsConstructor
+class AuditDummyInnerService {
+
+    private final AuditDummyChildEntityRepository childRepository;
+
+    @Audit(domain = "AUDIT_DUMMY_CHILD", action = ChangeActionType.UPDATE, targetId = "#id")
+    public void relabel(Long id, String newLabel) {
+        AuditDummyChildEntity child = childRepository.findById(id).orElseThrow();
+        child.relabel(newLabel);
     }
 }
