@@ -26,7 +26,8 @@ public class AuditInsertEventListener implements PostInsertEventListener {
         }
 
         String[] propertyNames = event.getPersister().getPropertyNames();
-        Map<String, Object> afterState = AuditStateSerializer.toStateMap(propertyNames, event.getState());
+        Map<String, Object> afterState = AuditStateSerializer.toStateMap(
+            propertyNames, event.getState(), event.getPersister().getPropertyTypes(), event.getSession());
 
         context.addDetail(ChangeDetail.create(
             entity.getClass().getSimpleName(),

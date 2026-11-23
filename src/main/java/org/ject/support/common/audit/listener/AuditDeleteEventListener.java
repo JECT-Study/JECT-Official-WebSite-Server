@@ -25,7 +25,8 @@ public class AuditDeleteEventListener implements PreDeleteEventListener {
         }
 
         String[] propertyNames = event.getPersister().getPropertyNames();
-        Map<String, Object> beforeState = AuditStateSerializer.toStateMap(propertyNames, event.getDeletedState());
+        Map<String, Object> beforeState = AuditStateSerializer.toStateMap(
+            propertyNames, event.getDeletedState(), event.getPersister().getPropertyTypes(), event.getSession());
 
         context.addDetail(ChangeDetail.create(
             entity.getClass().getSimpleName(),

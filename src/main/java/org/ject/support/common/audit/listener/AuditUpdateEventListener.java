@@ -2,6 +2,7 @@ package org.ject.support.common.audit.listener;
 
 import org.hibernate.event.spi.PreUpdateEvent;
 import org.hibernate.event.spi.PreUpdateEventListener;
+import org.hibernate.type.Type;
 import org.ject.support.common.audit.Auditable;
 import org.ject.support.common.audit.AuditContext;
 import org.ject.support.common.audit.AuditContextHolder;
@@ -30,14 +31,20 @@ public class AuditUpdateEventListener implements PreUpdateEventListener {
         }
 
         String[] propertyNames = event.getPersister().getPropertyNames();
+        Type[] propertyTypes = event.getPersister().getPropertyTypes();
         Object[] oldState = event.getOldState();
         Object[] newState = event.getState();
 
         Map<String, Object> before = new LinkedHashMap<>();
         Map<String, Object> after = new LinkedHashMap<>();
         for (int i = 0; i < propertyNames.length; i++) {
-            Object oldValue = oldState == null ? null : oldState[i];
-            Object newValue = newState[i];
+            Type propertyType = propertyTypes == null ? null : propertyTypes[i];
+            Object oldValue = AuditStateSerializer.normalize(
+                oldState == null ? null : oldState[i], propertyType, event.getSession());
+            Object newValue = AuditStateSerializer.normalize(newState[i], propertyType, event.getSession());
+            if (oldValue == AuditStateSerializer.EXCLUDED || newValue == AuditStateSerializer.EXCLUDED) {
+                continue;
+            }
             if (!Objects.equals(oldValue, newValue)) {
                 before.put(propertyNames[i], oldValue);
                 after.put(propertyNames[i], newValue);
