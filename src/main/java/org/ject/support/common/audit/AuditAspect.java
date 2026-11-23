@@ -33,6 +33,10 @@ public class AuditAspect {
 
     @Around("@annotation(audit)")
     public Object around(ProceedingJoinPoint joinPoint, Audit audit) throws Throwable {
+        if (AuditContextHolder.get() != null) {
+            return joinPoint.proceed();
+        }
+
         AuditContext context = new AuditContext(
             audit.domain(),
             audit.action(),
