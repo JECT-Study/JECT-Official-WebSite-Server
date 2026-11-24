@@ -35,20 +35,37 @@ public class AuditUpdateEventListener implements PreUpdateEventListener {
         Object[] oldState = event.getOldState();
         Object[] newState = event.getState();
 
+        // detached merge 등으로 스냅샷이 없으면 DB 스냅샷으로 복구한다
+        if (oldState == null) {
+            oldState = event.getPersister().getDatabaseSnapshot(event.getId(), event.getSession());
+        }
+        // 이전 상태를 알 수 없으면 모든 필드가 바뀐 것처럼 오인한 diff를 만들지 않는다
+        if (oldState == null) {
+            return false;
+        }
+
         Map<String, Object> before = new LinkedHashMap<>();
         Map<String, Object> after = new LinkedHashMap<>();
         for (int i = 0; i < propertyNames.length; i++) {
             Type propertyType = propertyTypes == null ? null : propertyTypes[i];
-            Object oldValue = AuditStateSerializer.normalize(
-                oldState == null ? null : oldState[i], propertyType, event.getSession());
-            Object newValue = AuditStateSerializer.normalize(newState[i], propertyType, event.getSession());
+            Object oldRaw = oldState[i];
+            Object newRaw = newState[i];
+
+            // Hibernate 타입 비교로 변경 여부를 판단한다 (배열 내용, 연관 식별자 비교)
+            boolean changed = propertyType != null
+                ? !propertyType.isEqual(oldRaw, newRaw)
+                : !Objects.equals(oldRaw, newRaw);
+            if (!changed) {
+                continue;
+            }
+
+            Object oldValue = AuditStateSerializer.normalize(oldRaw, propertyType, event.getSession());
+            Object newValue = AuditStateSerializer.normalize(newRaw, propertyType, event.getSession());
             if (oldValue == AuditStateSerializer.EXCLUDED || newValue == AuditStateSerializer.EXCLUDED) {
                 continue;
             }
-            if (!Objects.equals(oldValue, newValue)) {
-                before.put(propertyNames[i], oldValue);
-                after.put(propertyNames[i], newValue);
-            }
+            before.put(propertyNames[i], oldValue);
+            after.put(propertyNames[i], newValue);
         }
 
         if (before.isEmpty()) {
