@@ -1,12 +1,15 @@
 package org.ject.support.common.audit.listener;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.hibernate.event.spi.EventSource;
 import org.hibernate.event.spi.PreUpdateEvent;
 import org.hibernate.persister.entity.EntityPersister;
+import org.hibernate.type.Type;
 import org.ject.support.base.UnitTestSupport;
 import org.ject.support.common.audit.AuditContext;
 import org.ject.support.common.audit.AuditContextHolder;
@@ -140,9 +143,92 @@ class AuditUpdateEventListenerTest extends UnitTestSupport {
         assertThat(context.getDetails().get(0).getActionType()).isEqualTo(ChangeActionType.UPDATE);
     }
 
+    @Test
+    void oldState가_없으면_DB_스냅샷으로_비교한다() {
+        // given
+        AuditContext context = new AuditContext("DOMAIN", ChangeActionType.UPDATE, "1", null);
+        AuditContextHolder.set(context);
+        PreUpdateEvent event = updateEvent(new AuditableEntity(),
+            null, new Object[]{"변경후", false}, new Object[]{"변경전", false});
+
+        // when
+        listener.onPreUpdate(event);
+
+        // then
+        assertThat(context.getDetails()).hasSize(1);
+        ChangeDetail detail = context.getDetails().get(0);
+        assertThat(detail.getActionType()).isEqualTo(ChangeActionType.UPDATE);
+        assertThat(detail.getBeforeData()).contains("변경전");
+        assertThat(detail.getAfterData()).contains("변경후");
+    }
+
+    @Test
+    void oldState와_DB_스냅샷이_모두_없으면_수집하지_않는다() {
+        // given
+        AuditContext context = new AuditContext("DOMAIN", ChangeActionType.UPDATE, "1", null);
+        AuditContextHolder.set(context);
+        PreUpdateEvent event = updateEvent(new AuditableEntity(),
+            null, new Object[]{"값", false}, null);
+
+        // when
+        listener.onPreUpdate(event);
+
+        // then
+        assertThat(context.getDetails()).isEmpty();
+    }
+
+    @Test
+    void Hibernate_타입_비교로_내용이_같으면_수집하지_않는다() {
+        // given
+        AuditContext context = new AuditContext("DOMAIN", ChangeActionType.UPDATE, "1", null);
+        AuditContextHolder.set(context);
+
+        Type arrayType = mock(Type.class);
+        when(arrayType.isEqual(any(), any())).thenReturn(true);
+        PreUpdateEvent event = updateEvent(new AuditableEntity(),
+            new Object[]{new byte[]{1, 2}, false}, new Object[]{new byte[]{1, 2}, false},
+            new Type[]{arrayType, null}, null);
+
+        // when
+        listener.onPreUpdate(event);
+
+        // then
+        assertThat(context.getDetails()).isEmpty();
+    }
+
+    @Test
+    void Hibernate_타입_비교로_다르면_수집한다() {
+        // given
+        AuditContext context = new AuditContext("DOMAIN", ChangeActionType.UPDATE, "1", null);
+        AuditContextHolder.set(context);
+
+        Type arrayType = mock(Type.class);
+        when(arrayType.isEqual(any(), any())).thenReturn(false);
+        PreUpdateEvent event = updateEvent(new AuditableEntity(),
+            new Object[]{new byte[]{1, 2}, false}, new Object[]{new byte[]{3, 4}, false},
+            new Type[]{arrayType, null}, null);
+
+        // when
+        listener.onPreUpdate(event);
+
+        // then
+        assertThat(context.getDetails()).hasSize(1);
+    }
+
     private PreUpdateEvent updateEvent(Object entity, Object[] oldState, Object[] newState) {
+        return updateEvent(entity, oldState, newState, null, null);
+    }
+
+    private PreUpdateEvent updateEvent(Object entity, Object[] oldState, Object[] newState, Object[] dbSnapshot) {
+        return updateEvent(entity, oldState, newState, null, dbSnapshot);
+    }
+
+    private PreUpdateEvent updateEvent(Object entity, Object[] oldState, Object[] newState,
+                                       Type[] propertyTypes, Object[] dbSnapshot) {
         EntityPersister persister = mock(EntityPersister.class);
         lenient().when(persister.getPropertyNames()).thenReturn(PROPERTY_NAMES);
+        lenient().when(persister.getPropertyTypes()).thenReturn(propertyTypes);
+        lenient().when(persister.getDatabaseSnapshot(any(), any())).thenReturn(dbSnapshot);
         return new PreUpdateEvent(entity, 1L, newState, oldState, persister, mock(EventSource.class));
     }
 }
