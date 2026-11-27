@@ -5,12 +5,15 @@ import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
+import jakarta.persistence.EntityManager;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -22,6 +25,7 @@ import org.ject.support.admin.mail.repository.MailDispatchTargetRepository;
 import org.ject.support.base.TestSupport;
 import org.ject.support.common.response.ObjectMapperConfig;
 import org.ject.support.common.util.Map2JsonSerializer;
+import org.ject.support.testconfig.MysqlTestContainersConfig;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,22 +39,19 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({MailDispatchPersistenceService.class, MailDispatchQueryService.class,
         QueryDslTestConfig.class, Map2JsonSerializer.class, ObjectMapperConfig.class})
-@Testcontainers
 @Transactional(propagation = Propagation.NOT_SUPPORTED)
 class MailDispatchProcessRestartMysqlTest extends TestSupport {
 
-    @Container
-    private static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.2");
+    private static final String JDBC_URL = MysqlTestContainersConfig.createDatabase("mail_process_test");
 
     @Autowired
     private MailDispatchPersistenceService persistenceService;
@@ -67,6 +68,12 @@ class MailDispatchProcessRestartMysqlTest extends TestSupport {
     @Autowired
     private MailDispatchTargetRepository targetRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
     @TempDir(cleanup = CleanupMode.ON_SUCCESS)
     private Path processLogs;
 
@@ -76,11 +83,7 @@ class MailDispatchProcessRestartMysqlTest extends TestSupport {
 
     @DynamicPropertySource
     static void configureDataSource(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", MYSQL::getJdbcUrl);
-        registry.add("spring.datasource.driver-class-name", MYSQL::getDriverClassName);
-        registry.add("spring.datasource.username", MYSQL::getUsername);
-        registry.add("spring.datasource.password", MYSQL::getPassword);
-        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.MySQLDialect");
+        MysqlTestContainersConfig.registerDataSource(registry, JDBC_URL);
     }
 
     @BeforeEach
@@ -167,11 +170,22 @@ class MailDispatchProcessRestartMysqlTest extends TestSupport {
         assertThat(interruptedResult.status()).isEqualTo(MailDispatchJobStatus.PROCESSING);
         assertThat(interruptedResult.successCount()).isZero();
 
+        // 중단된 작업의 점유 만료 시각을 앞당겨 실제 대기 없이 복구 조건 구성
+        int affectedRows = new TransactionTemplate(transactionManager).execute(status ->
+                entityManager.createQuery("""
+                        update MailDispatchOutbox outbox
+                        set outbox.leaseUntil = :leaseUntil
+                        where outbox.dispatchJob.id = :jobId
+                        """)
+                        .setParameter("leaseUntil", LocalDateTime.now().minusMinutes(1))
+                        .setParameter("jobId", job.getId())
+                        .executeUpdate());
+        assertThat(affectedRows).isEqualTo(1);
+
         // when
         Process recovered = startProcess("recover", key);
         assertThat(recovered.pid()).isNotEqualTo(interrupted.pid()).isNotEqualTo(saved.pid());
-        // 운영 lease 2분의 실제 만료를 기다리며 저장된 시각이나 정책은 수정하지 않고 검증
-        await().atMost(Duration.ofMinutes(3)).pollInterval(Duration.ofSeconds(1)).untilAsserted(() -> {
+        await().atMost(Duration.ofSeconds(45)).untilAsserted(() -> {
             assertThat(recovered.isAlive()).isTrue();
             assertThat(acceptedMails).hasSize(1);
             assertThat(queryService.getJob(3L, job.getId()).status()).isEqualTo(MailDispatchJobStatus.UNKNOWN);
@@ -198,13 +212,14 @@ class MailDispatchProcessRestartMysqlTest extends TestSupport {
     private Process startProcess(String mode, String key) throws Exception {
         ProcessBuilder builder = new ProcessBuilder(
                 Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-                "-Xmx256m", "-cp", System.getProperty("mail.dispatch.test.classpath"),
+                "-Xmx256m", "-Duser.timezone=" + TimeZone.getDefault().getID(),
+                "-cp", System.getProperty("mail.dispatch.test.classpath"),
                 "org.ject.support.testconfig.MailDispatchProcessTestApplication", mode, key);
         // 부모의 운영 설정·자격증명 상속을 차단하고 검증 DB 접속값만 환경으로 전달
         builder.environment().clear();
-        builder.environment().put("MAIL_TEST_JDBC_URL", MYSQL.getJdbcUrl());
-        builder.environment().put("MAIL_TEST_DB_USER", MYSQL.getUsername());
-        builder.environment().put("MAIL_TEST_DB_PASSWORD", MYSQL.getPassword());
+        builder.environment().put("MAIL_TEST_JDBC_URL", JDBC_URL);
+        builder.environment().put("MAIL_TEST_DB_USER", MysqlTestContainersConfig.getUsername());
+        builder.environment().put("MAIL_TEST_DB_PASSWORD", MysqlTestContainersConfig.getPassword());
         builder.environment().put("MAIL_TEST_ENDPOINT", "http://127.0.0.1:" + mailServer.getAddress().getPort() + "/send");
         builder.redirectErrorStream(true).redirectOutput(processLogs.resolve(mode + "-" + processes.size() + ".log").toFile());
         Process process = builder.start();

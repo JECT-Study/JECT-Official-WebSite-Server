@@ -1,33 +1,51 @@
 package org.ject.support.testconfig;
 
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Profile;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import org.springframework.test.context.DynamicPropertyRegistry;
 import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
-@Profile("test")
-@TestConfiguration
-@Testcontainers
-public class MysqlTestContainersConfig implements DisposableBean {
-    private static final int PORT = 3306;
+public final class MysqlTestContainersConfig {
 
-    @Container
-    static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:8.2")
-            .withExposedPorts(PORT);
+    private static final MySQLContainer<?> MYSQL = new MySQLContainer<>("mysql:8.2")
+            .withUsername("root");
 
     static {
-        if(!mysqlContainer.isRunning()){
-            mysqlContainer.start();
-        }
+        MYSQL.start();
+        Runtime.getRuntime().addShutdownHook(new Thread(MYSQL::stop));
     }
 
+    private MysqlTestContainersConfig() {
+    }
 
-    @Override
-    public void destroy() {
-        if(mysqlContainer.isRunning()){
-            mysqlContainer.stop();
+    // 공유 MySQL 안에 테스트 클래스별 독립 DB 생성
+    public static synchronized String createDatabase(String databaseName) {
+        if (!databaseName.matches("[a-z][a-z0-9_]*")) {
+            throw new IllegalArgumentException("Invalid test database name");
         }
+        try (var connection = DriverManager.getConnection(MYSQL.getJdbcUrl(), getUsername(), getPassword());
+             var statement = connection.createStatement()) {
+            statement.execute("CREATE DATABASE IF NOT EXISTS `" + databaseName + "`");
+        } catch (SQLException exception) {
+            throw new IllegalStateException("테스트 DB 생성 실패", exception);
+        }
+        return "jdbc:mysql://" + MYSQL.getHost() + ":" + MYSQL.getMappedPort(3306) + "/" + databaseName;
+    }
+
+    // 테스트 전용 DB 연결과 MySQL 방언 등록
+    public static void registerDataSource(DynamicPropertyRegistry registry, String jdbcUrl) {
+        registry.add("spring.datasource.url", () -> jdbcUrl);
+        registry.add("spring.datasource.driver-class-name", MYSQL::getDriverClassName);
+        registry.add("spring.datasource.username", MysqlTestContainersConfig::getUsername);
+        registry.add("spring.datasource.password", MysqlTestContainersConfig::getPassword);
+        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.MySQLDialect");
+    }
+
+    public static String getUsername() {
+        return MYSQL.getUsername();
+    }
+
+    public static String getPassword() {
+        return MYSQL.getPassword();
     }
 }
