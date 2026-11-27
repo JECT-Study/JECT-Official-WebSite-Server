@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -211,7 +212,8 @@ class MailDispatchProcessRestartMysqlTest extends TestSupport {
     private Process startProcess(String mode, String key) throws Exception {
         ProcessBuilder builder = new ProcessBuilder(
                 Path.of(System.getProperty("java.home"), "bin", "java").toString(),
-                "-Xmx256m", "-cp", System.getProperty("mail.dispatch.test.classpath"),
+                "-Xmx256m", "-Duser.timezone=" + TimeZone.getDefault().getID(),
+                "-cp", System.getProperty("mail.dispatch.test.classpath"),
                 "org.ject.support.testconfig.MailDispatchProcessTestApplication", mode, key);
         // 부모의 운영 설정·자격증명 상속을 차단하고 검증 DB 접속값만 환경으로 전달
         builder.environment().clear();
