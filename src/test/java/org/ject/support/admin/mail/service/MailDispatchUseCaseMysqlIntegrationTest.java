@@ -54,6 +54,7 @@ import org.ject.support.domain.apply.service.ApplyQueryService;
 import org.ject.support.external.email.exception.EmailErrorCode;
 import org.ject.support.external.email.exception.EmailException;
 import org.ject.support.external.email.service.EmailSendService;
+import org.ject.support.testconfig.MysqlTestContainersConfig;
 import org.ject.support.testconfig.QueryDslTestConfig;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -77,9 +78,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -94,13 +92,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
         QueryDslTestConfig.class,
         MailDispatchUseCaseMysqlIntegrationTest.TestDependencies.class
 })
-@Testcontainers
 class MailDispatchUseCaseMysqlIntegrationTest extends TestSupport {
 
     private static final AtomicLong NEXT_SCHEDULED_APPLY_ID = new AtomicLong(900_000L);
 
-    @Container
-    private static final MySQLContainer<?> mysqlContainer = new MySQLContainer<>("mysql:8.2");
+    private static final String JDBC_URL = MysqlTestContainersConfig.createDatabase("mail_use_case_test");
 
     @Autowired
     private MailDispatchUseCase mailDispatchUseCase;
@@ -143,11 +139,7 @@ class MailDispatchUseCaseMysqlIntegrationTest extends TestSupport {
 
     @DynamicPropertySource
     static void configureDataSource(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", mysqlContainer::getJdbcUrl);
-        registry.add("spring.datasource.driver-class-name", mysqlContainer::getDriverClassName);
-        registry.add("spring.datasource.username", mysqlContainer::getUsername);
-        registry.add("spring.datasource.password", mysqlContainer::getPassword);
-        registry.add("spring.jpa.properties.hibernate.dialect", () -> "org.hibernate.dialect.MySQLDialect");
+        MysqlTestContainersConfig.registerDataSource(registry, JDBC_URL);
     }
 
     @Test

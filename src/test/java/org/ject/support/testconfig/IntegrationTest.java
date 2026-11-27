@@ -6,7 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 @SpringBootTest
-@Import({RedisTestContainersConfig.class, MysqlTestContainersConfig.class})
+@Import(RedisTestContainersConfig.class)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface IntegrationTest {
 }
