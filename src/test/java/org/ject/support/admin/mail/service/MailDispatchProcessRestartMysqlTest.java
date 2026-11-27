@@ -5,10 +5,12 @@ import static org.awaitility.Awaitility.await;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpServer;
+import jakarta.persistence.EntityManager;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -35,8 +37,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -66,6 +70,12 @@ class MailDispatchProcessRestartMysqlTest extends TestSupport {
 
     @Autowired
     private MailDispatchTargetRepository targetRepository;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     @TempDir(cleanup = CleanupMode.ON_SUCCESS)
     private Path processLogs;
@@ -167,11 +177,22 @@ class MailDispatchProcessRestartMysqlTest extends TestSupport {
         assertThat(interruptedResult.status()).isEqualTo(MailDispatchJobStatus.PROCESSING);
         assertThat(interruptedResult.successCount()).isZero();
 
+        // 중단된 작업의 점유 만료 시각을 앞당겨 실제 대기 없이 복구 조건 구성
+        int affectedRows = new TransactionTemplate(transactionManager).execute(status ->
+                entityManager.createQuery("""
+                        update MailDispatchOutbox outbox
+                        set outbox.leaseUntil = :leaseUntil
+                        where outbox.dispatchJob.id = :jobId
+                        """)
+                        .setParameter("leaseUntil", LocalDateTime.now().minusMinutes(1))
+                        .setParameter("jobId", job.getId())
+                        .executeUpdate());
+        assertThat(affectedRows).isEqualTo(1);
+
         // when
         Process recovered = startProcess("recover", key);
         assertThat(recovered.pid()).isNotEqualTo(interrupted.pid()).isNotEqualTo(saved.pid());
-        // 운영 lease 2분의 실제 만료를 기다리며 저장된 시각이나 정책은 수정하지 않고 검증
-        await().atMost(Duration.ofMinutes(3)).pollInterval(Duration.ofSeconds(1)).untilAsserted(() -> {
+        await().atMost(Duration.ofSeconds(45)).untilAsserted(() -> {
             assertThat(recovered.isAlive()).isTrue();
             assertThat(acceptedMails).hasSize(1);
             assertThat(queryService.getJob(3L, job.getId()).status()).isEqualTo(MailDispatchJobStatus.UNKNOWN);
